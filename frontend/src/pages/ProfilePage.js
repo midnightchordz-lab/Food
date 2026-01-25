@@ -22,6 +22,23 @@ const DIETARY_OPTIONS = [
   'Paleo'
 ];
 
+const CUISINE_OPTIONS = [
+  { name: 'Indian', flag: '🇮🇳' },
+  { name: 'Chinese', flag: '🇨🇳' },
+  { name: 'Italian', flag: '🇮🇹' },
+  { name: 'Mexican', flag: '🇲🇽' },
+  { name: 'Japanese', flag: '🇯🇵' },
+  { name: 'Thai', flag: '🇹🇭' },
+  { name: 'Mediterranean', flag: '🌊' },
+  { name: 'American', flag: '🇺🇸' },
+  { name: 'French', flag: '🇫🇷' },
+  { name: 'Korean', flag: '🇰🇷' },
+  { name: 'Middle Eastern', flag: '🌍' },
+  { name: 'Southeast Asian', flag: '🌴' },
+  { name: 'African', flag: '🌍' },
+  { name: 'Latin American', flag: '🌎' },
+];
+
 const ProfilePage = () => {
   const { user, updateProfile, isAuthenticated } = useAuth();
   const navigate = useNavigate();
