@@ -200,6 +200,16 @@ const SavedRecipes = () => {
                 </div>
               </DialogHeader>
               <div className="space-y-6 mt-4">
+                {selectedRecipe.image_url && (
+                  <div className="rounded-2xl overflow-hidden">
+                    <img 
+                      src={selectedRecipe.image_url} 
+                      alt={selectedRecipe.title}
+                      className="w-full h-64 object-cover"
+                    />
+                  </div>
+                )}
+                
                 <p className="text-muted-foreground">{selectedRecipe.description}</p>
                 
                 <div className="flex gap-4">
