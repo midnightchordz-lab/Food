@@ -143,24 +143,47 @@ const AuthModal = ({ open, onClose }) => {
           </div>
 
           {!isLogin && (
-            <div className="space-y-3">
-              <Label>Dietary Restrictions (Optional)</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {DIETARY_OPTIONS.map((option) => (
-                  <div key={option} className="flex items-center gap-2">
-                    <Checkbox
-                      id={option}
-                      checked={dietaryRestrictions.includes(option)}
-                      onCheckedChange={() => toggleDietary(option)}
-                      data-testid={`dietary-${option}`}
-                    />
-                    <Label htmlFor={option} className="text-sm cursor-pointer">
-                      {option}
-                    </Label>
-                  </div>
-                ))}
+            <>
+              <div className="space-y-3">
+                <Label>Dietary Restrictions (Optional)</Label>
+                <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 border rounded-xl">
+                  {DIETARY_OPTIONS.map((option) => (
+                    <div key={option} className="flex items-center gap-2">
+                      <Checkbox
+                        id={option}
+                        checked={dietaryRestrictions.includes(option)}
+                        onCheckedChange={() => toggleDietary(option)}
+                        data-testid={`dietary-${option}`}
+                      />
+                      <Label htmlFor={option} className="text-sm cursor-pointer">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+
+              <div className="space-y-3">
+                <Label>Cuisine Preferences (Optional)</Label>
+                <p className="text-xs text-muted-foreground">Select your favorite cuisines for personalized meal suggestions</p>
+                <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto p-2 border rounded-xl">
+                  {CUISINE_OPTIONS.map((cuisine) => (
+                    <div key={cuisine.name} className="flex items-center gap-2">
+                      <Checkbox
+                        id={`cuisine-${cuisine.name}`}
+                        checked={cuisinePreferences.includes(cuisine.name)}
+                        onCheckedChange={() => toggleCuisine(cuisine.name)}
+                        data-testid={`cuisine-${cuisine.name}`}
+                      />
+                      <Label htmlFor={`cuisine-${cuisine.name}`} className="text-sm cursor-pointer flex items-center gap-1">
+                        <span>{cuisine.flag}</span>
+                        <span>{cuisine.name}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
           <Button
