@@ -111,61 +111,67 @@ const SavedRecipes = () => {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRecipes.map((recipe) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredRecipes.map((recipe, idx) => (
               <div
                 key={recipe.id}
-                className="recipe-card bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                className="recipe-card bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group"
                 onClick={() => setSelectedRecipe(recipe)}
                 data-testid={`recipe-card-${recipe.id}`}
               >
-                <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden">
-                  {recipe.image_url ? (
-                    <img 
-                      src={recipe.image_url} 
-                      alt={recipe.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div className="absolute inset-0 flex items-center justify-center" style={{display: recipe.image_url ? 'none' : 'flex'}}>
-                    <ChefHat size={64} className="text-primary/40" />
-                  </div>
-                  {recipe.cuisine_type && (
-                    <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
-                      {recipe.cuisine_type}
+                {/* Book-style header */}
+                <div className="bg-gradient-to-br from-primary/10 to-accent/10 px-6 py-4 border-b border-border/20">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs uppercase tracking-wider text-accent font-semibold mb-2">
+                        {recipe.complexity || 'Standard'}
+                      </p>
+                      <h3 className="text-xl font-serif leading-tight group-hover:text-primary transition-colors">
+                        {recipe.title}
+                      </h3>
                     </div>
-                  )}
-                </div>
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-serif flex-1">{recipe.title}</h3>
-                    {recipeRatings[recipe.id]?.average_rating > 0 && (
-                      <div className="flex items-center gap-1 text-accent">
-                        <Star size={16} className="fill-accent" />
-                        <span className="text-sm font-medium">
-                          {recipeRatings[recipe.id].average_rating}
-                        </span>
+                    {recipe.image_url && (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden ml-4 ring-2 ring-background shadow-lg">
+                        <img
+                          src={recipe.image_url}
+                          alt={recipe.title}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                  {recipe.cuisine_type && (
+                    <div className="mt-3">
+                      <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-xs font-medium">
+                        {recipe.cuisine_type}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
                     {recipe.description}
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+
+                  {/* Metadata */}
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
                     <div className="flex items-center gap-1">
-                      <Clock size={16} />
+                      <Clock size={14} />
                       <span>{recipe.prep_time}</span>
                     </div>
-                    <span className="px-2 py-1 bg-secondary rounded-full text-xs">
-                      {recipe.complexity}
-                    </span>
+                    {recipeRatings[recipe.id]?.average_rating > 0 && (
+                      <div className="flex items-center gap-1 text-accent">
+                        <Star size={14} className="fill-accent" />
+                        <span className="font-medium">{recipeRatings[recipe.id].average_rating}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {recipe.mood_tags?.slice(0, 3).map((tag, idx) => (
+
+                  {/* Mood tags */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {recipe.mood_tags?.slice(0, 2).map((tag, idx) => (
                       <span
                         key={idx}
                         className="mood-badge px-2 py-1 bg-accent/10 text-accent rounded-full text-xs"
@@ -174,6 +180,24 @@ const SavedRecipes = () => {
                       </span>
                     ))}
                   </div>
+
+                  {/* Nutritional highlight */}
+                  <div className="bg-secondary/50 rounded-lg p-3 mb-4">
+                    <p className="text-xs font-medium text-muted-foreground line-clamp-2">
+                      {recipe.nutritional_highlights}
+                    </p>
+                  </div>
+
+                  {/* Action */}
+                  <Button
+                    className="w-full rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRecipe(recipe);
+                    }}
+                  >
+                    View Full Recipe
+                  </Button>
                 </div>
               </div>
             ))}
