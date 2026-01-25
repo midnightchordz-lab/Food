@@ -100,13 +100,26 @@ const ShoppingListPage = () => {
   return (
     <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="shopping-list-page">
       <div className="max-w-3xl mx-auto">
-        <div className="mb-12">
-          <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="page-title">
-            Shopping List
-          </h1>
-          <p className="text-muted-foreground" data-testid="page-description">
-            Keep track of ingredients you need for your mood-based meals.
-          </p>
+        <div className="mb-12 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="page-title">
+              Shopping List
+            </h1>
+            <p className="text-muted-foreground" data-testid="page-description">
+              Keep track of ingredients you need for your mood-based meals.
+            </p>
+          </div>
+          {items.length > 0 && (
+            <Button
+              onClick={exportToPDF}
+              variant="outline"
+              className="rounded-full"
+              data-testid="export-pdf-button"
+            >
+              <Download size={18} className="mr-2" />
+              Export PDF
+            </Button>
+          )}
         </div>
         
         {/* Add Item Form */}
