@@ -199,14 +199,21 @@ class VoiceTranscriptionResponse(BaseModel):
     text: str
     detected_mood: Optional[str] = None
 
+class VoiceTranscriptionRequest(BaseModel):
+    language: Optional[str] = 'en'
+
 class VoiceSynthesisRequest(BaseModel):
     text: str
     mood: Optional[str] = None
+    language: Optional[str] = 'en'
 
 class VoiceSynthesisResponse(BaseModel):
     audio_base64: str
     mood: str
     voice_description: str
+
+class LanguagesResponse(BaseModel):
+    languages: dict
 
 # Auth helper functions
 def verify_password(plain_password, hashed_password):
