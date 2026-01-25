@@ -136,6 +136,29 @@ const ProfilePage = () => {
               </div>
             </div>
 
+            <div className="space-y-3">
+              <Label>Favorite Cuisines</Label>
+              <p className="text-sm text-muted-foreground">
+                Select cuisines you enjoy. AI will prioritize these in meal suggestions.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {CUISINE_OPTIONS.map((cuisine) => (
+                  <div key={cuisine.name} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`profile-cuisine-${cuisine.name}`}
+                      checked={cuisinePreferences.includes(cuisine.name)}
+                      onCheckedChange={() => toggleCuisine(cuisine.name)}
+                      data-testid={`cuisine-${cuisine.name}`}
+                    />
+                    <Label htmlFor={`profile-cuisine-${cuisine.name}`} className="text-sm cursor-pointer flex items-center gap-1">
+                      <span>{cuisine.flag}</span>
+                      <span>{cuisine.name}</span>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <Button
               type="submit"
               disabled={saving}
