@@ -41,13 +41,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password, name, dietaryRestrictions = []) => {
+  const register = async (email, password, name, dietaryRestrictions = [], cuisinePreferences = []) => {
     try {
       const response = await axios.post(`${API}/auth/register`, {
         email,
         password,
         name,
-        dietary_restrictions: dietaryRestrictions
+        dietary_restrictions: dietaryRestrictions,
+        cuisine_preferences: cuisinePreferences
       });
       const { access_token, user: userData } = response.data;
       localStorage.setItem('token', access_token);
