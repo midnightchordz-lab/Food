@@ -304,15 +304,17 @@ const ChatPage = () => {
           
           {/* Input Form */}
           <div className="flex gap-3 items-end" data-testid="message-form">
-            <VoiceButton
-              isRecording={voiceControls.isRecording}
-              isProcessing={voiceControls.isProcessing}
-              isMuted={voiceControls.isMuted}
-              onStartRecording={voiceControls.startRecording}
-              onStopRecording={voiceControls.stopRecording}
-              onToggleMute={voiceControls.toggleMute}
-              size="lg"
-            />
+            {voiceControls && (
+              <VoiceButton
+                isRecording={voiceControls.isRecording}
+                isProcessing={voiceControls.isProcessing}
+                isMuted={voiceControls.isMuted}
+                onStartRecording={voiceControls.startRecording}
+                onStopRecording={voiceControls.stopRecording}
+                onToggleMute={voiceControls.toggleMute}
+                size="lg"
+              />
+            )}
             
             <Textarea
               value={inputMessage}
@@ -320,13 +322,13 @@ const ChatPage = () => {
               onKeyPress={handleKeyPress}
               placeholder="Tell me how you're feeling..."
               className="flex-1 rounded-2xl resize-none min-h-[60px] max-h-[120px] bg-card border-border/60 focus:border-primary"
-              disabled={isLoading || voiceControls.isRecording}
+              disabled={isLoading || (voiceControls && voiceControls.isRecording)}
               data-testid="message-input"
             />
             <Button
               onClick={handleSubmit}
               size="lg"
-              disabled={isLoading || !inputMessage.trim() || voiceControls.isRecording}
+              disabled={isLoading || !inputMessage.trim() || (voiceControls && voiceControls.isRecording)}
               className="rounded-full px-6 bg-primary hover:bg-primary/90 active:scale-95 transition-all"
               data-testid="send-button"
             >
