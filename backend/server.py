@@ -426,6 +426,11 @@ async def get_chat_history(session_id: str, current_user: User = Depends(get_cur
 async def save_recipe(request: SaveRecipeRequest, current_user: User = Depends(get_current_user)):
     try:
         recipe = Recipe(**request.recipe.model_dump())
+        
+        # Fetch image if not provided
+        if not recipe.image_url:
+            recipe.image_url = get_food_image(recipe.title)
+        
         recipe_dict = recipe.model_dump()
         recipe_dict['created_at'] = recipe_dict['created_at'].isoformat()
         await db.recipes.insert_one(recipe_dict)
