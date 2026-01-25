@@ -52,6 +52,7 @@ class User(BaseModel):
     email: str
     name: str
     dietary_restrictions: List[str] = []
+    cuisine_preferences: List[str] = []
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserInDB(User):
