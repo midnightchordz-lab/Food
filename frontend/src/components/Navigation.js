@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut } from 'lucide-react';
+import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Globe } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import { Button } from '@/components/ui/button';
