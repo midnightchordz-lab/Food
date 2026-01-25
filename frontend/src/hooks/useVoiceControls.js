@@ -7,12 +7,13 @@ import { toast } from 'sonner';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const VoiceControls = ({ onTranscription, autoPlayResponse = true }) => {
+const VoiceControls = ({ onTranscription, autoPlayResponse = true, language = 'en' }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [detectedMood, setDetectedMood] = useState(null);
+  const [currentLanguage, setCurrentLanguage] = useState(language);
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
