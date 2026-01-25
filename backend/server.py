@@ -506,6 +506,176 @@ async def get_weekly_plans(current_user: User = Depends(get_current_user)):
         logging.error(f"Error fetching weekly plans: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# AI-powered meal plan generation
+@api_router.post("/weekly-plan/generate")
+async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User = Depends(get_current_user)):
+    try:
+        meals = await generate_ai_meal_plan(
+            current_user,
+            request.mood,
+            request.focus_areas,
+            request.cuisine_preferences
+        )
+        
+        # Save the generated plan
+        today = datetime.now(timezone.utc)
+        week_start = today - timedelta(days=today.weekday())
+        
+        plan = WeeklyPlan(
+            user_id=current_user.id,
+            week_start=week_start.strftime('%Y-%m-%d'),
+            meals=meals
+        )
+        plan_dict = plan.model_dump()
+        plan_dict['created_at'] = plan_dict['created_at'].isoformat()
+        await db.weekly_plans.insert_one(plan_dict)
+        
+        return {"plan": plan, "message": "AI meal plan generated successfully!"}
+    except Exception as e:
+        logging.error(f"Error generating AI meal plan: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Recipe rating and review endpoints
+@api_router.post("/recipes/{recipe_id}/rate")
+async def rate_recipe(recipe_id: str, rating_data: RatingCreate, current_user: User = Depends(get_current_user)):
+    try:
+        # Check if user already rated this recipe
+        existing_rating = await db.recipe_ratings.find_one({
+            "user_id": current_user.id,
+            "recipe_id": recipe_id
+        }, {"_id": 0})
+        
+        if existing_rating:
+            # Update existing rating
+            await db.recipe_ratings.update_one(
+                {"user_id": current_user.id, "recipe_id": recipe_id},
+                {"$set": {
+                    "rating": rating_data.rating,
+                    "review": rating_data.review
+                }}
+            )
+            return {"message": "Rating updated successfully"}
+        else:
+            # Create new rating
+            rating = RecipeRating(
+                user_id=current_user.id,
+                recipe_id=recipe_id,
+                rating=rating_data.rating,
+                review=rating_data.review
+            )
+            rating_dict = rating.model_dump()
+            rating_dict['created_at'] = rating_dict['created_at'].isoformat()
+            await db.recipe_ratings.insert_one(rating_dict)
+            return {"message": "Rating added successfully"}
+    except Exception as e:
+        logging.error(f"Error rating recipe: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/recipes/{recipe_id}/ratings")
+async def get_recipe_ratings(recipe_id: str):
+    try:
+        ratings = await db.recipe_ratings.find({"recipe_id": recipe_id}, {"_id": 0}).to_list(100)
+        if not ratings:
+            return {"average_rating": 0, "total_ratings": 0, "ratings": []}
+        
+        avg_rating = sum(r['rating'] for r in ratings) / len(ratings)
+        return {
+            "average_rating": round(avg_rating, 1),
+            "total_ratings": len(ratings),
+            "ratings": ratings
+        }
+    except Exception as e:
+        logging.error(f"Error fetching ratings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Recipe search and filter
+@api_router.post("/recipes/search")
+async def search_recipes(search_params: RecipeSearchRequest, current_user: User = Depends(get_current_user)):
+    try:
+        # Build search query
+        query = {}
+        
+        # Get user's saved recipe IDs
+        saved = await db.saved_recipes.find({"user_id": current_user.id}, {"_id": 0, "recipe_id": 1}).to_list(100)
+        saved_ids = [s['recipe_id'] for s in saved]
+        query["id"] = {"$in": saved_ids}
+        
+        # Text search
+        if search_params.query:
+            query["$or"] = [
+                {"title": {"$regex": search_params.query, "$options": "i"}},
+                {"description": {"$regex": search_params.query, "$options": "i"}}
+            ]
+        
+        # Mood tags filter
+        if search_params.mood_tags:
+            query["mood_tags"] = {"$in": search_params.mood_tags}
+        
+        # Dietary tags filter
+        if search_params.dietary_tags:
+            query["dietary_info"] = {"$all": search_params.dietary_tags}
+        
+        # Complexity filter
+        if search_params.complexity:
+            query["complexity"] = search_params.complexity
+        
+        recipes = await db.recipes.find(query, {"_id": 0}).to_list(100)
+        return {"recipes": recipes}
+    except Exception as e:
+        logging.error(f"Error searching recipes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Meal prep reminders
+@api_router.post("/reminders")
+async def create_reminder(reminder_data: ReminderCreate, current_user: User = Depends(get_current_user)):
+    try:
+        reminder = MealReminder(user_id=current_user.id, **reminder_data.model_dump())
+        reminder_dict = reminder.model_dump()
+        reminder_dict['created_at'] = reminder_dict['created_at'].isoformat()
+        await db.meal_reminders.insert_one(reminder_dict)
+        return reminder
+    except Exception as e:
+        logging.error(f"Error creating reminder: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/reminders")
+async def get_reminders(current_user: User = Depends(get_current_user)):
+    try:
+        reminders = await db.meal_reminders.find({"user_id": current_user.id}, {"_id": 0}).to_list(100)
+        return {"reminders": reminders}
+    except Exception as e:
+        logging.error(f"Error fetching reminders: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/reminders/{reminder_id}")
+async def delete_reminder(reminder_id: str, current_user: User = Depends(get_current_user)):
+    try:
+        result = await db.meal_reminders.delete_one({"id": reminder_id, "user_id": current_user.id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Reminder not found")
+        return {"message": "Reminder deleted successfully"}
+    except Exception as e:
+        logging.error(f"Error deleting reminder: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# PDF export for shopping list
+@api_router.get("/shopping-list/export")
+async def export_shopping_list_pdf(current_user: User = Depends(get_current_user)):
+    try:
+        shopping_list = await db.shopping_lists.find_one({"user_id": current_user.id}, {"_id": 0})
+        items = shopping_list.get('items', []) if shopping_list else []
+        
+        pdf_buffer = generate_shopping_list_pdf(items, current_user.name)
+        
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=shopping_list_{datetime.now().strftime('%Y%m%d')}.pdf"}
+        )
+    except Exception as e:
+        logging.error(f"Error exporting shopping list: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 app.include_router(api_router)
 
 app.add_middleware(
