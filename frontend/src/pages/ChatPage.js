@@ -101,12 +101,27 @@ const ChatPage = () => {
         timestamp: response.data.timestamp
       };
       setMessages(prev => [...prev, assistantMsg]);
+      
+      // Auto-play voice response if not muted
+      if (!voiceControls.isMuted) {
+        voiceControls.playResponse(response.data.response, currentMood);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const handleVoiceTranscription = (text, detectedMood) => {
+    // Update current mood
+    if (detectedMood) {
+      setCurrentMood(detectedMood);
+    }
+    
+    // Send the transcribed text
+    sendMessage(text);
   };
   
   const handleSubmit = (e) => {
