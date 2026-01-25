@@ -2,8 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Heart, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -13,7 +21,11 @@ const ChatPage = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId] = useState(() => `session-${Date.now()}`);
+  const [showRecipeDialog, setShowRecipeDialog] = useState(false);
+  const [recipeToSave, setRecipeToSave] = useState(null);
   const messagesEndRef = useRef(null);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -24,6 +36,11 @@ const ChatPage = () => {
   }, [messages]);
   
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/');
+      return;
+    }
+    
     // Load chat history
     const loadHistory = async () => {
       try {
@@ -31,22 +48,19 @@ const ChatPage = () => {
         if (response.data.messages && response.data.messages.length > 0) {
           setMessages(response.data.messages);
         } else {
-          // Send initial greeting
-          await sendMessage('Hello! I\'m ready to help with meal planning.');
+          await sendMessage('Hello! I\'m ready to help with meal planning based on how you\'re feeling.');
         }
       } catch (error) {
         console.error('Error loading history:', error);
-        // Start fresh conversation
-        await sendMessage('Hello! I\'m ready to help with meal planning.');
+        await sendMessage('Hello! I\'m ready to help with meal planning based on how you\'re feeling.');
       }
     };
     loadHistory();
-  }, []);
+  }, [isAuthenticated]);
   
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
     
-    // Add user message to UI
     const userMsg = {
       role: 'user',
       content: messageText,
@@ -88,75 +102,235 @@ const ChatPage = () => {
     }
   };
   
+  const extractRecipeFromMessage = (message) => {
+    // Simple recipe extraction - looks for common patterns
+    const lines = message.split('\n');
+    let title = '';
+    let description = '';
+    let ingredients = [];
+    let instructions = [];
+    let prepTime = '30 min';
+    let cookTime = '30 min';
+    let complexity = 'standard';
+    
+    // Try to find title (often in bold or first line)
+    const titleMatch = message.match(/\*\*(.+?)\*\*/);
+    if (titleMatch) {
+      title = titleMatch[1];
+    } else {
+      // Use first substantial line
+      const firstLine = lines.find(l => l.trim().length > 10);
+      if (firstLine) title = firstLine.trim().substring(0, 100);
+    }
+    
+    // Extract ingredients (lines with measurements)
+    const ingredientSection = message.match(/Ingredients?:?\s*([\s\S]*?)(?=Instructions?|Directions?|Steps?|$)/i);
+    if (ingredientSection) {
+      ingredients = ingredientSection[1]
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l && !l.match(/^[#*]/))
+        .slice(0, 20);
+    }
+    
+    // Extract instructions
+    const instructionSection = message.match(/(?:Instructions?|Directions?|Steps?):?\s*([\s\S]*?)$/i);
+    if (instructionSection) {
+      instructions = instructionSection[1]
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l && !l.match(/^[#*]/))
+        .slice(0, 15);
+    }
+    
+    // Extract times
+    const prepMatch = message.match(/(?:prep|preparation)\s*time:?\s*(\d+[-\s]*\d*\s*(?:min|minutes|hour|hours))/i);
+    if (prepMatch) prepTime = prepMatch[1];
+    
+    const cookMatch = message.match(/(?:cook|cooking)\s*time:?\s*(\d+[-\s]*\d*\s*(?:min|minutes|hour|hours))/i);
+    if (cookMatch) cookTime = cookMatch[1];
+    
+    // Determine complexity
+    if (message.match(/quick|easy|simple|15[-\s]*20\s*min/i)) {
+      complexity = 'quick';
+    } else if (message.match(/involved|complex|hour|therapeutic/i)) {
+      complexity = 'involved';
+    }
+    
+    // Get description (first paragraph)
+    description = lines.find(l => l.length > 30)?.substring(0, 200) || 'A delicious mood-based meal';
+    
+    return {
+      title: title || 'Mood-Based Recipe',
+      description,
+      ingredients: ingredients.length > 0 ? ingredients : ['See chat for details'],
+      instructions: instructions.length > 0 ? instructions : ['See chat for details'],
+      mood_tags: ['comfort', 'nourishing'],
+      prep_time: prepTime,
+      cook_time: cookTime,
+      complexity,
+      nutritional_highlights: 'Rich in mood-boosting nutrients',
+      dietary_info: []
+    };
+  };
+  
+  const handleSaveRecipe = (message) => {
+    const recipe = extractRecipeFromMessage(message);
+    setRecipeToSave(recipe);
+    setShowRecipeDialog(true);
+  };
+  
+  const confirmSaveRecipe = async () => {
+    if (!recipeToSave) return;
+    
+    try {
+      await axios.post(`${API}/recipes/save`, { recipe: recipeToSave });
+      toast.success('Recipe saved to your collection!');
+      setShowRecipeDialog(false);
+    } catch (error) {
+      console.error('Error saving recipe:', error);
+      toast.error('Failed to save recipe');
+    }
+  };
+  
+  if (!isAuthenticated) {
+    return null;
+  }
+  
   return (
-    <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8" data-testid="chat-page">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="chat-title">
-            How are you feeling today?
-          </h1>
-          <p className="text-muted-foreground" data-testid="chat-subtitle">
-            Share your mood, and I'll suggest meals that nourish both body and mind.
-          </p>
-        </div>
-        
-        {/* Messages Container */}
-        <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-6 mb-6 chat-container" data-testid="messages-container">
-          <div className="space-y-4">
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                data-testid={`message-${msg.role}-${idx}`}
-              >
-                <div
-                  className={`message-bubble max-w-[80%] rounded-2xl px-5 py-3 ${
-                    msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-br-sm'
-                      : 'bg-secondary text-secondary-foreground rounded-bl-sm'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
-                </div>
-              </div>
-            ))}
-            
-            {isLoading && (
-              <div className="flex justify-start" data-testid="loading-indicator">
-                <div className="bg-secondary rounded-2xl rounded-bl-sm px-5 py-3 flex items-center gap-2">
-                  <Loader2 className="animate-spin" size={18} />
-                  <span>Thinking...</span>
-                </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
+    <>
+      <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8" data-testid="chat-page">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="chat-title">
+              How are you feeling today?
+            </h1>
+            <p className="text-muted-foreground" data-testid="chat-subtitle">
+              Share your mood, and I'll suggest meals that nourish both body and mind.
+            </p>
           </div>
+          
+          {/* Messages Container */}
+          <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-6 mb-6 chat-container" data-testid="messages-container">
+            <div className="space-y-4">
+              {messages.map((msg, idx) => (
+                <div key={idx}>
+                  <div
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    data-testid={`message-${msg.role}-${idx}`}
+                  >
+                    <div
+                      className={`message-bubble max-w-[80%] rounded-2xl px-5 py-3 ${
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground rounded-br-sm'
+                          : 'bg-secondary text-secondary-foreground rounded-bl-sm'
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Show save button for AI messages with recipes */}
+                  {msg.role === 'assistant' && msg.content.length > 200 && (
+                    msg.content.match(/ingredient|recipe|meal/i) && (
+                      <div className="flex justify-start mt-2 ml-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSaveRecipe(msg.content)}
+                          className="rounded-full text-xs"
+                          data-testid={`save-recipe-${idx}`}
+                        >
+                          <Heart size={14} className="mr-1" />
+                          Save Recipe
+                        </Button>
+                      </div>
+                    )
+                  )}
+                </div>
+              ))}
+              
+              {isLoading && (
+                <div className="flex justify-start" data-testid="loading-indicator">
+                  <div className="bg-secondary rounded-2xl rounded-bl-sm px-5 py-3 flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={18} />
+                    <span>Thinking...</span>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+          
+          {/* Input Form */}
+          <form onSubmit={handleSubmit} className="flex gap-3" data-testid="message-form">
+            <Textarea
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Tell me how you're feeling..."
+              className="flex-1 rounded-2xl resize-none min-h-[60px] max-h-[120px] bg-card border-border/60 focus:border-primary"
+              disabled={isLoading}
+              data-testid="message-input"
+            />
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isLoading || !inputMessage.trim()}
+              className="rounded-full px-6 bg-primary hover:bg-primary/90 active:scale-95 transition-all"
+              data-testid="send-button"
+            >
+              <Send size={20} />
+            </Button>
+          </form>
         </div>
-        
-        {/* Input Form */}
-        <form onSubmit={handleSubmit} className="flex gap-3" data-testid="message-form">
-          <Textarea
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Tell me how you're feeling..."
-            className="flex-1 rounded-2xl resize-none min-h-[60px] max-h-[120px] bg-card border-border/60 focus:border-primary"
-            disabled={isLoading}
-            data-testid="message-input"
-          />
-          <Button
-            type="submit"
-            size="lg"
-            disabled={isLoading || !inputMessage.trim()}
-            className="rounded-full px-6 bg-primary hover:bg-primary/90 active:scale-95 transition-all"
-            data-testid="send-button"
-          >
-            <Send size={20} />
-          </Button>
-        </form>
       </div>
-    </div>
+      
+      {/* Recipe Save Confirmation Dialog */}
+      <Dialog open={showRecipeDialog} onOpenChange={setShowRecipeDialog}>
+        <DialogContent className="max-w-md" data-testid="recipe-save-dialog">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-serif flex items-center gap-2">
+              <BookOpen size={24} className="text-primary" />
+              Save This Recipe?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {recipeToSave && (
+              <>
+                <div>
+                  <h3 className="font-serif text-lg mb-2">{recipeToSave.title}</h3>
+                  <p className="text-sm text-muted-foreground">{recipeToSave.description}</p>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <span className="px-2 py-1 bg-secondary rounded-full">{recipeToSave.complexity}</span>
+                  <span className="px-2 py-1 bg-secondary rounded-full">{recipeToSave.prep_time}</span>
+                </div>
+              </>
+            )}
+            <div className="flex gap-3">
+              <Button
+                onClick={confirmSaveRecipe}
+                className="flex-1 rounded-full bg-primary hover:bg-primary/90"
+                data-testid="confirm-save-recipe"
+              >
+                <Heart size={18} className="mr-2" />
+                Save Recipe
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowRecipeDialog(false)}
+                className="flex-1 rounded-full"
+                data-testid="cancel-save-recipe"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
