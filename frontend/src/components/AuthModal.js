@@ -7,15 +7,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/AuthContext';
 
 const DIETARY_OPTIONS = [
+  'Non-Vegetarian',
   'Vegetarian',
   'Vegan',
+  'Pescatarian',
   'Gluten-Free',
   'Dairy-Free',
   'Nut-Free',
   'Halal',
   'Kosher',
   'Low-Carb',
-  'Keto'
+  'Keto',
+  'Paleo'
 ];
 
 const AuthModal = ({ open, onClose }) => {
