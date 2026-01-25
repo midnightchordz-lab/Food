@@ -44,6 +44,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
   const [dietaryRestrictions, setDietaryRestrictions] = useState(user?.dietary_restrictions || []);
+  const [cuisinePreferences, setCuisinePreferences] = useState(user?.cuisine_preferences || []);
   const [saving, setSaving] = useState(false);
 
   if (!isAuthenticated) {
@@ -59,12 +60,21 @@ const ProfilePage = () => {
     );
   };
 
+  const toggleCuisine = (cuisine) => {
+    setCuisinePreferences(prev =>
+      prev.includes(cuisine)
+        ? prev.filter(item => item !== cuisine)
+        : [...prev, cuisine]
+    );
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
     await updateProfile({
       name,
-      dietary_restrictions: dietaryRestrictions
+      dietary_restrictions: dietaryRestrictions,
+      cuisine_preferences: cuisinePreferences
     });
     setSaving(false);
   };
