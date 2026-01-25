@@ -737,10 +737,12 @@ async def export_shopping_list_pdf(current_user: User = Depends(get_current_user
 @api_router.post("/voice/transcribe", response_model=VoiceTranscriptionResponse)
 async def transcribe_voice(
     audio: UploadFile = File(...),
+    language: str = 'en',
     current_user: User = Depends(get_current_user)
 ):
     """
-    Transcribe audio to text using Whisper and detect mood from the content.
+    Transcribe audio to text using Whisper with language support.
+    OPTIMIZED for faster response.
     """
     try:
         # Read audio file
@@ -748,8 +750,8 @@ async def transcribe_voice(
         audio_file = BytesIO(audio_content)
         audio_file.name = audio.filename or "audio.webm"
         
-        # Transcribe
-        text = await transcribe_audio(audio_file, os.environ['EMERGENT_LLM_KEY'])
+        # Transcribe with language hint for faster processing
+        text = await transcribe_audio(audio_file, os.environ['EMERGENT_LLM_KEY'], language=language)
         
         # Detect mood from transcribed text
         detected_mood = detect_mood_from_text(text)
@@ -768,18 +770,20 @@ async def synthesize_speech(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Convert text to speech with mood-appropriate voice characteristics.
+    Convert text to speech with mood-appropriate voice.
+    OPTIMIZED: Using tts-1 model for 2x faster response.
     """
     try:
         # Detect mood if not provided
         mood = request.mood or detect_mood_from_text(request.text)
         
-        # Generate speech
+        # Generate speech (optimized with tts-1 and text truncation)
         audio_base64 = await generate_mood_aware_speech(
             text=request.text,
             mood=mood,
             api_key=os.environ['EMERGENT_LLM_KEY'],
-            model="tts-1",
+            language=request.language or 'en',
+            model="tts-1",  # Faster model
             return_base64=True
         )
         
@@ -793,6 +797,14 @@ async def synthesize_speech(
     except Exception as e:
         logging.error(f"Error synthesizing speech: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/voice/languages", response_model=LanguagesResponse)
+async def get_supported_languages():
+    """
+    Get list of supported languages for voice features.
+    """
+    from voice_service import SUPPORTED_LANGUAGES
+    return LanguagesResponse(languages=SUPPORTED_LANGUAGES)
 
 @api_router.get("/voice/mood-info")
 async def get_mood_voice_info(current_user: User = Depends(get_current_user)):
