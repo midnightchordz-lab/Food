@@ -140,9 +140,50 @@ class WeeklyPlanCreate(BaseModel):
     week_start: str
     meals: Dict[str, Any]
 
+class AIWeeklyPlanRequest(BaseModel):
+    mood: str
+    focus_areas: Optional[List[str]] = []
+    cuisine_preferences: Optional[List[str]] = []
+
+class RecipeRating(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    recipe_id: str
+    rating: int  # 1-5
+    review: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class RatingCreate(BaseModel):
+    rating: int
+    review: Optional[str] = None
+
+class RecipeSearchRequest(BaseModel):
+    query: Optional[str] = None
+    mood_tags: Optional[List[str]] = None
+    dietary_tags: Optional[List[str]] = None
+    complexity: Optional[str] = None
+
+class MealReminder(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    day_of_week: str
+    time: str  # HH:MM format
+    meal_type: str  # breakfast, lunch, dinner
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ReminderCreate(BaseModel):
+    day_of_week: str
+    time: str
+    meal_type: str
+    enabled: bool = True
+
 class UserProfileUpdate(BaseModel):
     name: Optional[str] = None
     dietary_restrictions: Optional[List[str]] = None
+    cuisine_preferences: Optional[List[str]] = None
 
 # Auth helper functions
 def verify_password(plain_password, hashed_password):
