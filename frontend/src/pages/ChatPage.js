@@ -242,6 +242,11 @@ const ChatPage = () => {
             <p className="text-muted-foreground" data-testid="chat-subtitle">
               Share your mood, and I'll suggest meals that nourish both body and mind.
             </p>
+            {currentMood && (
+              <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-full text-sm">
+                <span>Current mood: {currentMood}</span>
+              </div>
+            )}
           </div>
           
           {/* Messages Container */}
