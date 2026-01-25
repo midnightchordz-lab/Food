@@ -41,6 +41,7 @@ class UserRegister(BaseModel):
     password: str
     name: str
     dietary_restrictions: List[str] = []
+    cuisine_preferences: List[str] = []
 
 class UserLogin(BaseModel):
     email: EmailStr
