@@ -273,6 +273,7 @@ async def register(user_data: UserRegister):
         email=user_data.email,
         name=user_data.name,
         dietary_restrictions=user_data.dietary_restrictions,
+        cuisine_preferences=user_data.cuisine_preferences,
         hashed_password=get_password_hash(user_data.password)
     )
     
