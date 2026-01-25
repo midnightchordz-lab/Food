@@ -236,16 +236,28 @@ const ChatPage = () => {
     <>
       <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8" data-testid="chat-page">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="chat-title">
-              How are you feeling today?
-            </h1>
-            <p className="text-muted-foreground" data-testid="chat-subtitle">
-              Share your mood, and I'll suggest meals that nourish both body and mind.
-            </p>
-            {currentMood && (
-              <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-full text-sm">
-                <span>Current mood: {currentMood}</span>
+          <div className="mb-8">
+            <div className="text-center mb-4">
+              <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="chat-title">
+                How are you feeling today?
+              </h1>
+              <p className="text-muted-foreground" data-testid="chat-subtitle">
+                Share your mood, and I'll suggest meals that nourish both body and mind.
+              </p>
+              {currentMood && (
+                <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-full text-sm">
+                  <span>Current mood: {currentMood}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Language Selector for Voice */}
+            {voiceControls && (
+              <div className="flex justify-center">
+                <LanguageSelector
+                  selectedLanguage={voiceControls.currentLanguage}
+                  onLanguageChange={voiceControls.setCurrentLanguage}
+                />
               </div>
             )}
           </div>
