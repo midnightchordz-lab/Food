@@ -20,6 +20,7 @@ from ai_meal_planner import generate_ai_meal_plan
 from voice_service import transcribe_audio, generate_mood_aware_speech, detect_mood_from_text, get_voice_description
 import base64
 from io import BytesIO
+from image_service import get_food_image, get_cuisine_specific_image
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
