@@ -48,11 +48,21 @@ const ChatPage = () => {
         if (response.data.messages && response.data.messages.length > 0) {
           setMessages(response.data.messages);
         } else {
-          await sendMessage('Hello! I\'m ready to help with meal planning based on how you\'re feeling.');
+          // Show initial greeting only in UI, don't save to backend
+          setMessages([{
+            role: 'assistant',
+            content: 'Hello! I\'m ready to help with meal planning based on how you\'re feeling. Tell me about your mood today, and I\'ll suggest meals that will nourish both your body and mind.',
+            timestamp: new Date().toISOString()
+          }]);
         }
       } catch (error) {
         console.error('Error loading history:', error);
-        await sendMessage('Hello! I\'m ready to help with meal planning based on how you\'re feeling.');
+        // Show initial greeting on error too
+        setMessages([{
+          role: 'assistant',
+          content: 'Hello! I\'m ready to help with meal planning based on how you\'re feeling. Tell me about your mood today, and I\'ll suggest meals that will nourish both your body and mind.',
+          timestamp: new Date().toISOString()
+        }]);
       }
     };
     loadHistory();
