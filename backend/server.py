@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
@@ -17,6 +17,9 @@ from passlib.context import CryptContext
 import json
 from pdf_generator import generate_shopping_list_pdf
 from ai_meal_planner import generate_ai_meal_plan
+from voice_service import transcribe_audio, generate_mood_aware_speech, detect_mood_from_text, get_voice_description
+import base64
+from io import BytesIO
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
