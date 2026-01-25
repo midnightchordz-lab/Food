@@ -303,26 +303,36 @@ const ChatPage = () => {
           </div>
           
           {/* Input Form */}
-          <form onSubmit={handleSubmit} className="flex gap-3" data-testid="message-form">
+          <div className="flex gap-3 items-end" data-testid="message-form">
+            <VoiceButton
+              isRecording={voiceControls.isRecording}
+              isProcessing={voiceControls.isProcessing}
+              isMuted={voiceControls.isMuted}
+              onStartRecording={voiceControls.startRecording}
+              onStopRecording={voiceControls.stopRecording}
+              onToggleMute={voiceControls.toggleMute}
+              size="lg"
+            />
+            
             <Textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Tell me how you're feeling..."
               className="flex-1 rounded-2xl resize-none min-h-[60px] max-h-[120px] bg-card border-border/60 focus:border-primary"
-              disabled={isLoading}
+              disabled={isLoading || voiceControls.isRecording}
               data-testid="message-input"
             />
             <Button
-              type="submit"
+              onClick={handleSubmit}
               size="lg"
-              disabled={isLoading || !inputMessage.trim()}
+              disabled={isLoading || !inputMessage.trim() || voiceControls.isRecording}
               className="rounded-full px-6 bg-primary hover:bg-primary/90 active:scale-95 transition-all"
               data-testid="send-button"
             >
               <Send size={20} />
             </Button>
-          </form>
+          </div>
         </div>
       </div>
       
