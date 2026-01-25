@@ -3,21 +3,37 @@ import os
 from typing import Optional
 import base64
 
-# Mood to voice mapping with speed adjustments
+# Language support for voice
+SUPPORTED_LANGUAGES = {
+    'english': {'code': 'en', 'name': 'English', 'flag': '🇺🇸'},
+    'hindi': {'code': 'hi', 'name': 'Hindi', 'flag': '🇮🇳'},
+    'mandarin': {'code': 'zh', 'name': 'Mandarin', 'flag': '🇨🇳'},
+    'spanish': {'code': 'es', 'name': 'Spanish', 'flag': '🇪🇸'},
+    'french': {'code': 'fr', 'name': 'French', 'flag': '🇫🇷'},
+    'japanese': {'code': 'ja', 'name': 'Japanese', 'flag': '🇯🇵'},
+    'korean': {'code': 'ko', 'name': 'Korean', 'flag': '🇰🇷'},
+    'thai': {'code': 'th', 'name': 'Thai', 'flag': '🇹🇭'},
+    'arabic': {'code': 'ar', 'name': 'Arabic', 'flag': '🇸🇦'},
+    'italian': {'code': 'it', 'name': 'Italian', 'flag': '🇮🇹'},
+    'portuguese': {'code': 'pt', 'name': 'Portuguese', 'flag': '🇧🇷'},
+    'vietnamese': {'code': 'vi', 'name': 'Vietnamese', 'flag': '🇻🇳'},
+}
+
+# Mood to voice mapping with speed adjustments (OPTIMIZED for faster response)
 MOOD_VOICE_CONFIG = {
-    'sad': {'voice': 'echo', 'speed': 0.9, 'description': 'Calm and comforting'},
-    'stressed': {'voice': 'coral', 'speed': 0.85, 'description': 'Warm and soothing'},
-    'anxious': {'voice': 'sage', 'speed': 0.9, 'description': 'Wise and reassuring'},
-    'tired': {'voice': 'fable', 'speed': 1.1, 'description': 'Energetic and uplifting'},
-    'sluggish': {'voice': 'nova', 'speed': 1.15, 'description': 'Bright and energizing'},
-    'overwhelmed': {'voice': 'ash', 'speed': 0.85, 'description': 'Clear and grounding'},
-    'excited': {'voice': 'shimmer', 'speed': 1.1, 'description': 'Cheerful and vibrant'},
-    'happy': {'voice': 'shimmer', 'speed': 1.05, 'description': 'Joyful and bright'},
-    'calm': {'voice': 'echo', 'speed': 0.95, 'description': 'Peaceful and gentle'},
-    'creative': {'voice': 'fable', 'speed': 1.0, 'description': 'Expressive and inspiring'},
+    'sad': {'voice': 'echo', 'speed': 1.0, 'description': 'Calm and comforting'},  # Increased speed
+    'stressed': {'voice': 'coral', 'speed': 1.0, 'description': 'Warm and soothing'},
+    'anxious': {'voice': 'sage', 'speed': 1.0, 'description': 'Wise and reassuring'},
+    'tired': {'voice': 'nova', 'speed': 1.2, 'description': 'Energetic and uplifting'},  # Faster for energy
+    'sluggish': {'voice': 'nova', 'speed': 1.25, 'description': 'Bright and energizing'},
+    'overwhelmed': {'voice': 'ash', 'speed': 0.95, 'description': 'Clear and grounding'},
+    'excited': {'voice': 'shimmer', 'speed': 1.15, 'description': 'Cheerful and vibrant'},
+    'happy': {'voice': 'shimmer', 'speed': 1.1, 'description': 'Joyful and bright'},
+    'calm': {'voice': 'echo', 'speed': 1.0, 'description': 'Peaceful and gentle'},
+    'creative': {'voice': 'fable', 'speed': 1.05, 'description': 'Expressive and inspiring'},
     'romantic': {'voice': 'coral', 'speed': 0.95, 'description': 'Warm and intimate'},
-    'celebratory': {'voice': 'nova', 'speed': 1.1, 'description': 'Upbeat and festive'},
-    'default': {'voice': 'alloy', 'speed': 1.0, 'description': 'Balanced and neutral'}
+    'celebratory': {'voice': 'nova', 'speed': 1.15, 'description': 'Upbeat and festive'},
+    'default': {'voice': 'alloy', 'speed': 1.1, 'description': 'Balanced and neutral'}
 }
 
 def detect_mood_from_text(text: str) -> str:
