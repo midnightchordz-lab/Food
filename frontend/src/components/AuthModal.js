@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/AuthContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const DIETARY_OPTIONS = [
   'Non-Vegetarian',
@@ -19,6 +20,23 @@ const DIETARY_OPTIONS = [
   'Low-Carb',
   'Keto',
   'Paleo'
+];
+
+const CUISINE_OPTIONS = [
+  { name: 'Indian', flag: '🇮🇳', regional: ['North Indian', 'South Indian', 'Bengali', 'Punjabi', 'Gujarati'] },
+  { name: 'Chinese', flag: '🇨🇳', regional: ['Cantonese', 'Sichuan', 'Hunan', 'Shanghai'] },
+  { name: 'Italian', flag: '🇮🇹', regional: ['Tuscan', 'Sicilian', 'Roman', 'Neapolitan'] },
+  { name: 'Mexican', flag: '🇲🇽', regional: ['Tex-Mex', 'Yucatan', 'Oaxacan'] },
+  { name: 'Japanese', flag: '🇯🇵', regional: ['Sushi', 'Ramen', 'Tempura'] },
+  { name: 'Thai', flag: '🇹🇭', regional: ['Central Thai', 'Northern Thai', 'Southern Thai'] },
+  { name: 'Mediterranean', flag: '🌊', regional: ['Greek', 'Lebanese', 'Turkish', 'Moroccan'] },
+  { name: 'American', flag: '🇺🇸', regional: ['Southern', 'BBQ', 'Cajun', 'Soul Food'] },
+  { name: 'French', flag: '🇫🇷', regional: ['Provençal', 'Burgundy', 'Alsatian'] },
+  { name: 'Korean', flag: '🇰🇷', regional: ['Seoul', 'Jeju', 'Traditional'] },
+  { name: 'Middle Eastern', flag: '🌍', regional: ['Persian', 'Arabian', 'Israeli'] },
+  { name: 'Southeast Asian', flag: '🌴', regional: ['Vietnamese', 'Filipino', 'Indonesian', 'Malaysian'] },
+  { name: 'African', flag: '🌍', regional: ['Ethiopian', 'Nigerian', 'North African'] },
+  { name: 'Latin American', flag: '🌎', regional: ['Brazilian', 'Argentinian', 'Peruvian', 'Caribbean'] },
 ];
 
 const AuthModal = ({ open, onClose }) => {
