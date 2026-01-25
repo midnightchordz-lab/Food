@@ -6,6 +6,8 @@ import { Send, Loader2, Heart, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import useVoiceControls from '@/hooks/useVoiceControls';
+import VoiceButton from '@/components/VoiceButton';
 import {
   Dialog,
   DialogContent,
