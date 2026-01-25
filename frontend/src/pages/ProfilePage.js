@@ -8,15 +8,18 @@ import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const DIETARY_OPTIONS = [
+  'Non-Vegetarian',
   'Vegetarian',
   'Vegan',
+  'Pescatarian',
   'Gluten-Free',
   'Dairy-Free',
   'Nut-Free',
   'Halal',
   'Kosher',
   'Low-Carb',
-  'Keto'
+  'Keto',
+  'Paleo'
 ];
 
 const ProfilePage = () => {
