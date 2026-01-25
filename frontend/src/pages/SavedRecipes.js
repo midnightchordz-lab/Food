@@ -119,8 +119,26 @@ const SavedRecipes = () => {
                 onClick={() => setSelectedRecipe(recipe)}
                 data-testid={`recipe-card-${recipe.id}`}
               >
-                <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                  <ChefHat size={64} className="text-primary/40" />
+                <div className="h-48 bg-gradient-to-br from-primary/20 to-accent/20 relative overflow-hidden">
+                  {recipe.image_url ? (
+                    <img 
+                      src={recipe.image_url} 
+                      alt={recipe.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className="absolute inset-0 flex items-center justify-center" style={{display: recipe.image_url ? 'none' : 'flex'}}>
+                    <ChefHat size={64} className="text-primary/40" />
+                  </div>
+                  {recipe.cuisine_type && (
+                    <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
+                      {recipe.cuisine_type}
+                    </div>
+                  )}
                 </div>
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-2">
