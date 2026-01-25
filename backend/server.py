@@ -377,7 +377,7 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
         chat = LlmChat(
             api_key=os.environ['EMERGENT_LLM_KEY'],
             session_id=request.session_id,
-            system_message=get_system_message(current_user.dietary_restrictions)
+            system_message=get_system_message(current_user.dietary_restrictions, current_user.cuisine_preferences)
         )
         chat.with_model("openai", "gpt-4o")
         
