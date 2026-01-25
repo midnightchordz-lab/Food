@@ -65,15 +65,17 @@ def detect_mood_from_text(text: str) -> str:
     
     return 'default'
 
-async def transcribe_audio(audio_file, api_key: str) -> str:
+async def transcribe_audio(audio_file, api_key: str, language: str = 'en') -> str:
     """
-    Transcribe audio file to text using Whisper.
+    Transcribe audio file to text using Whisper with language support.
+    Optimized for faster response.
     """
     try:
         stt = OpenAISpeechToText(api_key=api_key)
         response = await stt.transcribe(
             file=audio_file,
             model="whisper-1",
+            language=language,  # Specify language for faster processing
             response_format="json"
         )
         return response.text
@@ -84,13 +86,19 @@ async def generate_mood_aware_speech(
     text: str, 
     mood: str,
     api_key: str,
-    model: str = "tts-1",
+    language: str = 'en',
+    model: str = "tts-1",  # Use tts-1 for faster response (not tts-1-hd)
     return_base64: bool = False
 ) -> bytes:
     """
     Generate speech with voice and speed adjusted for the detected mood.
+    OPTIMIZED for faster response with tts-1 model.
     """
     try:
+        # Limit text length for faster response (max 500 chars)
+        if len(text) > 500:
+            text = text[:497] + "..."
+        
         # Get voice configuration for mood
         voice_config = MOOD_VOICE_CONFIG.get(mood, MOOD_VOICE_CONFIG['default'])
         
