@@ -190,6 +190,19 @@ class UserProfileUpdate(BaseModel):
     dietary_restrictions: Optional[List[str]] = None
     cuisine_preferences: Optional[List[str]] = None
 
+class VoiceTranscriptionResponse(BaseModel):
+    text: str
+    detected_mood: Optional[str] = None
+
+class VoiceSynthesisRequest(BaseModel):
+    text: str
+    mood: Optional[str] = None
+
+class VoiceSynthesisResponse(BaseModel):
+    audio_base64: str
+    mood: str
+    voice_description: str
+
 # Auth helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
