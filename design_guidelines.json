@@ -1,0 +1,211 @@
+{
+  "identity": {
+    "name": "E1: The Anti-AI Designer",
+    "mission": "Create a warm, compassionate, and mood-responsive culinary experience that feels like a hug, not a spreadsheet.",
+    "principles": [
+      "Fusion: Nutritional Science x Emotional Comfort x Editorial Food Magazine",
+      "Emotion First: Every interaction acknowledges the user's state before offering a solution.",
+      "Content is King: Recipes are stories, not just lists.",
+      "Negative Space: Use generous 'breathing room' to reduce cognitive load for stressed users."
+    ]
+  },
+  "theme_strategy": {
+    "mode": "light",
+    "rationale": "A warm, light aesthetic mimics natural light and fresh ingredients, fostering a sense of clarity and optimism essential for wellness.",
+    "dark_mode_handling": "Soft 'Dim' mode (dark warm grey) instead of pitch black for evening use."
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Cormorant Garamond, serif",
+      "usage": "All major headings (H1-H3). Use italic variants for emphasis.",
+      "weights": ["Light (300)", "Regular (400)", "SemiBold (600)"],
+      "tailwind_class": "font-serif tracking-tight"
+    },
+    "body": {
+      "font_family": "Manrope, sans-serif",
+      "usage": "UI text, recipes, chat interface.",
+      "weights": ["Regular (400)", "Medium (500)"],
+      "tailwind_class": "font-sans tracking-wide"
+    },
+    "installation": "Import from Google Fonts: https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Manrope:wght@400;500;700&display=swap"
+  },
+  "colors": {
+    "palette": {
+      "background": {
+        "default": "#F9F8F6",
+        "paper": "#F2EFE9",
+        "name": "Warm Bone"
+      },
+      "foreground": {
+        "default": "#2D2A26",
+        "muted": "#5C5852",
+        "name": "Soft Charcoal"
+      },
+      "primary": {
+        "default": "#768A76",
+        "foreground": "#FFFFFF",
+        "hover": "#5F705F",
+        "name": "Sage Green (Calm/Growth)"
+      },
+      "secondary": {
+        "default": "#E8E4D9",
+        "foreground": "#2D2A26",
+        "name": "Oatmeal (Neutral Base)"
+      },
+      "accent": {
+        "default": "#C66B3D",
+        "foreground": "#FFFFFF",
+        "name": "Terracotta (Warmth/Energy)"
+      },
+      "moods": {
+        "stressed": "#9FB8AD",
+        "energetic": "#E6B89C",
+        "sad": "#D4CCC4",
+        "celebratory": "#D4A373"
+      }
+    },
+    "tailwind_config_extension": {
+      "colors": {
+        "border": "hsl(var(--border))",
+        "input": "hsl(var(--input))",
+        "ring": "hsl(var(--ring))",
+        "background": "hsl(var(--background))",
+        "foreground": "hsl(var(--foreground))",
+        "primary": {
+          "DEFAULT": "hsl(var(--primary))",
+          "foreground": "hsl(var(--primary-foreground))"
+        },
+        "secondary": {
+          "DEFAULT": "hsl(var(--secondary))",
+          "foreground": "hsl(var(--secondary-foreground))"
+        },
+        "destructive": {
+          "DEFAULT": "hsl(var(--destructive))",
+          "foreground": "hsl(var(--destructive-foreground))"
+        },
+        "muted": {
+          "DEFAULT": "hsl(var(--muted))",
+          "foreground": "hsl(var(--muted-foreground))"
+        },
+        "accent": {
+          "DEFAULT": "hsl(var(--accent))",
+          "foreground": "hsl(var(--accent-foreground))"
+        },
+        "popover": {
+          "DEFAULT": "hsl(var(--popover))",
+          "foreground": "hsl(var(--popover-foreground))"
+        },
+        "card": {
+          "DEFAULT": "hsl(var(--card))",
+          "foreground": "hsl(var(--card-foreground))"
+        }
+      },
+      "borderRadius": {
+        "lg": "var(--radius)",
+        "md": "calc(var(--radius) - 2px)",
+        "sm": "calc(var(--radius) - 4px)"
+      }
+    },
+    "css_variables": {
+      ":root": {
+        "--background": "40 10% 97%",
+        "--foreground": "30 5% 16%",
+        "--card": "40 15% 93%",
+        "--card-foreground": "30 5% 16%",
+        "--popover": "40 10% 97%",
+        "--popover-foreground": "30 5% 16%",
+        "--primary": "120 9% 50%",
+        "--primary-foreground": "0 0% 100%",
+        "--secondary": "40 20% 88%",
+        "--secondary-foreground": "30 5% 16%",
+        "--muted": "40 20% 88%",
+        "--muted-foreground": "30 5% 40%",
+        "--accent": "20 55% 50%",
+        "--accent-foreground": "0 0% 100%",
+        "--destructive": "0 84.2% 60.2%",
+        "--destructive-foreground": "0 0% 98%",
+        "--border": "40 10% 85%",
+        "--input": "40 10% 85%",
+        "--ring": "120 9% 50%",
+        "--radius": "1rem"
+      }
+    }
+  },
+  "layout": {
+    "grid_system": "Bento Grid (Mode A)",
+    "spacing": "Generous. Use p-6 or p-8 for cards. Gap-6 for grids.",
+    "container": "Max-width 1200px, centered.",
+    "border_radius": "Rounded-2xl or Rounded-3xl for a soft, organic feel."
+  },
+  "components": {
+    "buttons": {
+      "style": "Pill-shaped (rounded-full).",
+      "primary": "bg-primary text-white hover:bg-primary/90 shadow-sm hover:shadow-md transition-all",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+    },
+    "cards": {
+      "style": "Flat with soft color OR White with diffuse shadow.",
+      "recipe_card": "bg-white rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden border border-border/40",
+      "mood_card": "bg-secondary/50 hover:bg-secondary transition-colors rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer"
+    },
+    "chat_interface": {
+      "style": "Message bubbles should be distinct. User: Primary Color (Sage). AI: Secondary Color (Oatmeal).",
+      "container": "Clean, distraction-free. Focus on the conversation."
+    },
+    "navigation": {
+      "style": "Floating dock or clean top bar with ample whitespace."
+    }
+  },
+  "visual_enhancers": {
+    "textures": "Subtle grain overlay (opacity 0.03) to reduce digital harshness.",
+    "shadows": "Soft, diffuse shadows. shadow-[0_8px_30px_rgb(0,0,0,0.04)].",
+    "icons": "Phosphor Icons (Regular or Light weight) or Lucide (Stroke width 1.5).",
+    "motion": "Slow, gentle transitions (duration-300 ease-out). No abrupt movements."
+  },
+  "image_urls": {
+    "hero_mood": [
+      {
+        "url": "https://images.unsplash.com/photo-1761662826410-3218852da3bf",
+        "description": "Rustic cozy kitchen, warm lighting",
+        "category": "hero_background"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1765200231320-987437f4acc5",
+        "description": "Couple cooking together, emotional connection",
+        "category": "community_section"
+      }
+    ],
+    "food_showcase": [
+      {
+        "url": "https://images.unsplash.com/photo-1678831654422-f4f8f22e0cd6",
+        "description": "Healthy salad bowl on wood, comfort food",
+        "category": "recipe_card_example"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1560179524-382d0d0f27f9",
+        "description": "Fresh ingredients, clean and simple",
+        "category": "ingredients_background"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1745808977891-0c820f46f543",
+        "description": "Communal dining, warm atmosphere",
+        "category": "social_proof"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Update `index.css` with the provided CSS variables to establish the 'Warm Bone' theme immediately.",
+    "2. FONTS: Add the Google Fonts import to `index.css` or `index.html`.",
+    "3. CLEANUP: Remove default React logos and 'App.css' centering styles.",
+    "4. COMPONENTS: Customize Shadcn components. Remove sharp corners (use rounded-xl or 2xl). Change focus rings to Sage Green.",
+    "5. CHAT: Build the chat interface to feel like a therapy session—calm, paced, and visually soothing.",
+    "6. IMAGES: Use the provided Unsplash URLs for placeholders. Do not use gray boxes.",
+    "7. ACCESSIBILITY: Ensure text contrast on the 'Oatmeal' and 'Sage' backgrounds meets WCAG AA."
+  ],
+  "universal_guidelines": [
+    "Avoid 'AI Slop': No generic gradients, no 'Inter' font for headings.",
+    "Micro-interactions: Buttons should scale down slightly on click (active:scale-95).",
+    "Data-TestID: Add `data-testid` to all interactive elements.",
+    "Toast: Use `sonner` for notifications (e.g., 'Recipe saved to favorites')."
+  ]
+}
