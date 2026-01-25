@@ -65,6 +65,27 @@ const ShoppingListPage = () => {
     saveShoppingList(updatedItems);
   };
   
+  const exportToPDF = async () => {
+    try {
+      const response = await axios.get(`${API}/shopping-list/export`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `shopping_list_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success('Shopping list exported to PDF!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error('Failed to export PDF');
+    }
+  };
+  
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="shopping-list-page">
