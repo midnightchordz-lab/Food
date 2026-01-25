@@ -695,6 +695,85 @@ async def export_shopping_list_pdf(current_user: User = Depends(get_current_user
         logging.error(f"Error exporting shopping list: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# Voice endpoints
+@api_router.post("/voice/transcribe", response_model=VoiceTranscriptionResponse)
+async def transcribe_voice(
+    audio: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Transcribe audio to text using Whisper and detect mood from the content.
+    """
+    try:
+        # Read audio file
+        audio_content = await audio.read()
+        audio_file = BytesIO(audio_content)
+        audio_file.name = audio.filename or "audio.webm"
+        
+        # Transcribe
+        text = await transcribe_audio(audio_file, os.environ['EMERGENT_LLM_KEY'])
+        
+        # Detect mood from transcribed text
+        detected_mood = detect_mood_from_text(text)
+        
+        return VoiceTranscriptionResponse(
+            text=text,
+            detected_mood=detected_mood if detected_mood != 'default' else None
+        )
+    except Exception as e:
+        logging.error(f"Error transcribing audio: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/voice/synthesize", response_model=VoiceSynthesisResponse)
+async def synthesize_speech(
+    request: VoiceSynthesisRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Convert text to speech with mood-appropriate voice characteristics.
+    """
+    try:
+        # Detect mood if not provided
+        mood = request.mood or detect_mood_from_text(request.text)
+        
+        # Generate speech
+        audio_base64 = await generate_mood_aware_speech(
+            text=request.text,
+            mood=mood,
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            model="tts-1",
+            return_base64=True
+        )
+        
+        voice_description = get_voice_description(mood)
+        
+        return VoiceSynthesisResponse(
+            audio_base64=audio_base64,
+            mood=mood,
+            voice_description=voice_description
+        )
+    except Exception as e:
+        logging.error(f"Error synthesizing speech: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/voice/mood-info")
+async def get_mood_voice_info(current_user: User = Depends(get_current_user)):
+    """
+    Get information about available moods and their voice characteristics.
+    """
+    from voice_service import MOOD_VOICE_CONFIG
+    
+    mood_info = {
+        mood: {
+            'voice': config['voice'],
+            'description': config['description'],
+            'speed': config['speed']
+        }
+        for mood, config in MOOD_VOICE_CONFIG.items()
+    }
+    
+    return {"moods": mood_info}
+
 app.include_router(api_router)
 
 app.add_middleware(
