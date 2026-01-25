@@ -99,6 +99,8 @@ class Recipe(BaseModel):
     complexity: str
     nutritional_highlights: str
     dietary_info: List[str] = []
+    image_url: Optional[str] = None
+    cuisine_type: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class RecipeCreate(BaseModel):
@@ -112,6 +114,8 @@ class RecipeCreate(BaseModel):
     complexity: str
     nutritional_highlights: str
     dietary_info: List[str] = []
+    image_url: Optional[str] = None
+    cuisine_type: Optional[str] = None
 
 class SavedRecipe(BaseModel):
     model_config = ConfigDict(extra="ignore")
