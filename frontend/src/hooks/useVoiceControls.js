@@ -162,6 +162,8 @@ const VoiceControls = ({ onTranscription, autoPlayResponse = true, language = 'e
     isPlaying,
     isMuted,
     detectedMood,
+    currentLanguage,
+    setCurrentLanguage,
     startRecording,
     stopRecording,
     playResponse,
