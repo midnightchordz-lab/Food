@@ -30,12 +30,6 @@ const ChatPage = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
-  // Voice controls
-  const voiceControls = useVoiceControls({
-    onTranscription: handleVoiceTranscription,
-    autoPlayResponse: true
-  });
-  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -103,7 +97,7 @@ const ChatPage = () => {
       setMessages(prev => [...prev, assistantMsg]);
       
       // Auto-play voice response if not muted
-      if (!voiceControls.isMuted) {
+      if (voiceControls && !voiceControls.isMuted) {
         voiceControls.playResponse(response.data.response, currentMood);
       }
     } catch (error) {
@@ -123,6 +117,12 @@ const ChatPage = () => {
     // Send the transcribed text
     sendMessage(text);
   };
+  
+  // Voice controls - now defined after handleVoiceTranscription
+  const voiceControls = useVoiceControls({
+    onTranscription: handleVoiceTranscription,
+    autoPlayResponse: true
+  });
   
   const handleSubmit = (e) => {
     e.preventDefault();
