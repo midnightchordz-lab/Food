@@ -45,6 +45,7 @@ const AuthModal = ({ open, onClose }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [dietaryRestrictions, setDietaryRestrictions] = useState([]);
+  const [cuisinePreferences, setCuisinePreferences] = useState([]);
   const [loading, setLoading] = useState(false);
   const { register, login } = useAuth();
 
@@ -56,7 +57,7 @@ const AuthModal = ({ open, onClose }) => {
     if (isLogin) {
       success = await login(email, password);
     } else {
-      success = await register(email, password, name, dietaryRestrictions);
+      success = await register(email, password, name, dietaryRestrictions, cuisinePreferences);
     }
 
     setLoading(false);
@@ -71,6 +72,7 @@ const AuthModal = ({ open, onClose }) => {
     setPassword('');
     setName('');
     setDietaryRestrictions([]);
+    setCuisinePreferences([]);
   };
 
   const toggleDietary = (option) => {
@@ -78,6 +80,14 @@ const AuthModal = ({ open, onClose }) => {
       prev.includes(option)
         ? prev.filter(item => item !== option)
         : [...prev, option]
+    );
+  };
+
+  const toggleCuisine = (cuisine) => {
+    setCuisinePreferences(prev =>
+      prev.includes(cuisine)
+        ? prev.filter(item => item !== cuisine)
+        : [...prev, cuisine]
     );
   };
 
