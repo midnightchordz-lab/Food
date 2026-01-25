@@ -25,9 +25,16 @@ const ChatPage = () => {
   const [sessionId] = useState(() => `session-${Date.now()}`);
   const [showRecipeDialog, setShowRecipeDialog] = useState(false);
   const [recipeToSave, setRecipeToSave] = useState(null);
+  const [currentMood, setCurrentMood] = useState(null);
   const messagesEndRef = useRef(null);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  
+  // Voice controls
+  const voiceControls = useVoiceControls({
+    onTranscription: handleVoiceTranscription,
+    autoPlayResponse: true
+  });
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
