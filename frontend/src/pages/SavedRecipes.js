@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Heart, Clock, ChefHat, ShoppingCart } from 'lucide-react';
+import { Heart, Clock, ChefHat, ShoppingCart, Star, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,13 +10,17 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import RecipeSearchFilter from '@/components/RecipeSearchFilter';
+import RecipeRating from '@/components/RecipeRating';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const SavedRecipes = () => {
   const [recipes, setRecipes] = useState([]);
+  const [filteredRecipes, setFilteredRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [recipeRatings, setRecipeRatings] = useState({});
   const { isAuthenticated } = useAuth();
   
   useEffect(() => {
@@ -28,9 +32,36 @@ const SavedRecipes = () => {
   const loadRecipes = async () => {
     try {
       const response = await axios.get(`${API}/recipes/saved`);
-      setRecipes(response.data.recipes || []);
+      const loadedRecipes = response.data.recipes || [];
+      setRecipes(loadedRecipes);
+      setFilteredRecipes(loadedRecipes);
+      
+      // Load ratings for each recipe
+      loadedRecipes.forEach(recipe => loadRecipeRating(recipe.id));
     } catch (error) {
       console.error('Error loading recipes:', error);
+    }
+  };
+  
+  const loadRecipeRating = async (recipeId) => {
+    try {
+      const response = await axios.get(`${API}/recipes/${recipeId}/ratings`);
+      setRecipeRatings(prev => ({
+        ...prev,
+        [recipeId]: response.data
+      }));
+    } catch (error) {
+      console.error('Error loading rating:', error);
+    }
+  };
+  
+  const handleSearch = async (searchParams) => {
+    try {
+      const response = await axios.post(`${API}/recipes/search`, searchParams);
+      setFilteredRecipes(response.data.recipes || []);
+    } catch (error) {
+      console.error('Error searching recipes:', error);
+      toast.error('Failed to search recipes');
     }
   };
   
@@ -62,20 +93,26 @@ const SavedRecipes = () => {
           <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="page-title">
             Your Recipe Collection
           </h1>
-          <p className="text-muted-foreground" data-testid="page-description">
+          <p className="text-muted-foreground mb-6" data-testid="page-description">
             Meals you've saved for later, organized by mood and occasion.
           </p>
+          
+          <RecipeSearchFilter onSearch={handleSearch} />
         </div>
         
-        {recipes.length === 0 ? (
+        {filteredRecipes.length === 0 ? (
           <div className="text-center py-20" data-testid="empty-state">
             <Heart className="mx-auto mb-4 text-muted-foreground" size={48} />
-            <h3 className="text-xl font-serif mb-2">No saved recipes yet</h3>
-            <p className="text-muted-foreground">Start chatting to discover mood-based meals!</p>
+            <h3 className="text-xl font-serif mb-2">
+              {recipes.length === 0 ? 'No saved recipes yet' : 'No recipes match your search'}
+            </h3>
+            <p className="text-muted-foreground">
+              {recipes.length === 0 ? 'Start chatting to discover mood-based meals!' : 'Try adjusting your filters'}
+            </p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recipes.map((recipe) => (
+            {filteredRecipes.map((recipe) => (
               <div
                 key={recipe.id}
                 className="recipe-card bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-md transition-all cursor-pointer"
@@ -86,7 +123,17 @@ const SavedRecipes = () => {
                   <ChefHat size={64} className="text-primary/40" />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-serif mb-2">{recipe.title}</h3>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-xl font-serif flex-1">{recipe.title}</h3>
+                    {recipeRatings[recipe.id]?.average_rating > 0 && (
+                      <div className="flex items-center gap-1 text-accent">
+                        <Star size={16} className="fill-accent" />
+                        <span className="text-sm font-medium">
+                          {recipeRatings[recipe.id].average_rating}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                     {recipe.description}
                   </p>
@@ -122,7 +169,17 @@ const SavedRecipes = () => {
           {selectedRecipe && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-3xl font-serif">{selectedRecipe.title}</DialogTitle>
+                <div className="flex justify-between items-start">
+                  <DialogTitle className="text-3xl font-serif flex-1">{selectedRecipe.title}</DialogTitle>
+                  {recipeRatings[selectedRecipe.id]?.average_rating > 0 && (
+                    <div className="flex items-center gap-2 bg-accent/10 px-3 py-1 rounded-full">
+                      <Star size={18} className="fill-accent text-accent" />
+                      <span className="font-medium text-accent">
+                        {recipeRatings[selectedRecipe.id].average_rating} ({recipeRatings[selectedRecipe.id].total_ratings})
+                      </span>
+                    </div>
+                  )}
+                </div>
               </DialogHeader>
               <div className="space-y-6 mt-4">
                 <p className="text-muted-foreground">{selectedRecipe.description}</p>
@@ -176,6 +233,8 @@ const SavedRecipes = () => {
                   <h3 className="font-serif text-lg mb-2">Nutritional Highlights</h3>
                   <p className="text-sm text-muted-foreground">{selectedRecipe.nutritional_highlights}</p>
                 </div>
+                
+                <RecipeRating recipeId={selectedRecipe.id} />
                 
                 <Button
                   onClick={() => addToShoppingList(selectedRecipe.id)}
