@@ -78,10 +78,14 @@ const VoiceControls = ({ onTranscription, autoPlayResponse = true, language = 'e
     try {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('language', currentLanguage);
       
       const response = await axios.post(`${API}/voice/transcribe`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
+        },
+        params: {
+          language: currentLanguage
         }
       });
       
@@ -110,7 +114,8 @@ const VoiceControls = ({ onTranscription, autoPlayResponse = true, language = 'e
       
       const response = await axios.post(`${API}/voice/synthesize`, {
         text,
-        mood: mood || detectedMood
+        mood: mood || detectedMood,
+        language: currentLanguage
       });
       
       const { audio_base64, mood: usedMood, voice_description } = response.data;
