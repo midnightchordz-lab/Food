@@ -1,15 +1,19 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+import jwt
+from passlib.context import CryptContext
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -21,8 +25,158 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-# System message for the AI chef
-SYSTEM_MESSAGE = """You are a compassionate nutritional expert and chef who specializes in mood-based meal planning. Your approach combines culinary expertise, nutritional science, and emotional wellness to create meals that nourish both body and mind.
+# Security
+security = HTTPBearer()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_DAYS = 30
+
+# Models
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    dietary_restrictions: List[str] = []
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: str
+    name: str
+    dietary_restrictions: List[str] = []
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserInDB(User):
+    hashed_password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: User
+
+class ChatMessage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    session_id: str
+    role: str
+    content: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    structured_data: Optional[Dict[str, Any]] = None
+
+class ChatRequest(BaseModel):
+    session_id: str
+    message: str
+
+class ChatResponse(BaseModel):
+    session_id: str
+    response: str
+    timestamp: datetime
+    structured_recipes: Optional[List[Dict[str, Any]]] = None
+
+class Recipe(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: str
+    ingredients: List[str]
+    instructions: List[str]
+    mood_tags: List[str]
+    prep_time: str
+    cook_time: str
+    complexity: str
+    nutritional_highlights: str
+    dietary_info: List[str] = []
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class RecipeCreate(BaseModel):
+    title: str
+    description: str
+    ingredients: List[str]
+    instructions: List[str]
+    mood_tags: List[str]
+    prep_time: str
+    cook_time: str
+    complexity: str
+    nutritional_highlights: str
+    dietary_info: List[str] = []
+
+class SavedRecipe(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    recipe_id: str
+    saved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class SaveRecipeRequest(BaseModel):
+    recipe: RecipeCreate
+
+class ShoppingList(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    items: List[Dict[str, Any]]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ShoppingListCreate(BaseModel):
+    items: List[Dict[str, Any]]
+
+class WeeklyPlan(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    week_start: str
+    meals: Dict[str, Any]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class WeeklyPlanCreate(BaseModel):
+    week_start: str
+    meals: Dict[str, Any]
+
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    dietary_restrictions: Optional[List[str]] = None
+
+# Auth helper functions
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+        
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "hashed_password": 0})
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+        return User(**user)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+def get_system_message(dietary_restrictions: List[str] = None):
+    base_message = """You are a compassionate nutritional expert and chef who specializes in mood-based meal planning. Your approach combines culinary expertise, nutritional science, and emotional wellness to create meals that nourish both body and mind.
 
 Your Role:
 - Start every interaction by asking the user how they're feeling today (emotionally and physically)
@@ -53,90 +207,73 @@ Mood-Food Principles:
 - Romantic: Elegant, sensual foods with aphrodisiac qualities
 
 Your Tone: Warm, non-judgmental, encouraging, and knowledgeable."""
+    
+    if dietary_restrictions and len(dietary_restrictions) > 0:
+        restrictions_text = ", ".join(dietary_restrictions)
+        base_message += f"\n\nIMPORTANT: The user has the following dietary restrictions: {restrictions_text}. All meal suggestions MUST accommodate these restrictions."
+    
+    return base_message
 
-# Models
-class ChatMessage(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    session_id: str
-    role: str  # "user" or "assistant"
-    content: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+# Auth endpoints
+@api_router.post("/auth/register", response_model=Token)
+async def register(user_data: UserRegister):
+    # Check if user exists
+    existing_user = await db.users.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create user
+    user = UserInDB(
+        email=user_data.email,
+        name=user_data.name,
+        dietary_restrictions=user_data.dietary_restrictions,
+        hashed_password=get_password_hash(user_data.password)
+    )
+    
+    user_dict = user.model_dump()
+    user_dict['created_at'] = user_dict['created_at'].isoformat()
+    await db.users.insert_one(user_dict)
+    
+    # Create token
+    access_token = create_access_token(data={"sub": user.id})
+    
+    user_response = User(**{k: v for k, v in user.model_dump().items() if k != 'hashed_password'})
+    
+    return Token(access_token=access_token, token_type="bearer", user=user_response)
 
-class ChatRequest(BaseModel):
-    session_id: str
-    message: str
+@api_router.post("/auth/login", response_model=Token)
+async def login(credentials: UserLogin):
+    user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    if not user or not verify_password(credentials.password, user['hashed_password']):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    access_token = create_access_token(data={"sub": user['id']})
+    
+    user_response = User(**{k: v for k, v in user.items() if k != 'hashed_password'})
+    
+    return Token(access_token=access_token, token_type="bearer", user=user_response)
 
-class ChatResponse(BaseModel):
-    session_id: str
-    response: str
-    timestamp: datetime
+@api_router.get("/auth/me", response_model=User)
+async def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
 
-class Recipe(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    title: str
-    description: str
-    ingredients: List[str]
-    instructions: List[str]
-    mood_tags: List[str]
-    prep_time: str
-    cook_time: str
-    complexity: str  # "quick", "standard", "involved"
-    nutritional_highlights: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class RecipeCreate(BaseModel):
-    title: str
-    description: str
-    ingredients: List[str]
-    instructions: List[str]
-    mood_tags: List[str]
-    prep_time: str
-    cook_time: str
-    complexity: str
-    nutritional_highlights: str
-
-class SavedRecipe(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
-    recipe_id: str
-    saved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class SaveRecipeRequest(BaseModel):
-    user_id: str
-    recipe: RecipeCreate
-
-class ShoppingList(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
-    items: List[Dict[str, Any]]
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class ShoppingListCreate(BaseModel):
-    user_id: str
-    items: List[Dict[str, Any]]
-
-class WeeklyPlan(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str
-    week_start: str
-    meals: Dict[str, Any]
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class WeeklyPlanCreate(BaseModel):
-    user_id: str
-    week_start: str
-    meals: Dict[str, Any]
+@api_router.put("/auth/profile", response_model=User)
+async def update_profile(profile_data: UserProfileUpdate, current_user: User = Depends(get_current_user)):
+    update_data = {k: v for k, v in profile_data.model_dump().items() if v is not None}
+    
+    if update_data:
+        await db.users.update_one(
+            {"id": current_user.id},
+            {"$set": update_data}
+        )
+    
+    updated_user = await db.users.find_one({"id": current_user.id}, {"_id": 0, "hashed_password": 0})
+    return User(**updated_user)
 
 # Chat endpoints
 @api_router.post("/chat/send", response_model=ChatResponse)
-async def send_chat_message(request: ChatRequest):
+async def send_chat_message(request: ChatRequest, current_user: User = Depends(get_current_user)):
     try:
-        # Save user message
         user_msg = ChatMessage(
             session_id=request.session_id,
             role="user",
@@ -144,30 +281,20 @@ async def send_chat_message(request: ChatRequest):
         )
         await db.chat_messages.insert_one({
             **user_msg.model_dump(),
-            "timestamp": user_msg.timestamp.isoformat()
+            "timestamp": user_msg.timestamp.isoformat(),
+            "user_id": current_user.id
         })
         
-        # Get chat history for context
-        history = await db.chat_messages.find(
-            {"session_id": request.session_id},
-            {"_id": 0}
-        ).sort("timestamp", 1).limit(10).to_list(10)
-        
-        # Initialize LLM chat
         chat = LlmChat(
             api_key=os.environ['EMERGENT_LLM_KEY'],
             session_id=request.session_id,
-            system_message=SYSTEM_MESSAGE
+            system_message=get_system_message(current_user.dietary_restrictions)
         )
         chat.with_model("openai", "gpt-4o")
         
-        # Create user message for LLM
         user_message = UserMessage(text=request.message)
-        
-        # Get AI response
         ai_response = await chat.send_message(user_message)
         
-        # Save assistant message
         assistant_msg = ChatMessage(
             session_id=request.session_id,
             role="assistant",
@@ -175,7 +302,8 @@ async def send_chat_message(request: ChatRequest):
         )
         await db.chat_messages.insert_one({
             **assistant_msg.model_dump(),
-            "timestamp": assistant_msg.timestamp.isoformat()
+            "timestamp": assistant_msg.timestamp.isoformat(),
+            "user_id": current_user.id
         })
         
         return ChatResponse(
@@ -188,10 +316,10 @@ async def send_chat_message(request: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/chat/history/{session_id}")
-async def get_chat_history(session_id: str):
+async def get_chat_history(session_id: str, current_user: User = Depends(get_current_user)):
     try:
         messages = await db.chat_messages.find(
-            {"session_id": session_id},
+            {"session_id": session_id, "user_id": current_user.id},
             {"_id": 0}
         ).sort("timestamp", 1).to_list(100)
         
@@ -206,16 +334,14 @@ async def get_chat_history(session_id: str):
 
 # Recipe endpoints
 @api_router.post("/recipes/save", response_model=SavedRecipe)
-async def save_recipe(request: SaveRecipeRequest):
+async def save_recipe(request: SaveRecipeRequest, current_user: User = Depends(get_current_user)):
     try:
-        # Create and save recipe
         recipe = Recipe(**request.recipe.model_dump())
         recipe_dict = recipe.model_dump()
         recipe_dict['created_at'] = recipe_dict['created_at'].isoformat()
         await db.recipes.insert_one(recipe_dict)
         
-        # Save to user's saved recipes
-        saved = SavedRecipe(user_id=request.user_id, recipe_id=recipe.id)
+        saved = SavedRecipe(user_id=current_user.id, recipe_id=recipe.id)
         saved_dict = saved.model_dump()
         saved_dict['saved_at'] = saved_dict['saved_at'].isoformat()
         await db.saved_recipes.insert_one(saved_dict)
@@ -225,14 +351,12 @@ async def save_recipe(request: SaveRecipeRequest):
         logging.error(f"Error saving recipe: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/recipes/saved/{user_id}")
-async def get_saved_recipes(user_id: str):
+@api_router.get("/recipes/saved")
+async def get_saved_recipes(current_user: User = Depends(get_current_user)):
     try:
-        # Get saved recipe IDs
-        saved = await db.saved_recipes.find({"user_id": user_id}, {"_id": 0}).to_list(100)
+        saved = await db.saved_recipes.find({"user_id": current_user.id}, {"_id": 0}).to_list(100)
         recipe_ids = [s['recipe_id'] for s in saved]
         
-        # Get full recipes
         recipes = await db.recipes.find({"id": {"$in": recipe_ids}}, {"_id": 0}).to_list(100)
         
         return {"recipes": recipes}
@@ -240,18 +364,49 @@ async def get_saved_recipes(user_id: str):
         logging.error(f"Error fetching saved recipes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Shopping list endpoints
-@api_router.post("/shopping-list", response_model=ShoppingList)
-async def create_or_update_shopping_list(request: ShoppingListCreate):
+@api_router.post("/recipes/{recipe_id}/add-to-shopping-list")
+async def add_recipe_to_shopping_list(recipe_id: str, current_user: User = Depends(get_current_user)):
     try:
-        # Check if user already has a list
-        existing = await db.shopping_lists.find_one({"user_id": request.user_id}, {"_id": 0})
+        recipe = await db.recipes.find_one({"id": recipe_id}, {"_id": 0})
+        if not recipe:
+            raise HTTPException(status_code=404, detail="Recipe not found")
         
-        if existing:
-            # Update existing list
+        existing_list = await db.shopping_lists.find_one({"user_id": current_user.id}, {"_id": 0})
+        
+        new_items = [{"name": ingredient, "checked": False} for ingredient in recipe['ingredients']]
+        
+        if existing_list:
+            updated_items = existing_list['items'] + new_items
             update_time = datetime.now(timezone.utc)
             await db.shopping_lists.update_one(
-                {"user_id": request.user_id},
+                {"user_id": current_user.id},
+                {"$set": {
+                    "items": updated_items,
+                    "updated_at": update_time.isoformat()
+                }}
+            )
+        else:
+            shopping_list = ShoppingList(user_id=current_user.id, items=new_items)
+            list_dict = shopping_list.model_dump()
+            list_dict['created_at'] = list_dict['created_at'].isoformat()
+            list_dict['updated_at'] = list_dict['updated_at'].isoformat()
+            await db.shopping_lists.insert_one(list_dict)
+        
+        return {"message": "Ingredients added to shopping list", "items_added": len(new_items)}
+    except Exception as e:
+        logging.error(f"Error adding to shopping list: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Shopping list endpoints
+@api_router.post("/shopping-list", response_model=ShoppingList)
+async def create_or_update_shopping_list(request: ShoppingListCreate, current_user: User = Depends(get_current_user)):
+    try:
+        existing = await db.shopping_lists.find_one({"user_id": current_user.id}, {"_id": 0})
+        
+        if existing:
+            update_time = datetime.now(timezone.utc)
+            await db.shopping_lists.update_one(
+                {"user_id": current_user.id},
                 {"$set": {
                     "items": request.items,
                     "updated_at": update_time.isoformat()
@@ -261,9 +416,8 @@ async def create_or_update_shopping_list(request: ShoppingListCreate):
             existing['updated_at'] = update_time
             return ShoppingList(**existing)
         else:
-            # Create new list
             shopping_list = ShoppingList(
-                user_id=request.user_id,
+                user_id=current_user.id,
                 items=request.items
             )
             list_dict = shopping_list.model_dump()
@@ -275,10 +429,10 @@ async def create_or_update_shopping_list(request: ShoppingListCreate):
         logging.error(f"Error with shopping list: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/shopping-list/{user_id}")
-async def get_shopping_list(user_id: str):
+@api_router.get("/shopping-list")
+async def get_shopping_list(current_user: User = Depends(get_current_user)):
     try:
-        shopping_list = await db.shopping_lists.find_one({"user_id": user_id}, {"_id": 0})
+        shopping_list = await db.shopping_lists.find_one({"user_id": current_user.id}, {"_id": 0})
         if not shopping_list:
             return {"items": []}
         return shopping_list
@@ -288,9 +442,9 @@ async def get_shopping_list(user_id: str):
 
 # Weekly plan endpoints
 @api_router.post("/weekly-plan", response_model=WeeklyPlan)
-async def create_weekly_plan(request: WeeklyPlanCreate):
+async def create_weekly_plan(request: WeeklyPlanCreate, current_user: User = Depends(get_current_user)):
     try:
-        plan = WeeklyPlan(**request.model_dump())
+        plan = WeeklyPlan(user_id=current_user.id, **request.model_dump())
         plan_dict = plan.model_dump()
         plan_dict['created_at'] = plan_dict['created_at'].isoformat()
         await db.weekly_plans.insert_one(plan_dict)
@@ -299,10 +453,10 @@ async def create_weekly_plan(request: WeeklyPlanCreate):
         logging.error(f"Error creating weekly plan: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/weekly-plan/{user_id}")
-async def get_weekly_plans(user_id: str):
+@api_router.get("/weekly-plan")
+async def get_weekly_plans(current_user: User = Depends(get_current_user)):
     try:
-        plans = await db.weekly_plans.find({"user_id": user_id}, {"_id": 0}).sort("created_at", -1).to_list(10)
+        plans = await db.weekly_plans.find({"user_id": current_user.id}, {"_id": 0}).sort("created_at", -1).to_list(10)
         return {"plans": plans}
     except Exception as e:
         logging.error(f"Error fetching weekly plans: {e}")
