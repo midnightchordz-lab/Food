@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Plus, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -12,15 +13,17 @@ const API = `${BACKEND_URL}/api`;
 const ShoppingListPage = () => {
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState('');
-  const [userId] = useState('demo-user');
+  const { isAuthenticated } = useAuth();
   
   useEffect(() => {
-    loadShoppingList();
-  }, []);
+    if (isAuthenticated) {
+      loadShoppingList();
+    }
+  }, [isAuthenticated]);
   
   const loadShoppingList = async () => {
     try {
-      const response = await axios.get(`${API}/shopping-list/${userId}`);
+      const response = await axios.get(`${API}/shopping-list`);
       setItems(response.data.items || []);
     } catch (error) {
       console.error('Error loading shopping list:', error);
@@ -30,7 +33,6 @@ const ShoppingListPage = () => {
   const saveShoppingList = async (updatedItems) => {
     try {
       await axios.post(`${API}/shopping-list`, {
-        user_id: userId,
         items: updatedItems
       });
       toast.success('Shopping list updated!');
@@ -62,6 +64,17 @@ const ShoppingListPage = () => {
     setItems(updatedItems);
     saveShoppingList(updatedItems);
   };
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="shopping-list-page">
+        <div className="max-w-3xl mx-auto text-center py-20">
+          <ShoppingCart className="mx-auto mb-4 text-muted-foreground" size={48} />
+          <h3 className="text-xl font-serif mb-2">Please log in to access your shopping list</h3>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="shopping-list-page">

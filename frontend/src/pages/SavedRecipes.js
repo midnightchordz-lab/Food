@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Heart, Clock, ChefHat } from 'lucide-react';
+import { Heart, Clock, ChefHat, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -8,6 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -15,20 +17,43 @@ const API = `${BACKEND_URL}/api`;
 const SavedRecipes = () => {
   const [recipes, setRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [userId] = useState('demo-user'); // In production, this would come from auth
+  const { isAuthenticated } = useAuth();
   
   useEffect(() => {
-    loadRecipes();
-  }, []);
+    if (isAuthenticated) {
+      loadRecipes();
+    }
+  }, [isAuthenticated]);
   
   const loadRecipes = async () => {
     try {
-      const response = await axios.get(`${API}/recipes/saved/${userId}`);
+      const response = await axios.get(`${API}/recipes/saved`);
       setRecipes(response.data.recipes || []);
     } catch (error) {
       console.error('Error loading recipes:', error);
     }
   };
+  
+  const addToShoppingList = async (recipeId) => {
+    try {
+      const response = await axios.post(`${API}/recipes/${recipeId}/add-to-shopping-list`);
+      toast.success(`${response.data.items_added} ingredients added to shopping list!`);
+    } catch (error) {
+      console.error('Error adding to shopping list:', error);
+      toast.error('Failed to add to shopping list');
+    }
+  };
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="saved-recipes-page">
+        <div className="max-w-7xl mx-auto text-center py-20">
+          <Heart className="mx-auto mb-4 text-muted-foreground" size={48} />
+          <h3 className="text-xl font-serif mb-2">Please log in to view saved recipes</h3>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="saved-recipes-page">
@@ -65,7 +90,7 @@ const SavedRecipes = () => {
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                     {recipe.description}
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                     <div className="flex items-center gap-1">
                       <Clock size={16} />
                       <span>{recipe.prep_time}</span>
@@ -74,7 +99,7 @@ const SavedRecipes = () => {
                       {recipe.complexity}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2">
                     {recipe.mood_tags?.slice(0, 3).map((tag, idx) => (
                       <span
                         key={idx}
@@ -113,6 +138,16 @@ const SavedRecipes = () => {
                   </div>
                 </div>
                 
+                {selectedRecipe.dietary_info && selectedRecipe.dietary_info.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRecipe.dietary_info.map((info, idx) => (
+                      <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                        {info}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
                 <div>
                   <h3 className="font-serif text-xl mb-3">Ingredients</h3>
                   <ul className="space-y-2">
@@ -141,6 +176,15 @@ const SavedRecipes = () => {
                   <h3 className="font-serif text-lg mb-2">Nutritional Highlights</h3>
                   <p className="text-sm text-muted-foreground">{selectedRecipe.nutritional_highlights}</p>
                 </div>
+                
+                <Button
+                  onClick={() => addToShoppingList(selectedRecipe.id)}
+                  className="w-full rounded-full bg-primary hover:bg-primary/90"
+                  data-testid="add-to-shopping-list-button"
+                >
+                  <ShoppingCart size={18} className="mr-2" />
+                  Add Ingredients to Shopping List
+                </Button>
               </div>
             </>
           )}

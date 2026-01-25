@@ -1,0 +1,124 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { User } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
+const DIETARY_OPTIONS = [
+  'Vegetarian',
+  'Vegan',
+  'Gluten-Free',
+  'Dairy-Free',
+  'Nut-Free',
+  'Halal',
+  'Kosher',
+  'Low-Carb',
+  'Keto'
+];
+
+const ProfilePage = () => {
+  const { user, updateProfile, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [name, setName] = useState(user?.name || '');
+  const [dietaryRestrictions, setDietaryRestrictions] = useState(user?.dietary_restrictions || []);
+  const [saving, setSaving] = useState(false);
+
+  if (!isAuthenticated) {
+    navigate('/');
+    return null;
+  }
+
+  const toggleDietary = (option) => {
+    setDietaryRestrictions(prev =>
+      prev.includes(option)
+        ? prev.filter(item => item !== option)
+        : [...prev, option]
+    );
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    await updateProfile({
+      name,
+      dietary_restrictions: dietaryRestrictions
+    });
+    setSaving(false);
+  };
+
+  return (
+    <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="profile-page">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-12">
+          <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="page-title">
+            Your Profile
+          </h1>
+          <p className="text-muted-foreground" data-testid="page-description">
+            Manage your preferences and dietary restrictions.
+          </p>
+        </div>
+
+        <div className="bg-card rounded-3xl border border-border/40 p-8">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+              <User size={32} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-serif">{user?.name}</h2>
+              <p className="text-muted-foreground">{user?.email}</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="rounded-xl"
+                data-testid="name-input"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label>Dietary Restrictions</Label>
+              <p className="text-sm text-muted-foreground">
+                Select your dietary preferences to get personalized meal suggestions.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {DIETARY_OPTIONS.map((option) => (
+                  <div key={option} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`profile-${option}`}
+                      checked={dietaryRestrictions.includes(option)}
+                      onCheckedChange={() => toggleDietary(option)}
+                      data-testid={`dietary-${option}`}
+                    />
+                    <Label htmlFor={`profile-${option}`} className="text-sm cursor-pointer">
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-full bg-primary hover:bg-primary/90 active:scale-95 transition-all"
+              data-testid="save-profile-button"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProfilePage;

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -12,18 +13,21 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 const WeeklyPlannerPage = () => {
   const [plans, setPlans] = useState([]);
   const [currentWeek, setCurrentWeek] = useState('');
-  const [userId] = useState('demo-user');
+  const { isAuthenticated } = useAuth();
   
   useEffect(() => {
     const today = new Date();
     const weekStart = new Date(today.setDate(today.getDate() - today.getDay() + 1));
     setCurrentWeek(weekStart.toISOString().split('T')[0]);
-    loadPlans();
-  }, []);
+    
+    if (isAuthenticated) {
+      loadPlans();
+    }
+  }, [isAuthenticated]);
   
   const loadPlans = async () => {
     try {
-      const response = await axios.get(`${API}/weekly-plan/${userId}`);
+      const response = await axios.get(`${API}/weekly-plan`);
       setPlans(response.data.plans || []);
     } catch (error) {
       console.error('Error loading plans:', error);
@@ -43,7 +47,6 @@ const WeeklyPlannerPage = () => {
     
     try {
       await axios.post(`${API}/weekly-plan`, {
-        user_id: userId,
         week_start: currentWeek,
         meals: sampleMeals
       });
@@ -54,6 +57,17 @@ const WeeklyPlannerPage = () => {
       toast.error('Failed to create plan');
     }
   };
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="weekly-planner-page">
+        <div className="max-w-6xl mx-auto text-center py-20">
+          <Calendar className="mx-auto mb-4 text-muted-foreground" size={48} />
+          <h3 className="text-xl font-serif mb-2">Please log in to access meal planning</h3>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="weekly-planner-page">
