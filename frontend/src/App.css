@@ -29,3 +29,37 @@
 .mood-badge:hover {
   transform: scale(1.05);
 }
+
+/* Recipe Visual Cards in Chat */
+.recipe-visual-card {
+  animation: slideIn 0.4s ease-out;
+}
+
+.recipe-visual-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+}
+
+.recipe-visual-card img {
+  transition: transform 0.5s ease;
+}
+
+.recipe-visual-card:hover img {
+  transform: scale(1.05);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Recipe display in chat - wider layout */
+.recipe-visual-display {
+  width: 100%;
+}
