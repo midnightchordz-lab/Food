@@ -131,7 +131,7 @@ const ExploreCuisinesPage = () => {
               data-testid={`cuisine-card-${cuisine.name}`}
             >
               <div className="bg-card rounded-3xl overflow-hidden border border-border/40 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
-                {/* Image with Gradient Overlay */}
+                {/* Image with Gradient Overlay - NO COUNTRY CODES */}
                 <div className="relative h-64 overflow-hidden">
                   <img
                     src={cuisine.image}
@@ -139,9 +139,7 @@ const ExploreCuisinesPage = () => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className={`absolute inset-0 bg-gradient-to-t ${cuisine.color} opacity-60 group-hover:opacity-40 transition-opacity`}></div>
-                  <div className="absolute top-4 right-4 text-6xl drop-shadow-lg">
-                    {cuisine.flag}
-                  </div>
+                  {/* Removed country code overlay for clean presentation */}
                 </div>
 
                 {/* Content */}
