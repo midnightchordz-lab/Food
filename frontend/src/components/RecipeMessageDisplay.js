@@ -563,72 +563,16 @@ export const hasRecipes = (message) => {
   return (hasTimeCategories || hasBoldRecipes || hasRecipeStructure) && message.length > 200;
 };
 
-// Clickable Recipe Card Component
+// Clickable Recipe Card Component - Compact for 3-per-row grid
 const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   return (
     <div 
-      className="recipe-visual-card group flex flex-col md:flex-row bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer"
+      className="recipe-visual-card group flex flex-col bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer h-full"
       onClick={() => onViewDetails(recipe)}
       data-testid="recipe-visual-card"
     >
-      {/* Recipe Text - Left Side (50-55%) */}
-      <div className="flex-1 p-5 order-2 md:order-1 flex flex-col justify-between">
-        <div>
-          {/* Title */}
-          <h3 className="text-xl font-serif text-foreground leading-tight mb-2 group-hover:text-primary transition-colors">
-            {recipe.title}
-          </h3>
-          
-          {/* Difficulty Badge */}
-          <div className="mb-3">
-            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${DIFFICULTY_COLORS[recipe.difficulty] || DIFFICULTY_COLORS['Medium']}`}>
-              {recipe.difficulty}
-            </span>
-          </div>
-          
-          {/* Description */}
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {recipe.description}
-          </p>
-        </div>
-        
-        {/* Metadata & Actions */}
-        <div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-            <div className="flex items-center gap-1.5">
-              <Clock size={15} className="text-primary" />
-              <span>{recipe.cookingTime || '30 min'}</span>
-            </div>
-            {recipe.cuisineHint && (
-              <div className="flex items-center gap-1.5">
-                <Utensils size={15} className="text-primary" />
-                <span className="capitalize">{recipe.cuisineHint}</span>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSave && onSave(recipe);
-              }}
-              className="rounded-full text-xs border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"
-            >
-              <Heart size={14} className="mr-1.5" />
-              Save Recipe
-            </Button>
-            <span className="text-xs text-primary flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              View Full Recipe <ChevronRight size={14} />
-            </span>
-          </div>
-        </div>
-      </div>
-      
-      {/* Recipe Image - Right Side (45-50%) */}
-      <div className="md:w-[48%] h-56 md:h-auto order-1 md:order-2 relative overflow-hidden">
+      {/* Recipe Image - Top */}
+      <div className="w-full h-44 relative overflow-hidden">
         <img
           src={recipe.imageUrl}
           alt={recipe.title}
@@ -637,14 +581,51 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
             e.target.src = GENERIC_FOOD_IMAGES[0];
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background/5" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         
         {/* View Recipe overlay on hover */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-all duration-300">
-          <span className="px-4 py-2 bg-white/90 rounded-full text-sm font-medium opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2">
-            View Recipe <ChevronRight size={16} />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all duration-300">
+          <span className="px-4 py-2 bg-white/95 rounded-full text-sm font-medium opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2">
+            Read More <ChevronRight size={16} />
           </span>
         </div>
+      </div>
+      
+      {/* Recipe Content - Bottom */}
+      <div className="flex-1 p-4 flex flex-col">
+        {/* Title */}
+        <h3 className="text-lg font-serif text-foreground leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
+          {recipe.title}
+        </h3>
+        
+        {/* Description */}
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">
+          {recipe.description}
+        </p>
+        
+        {/* Metadata */}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+          <div className="flex items-center gap-1">
+            <Clock size={14} className="text-primary" />
+            <span>{recipe.cookingTime || '30 min'}</span>
+          </div>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${DIFFICULTY_COLORS[recipe.difficulty] || DIFFICULTY_COLORS['Medium']}`}>
+            {recipe.difficulty}
+          </span>
+        </div>
+        
+        {/* Read More Button */}
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full rounded-full text-xs border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground group-hover:border-primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetails(recipe);
+          }}
+        >
+          Read More <ChevronRight size={14} className="ml-1" />
+        </Button>
       </div>
     </div>
   );
