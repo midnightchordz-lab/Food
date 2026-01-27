@@ -543,6 +543,26 @@ async def update_profile(profile_data: UserProfileUpdate, current_user: User = D
     updated_user = await db.users.find_one({"id": current_user.id}, {"_id": 0, "hashed_password": 0})
     return User(**updated_user)
 
+# Helper to detect recipe generation requests from the frontend
+def is_recipe_generation_request(message: str) -> dict:
+    """Detect if message is a structured recipe request and extract parameters"""
+    if "[User Preferences]" in message and "Please suggest" in message:
+        # Parse the structured message from frontend
+        lines = message.split("\n")
+        params = {"mood": "", "meal_type": "", "dietary_pref": "", "cuisines": ""}
+        for line in lines:
+            if "- Mood:" in line:
+                params["mood"] = line.split("- Mood:")[1].strip().split("(")[0].strip()
+            elif "- Meal Type:" in line:
+                params["meal_type"] = line.split("- Meal Type:")[1].strip()
+            elif "- Dietary Preference:" in line:
+                params["dietary_pref"] = line.split("- Dietary Preference:")[1].strip()
+            elif "- Cuisine(s):" in line:
+                params["cuisines"] = line.split("- Cuisine(s):")[1].strip()
+        return params
+    return None
+
+
 # Chat endpoints
 @api_router.post("/chat/send", response_model=ChatResponse)
 async def send_chat_message(request: ChatRequest, current_user: User = Depends(get_current_user)):
@@ -558,14 +578,37 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             "user_id": current_user.id
         })
         
+        # Check if this is a recipe generation request
+        recipe_params = is_recipe_generation_request(request.message)
+        
+        if recipe_params:
+            # Use optimized recipe generation prompt
+            system_msg = get_recipe_generation_prompt(
+                mood=recipe_params["mood"],
+                meal_type=recipe_params["meal_type"],
+                dietary_pref=recipe_params["dietary_pref"],
+                cuisines=recipe_params["cuisines"]
+            )
+            # Add user dietary restrictions if any
+            if current_user.dietary_restrictions:
+                system_msg += f"\n\nDIETARY RESTRICTIONS: {', '.join(current_user.dietary_restrictions)}. All recipes MUST comply."
+            
+            # Simplified user message for recipe generation
+            user_text = f"Generate 6 {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine."
+            logging.info(f"Recipe generation request: {recipe_params}")
+        else:
+            # Use general conversational system message
+            system_msg = get_system_message(current_user.dietary_restrictions, current_user.cuisine_preferences)
+            user_text = request.message
+        
         chat = LlmChat(
             api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=request.session_id,
-            system_message=get_system_message(current_user.dietary_restrictions, current_user.cuisine_preferences)
+            session_id=f"{request.session_id}-{uuid.uuid4().hex[:8]}",  # Unique session to avoid context buildup
+            system_message=system_msg
         )
         chat.with_model("openai", "gpt-4o")
         
-        user_message = UserMessage(text=request.message)
+        user_message = UserMessage(text=user_text)
         ai_response = await chat.send_message(user_message)
         
         assistant_msg = ChatMessage(
