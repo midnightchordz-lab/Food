@@ -125,21 +125,25 @@ A compassionate nutritional expert AI application that suggests meals based on u
 ## Known Limitations
 - Recipe discovery uses curated static data (MOCKED - not live web search)
 - Voice response latency depends on TTS model speed
+- Shopping partner integration copies list to clipboard (no actual API integration)
 
 ## Upcoming Tasks (Backlog)
 
 ### P1 - High Priority
-- [ ] Add more recipes to the curated database
+- [ ] Verify image display for previously saved recipes
 - [ ] Improve voice agent response speed (optimize TTS)
 
 ### P2 - Medium Priority
 - [ ] Auto-detect browser language for voice default
 - [ ] Recipe rating and review system enhancements
 - [ ] Meal prep reminders and notifications
+- [ ] Add more recipes to the curated database
+- [ ] Create persistent "My Grocery List" page that saves across sessions
 
 ### P3 - Low Priority  
 - [ ] Server.py refactoring into modular routers
 - [ ] Real-time web search for recipes (when API available)
+- [ ] Actual shopping partner API integrations (Instacart, Amazon Fresh)
 
 ## Changelog
 - **Jan 27, 2026**: Fixed Recipe Discovery feature
