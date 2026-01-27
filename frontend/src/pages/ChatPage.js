@@ -338,6 +338,18 @@ const ChatPage = () => {
                   <span>Current mood: {currentMood}</span>
                 </div>
               )}
+              {foodPreference && (
+                <div className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm ml-2">
+                  <span className="capitalize">🍽️ {foodPreference.replace('-', ' ')}</span>
+                  <button 
+                    onClick={() => setFoodPreference(null)}
+                    className="ml-1 hover:opacity-70"
+                    title="Change preference"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
             
             {/* Language Selector for Voice */}
