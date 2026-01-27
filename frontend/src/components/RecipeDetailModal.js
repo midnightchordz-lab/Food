@@ -617,6 +617,73 @@ const createDefaultRecipe = (recipe) => {
   };
 };
 
+// Parse AI-generated ingredients from fullContent
+const parseAIIngredients = (fullContent) => {
+  if (!fullContent) return null;
+  
+  const ingredientSection = fullContent.match(/\*\*Ingredients:?\*\*[\s\S]*?(?=\*\*Instructions|\*\*Chef|$)/i);
+  if (!ingredientSection) return null;
+  
+  const lines = ingredientSection[0].split('\n')
+    .filter(line => line.trim().startsWith('-') || line.trim().match(/^\d+\./))
+    .map(line => {
+      const cleaned = line.replace(/^[-\d.\s]+/, '').trim();
+      // Try to extract amount and item
+      const match = cleaned.match(/^([\d½¼¾⅓⅔\s\/]+\s*(?:cup|cups|tbsp|tsp|oz|lb|lbs|g|kg|ml|inch|cloves?|large|medium|small|piece|can)?s?\s*)?(.+)$/i);
+      if (match) {
+        return { amount: match[1]?.trim() || '', item: match[2]?.trim() || cleaned };
+      }
+      return { amount: '', item: cleaned };
+    })
+    .filter(ing => ing.item.length > 1);
+  
+  return lines.length > 0 ? lines : null;
+};
+
+// Parse AI-generated instructions from fullContent
+const parseAIInstructions = (fullContent) => {
+  if (!fullContent) return null;
+  
+  const instructionSection = fullContent.match(/\*\*Instructions:?\*\*[\s\S]*?(?=\*\*Chef|---|\n\n\n|$)/i);
+  if (!instructionSection) return null;
+  
+  const lines = instructionSection[0].split('\n')
+    .filter(line => line.trim().match(/^\d+\./))
+    .map((line, idx) => {
+      const cleaned = line.replace(/^\d+\.\s*/, '').trim();
+      
+      // Extract time marker like [PREP 5 min] or [COOK 10 min]
+      const timeMatch = cleaned.match(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL)\s*(\d+[-–]?\d*)\s*min\]/i);
+      let time = timeMatch ? timeMatch[1] + ' min' : '';
+      
+      // Remove the timing marker from the text for cleaner display
+      const textWithoutMarker = cleaned.replace(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL)\s*\d+[-–]?\d*\s*min\]\s*/i, '').trim();
+      
+      // If no time marker found, try to extract from text
+      if (!time) {
+        const inlineTime = textWithoutMarker.match(/(\d+[-–]?\d*)\s*(?:min|minutes)/i);
+        if (inlineTime) time = inlineTime[1] + ' min';
+      }
+      
+      return { 
+        step: idx + 1, 
+        text: textWithoutMarker || cleaned,
+        time: time || ''
+      };
+    })
+    .filter(inst => inst.text.length > 5);
+  
+  return lines.length > 0 ? lines : null;
+};
+
+// Parse Chef's Tip from fullContent
+const parseChefTip = (fullContent) => {
+  if (!fullContent) return null;
+  
+  const tipMatch = fullContent.match(/\*\*Chef['']?s?\s*Tip:?\*\*\s*([^\n*]+)/i);
+  return tipMatch ? [tipMatch[1].trim()] : null;
+};
+
 // Get dietary tags based on recipe
 const getDietaryTags = (recipe) => {
   const tags = [];
