@@ -219,7 +219,7 @@ const TIME_CATEGORIES = {
   elaborate: { icon: '👨‍🍳', title: 'Elaborate Option (40-60 min)', color: 'text-purple-600' },
 };
 
-// Parse recipes with better title extraction
+// Parse recipes with better title extraction - supports multiple recipes per category
 const parseRecipesWithCategories = (message) => {
   const categories = {
     quick: { ...TIME_CATEGORIES.quick, recipes: [] },
@@ -227,27 +227,105 @@ const parseRecipesWithCategories = (message) => {
     elaborate: { ...TIME_CATEGORIES.elaborate, recipes: [] },
   };
   
-  // Check for time category headers
-  const quickMatch = message.match(/###?\s*Quick\s*Option[^#]*(?=###|$)/is);
-  const moderateMatch = message.match(/###?\s*Moderate\s*Option[^#]*(?=###|$)/is);
-  const elaborateMatch = message.match(/###?\s*Elaborate\s*Option[^#]*(?=###|$)/is);
+  // Use regex to find ALL occurrences of each category
+  // Matches all "### Quick Option (X min): Recipe Name" patterns throughout message
+  const quickMatches = [...message.matchAll(/###?\s*Quick\s*Option[^:]*:\s*([^\n]+)[\s\S]*?(?=###?\s*(?:Quick|Moderate|Elaborate)\s*Option|$)/gi)];
+  const moderateMatches = [...message.matchAll(/###?\s*Moderate\s*Option[^:]*:\s*([^\n]+)[\s\S]*?(?=###?\s*(?:Quick|Moderate|Elaborate)\s*Option|$)/gi)];
+  const elaborateMatches = [...message.matchAll(/###?\s*Elaborate\s*Option[^:]*:\s*([^\n]+)[\s\S]*?(?=###?\s*(?:Quick|Moderate|Elaborate)\s*Option|$)/gi)];
   
-  if (quickMatch) categories.quick.recipes = parseRecipesFromSection(quickMatch[0], 'quick');
-  if (moderateMatch) categories.moderate.recipes = parseRecipesFromSection(moderateMatch[0], 'moderate');
-  if (elaborateMatch) categories.elaborate.recipes = parseRecipesFromSection(elaborateMatch[0], 'elaborate');
+  // Parse each match
+  quickMatches.forEach(match => {
+    const recipe = parseRecipeFromMatch(match, 'quick');
+    if (recipe) categories.quick.recipes.push(recipe);
+  });
+  
+  moderateMatches.forEach(match => {
+    const recipe = parseRecipeFromMatch(match, 'moderate');
+    if (recipe) categories.moderate.recipes.push(recipe);
+  });
+  
+  elaborateMatches.forEach(match => {
+    const recipe = parseRecipeFromMatch(match, 'elaborate');
+    if (recipe) categories.elaborate.recipes.push(recipe);
+  });
   
   // If no categories found, try general parsing
   if (!categories.quick.recipes.length && !categories.moderate.recipes.length && !categories.elaborate.recipes.length) {
-    const allRecipes = parseRecipesGeneral(message);
-    allRecipes.forEach(recipe => {
-      const time = extractTimeMinutes(recipe.cookingTime);
-      if (time <= 20) categories.quick.recipes.push(recipe);
-      else if (time <= 40) categories.moderate.recipes.push(recipe);
-      else categories.elaborate.recipes.push(recipe);
-    });
+    // Fallback: try old section-based parsing
+    const quickSection = message.match(/###?\s*Quick\s*Option[^#]*(?=###|$)/is);
+    const moderateSection = message.match(/###?\s*Moderate\s*Option[^#]*(?=###|$)/is);
+    const elaborateSection = message.match(/###?\s*Elaborate\s*Option[^#]*(?=###|$)/is);
+    
+    if (quickSection) categories.quick.recipes = parseRecipesFromSection(quickSection[0], 'quick');
+    if (moderateSection) categories.moderate.recipes = parseRecipesFromSection(moderateSection[0], 'moderate');
+    if (elaborateSection) categories.elaborate.recipes = parseRecipesFromSection(elaborateSection[0], 'elaborate');
+    
+    // If still nothing, try completely general parsing
+    if (!categories.quick.recipes.length && !categories.moderate.recipes.length && !categories.elaborate.recipes.length) {
+      const allRecipes = parseRecipesGeneral(message);
+      allRecipes.forEach(recipe => {
+        const time = extractTimeMinutes(recipe.cookingTime);
+        if (time <= 20) categories.quick.recipes.push(recipe);
+        else if (time <= 40) categories.moderate.recipes.push(recipe);
+        else categories.elaborate.recipes.push(recipe);
+      });
+    }
   }
   
   return categories;
+};
+
+// Parse a single recipe from a regex match
+const parseRecipeFromMatch = (match, category) => {
+  const [fullMatch, titleFromHeader] = match;
+  const title = titleFromHeader?.trim();
+  
+  // Skip patterns
+  const skipPatterns = [
+    /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name|total time|prep time)/i,
+  ];
+  
+  if (!title || title.length < 3 || title.length > 120 || skipPatterns.some(p => p.test(title))) {
+    return null;
+  }
+  
+  // Extract cooking time from the full match
+  const timeMatch = fullMatch.match(/\*\*Cooking\s*Time:?\*\*\s*(\d+[-–]?\d*\s*(?:min|minutes|hours?))/i) ||
+                    fullMatch.match(/\((\d+[-–]?\d*\s*min)\)/i);
+  const cookingTime = timeMatch ? timeMatch[1] : getCategoryDefaultTime(category);
+  
+  // Extract difficulty
+  const diffMatch = fullMatch.match(/\*\*Difficulty(?:\s*Level)?:?\*\*\s*(Easy|Medium|Hard|Moderate)/i);
+  let difficulty = diffMatch ? diffMatch[1] : 'Medium';
+  if (difficulty === 'Moderate') difficulty = 'Medium';
+  if (category === 'quick') difficulty = 'Easy';
+  if (category === 'elaborate') difficulty = 'Hard';
+  
+  // Extract description
+  const descMatch = fullMatch.match(/\*\*Description:?\*\*\s*([^*\n]+)/i);
+  let description = descMatch ? descMatch[1].trim() : '';
+  if (!description) {
+    const lines = fullMatch.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('**'));
+    if (lines.length > 0) {
+      description = lines[0].trim().substring(0, 200);
+    }
+  }
+  if (!description || description.length < 10) {
+    description = `A delicious ${category === 'quick' ? 'quick and easy' : category === 'elaborate' ? 'gourmet' : 'satisfying'} dish perfect for any occasion.`;
+  }
+  
+  const cuisineHint = detectCuisine(title + ' ' + fullMatch);
+  
+  return {
+    title,
+    description,
+    cookingTime,
+    difficulty,
+    cuisineHint,
+    category,
+    imageUrl: getRecipeImage(title, cuisineHint),
+    fullContent: fullMatch
+  };
 };
 
 // Extract time in minutes
