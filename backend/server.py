@@ -190,10 +190,18 @@ class ReminderCreate(BaseModel):
     meal_type: str
     enabled: bool = True
 
-class UserProfileUpdate(BaseModel):
-    name: Optional[str] = None
-    dietary_restrictions: Optional[List[str]] = None
-    cuisine_preferences: Optional[List[str]] = None
+class RecipeSearchRequest(BaseModel):
+    cuisine: Optional[str] = None
+    count: int = 12
+
+class DiscoveredRecipe(BaseModel):
+    title: str
+    description: str
+    cooking_time: str
+    difficulty: str
+    image_url: str
+    cuisine: str
+    source_url: str
 
 class VoiceTranscriptionResponse(BaseModel):
     text: str
