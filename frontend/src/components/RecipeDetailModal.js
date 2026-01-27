@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { 
   Heart, Clock, ChefHat, Utensils, Users, Flame, Printer, 
   Share2, Star, ShoppingCart, BookOpen, X, ChevronRight,
-  Timer, Leaf, AlertCircle, Check
+  Timer, Leaf, AlertCircle, Check, Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,7 +13,7 @@ import {
   DialogDescription 
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import axios from 'axios';
+import { useShoppingCart } from '@/context/ShoppingCartContext';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
