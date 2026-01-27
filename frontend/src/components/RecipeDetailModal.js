@@ -808,7 +808,19 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
           
-          {/* Close button */}
+          {/* Back/Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 left-4 px-4 py-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors flex items-center gap-2"
+            data-testid="back-to-planner-btn"
+          >
+            <ChevronLeft size={18} />
+            <span className="text-sm font-medium">
+              {fromPlanner ? 'Back to Planner' : 'Back'}
+            </span>
+          </button>
+          
+          {/* Close X button (additional) */}
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
@@ -818,9 +830,16 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
           
           {/* Title overlay */}
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-            <p className="text-sm uppercase tracking-wider mb-2 text-white/80">Recipe Name</p>
+            <p className="text-sm uppercase tracking-wider mb-2 text-white/80">
+              {fromPlanner && recipe.mealType ? `${recipe.mealType.charAt(0).toUpperCase() + recipe.mealType.slice(1)} Recipe` : 'Recipe Name'}
+            </p>
             <h1 className="text-3xl md:text-4xl font-serif mb-3">{recipe.title}</h1>
             <div className="flex flex-wrap gap-2">
+              {fromPlanner && recipe.day && (
+                <span className="px-3 py-1 bg-primary/80 backdrop-blur-sm rounded-full text-sm font-medium">
+                  {recipe.day}
+                </span>
+              )}
               {detailedRecipe.dietaryTags?.map((tag, idx) => (
                 <span key={idx} className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium">
                   {tag}
