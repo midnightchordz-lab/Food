@@ -650,14 +650,22 @@ const parseAIInstructions = (fullContent) => {
   const lines = instructionSection[0].split('\n')
     .filter(line => line.trim().match(/^\d+\./))
     .map((line, idx) => {
-      const cleaned = line.replace(/^\d+\.\s*/, '').trim();
+      let cleaned = line.replace(/^\d+\.\s*/, '').trim();
       
-      // Extract time marker like [PREP 5 min] or [COOK 10 min]
-      const timeMatch = cleaned.match(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL)\s*(\d+[-–]?\d*)\s*min\]/i);
+      // Remove markdown bold markers around timing markers: **[FILL 5 min]** -> [FILL 5 min]
+      cleaned = cleaned.replace(/\*\*\[/g, '[').replace(/\]\*\*/g, ']');
+      // Also remove standalone asterisks at start: **** text -> text
+      cleaned = cleaned.replace(/^\*+\s*/, '');
+      
+      // Extract time marker like [PREP 5 min] or [COOK 10 min] or [FILL 5 min]
+      const timeMatch = cleaned.match(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL|FILL|DRIZZLE|ASSEMBLE)\s*(\d+[-–]?\d*)\s*min\]/i);
       let time = timeMatch ? timeMatch[1] + ' min' : '';
       
       // Remove the timing marker from the text for cleaner display
-      const textWithoutMarker = cleaned.replace(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL)\s*\d+[-–]?\d*\s*min\]\s*/i, '').trim();
+      let textWithoutMarker = cleaned.replace(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL|FILL|DRIZZLE|ASSEMBLE)\s*\d*[-–]?\d*\s*(?:min)?\]\s*/gi, '').trim();
+      
+      // Also handle [SERVE] without time
+      textWithoutMarker = textWithoutMarker.replace(/\[(?:SERVE|PLATE|FINISH)\]\s*/gi, '').trim();
       
       // If no time marker found, try to extract from text
       if (!time) {
