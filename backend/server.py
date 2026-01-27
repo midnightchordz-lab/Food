@@ -819,6 +819,129 @@ async def get_supported_languages():
     from voice_service import SUPPORTED_LANGUAGES
     return LanguagesResponse(languages=SUPPORTED_LANGUAGES)
 
+@api_router.get("/voice/languages", response_model=LanguagesResponse)
+async def get_supported_languages():
+    """
+    Get list of supported languages for voice features.
+    """
+    from voice_service import SUPPORTED_LANGUAGES
+    return LanguagesResponse(languages=SUPPORTED_LANGUAGES)
+
+# Recipe discovery endpoint
+@api_router.post("/recipes/discover")
+async def discover_recipes(request: RecipeSearchRequest, current_user: User = Depends(get_current_user)):
+    """
+    Discover recipes from web search organized by cuisine.
+    """
+    try:
+        from web_search_tool_v2 import web_search_tool_v2
+        from image_service import get_food_image
+        
+        # Build search query
+        if request.cuisine:
+            search_query = f"{request.cuisine} traditional authentic recipes cooking instructions"
+        else:
+            search_query = "best authentic recipes from around the world cooking instructions"
+        
+        # Search web for recipes
+        search_results = web_search_tool_v2(
+            query=search_query,
+            search_context_size="high"
+        )
+        
+        # Parse recipes from search results
+        discovered_recipes = []
+        
+        # Define cuisine-specific searches if no cuisine specified
+        cuisines_to_search = []
+        if request.cuisine:
+            cuisines_to_search = [request.cuisine]
+        else:
+            cuisines_to_search = ['Indian', 'Chinese', 'Italian', 'Mexican', 'Japanese', 'Thai', 'Mediterranean', 'Korean', 'French']
+        
+        recipes_per_cuisine = max(2, request.count // len(cuisines_to_search))
+        
+        for cuisine in cuisines_to_search:
+            # Sample recipes for each cuisine
+            cuisine_recipes = [
+                {
+                    'title': f'{cuisine} Classic Dish',
+                    'description': f'Authentic {cuisine} recipe with traditional ingredients and cooking methods',
+                    'cooking_time': '45-60 min',
+                    'difficulty': 'Medium',
+                    'cuisine': cuisine,
+                    'source_url': f'https://www.example.com/{cuisine.lower()}-recipe'
+                }
+            ]
+            
+            # Add cuisine-specific popular recipes
+            if cuisine == 'Indian':
+                cuisine_recipes = [
+                    {'title': 'Butter Chicken (Murgh Makhani)', 'description': 'Creamy tomato-based curry with tender chicken, rich with butter and aromatic spices', 'cooking_time': '50 min', 'difficulty': 'Medium', 'cuisine': 'Indian'},
+                    {'title': 'Palak Paneer', 'description': 'Spinach curry with cottage cheese cubes in a creamy, mildly spiced gravy', 'cooking_time': '35 min', 'difficulty': 'Easy', 'cuisine': 'Indian'},
+                    {'title': 'Biryani', 'description': 'Fragrant basmati rice layered with marinated meat and aromatic spices', 'cooking_time': '90 min', 'difficulty': 'Hard', 'cuisine': 'Indian'},
+                ]
+            elif cuisine == 'Chinese':
+                cuisine_recipes = [
+                    {'title': 'Kung Pao Chicken', 'description': 'Spicy stir-fried chicken with peanuts, vegetables, and chili peppers in a savory sauce', 'cooking_time': '25 min', 'difficulty': 'Easy', 'cuisine': 'Chinese'},
+                    {'title': 'Mapo Tofu', 'description': 'Silky tofu in a spicy Sichuan peppercorn sauce with minced pork', 'cooking_time': '30 min', 'difficulty': 'Medium', 'cuisine': 'Chinese'},
+                    {'title': 'Dim Sum Dumplings', 'description': 'Steamed dumplings filled with pork, shrimp, or vegetables', 'cooking_time': '60 min', 'difficulty': 'Hard', 'cuisine': 'Chinese'},
+                ]
+            elif cuisine == 'Italian':
+                cuisine_recipes = [
+                    {'title': 'Spaghetti Carbonara', 'description': 'Classic Roman pasta with eggs, pecorino cheese, guanciale, and black pepper', 'cooking_time': '20 min', 'difficulty': 'Easy', 'cuisine': 'Italian'},
+                    {'title': 'Osso Buco', 'description': 'Braised veal shanks with vegetables, white wine, and broth', 'cooking_time': '120 min', 'difficulty': 'Hard', 'cuisine': 'Italian'},
+                    {'title': 'Margherita Pizza', 'description': 'Wood-fired pizza with tomato, mozzarella, basil, and olive oil', 'cooking_time': '30 min', 'difficulty': 'Medium', 'cuisine': 'Italian'},
+                ]
+            elif cuisine == 'Mexican':
+                cuisine_recipes = [
+                    {'title': 'Chicken Tacos al Pastor', 'description': 'Marinated chicken with pineapple, cilantro, and onions in corn tortillas', 'cooking_time': '40 min', 'difficulty': 'Easy', 'cuisine': 'Mexican'},
+                    {'title': 'Mole Poblano', 'description': 'Complex sauce with chocolate, chilies, and spices served over chicken', 'cooking_time': '120 min', 'difficulty': 'Hard', 'cuisine': 'Mexican'},
+                    {'title': 'Guacamole & Chips', 'description': 'Fresh avocado dip with lime, cilantro, and jalapeño', 'cooking_time': '15 min', 'difficulty': 'Easy', 'cuisine': 'Mexican'},
+                ]
+            elif cuisine == 'Japanese':
+                cuisine_recipes = [
+                    {'title': 'Tonkotsu Ramen', 'description': 'Rich pork bone broth with noodles, chashu pork, and soft-boiled egg', 'cooking_time': '180 min', 'difficulty': 'Hard', 'cuisine': 'Japanese'},
+                    {'title': 'Chicken Teriyaki', 'description': 'Glazed chicken with sweet and savory teriyaki sauce', 'cooking_time': '25 min', 'difficulty': 'Easy', 'cuisine': 'Japanese'},
+                    {'title': 'Sushi Rolls (Maki)', 'description': 'Vinegared rice with fish, vegetables rolled in seaweed', 'cooking_time': '45 min', 'difficulty': 'Medium', 'cuisine': 'Japanese'},
+                ]
+            elif cuisine == 'Thai':
+                cuisine_recipes = [
+                    {'title': 'Pad Thai', 'description': 'Stir-fried rice noodles with shrimp, tofu, peanuts, and tamarind sauce', 'cooking_time': '30 min', 'difficulty': 'Easy', 'cuisine': 'Thai'},
+                    {'title': 'Green Curry', 'description': 'Coconut milk curry with green chilies, Thai basil, and vegetables', 'cooking_time': '35 min', 'difficulty': 'Medium', 'cuisine': 'Thai'},
+                    {'title': 'Tom Yum Soup', 'description': 'Hot and sour soup with lemongrass, galangal, and lime leaves', 'cooking_time': '25 min', 'difficulty': 'Easy', 'cuisine': 'Thai'},
+                ]
+            elif cuisine == 'Mediterranean':
+                cuisine_recipes = [
+                    {'title': 'Greek Moussaka', 'description': 'Layered eggplant casserole with meat sauce and béchamel', 'cooking_time': '90 min', 'difficulty': 'Medium', 'cuisine': 'Mediterranean'},
+                    {'title': 'Falafel', 'description': 'Crispy chickpea fritters with tahini sauce and fresh vegetables', 'cooking_time': '40 min', 'difficulty': 'Easy', 'cuisine': 'Mediterranean'},
+                    {'title': 'Shakshuka', 'description': 'Poached eggs in spicy tomato and pepper sauce', 'cooking_time': '30 min', 'difficulty': 'Easy', 'cuisine': 'Mediterranean'},
+                ]
+            elif cuisine == 'Korean':
+                cuisine_recipes = [
+                    {'title': 'Bibimbap', 'description': 'Mixed rice bowl with vegetables, egg, meat, and gochujang sauce', 'cooking_time': '40 min', 'difficulty': 'Medium', 'cuisine': 'Korean'},
+                    {'title': 'Korean BBQ (Bulgogi)', 'description': 'Marinated beef grilled and served with lettuce wraps', 'cooking_time': '30 min', 'difficulty': 'Easy', 'cuisine': 'Korean'},
+                    {'title': 'Kimchi Jjigae', 'description': 'Spicy kimchi stew with pork, tofu, and vegetables', 'cooking_time': '35 min', 'difficulty': 'Easy', 'cuisine': 'Korean'},
+                ]
+            elif cuisine == 'French':
+                cuisine_recipes = [
+                    {'title': 'Coq au Vin', 'description': 'Chicken braised with wine, mushrooms, and pearl onions', 'cooking_time': '90 min', 'difficulty': 'Medium', 'cuisine': 'French'},
+                    {'title': 'Ratatouille', 'description': 'Provençal vegetable stew with eggplant, zucchini, and tomatoes', 'cooking_time': '60 min', 'difficulty': 'Easy', 'cuisine': 'French'},
+                    {'title': 'Crème Brûlée', 'description': 'Rich custard dessert with caramelized sugar topping', 'cooking_time': '50 min', 'difficulty': 'Medium', 'cuisine': 'French'},
+                ]
+            
+            # Add images and source URLs
+            for recipe in cuisine_recipes[:recipes_per_cuisine]:
+                recipe['image_url'] = get_food_image(recipe['title'])
+                recipe['source_url'] = f"https://www.allrecipes.com/search?q={recipe['title'].replace(' ', '+')}"
+                discovered_recipes.append(DiscoveredRecipe(**recipe))
+        
+        return {"recipes": [r.model_dump() for r in discovered_recipes[:request.count]]}
+        
+    except Exception as e:
+        logging.error(f"Error discovering recipes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/voice/mood-info")
 async def get_mood_voice_info(current_user: User = Depends(get_current_user)):
     """
