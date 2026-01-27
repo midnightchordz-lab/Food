@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import useVoiceControls from '@/hooks/useVoiceControls';
 import VoiceButton from '@/components/VoiceButton';
 import LanguageSelector from '@/components/LanguageSelector';
+import RecipeMessageDisplay, { hasRecipes } from '@/components/RecipeMessageDisplay';
 import {
   Dialog,
   DialogContent,
