@@ -260,8 +260,6 @@ const extractTimeMinutes = (timeStr) => {
 // Parse recipes from a section with improved title detection
 const parseRecipesFromSection = (section, category) => {
   const recipes = [];
-  const recipePattern = /\*\*([^*]+)\*\*([^*]*?)(?=\*\*|$)/gs;
-  let match;
   
   // Skip patterns - things that are NOT recipe names
   const skipPatterns = [
@@ -269,6 +267,22 @@ const parseRecipesFromSection = (section, category) => {
     /^\d+\.\s*$/,
     /^[:\s]*\(\d+/,
   ];
+  
+  // PATTERN 1: Try to extract recipe title from ### header line
+  // Format: "### Quick Option (15-20 min): Recipe Title Name Here"
+  const headerMatch = section.match(/###?\s*(?:Quick|Moderate|Elaborate)\s*Option\s*\([^)]+\)\s*[:\-–]\s*(.+?)(?:\n|$)/i);
+  if (headerMatch) {
+    const title = headerMatch[1].trim();
+    if (title.length >= 3 && title.length <= 120 && !skipPatterns.some(p => p.test(title))) {
+      const recipe = parseRecipeContent(title, section, category);
+      if (recipe) recipes.push(recipe);
+      return recipes; // One recipe per section in this format
+    }
+  }
+  
+  // PATTERN 2: Original pattern - look for **Recipe Title**
+  const recipePattern = /\*\*([^*]+)\*\*([^*]*?)(?=\*\*|$)/gs;
+  let match;
   
   while ((match = recipePattern.exec(section)) !== null) {
     let title = match[1].trim();
@@ -317,6 +331,63 @@ const parseRecipesFromSection = (section, category) => {
     
     // Detect cuisine
     const cuisineHint = detectCuisine(title + ' ' + content);
+    
+    recipes.push({
+      title,
+      description,
+      cookingTime,
+      difficulty,
+      cuisineHint,
+      category,
+      imageUrl: getRecipeImage(title, cuisineHint),
+      fullContent: content
+    });
+  }
+  
+  return recipes;
+};
+
+// Parse recipe content helper for header-based recipes
+const parseRecipeContent = (title, section, category) => {
+  // Extract cooking time from section
+  const timeMatch = section.match(/\*\*Cooking\s*Time:?\*\*\s*(\d+[-–]?\d*\s*(?:min|minutes|hours?))/i) ||
+                    section.match(/(\d+[-–]?\d*)\s*(min|minutes)/i);
+  const cookingTime = timeMatch ? timeMatch[1] || timeMatch[0] : getCategoryDefaultTime(category);
+  
+  // Extract difficulty
+  const diffMatch = section.match(/\*\*Difficulty(?:\s*Level)?:?\*\*\s*(Easy|Medium|Hard|Moderate)/i);
+  let difficulty = diffMatch ? diffMatch[1] : 'Medium';
+  if (difficulty === 'Moderate') difficulty = 'Medium';
+  if (category === 'quick') difficulty = 'Easy';
+  if (category === 'elaborate') difficulty = 'Hard';
+  
+  // Extract description
+  const descMatch = section.match(/\*\*Description:?\*\*\s*([^*\n]+)/i);
+  let description = descMatch ? descMatch[1].trim() : '';
+  if (!description) {
+    // Try to get first paragraph after header
+    const paragraphs = section.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('*') && !l.startsWith('-'));
+    if (paragraphs.length > 0) {
+      description = paragraphs[0].trim().substring(0, 200);
+    }
+  }
+  if (!description || description.length < 10) {
+    description = `A delicious ${category === 'quick' ? 'quick and easy' : category === 'elaborate' ? 'gourmet' : 'satisfying'} dish perfect for any occasion.`;
+  }
+  
+  const cuisineHint = detectCuisine(title + ' ' + section);
+  
+  return {
+    title,
+    description,
+    cookingTime,
+    difficulty,
+    cuisineHint,
+    category,
+    imageUrl: getRecipeImage(title, cuisineHint),
+    fullContent: section
+  };
+};
     
     recipes.push({
       title,
