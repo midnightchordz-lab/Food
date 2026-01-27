@@ -492,9 +492,12 @@ const detectCuisine = (text) => {
 
 // Check if message contains recipes
 export const hasRecipes = (message) => {
-  return message.includes('**') && 
-    message.match(/\b(ingredient|recipe|cook|prep|serve|meal|dish)\b/i) &&
-    message.length > 200;
+  // Check for various recipe formats
+  const hasTimeCategories = message.match(/###?\s*(Quick|Moderate|Elaborate)\s*Option/i);
+  const hasBoldRecipes = message.includes('**') && message.match(/\b(ingredient|recipe|cook|prep|serve|meal|dish)\b/i);
+  const hasRecipeStructure = message.match(/\*\*(Cooking Time|Difficulty|Ingredients|Instructions):?\*\*/i);
+  
+  return (hasTimeCategories || hasBoldRecipes || hasRecipeStructure) && message.length > 200;
 };
 
 // Clickable Recipe Card Component
