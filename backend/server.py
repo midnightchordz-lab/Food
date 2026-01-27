@@ -767,6 +767,71 @@ async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User 
         logging.error(f"Error generating AI meal plan: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============== RECIPE SUBSCRIPTION ==============
+class RecipeSubscription(BaseModel):
+    email: str
+    dietary_preference: str
+    cuisines: List[str]
+    recipes_per_week: int = 5
+    delivery_day: str = "Sunday"
+
+@api_router.post("/subscription/recipes")
+async def subscribe_to_recipes(request: RecipeSubscription, current_user: User = Depends(get_current_user)):
+    """Subscribe to weekly recipe newsletter"""
+    try:
+        subscription = {
+            "user_id": current_user.id,
+            "email": request.email,
+            "dietary_preference": request.dietary_preference,
+            "cuisines": request.cuisines,
+            "recipes_per_week": request.recipes_per_week,
+            "delivery_day": request.delivery_day,
+            "active": True,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Upsert - update if exists, create if not
+        await db.recipe_subscriptions.update_one(
+            {"user_id": current_user.id},
+            {"$set": subscription},
+            upsert=True
+        )
+        
+        # In production, integrate with email service like SendGrid
+        # For now, just store the subscription
+        logging.info(f"New recipe subscription: {request.email}")
+        
+        return {"status": "subscribed", "message": "Successfully subscribed to weekly recipes!"}
+    except Exception as e:
+        logging.error(f"Subscription error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/subscription/recipes")
+async def get_subscription_status(current_user: User = Depends(get_current_user)):
+    """Get user's subscription status"""
+    try:
+        subscription = await db.recipe_subscriptions.find_one(
+            {"user_id": current_user.id, "active": True},
+            {"_id": 0}
+        )
+        return {"subscribed": subscription is not None, "subscription": subscription}
+    except Exception as e:
+        logging.error(f"Error fetching subscription: {e}")
+        return {"subscribed": False, "subscription": None}
+
+@api_router.delete("/subscription/recipes")
+async def unsubscribe_from_recipes(current_user: User = Depends(get_current_user)):
+    """Unsubscribe from weekly recipes"""
+    try:
+        await db.recipe_subscriptions.update_one(
+            {"user_id": current_user.id},
+            {"$set": {"active": False}}
+        )
+        return {"status": "unsubscribed", "message": "Successfully unsubscribed"}
+    except Exception as e:
+        logging.error(f"Unsubscribe error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Recipe rating and review endpoints
 @api_router.post("/recipes/{recipe_id}/rate")
 async def rate_recipe(recipe_id: str, rating_data: RatingCreate, current_user: User = Depends(get_current_user)):
