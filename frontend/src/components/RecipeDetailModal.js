@@ -657,15 +657,15 @@ const parseAIInstructions = (fullContent) => {
       // Also remove standalone asterisks at start: **** text -> text
       cleaned = cleaned.replace(/^\*+\s*/, '');
       
-      // Extract time marker like [PREP 5 min] or [COOK 10 min] or [FILL 5 min]
-      const timeMatch = cleaned.match(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL|FILL|DRIZZLE|ASSEMBLE)\s*(\d+[-–]?\d*)\s*min\]/i);
+      // Extract time marker like [PREP 5 min] or [COOK 10 min] or [FILL 5 min] or [WHISK 5 min]
+      const timeMatch = cleaned.match(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL|FILL|DRIZZLE|ASSEMBLE|WHISK|COMBINE|SAUTE|STIR|FOLD|CHOP|SLICE|DICE|MINCE|GRATE|POUR|SPREAD|LAYER|BROIL|GRILL|FRY|ROAST|STEAM)\s*(\d+[-–]?\d*)\s*min\]/i);
       let time = timeMatch ? timeMatch[1] + ' min' : '';
       
-      // Remove the timing marker from the text for cleaner display
-      let textWithoutMarker = cleaned.replace(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL|FILL|DRIZZLE|ASSEMBLE)\s*\d*[-–]?\d*\s*(?:min)?\]\s*/gi, '').trim();
+      // Remove the timing marker from the text for cleaner display - comprehensive list of cooking actions
+      let textWithoutMarker = cleaned.replace(/\[(?:PREP|COOK|MIX|TOSS|SAUTÉ|BAKE|SIMMER|BOIL|PLATE|BLEND|DRESS|FINISH|SERVE|HEAT|CHILL|FILL|DRIZZLE|ASSEMBLE|WHISK|COMBINE|SAUTE|STIR|FOLD|CHOP|SLICE|DICE|MINCE|GRATE|POUR|SPREAD|LAYER|BROIL|GRILL|FRY|ROAST|STEAM)\s*\d*[-–]?\d*\s*(?:min)?\]\s*/gi, '').trim();
       
-      // Also handle [SERVE] without time
-      textWithoutMarker = textWithoutMarker.replace(/\[(?:SERVE|PLATE|FINISH)\]\s*/gi, '').trim();
+      // Also handle action markers without time like [SERVE], [PLATE], [FINISH]
+      textWithoutMarker = textWithoutMarker.replace(/\[(?:SERVE|PLATE|FINISH|GARNISH|REST)\]\s*/gi, '').trim();
       
       // If no time marker found, try to extract from text
       if (!time) {
