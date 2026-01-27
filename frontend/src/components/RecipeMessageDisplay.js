@@ -350,7 +350,7 @@ const parseRecipesGeneral = (message) => {
   let match;
   
   const skipPatterns = [
-    /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|name)/i,
+    /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name)/i,
   ];
   
   while ((match = recipePattern.exec(message)) !== null) {
