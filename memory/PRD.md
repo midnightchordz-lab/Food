@@ -147,3 +147,8 @@ A compassionate nutritional expert AI application that suggests meals based on u
   - Updated `image_service.py` with curated Unsplash images for 9 cuisines
   - Verified navigation from Explore Cuisines -> Discover Recipes works correctly
   - All tests passing (100% success rate)
+  
+- **Jan 27, 2026**: Fixed Auth Modal scrolling issue
+  - Made the signup modal scrollable (`max-h-[90vh] overflow-y-auto`)
+  - Reduced checkbox section heights for better visibility
+  - Sign Up button now accessible without scrolling on most screens
