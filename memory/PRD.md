@@ -239,5 +239,11 @@ A compassionate nutritional expert AI application that suggests meals based on u
     * Category organization with collapsible sections
     * Recipe attribution ("From: [Recipe Name]") shown under each item
     * Manual item addition via input form on Shopping List page
-  - Test Results: 100% pass rate (11/11 features tested)
+  - **FIX: Clean Ingredient Names (No Quantities)**
+    * Added `extractIngredientName()` function to strip quantities, measurements, and prep instructions
+    * Shopping list now shows ONLY clean ingredient names (e.g., "Baby spinach" not "4 cups baby spinach")
+    * Removes: quantities (4 cups, 1.5 lbs), measurements (tbsp, oz), prep instructions (, halved, , minced)
+    * Preserves important descriptors (fresh, cherry, Thai) and proper nouns (Parmesan, Greek)
+    * Proper capitalization (first letter only)
+  - Test Results: 100% pass rate (8/8 features tested)
 
