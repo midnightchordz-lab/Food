@@ -296,6 +296,7 @@ Your Response Framework:
 
 - Each category MUST have 3-4 different recipe suggestions
 - For EACH recipe, provide:
+  * Recipe name in the header (e.g., "### Quick Option (15-20 min): Avocado Toast with Egg")
   * Ingredient list with quantities
   * Step-by-step instructions
   * Prep and cook time
