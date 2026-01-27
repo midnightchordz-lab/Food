@@ -217,6 +217,7 @@ A compassionate nutritional expert AI application that suggests meals based on u
     * exportAsText, copyToClipboard, downloadList
     * Automatic ingredient categorization (Produce, Dairy, Meat, Seafood, Pantry, Spices, Condiments)
     * localStorage persistence for cart items
+    * Fixed race condition bug with isInitialized flag
   - Created `ShoppingCartModal.js` with:
     * Floating cart button in bottom-right corner (always visible)
     * Cart item count badge
@@ -230,8 +231,13 @@ A compassionate nutritional expert AI application that suggests meals based on u
     * Individual "Add to Cart" (+) buttons next to each ingredient
     * "Add All" button to add all ingredients at once
     * Visual feedback when items are added (checkmark icon)
-  - Updated `RecipeMessageDisplay.js`:
-    * Improved parsing to handle 3-4 recipes per time category
-    * Better regex patterns for multi-recipe detection
-  - Updated backend system prompt to request 3-4 recipe options per time category
+  - **CRITICAL FIX: Unified Shopping Cart and Shopping List Page**
+    * Rewrote `ShoppingListPage.js` to use `ShoppingCartContext` (same as floating cart)
+    * Single source of truth - no more two separate systems
+    * Items added from recipes now AUTOMATICALLY appear on Shopping List page
+    * No manual "Save to Grocery List" step required
+    * Category organization with collapsible sections
+    * Recipe attribution ("From: [Recipe Name]") shown under each item
+    * Manual item addition via input form on Shopping List page
   - Test Results: 100% pass rate (11/11 features tested)
+
