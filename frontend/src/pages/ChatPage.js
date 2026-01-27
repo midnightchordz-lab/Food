@@ -395,8 +395,18 @@ const ChatPage = () => {
                     </div>
                   </div>
                   
+                  {/* Show Food Preference Selector after the message that asks for it */}
+                  {msg.showPreferenceSelector && showPreferenceSelector && (
+                    <div className="mt-4 ml-2">
+                      <FoodPreferenceSelector 
+                        onSelect={handlePreferenceSelect}
+                        selectedPreference={foodPreference}
+                      />
+                    </div>
+                  )}
+                  
                   {/* Show save button for AI messages without visual recipe cards */}
-                  {msg.role === 'assistant' && msg.content.length > 200 && !hasRecipes(msg.content) && (
+                  {msg.role === 'assistant' && msg.content.length > 200 && !hasRecipes(msg.content) && !msg.showPreferenceSelector && (
                     msg.content.match(/ingredient|recipe|meal/i) && (
                       <div className="flex justify-start mt-2 ml-2">
                         <Button
