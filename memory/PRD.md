@@ -55,11 +55,23 @@ A mood-based recipe discovery application where users receive personalized meal 
 - **Home Button**: Visible on all pages
 - **Persistent Navigation**: Stays fixed at top
 
-### 6. Weekly Meal Planner (COMPLETE - Phase 4, Jan 27, 2026)
+### 6. Weekly Meal Planner (COMPLETE - Phase 4, Updated Jan 27, 2026)
 - **7-Day Calendar View**: Monday through Sunday columns
 - **3 Meal Slots per Day**: Breakfast, Lunch, Dinner (21 total slots)
 - **Week Navigation**: Previous/Next week buttons
 - **AI Plan Generation**: Generate meal plans based on preferences
+- **Clickable Recipes**: 
+  - Scheduled meals are clickable with hover effects (underline, color change)
+  - Opens full recipe detail modal with:
+    - Hero image
+    - Full recipe name
+    - Meal type badge (Breakfast/Lunch/Dinner)
+    - Day badge
+    - Ingredients list with individual "+ Add to List" buttons
+    - "Add All Ingredients" button
+    - Step-by-step cooking instructions
+    - "← Back to Planner" button
+  - Empty slots open AI generator to add meals
 - **Subscription Feature**:
   - Weekly recipe newsletter signup
   - Customizable preferences: dietary, cuisines, recipes per week, delivery day
