@@ -708,13 +708,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   const [checkedIngredients, setCheckedIngredients] = useState({});
   const [addedIngredients, setAddedIngredients] = useState({});
   
-  // Shopping cart hook - wrapped in try/catch for safety
-  let shoppingCart = null;
-  try {
-    shoppingCart = useShoppingCart();
-  } catch (e) {
-    // Shopping cart not available in this context
-  }
+  // Shopping cart hook - called unconditionally (required by React rules)
+  const shoppingCart = useShoppingCart();
   
   const detailedRecipe = recipe ? generateDetailedRecipe(recipe) : null;
   
