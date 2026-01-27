@@ -50,6 +50,57 @@ const SHOPPING_PARTNERS = [
   { id: 'other', name: 'Other Store', logo: '📋', color: 'bg-gray-500' },
 ];
 
+// Extract clean ingredient name - removes quantities, measurements, and prep instructions
+const extractIngredientName = (fullIngredient) => {
+  if (!fullIngredient || typeof fullIngredient !== 'string') return fullIngredient;
+  
+  let name = fullIngredient.trim();
+  
+  // Step 1: Remove leading quantities and measurements
+  // Matches: "4 cups", "1.5 lbs", "2 tablespoons", "8 oz", "½ cup", "¼ teaspoon", "1/2 cup", etc.
+  name = name.replace(/^[\d½¼¾⅓⅔⅛\/\.\s-]+(cups?|tablespoons?|tbsp|teaspoons?|tsp|pounds?|lbs?|ounces?|oz|grams?|g|kg|ml|liters?|l|cloves?|pieces?|slices?|whole|medium|large|small|bunch|head|stalk|sprigs?|can|cans|jar|jars|package|pkg|bag|box|bottle|pinch|pinches|dash|dashes)\s+/gi, '');
+  
+  // Also catch simple number patterns like "4 garlic cloves" or "2 eggs"
+  name = name.replace(/^[\d½¼¾⅓⅔⅛\/\.\s-]+(?=\w)/g, '');
+  
+  // Step 2: Remove preparation instructions after commas or in parentheses
+  // Matches: ", chopped", ", diced", ", minced", "(optional)", etc.
+  name = name.replace(/,\s*(finely\s+)?(roughly\s+)?(chopped|diced|minced|sliced|halved|quartered|torn|shredded|grated|peeled|seeded|crushed|beaten|melted|softened|thawed|cooked|raw|cubed|julienned|chiffonade|thinly\s+sliced|cut\s+into.*?|divided|at\s+room\s+temperature|room\s+temp).*$/gi, '');
+  
+  // Step 3: Remove parenthetical notes
+  name = name.replace(/\s*\([^)]*\)/g, '');
+  
+  // Step 4: Remove trailing notes like "to taste", "as needed", etc.
+  name = name.replace(/,?\s*(to\s+taste|as\s+needed|if\s+needed|for\s+serving|for\s+garnish|or\s+more|or\s+less|plus\s+more|optional|adjusted|about).*$/gi, '');
+  
+  // Step 5: Remove size descriptors when redundant
+  name = name.replace(/^(small|medium|large|extra-large|jumbo)\s+/gi, '');
+  
+  // Step 6: Simplify common cases
+  name = name.replace(/\s+cloves?$/i, ''); // "Garlic cloves" → "Garlic"
+  name = name.replace(/\s+leaves?$/i, ''); // "Basil leaves" → "Basil"  
+  name = name.replace(/\s+florets?$/i, ''); // "Broccoli florets" → "Broccoli"
+  name = name.replace(/\s+stalks?$/i, ''); // "Celery stalks" → "Celery"
+  name = name.replace(/\s+pieces?$/i, ''); // "Chicken pieces" → "Chicken"
+  
+  // Step 7: Clean up extra whitespace
+  name = name.trim().replace(/\s+/g, ' ');
+  
+  // Step 8: Capitalize first letter only, preserve proper nouns
+  if (name.length > 0) {
+    name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    
+    // Preserve capitalization for specific proper nouns/types
+    const properNouns = ['Thai', 'Greek', 'Italian', 'Japanese', 'Chinese', 'Indian', 'Mexican', 'French', 'Spanish', 'Korean', 'Vietnamese', 'Parmesan', 'Pecorino', 'Romano', 'Gruyere', 'Dijon', 'Worcestershire', 'Tabasco', 'Sriracha'];
+    properNouns.forEach(noun => {
+      const regex = new RegExp(`\\b${noun.toLowerCase()}\\b`, 'gi');
+      name = name.replace(regex, noun);
+    });
+  }
+  
+  return name || fullIngredient;
+};
+
 export const ShoppingCartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [groceryList, setGroceryList] = useState([]);
