@@ -62,6 +62,8 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/explore-cuisines" element={<ExploreCuisinesPage />} />
             <Route path="/recipes/cuisine/:cuisine" element={<CuisineRecipesPage />} />
+            <Route path="/discover-recipes" element={<DiscoverRecipesPage />} />
+            <Route path="/discover-recipes/:cuisine" element={<DiscoverRecipesPage />} />
           </Routes>
         </BrowserRouter>
         <Toaster />
