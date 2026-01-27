@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   Heart, Clock, ChefHat, Utensils, Users, Flame, Printer, 
-  Share2, Star, ShoppingCart, BookOpen, X, ChevronRight,
+  Share2, Star, ShoppingCart, BookOpen, X, ChevronRight, ChevronLeft,
   Timer, Leaf, AlertCircle, Check, Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
