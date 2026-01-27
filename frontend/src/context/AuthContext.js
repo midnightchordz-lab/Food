@@ -120,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     register,
     login,
+    loginWithToken,
     logout,
     updateProfile
   };
