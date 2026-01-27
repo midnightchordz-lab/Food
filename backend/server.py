@@ -916,8 +916,8 @@ async def discover_recipes(request: RecipeSearchRequest, current_user: User = De
             cuisine_recipes = CUISINE_RECIPES.get(cuisine, [])
             
             for recipe in cuisine_recipes[:recipes_per_cuisine]:
-                # Get image for the recipe (uses Pexels API)
-                image_url = get_food_image(recipe['title'])
+                # Get image for the recipe (uses curated Unsplash images)
+                image_url = get_food_image(recipe['title'], cuisine)
                 
                 discovered_recipe = DiscoveredRecipe(
                     title=recipe['title'],
