@@ -227,8 +227,35 @@ const parseRecipesWithCategories = (message) => {
     elaborate: { ...TIME_CATEGORIES.elaborate, recipes: [] },
   };
   
-  // Use regex to find ALL occurrences of each category
-  // Matches all "### Quick Option (X min): Recipe Name" patterns throughout message
+  // PATTERN 1: New AI format - "### 1. Recipe Name" or "### Recipe Name"
+  // Parse numbered recipes and distribute by cooking time
+  const numberedRecipes = parseNumberedRecipes(message);
+  if (numberedRecipes.length > 0) {
+    numberedRecipes.forEach(recipe => {
+      const time = extractTimeMinutes(recipe.cookingTime);
+      if (time <= 25) categories.quick.recipes.push(recipe);
+      else if (time <= 40) categories.moderate.recipes.push(recipe);
+      else categories.elaborate.recipes.push(recipe);
+    });
+    
+    // If all ended up in one category, redistribute evenly
+    const totalRecipes = numberedRecipes.length;
+    if (categories.quick.recipes.length === totalRecipes || 
+        categories.moderate.recipes.length === totalRecipes ||
+        categories.elaborate.recipes.length === totalRecipes) {
+      categories.quick.recipes = [];
+      categories.moderate.recipes = [];
+      categories.elaborate.recipes = [];
+      numberedRecipes.forEach((recipe, idx) => {
+        if (idx < Math.ceil(totalRecipes / 3)) categories.quick.recipes.push(recipe);
+        else if (idx < Math.ceil(2 * totalRecipes / 3)) categories.moderate.recipes.push(recipe);
+        else categories.elaborate.recipes.push(recipe);
+      });
+    }
+    return categories;
+  }
+  
+  // PATTERN 2: Original format - "### Quick Option (X min): Recipe Name"
   const quickMatches = [...message.matchAll(/###?\s*Quick\s*Option[^:]*:\s*([^\n]+)[\s\S]*?(?=###?\s*(?:Quick|Moderate|Elaborate)\s*Option|$)/gi)];
   const moderateMatches = [...message.matchAll(/###?\s*Moderate\s*Option[^:]*:\s*([^\n]+)[\s\S]*?(?=###?\s*(?:Quick|Moderate|Elaborate)\s*Option|$)/gi)];
   const elaborateMatches = [...message.matchAll(/###?\s*Elaborate\s*Option[^:]*:\s*([^\n]+)[\s\S]*?(?=###?\s*(?:Quick|Moderate|Elaborate)\s*Option|$)/gi)];
@@ -273,6 +300,61 @@ const parseRecipesWithCategories = (message) => {
   }
   
   return categories;
+};
+
+// Parse numbered recipes format: "### 1. Recipe Name" or "### Recipe Name (Meal Type)"
+const parseNumberedRecipes = (message) => {
+  const recipes = [];
+  
+  // Match patterns like "### 1. Caprese Stuffed Portobello Mushrooms" or "### Recipe Name"
+  // Each section ends at the next ### or ---
+  const recipePattern = /###\s*(?:\d+\.)?\s*([^\n]+)\n([\s\S]*?)(?=###|---\s*$|$)/g;
+  
+  let match;
+  while ((match = recipePattern.exec(message)) !== null) {
+    const title = match[1].trim().replace(/\([^)]*\)\s*$/, '').trim(); // Remove trailing (Dinner) etc
+    const content = match[2].trim();
+    
+    // Skip if this looks like a header not a recipe
+    if (title.match(/^(option|tip|note|why|instructions|ingredients)/i)) continue;
+    if (title.length < 3 || title.length > 100) continue;
+    
+    // Extract cooking time
+    const timeMatch = content.match(/\*\*(?:Cooking\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i) ||
+                      content.match(/\|\s*\*\*Time:?\*\*\s*(\d+)\s*min/i);
+    const cookingTime = timeMatch ? timeMatch[1] + ' min' : '30 min';
+    
+    // Extract difficulty
+    const diffMatch = content.match(/\*\*Difficulty:?\*\*\s*(Easy|Medium|Hard)/i);
+    const difficulty = diffMatch ? diffMatch[1] : 'Medium';
+    
+    // Extract description - look for "Why it fits" or first paragraph
+    const descMatch = content.match(/\*\*Why[^*]+\*\*\s*([^\n*]+)/i) ||
+                      content.match(/\*\*Description:?\*\*\s*([^\n*]+)/i);
+    let description = descMatch ? descMatch[1].trim() : '';
+    if (!description) {
+      const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('*') && !l.startsWith('#'));
+      if (lines.length > 0) description = lines[0].substring(0, 200);
+    }
+    if (!description) description = `A delicious ${title} recipe.`;
+    
+    // Detect cuisine
+    const cuisineMatch = content.match(/\*\*Cuisine:?\*\*\s*([^|\n*]+)/i);
+    const cuisineHint = cuisineMatch ? cuisineMatch[1].trim() : detectCuisine(title + ' ' + content);
+    
+    recipes.push({
+      title,
+      description,
+      cookingTime,
+      difficulty,
+      cuisineHint,
+      category: 'moderate', // Will be reassigned based on time
+      imageUrl: getRecipeImage(title, cuisineHint),
+      fullContent: content
+    });
+  }
+  
+  return recipes;
 };
 
 // Parse a single recipe from a regex match
