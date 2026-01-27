@@ -36,8 +36,8 @@
 }
 
 .recipe-visual-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.15);
 }
 
 .recipe-visual-card img {
@@ -45,7 +45,7 @@
 }
 
 .recipe-visual-card:hover img {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
 @keyframes slideIn {
@@ -62,4 +62,19 @@
 /* Recipe display in chat - wider layout */
 .recipe-visual-display {
   width: 100%;
+}
+
+/* Recipe Detail Modal Print Styles */
+@media print {
+  .recipe-visual-card,
+  [data-testid="food-preference-selector"],
+  button {
+    display: none !important;
+  }
+  
+  [data-testid="recipe-detail-modal"] {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
 }
