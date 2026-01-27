@@ -184,7 +184,6 @@ export const ShoppingCartProvider = ({ children }) => {
       setCartItems(prev => [...prev, newItem]);
       toast.success(`Added ${cleanName} to cart`);
     }
-    }
   };
 
   // Add multiple ingredients to cart
