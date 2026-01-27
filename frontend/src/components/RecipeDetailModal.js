@@ -280,6 +280,10 @@ const StarRating = ({ rating, onRate }) => {
 const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingList }) => {
   const [userRating, setUserRating] = useState(0);
   const [servings, setServings] = useState(4);
+  
+  // Early return if no recipe - must be before any hooks that depend on recipe
+  if (!recipe) return null;
+  
   const detailedRecipe = generateDetailedRecipe(recipe);
   
   const handlePrint = () => {
