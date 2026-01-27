@@ -1,7 +1,7 @@
-# Chef Feels - Mood-Based Meal Planning App
+# MoodFood - Mood-Based Meal Planning App
 
 ## Overview
-A compassionate nutritional expert AI application that suggests meals based on user's mood. The app provides recipes, shopping lists, and weekly plans with a warm, empathetic tone.
+A mood-based recipe discovery application where users receive personalized meal suggestions based on their current emotional state, dietary preferences, meal type, and cuisine choices.
 
 ## Core Features
 
@@ -10,44 +10,48 @@ A compassionate nutritional expert AI application that suggests meals based on u
 - User registration with dietary preferences and cuisine preferences
 - Login/logout functionality
 
-### 2. Mood-Based Chat (COMPLETE)
-- AI-powered chat with OpenAI GPT-4o
-- Mood detection and empathetic responses
-- Recipe suggestions based on emotional state
-- Global cuisine coverage (Indian, Chinese, Italian, Mexican, Japanese, Thai, Mediterranean, Korean, French)
+### 2. Enhanced Chat Flow (COMPLETE - Phase 1, Jan 27, 2026)
+- **Structured Multi-Step Flow**:
+  1. **Mood Selection**: 8 moods (Happy, Sad, Angry, Excited, Calm, Stressed, Romantic, Cozy)
+  2. **Meal Type Selection**: Breakfast, Lunch, or Dinner
+  3. **Dietary Preference**: Vegetarian, Vegan, Non-Vegetarian, Pescatarian, Any
+  4. **Cuisine Selection**: Multi-select from 11 cuisines (Mexican, Italian, Chinese, Indian, Japanese, Thai, Mediterranean, American, Korean, Middle Eastern, Surprise Me)
+- **Chat Persistence**: Conversation state saved to localStorage, persists across navigation
+- **Visual Selection Badges**: All selections shown as badges at top of chat
+- AI-powered responses with OpenAI GPT-4o
 
-### 3. Recipe Discovery (COMPLETE - Jan 27, 2026)
-- **Explore Cuisines Page**: Browse 9 regional cuisines with beautiful cards
-- **Discover Recipes Page**: View curated authentic recipes organized by cuisine
-- Features:
-  - Search functionality
-  - Cuisine filter dropdown
-  - Difficulty level filter (Easy, Medium, Hard)
-  - Clean recipe cards with title, description, cooking time, difficulty, image
-  - "View Full Recipe" button links to external recipe sources
-  - High-quality Unsplash images (no watermarks/country codes)
-- Navigation: Explore Cuisines -> Click "Explore Recipes" -> Discover Recipes Page (NOT chat redirect)
+### 3. Recipe Display (COMPLETE - Phase 2, Jan 27, 2026)
+- **3-Column Grid Layout**: Recipe cards displayed in responsive grid (1 column mobile, 2 tablet, 3 desktop)
+- **Recipe Cards Include**:
+  - High-quality food image
+  - Recipe title
+  - Brief description (2-3 sentences)
+  - Cooking time and difficulty badge
+  - "Read More" button
+- **Recipe Detail Modal**:
+  - Two-column layout: Ingredients (left) + Steps (right)
+  - Individual "+ Add to List" buttons per ingredient
+  - "Add All Ingredients" button
+  - Checkboxes for step tracking
+  - Detailed, specific cooking instructions
 
-### 4. Recipe Saving & Collection (COMPLETE)
-- Save recipes from chat conversations
-- View saved recipes in collection
-- Recipe cards with images, mood tags, cooking times
-- Recipe detail modal with ingredients and instructions
+### 4. Shopping List (COMPLETE)
+- Shows ONLY ingredient names (no quantities)
+- Organized by category (Produce, Dairy, Meat, Pantry, etc.)
+- Shows source recipe for each ingredient
+- Persistent across sessions via localStorage
+- Shopping partner integration (Amazon Fresh, Instacart, Walmart, etc.)
+- Export options (Copy, Download)
 
-### 5. Shopping List (COMPLETE)
-- Add recipe ingredients to shopping list
-- Checkable items
-- PDF export functionality
+### 5. Navigation (UPDATED - Jan 27, 2026)
+- **5 Tabs**: Home, Chat, List, Planner, Profile
+- **Home Button**: Visible on all pages
+- **Persistent Navigation**: Stays fixed at top
 
-### 6. Weekly Meal Planner (COMPLETE)
-- AI-generated weekly meal plans
-- Based on mood and cuisine preferences
-- Save and view plans
-
-### 7. Voice Assistant (COMPLETE)
-- Speech-to-Text with OpenAI Whisper
-- Text-to-Speech with OpenAI TTS
-- Multi-language support (English, Hindi, Chinese, Spanish, French, Japanese, Korean, Thai, Arabic, Italian, Portuguese, Vietnamese)
+### 6. Weekly Meal Planner
+- Weekly calendar view
+- Add recipes to specific days/meals
+- Subscription feature for weekly recipe newsletter (planned)
 - Mood-responsive voice tones
 
 ## Technical Architecture
