@@ -193,8 +193,11 @@ export const ShoppingCartProvider = ({ children }) => {
     const updatedCart = [...cartItems];
 
     ingredients.forEach(ing => {
+      // Extract clean ingredient name
+      const cleanName = extractIngredientName(ing.item);
+      
       const existingIndex = updatedCart.findIndex(
-        item => item.item.toLowerCase() === ing.item.toLowerCase()
+        item => item.item.toLowerCase() === cleanName.toLowerCase()
       );
 
       if (existingIndex >= 0) {
@@ -204,8 +207,9 @@ export const ShoppingCartProvider = ({ children }) => {
       } else {
         newItems.push({
           id: Date.now() + Math.random(),
-          ...ing,
-          category: categorizeIngredient(ing.item),
+          item: cleanName,
+          amount: ing.amount || '',
+          category: categorizeIngredient(cleanName),
           recipes: [recipeName],
           checked: false,
           addedAt: new Date().toISOString(),
