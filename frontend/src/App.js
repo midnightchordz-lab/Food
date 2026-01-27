@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
+import { ShoppingCartProvider } from "@/context/ShoppingCartContext";
 import LandingPage from "@/pages/LandingPage";
 import ChatPage from "@/pages/ChatPage";
 import SavedRecipes from "@/pages/SavedRecipes";
@@ -11,6 +12,7 @@ import ExploreCuisinesPage from "@/pages/ExploreCuisinesPage";
 import CuisineRecipesPage from "@/pages/CuisineRecipesPage";
 import DiscoverRecipesPage from "@/pages/DiscoverRecipesPage";
 import Navigation from "@/components/Navigation";
+import ShoppingCartModal from "@/components/ShoppingCartModal";
 import "@/App.css";
 import { useEffect } from "react";
 
