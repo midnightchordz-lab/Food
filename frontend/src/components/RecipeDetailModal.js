@@ -714,6 +714,24 @@ const generateDetailedRecipe = (recipe) => {
   
   const titleKey = recipe.title.toLowerCase().trim();
   
+  // FIRST: Try to parse AI-generated content from fullContent
+  const aiIngredients = parseAIIngredients(recipe.fullContent);
+  const aiInstructions = parseAIInstructions(recipe.fullContent);
+  const aiTips = parseChefTip(recipe.fullContent);
+  
+  // If we have AI-generated instructions, use them
+  if (aiInstructions && aiInstructions.length > 0) {
+    const baseRecipe = DETAILED_RECIPES[titleKey] || createDefaultRecipe(recipe);
+    return {
+      ...recipe,
+      ...baseRecipe,
+      // Override with AI-generated content
+      ingredients: aiIngredients || baseRecipe.ingredients,
+      instructions: aiInstructions,
+      tips: aiTips || baseRecipe.tips,
+    };
+  }
+  
   // Check if we have this exact recipe in database
   if (DETAILED_RECIPES[titleKey]) {
     return {
