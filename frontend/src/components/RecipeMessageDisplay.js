@@ -148,13 +148,33 @@ const parseRecipes = (message) => {
   const recipePattern = /\*\*([^*]+)\*\*([^*]*?)(?=\*\*|$)/gs;
   let match;
   
+  // Section headers to skip (not actual recipe names)
+  const skipPatterns = [
+    /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why this)/i,
+    /^(quick|standard|involved)\s+(option|recipe)/i,
+    /^\d+\./,  // Numbered items
+    /^(prep|cook|total)\s+time/i,
+  ];
+  
   while ((match = recipePattern.exec(message)) !== null) {
     const title = match[1].trim();
     const content = match[2].trim();
     
-    // Skip if title is too short or doesn't look like a recipe
+    // Skip if title is too short or too long
     if (title.length < 3 || title.length > 100) continue;
-    if (title.match(/^(option|tip|note|step|ingredient)/i)) continue;
+    
+    // Skip section headers and non-recipe titles
+    if (skipPatterns.some(pattern => pattern.test(title))) continue;
+    
+    // Must look like a food/recipe name (contains food-related words or is capitalized properly)
+    const looksLikeRecipe = 
+      title.match(/chicken|beef|pork|fish|salmon|shrimp|tofu|vegetable|soup|salad|curry|pasta|rice|noodle|stew|roast|grilled|baked|fried|steamed/i) ||
+      title.match(/^[A-Z][a-z]+(\s+[A-Za-z]+)*$/) ||  // Proper case title
+      title.match(/\b(dal|paneer|tikka|biryani|ramen|sushi|taco|burrito|pizza|risotto|pad thai|pho|kebab|falafel|hummus|bibimbap|bulgogi)/i);
+    
+    if (!looksLikeRecipe && !content.match(/ingredient|prep time|cook time|serves/i)) {
+      continue;
+    }
     
     // Extract cooking time
     const timeMatch = content.match(/(\d+[-–]?\d*)\s*(min|minutes|hour|hours)/i);
@@ -162,24 +182,25 @@ const parseRecipes = (message) => {
     
     // Extract complexity/difficulty hints
     let difficulty = 'Medium';
-    if (content.match(/quick|easy|simple|fast|15[-\s]*min/i)) difficulty = 'Easy';
-    else if (content.match(/involved|complex|hour|advanced|therapeutic/i)) difficulty = 'Hard';
+    if (content.match(/quick|easy|simple|fast|15[-\s]*min/i) || title.match(/quick|easy/i)) difficulty = 'Easy';
+    else if (content.match(/involved|complex|hour|advanced|therapeutic/i) || title.match(/involved/i)) difficulty = 'Hard';
     
     // Extract description (first sentence or two)
     const descMatch = content.match(/^([^.!?]*[.!?]){1,2}/);
     const description = descMatch ? descMatch[0].trim() : content.substring(0, 150).trim();
     
-    // Detect cuisine type from content
+    // Detect cuisine type from title and content
     let cuisineHint = '';
-    if (content.match(/indian|curry|masala|paneer|dal|tikka/i)) cuisineHint = 'indian';
-    else if (content.match(/chinese|wok|stir.?fry|soy sauce|ginger/i)) cuisineHint = 'chinese';
-    else if (content.match(/italian|pasta|risotto|pizza|parmesan/i)) cuisineHint = 'italian';
-    else if (content.match(/mexican|taco|salsa|cilantro|lime|avocado/i)) cuisineHint = 'mexican';
-    else if (content.match(/japanese|miso|sushi|ramen|teriyaki/i)) cuisineHint = 'japanese';
-    else if (content.match(/thai|coconut milk|lemongrass|fish sauce/i)) cuisineHint = 'thai';
-    else if (content.match(/korean|gochujang|kimchi|sesame/i)) cuisineHint = 'korean';
-    else if (content.match(/french|butter|wine|cream|herbs/i)) cuisineHint = 'french';
-    else if (content.match(/mediterranean|olive oil|feta|hummus/i)) cuisineHint = 'mediterranean';
+    const searchText = (title + ' ' + content).toLowerCase();
+    if (searchText.match(/indian|curry|masala|paneer|dal|tikka|biryani|naan|tandoor/i)) cuisineHint = 'indian';
+    else if (searchText.match(/chinese|wok|stir.?fry|soy sauce|dumpling|dim sum|szechuan|cantonese/i)) cuisineHint = 'chinese';
+    else if (searchText.match(/italian|pasta|risotto|pizza|parmesan|marinara|pesto|lasagna/i)) cuisineHint = 'italian';
+    else if (searchText.match(/mexican|taco|salsa|cilantro|lime|avocado|burrito|enchilada|quesadilla/i)) cuisineHint = 'mexican';
+    else if (searchText.match(/japanese|miso|sushi|ramen|teriyaki|tempura|udon|sake/i)) cuisineHint = 'japanese';
+    else if (searchText.match(/thai|coconut milk|lemongrass|fish sauce|pad thai|tom yum|basil/i)) cuisineHint = 'thai';
+    else if (searchText.match(/korean|gochujang|kimchi|sesame|bulgogi|bibimbap|korean bbq/i)) cuisineHint = 'korean';
+    else if (searchText.match(/french|butter|wine|cream|provence|bistro|croissant/i)) cuisineHint = 'french';
+    else if (searchText.match(/mediterranean|olive oil|feta|hummus|falafel|greek|lebanese/i)) cuisineHint = 'mediterranean';
     
     recipes.push({
       title,
