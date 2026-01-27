@@ -280,7 +280,7 @@ export const ShoppingCartProvider = ({ children }) => {
     return organized;
   };
 
-  // Export cart as text
+  // Export cart as text - ONLY ingredient names (no quantities)
   const exportAsText = () => {
     const organized = getItemsByCategory();
     let text = `🛒 Shopping List\n`;
@@ -289,7 +289,8 @@ export const ShoppingCartProvider = ({ children }) => {
     Object.entries(organized).forEach(([category, items]) => {
       text += `${CATEGORY_LABELS[category] || category.toUpperCase()}\n`;
       items.forEach(item => {
-        text += `  ☐ ${item.amount} ${item.item}\n`;
+        const checkbox = item.checked ? '☑' : '☐';
+        text += `  ${checkbox} ${item.item}\n`;
       });
       text += '\n';
     });
