@@ -223,6 +223,11 @@ class VoiceSynthesisResponse(BaseModel):
 class LanguagesResponse(BaseModel):
     languages: dict
 
+class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    dietary_restrictions: Optional[List[str]] = None
+    cuisine_preferences: Optional[List[str]] = None
+
 # Auth helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
