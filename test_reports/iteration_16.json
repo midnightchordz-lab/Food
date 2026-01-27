@@ -1,0 +1,81 @@
+{
+  "summary": "RecipeDetailModal SPECIFIC instructions fix verified. Frontend now correctly parses and displays AI-generated cooking instructions from fullContent field instead of generic templates. Instructions show specific text like 'bring salted water to a boil', 'Once the oil shimmers', 'Sauté for 1 minute until fragrant' with timing markers.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "DialogContent",
+        "issues": ["Missing aria-describedby attribute - console warning (cosmetic)"]
+      }
+    ]
+  },
+
+  "passed_tests": [
+    "TEST 1 - RecipeDetailModal parses AI-generated instructions from fullContent: PASS",
+    "TEST 2 - Instructions show timing markers (5 min, 10 min, 3-5 min): PASS",
+    "TEST 3 - Instructions show SPECIFIC text not generic templates: PASS",
+    "TEST 4 - No 'Prepare all ingredients' or 'Heat cooking oil' generic text: PASS",
+    "TEST 5 - Bracket markers [PREP], [COOK], [WHISK] properly removed from display: PASS",
+    "TEST 6 - Recipe cards in chat properly pass fullContent to RecipeDetailModal: PASS",
+    "TEST 7 - Multi-step chat flow generates recipes with detailed instructions: PASS",
+    "TEST 8 - Instructions include specific ingredients, temperatures, and sensory cues: PASS"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_recipe_generation_p0.py"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "parseAIInstructions() function correctly extracts instructions from **Instructions:** section in fullContent",
+    "Timing markers like [PREP 5 min], [COOK 10 min], [WHISK 5 min] are properly parsed and displayed separately",
+    "generateDetailedRecipe() prioritizes AI-generated content over template database",
+    "parseNumberedRecipes() in RecipeMessageDisplay.js correctly handles new AI format '### 1. Recipe Name'"
+  ],
+
+  "updated_files": [
+    "/app/frontend/src/components/RecipeDetailModal.js"
+  ],
+
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+
+  "test_credentials": {
+    "test_email": "testui1769541046@test.com",
+    "test_password": "Test1234!"
+  },
+
+  "seed_data_creation": "Test user created during testing",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "RecipeDetailModal now correctly displays AI-generated specific instructions. The parseAIInstructions() function extracts instructions from fullContent field and removes timing markers like [PREP 5 min] for cleaner display. Instructions show specific cooking steps like 'bring salted water to a boil', 'Once the oil shimmers', 'Sauté for 1 minute until fragrant' instead of generic templates.",
+
+  "fix_verification": {
+    "issue": "RecipeDetailModal showing generic template instructions instead of AI-generated specific instructions",
+    "status": "FIXED",
+    "before": "Generic templates like 'Prepare all ingredients', 'Heat cooking oil', 'Cook until done'",
+    "after": "Specific AI-generated instructions like 'In a large pot, bring salted water to a boil. Once boiling, add spaghetti and cook for 8-10 minutes until al dente.'",
+    "fix_applied": "Updated parseAIInstructions() to handle more timing marker formats including [WHISK], [COMBINE], [SAUTE], etc. and properly remove markdown bold markers **[...]**"
+  },
+
+  "sample_instructions_verified": [
+    "In a large pot, bring salted water to a boil. Once boiling, add spaghetti and cook for 8-10 minutes until al dente.",
+    "While the pasta cooks, chop the cherry tomatoes, bell peppers, zucchini, and asparagus into bite-sized pieces.",
+    "In a large skillet over medium heat, add the olive oil. Once the oil shimmers (about 1 minute), add the garlic. Sauté for 1 minute until fragrant.",
+    "Continue by adding the bell peppers and asparagus to the skillet. Cook for 3 minutes, stirring occasionally, until the peppers begin to soften.",
+    "Add the zucchini and cherry tomatoes to the skillet. Sauté for another 3-5 minutes until the vegetables are vibrant and tender."
+  ]
+}
