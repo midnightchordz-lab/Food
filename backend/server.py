@@ -284,47 +284,32 @@ Be warm, concise, and helpful. Ask clarifying questions if needed."""
 
 def get_recipe_generation_prompt(mood: str, meal_type: str, dietary_pref: str, cuisines: str):
     """Generate a focused prompt for recipe suggestions with detailed instructions"""
-    return f"""You are an expert chef creating personalized recipe recommendations.
+    return f"""You are an expert chef. Generate EXACTLY 4 {dietary_pref} {cuisines} {meal_type} recipes matching a {mood} mood.
 
-USER PREFERENCES:
-- Mood: {mood}
-- Meal: {meal_type}
-- Diet: {dietary_pref}
-- Cuisine: {cuisines}
+For EACH recipe:
 
-Generate EXACTLY 6 recipes matching these preferences. For EACH recipe, provide:
+### [Recipe Name]
+**Cuisine:** {cuisines} | **Time:** X min | **Difficulty:** Easy/Medium/Hard
 
-### [Recipe Name] ({meal_type})
-**Cuisine:** [Type]
-**Cooking Time:** [X] minutes
-**Difficulty:** Easy/Medium/Hard
+**Why it fits the {mood} mood:** 1-2 sentences
 
-**Description:** A 2-sentence appetizing description explaining why this dish matches the {mood} mood.
+**Ingredients:** (6-8 items with quantities)
+- [Qty] [Ingredient]
 
-**Ingredients:**
-- [Quantity] [Ingredient 1]
-- [Quantity] [Ingredient 2]
-(list 6-10 ingredients with exact measurements)
+**Instructions:** (6-8 specific steps)
+1. [PREP X min] Do this with [specific ingredient]: [technique, cut size, bowl type]
+2. [COOK X min] Heat [specific pan] to [exact temp/heat level]. Add [ingredient]. Cook [X minutes] until [visual cue].
+3. Continue...
 
-**Instructions:**
-1. [PREP - X min] [Specific action]: Describe exactly what to do with which ingredients, including knife techniques, bowl sizes, temperatures.
-2. [COOK - X min] [Specific action]: Include exact heat levels (medium-high, 375°F), visual/audio cues (sizzling, golden brown), and timing.
-3. Continue with numbered steps...
-(Provide 6-10 detailed steps with timing, temperatures, and sensory cues for each)
-
-**Chef's Tip:** One professional tip specific to this dish.
+**Chef's Tip:** One unique tip for this dish.
 
 ---
 
-CRITICAL INSTRUCTION RULES:
-1. NEVER use generic phrases like "cook until done" or "season to taste"
-2. ALWAYS specify exact temperatures (350°F, medium-high heat)
-3. ALWAYS include timing for each step (sauté for 3-4 minutes)
-4. ALWAYS describe visual/sensory cues (until edges are crispy, until fragrant)
-5. ALWAYS name specific ingredients in each step
-6. Instructions must be unique to each recipe - no copy-paste templates
-
-Respond ONLY with the 6 recipes in the exact format above. No introductions or conclusions."""
+RULES:
+- NO generic phrases like "cook until done" or "season to taste"
+- ALWAYS include: exact temperatures, timing per step, visual/audio cues
+- Each recipe must have UNIQUE, dish-specific instructions
+- Keep total response under 3000 words"""
 
 
 def get_system_message(dietary_restrictions: List[str] = None, cuisine_preferences: List[str] = None):
