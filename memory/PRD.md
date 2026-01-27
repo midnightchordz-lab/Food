@@ -152,3 +152,12 @@ A compassionate nutritional expert AI application that suggests meals based on u
   - Made the signup modal scrollable (`max-h-[90vh] overflow-y-auto`)
   - Reduced checkbox section heights for better visibility
   - Sign Up button now accessible without scrolling on most screens
+
+- **Jan 27, 2026**: Implemented Visual-First Recipe Display in Chat
+  - Created `RecipeMessageDisplay.js` component for visual recipe cards
+  - Two-column layout: text (60-70%) on left, image (30-40%) on right
+  - Recipe cards show: title, description, cooking time, difficulty badge
+  - High-quality Unsplash images matched to each dish (no country codes)
+  - Save Recipe button on each card with dialog confirmation
+  - Cuisine type indicators displayed on cards
+  - CSS animations for smooth card appearance
