@@ -706,6 +706,15 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   const [servings, setServings] = useState(4);
   const [checkedSteps, setCheckedSteps] = useState({});
   const [checkedIngredients, setCheckedIngredients] = useState({});
+  const [addedIngredients, setAddedIngredients] = useState({});
+  
+  // Shopping cart hook - wrapped in try/catch for safety
+  let shoppingCart = null;
+  try {
+    shoppingCart = useShoppingCart();
+  } catch (e) {
+    // Shopping cart not available in this context
+  }
   
   const detailedRecipe = recipe ? generateDetailedRecipe(recipe) : null;
   
@@ -731,18 +740,34 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
     }
   };
   
-  const handleAddToShoppingList = async () => {
-    try {
-      const ingredients = detailedRecipe.ingredients.map(i => `${i.amount} ${i.item}`);
-      await axios.post(`${API}/shopping-list`, {
-        recipe_name: recipe.title,
-        items: ingredients
-      });
-      toast.success('Ingredients added to shopping list!');
-      onAddToShoppingList && onAddToShoppingList(ingredients);
-    } catch (error) {
-      toast.error('Failed to add to shopping list');
+  // Add single ingredient to cart
+  const handleAddIngredient = (ingredient, index) => {
+    if (shoppingCart) {
+      shoppingCart.addToCart(ingredient, recipe.title);
+      setAddedIngredients(prev => ({ ...prev, [index]: true }));
+    } else {
+      toast.error('Shopping cart not available');
     }
+  };
+  
+  // Add all ingredients to cart
+  const handleAddAllToCart = () => {
+    if (shoppingCart && detailedRecipe?.ingredients) {
+      shoppingCart.addAllToCart(detailedRecipe.ingredients, recipe.title);
+      // Mark all as added
+      const allAdded = {};
+      detailedRecipe.ingredients.forEach((_, idx) => {
+        allAdded[idx] = true;
+      });
+      setAddedIngredients(allAdded);
+    } else {
+      toast.error('Shopping cart not available');
+    }
+  };
+  
+  // Legacy function for API-based shopping list
+  const handleAddToShoppingList = async () => {
+    handleAddAllToCart();
   };
   
   const handleRate = (rating) => {
