@@ -93,14 +93,14 @@ const AuthModal = ({ open, onClose }) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md" data-testid="auth-modal">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" data-testid="auth-modal">
+        <DialogHeader className="sticky top-0 bg-background z-10 pb-2">
           <DialogTitle className="text-3xl font-serif">
             {isLogin ? 'Welcome Back' : 'Join Chef Feels'}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           {!isLogin && (
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
