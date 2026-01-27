@@ -281,10 +281,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   const [userRating, setUserRating] = useState(0);
   const [servings, setServings] = useState(4);
   
-  // Early return if no recipe - must be before any hooks that depend on recipe
-  if (!recipe) return null;
-  
-  const detailedRecipe = generateDetailedRecipe(recipe);
+  // Generate detailed recipe only if recipe exists
+  const detailedRecipe = recipe ? generateDetailedRecipe(recipe) : null;
   
   const handlePrint = () => {
     window.print();
