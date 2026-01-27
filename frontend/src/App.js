@@ -9,6 +9,7 @@ import WeeklyPlannerPage from "@/pages/WeeklyPlannerPage";
 import ProfilePage from "@/pages/ProfilePage";
 import ExploreCuisinesPage from "@/pages/ExploreCuisinesPage";
 import CuisineRecipesPage from "@/pages/CuisineRecipesPage";
+import DiscoverRecipesPage from "@/pages/DiscoverRecipesPage";
 import Navigation from "@/components/Navigation";
 import "@/App.css";
 import { useEffect } from "react";
