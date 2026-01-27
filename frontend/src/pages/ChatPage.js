@@ -273,18 +273,42 @@ const ChatPage = () => {
                     data-testid={`message-${msg.role}-${idx}`}
                   >
                     <div
-                      className={`message-bubble max-w-[80%] rounded-2xl px-5 py-3 ${
+                      className={`message-bubble ${msg.role === 'user' ? 'max-w-[80%]' : 'max-w-[95%] w-full'} rounded-2xl px-5 py-4 ${
                         msg.role === 'user'
                           ? 'bg-primary text-primary-foreground rounded-br-sm'
-                          : 'bg-secondary text-secondary-foreground rounded-bl-sm'
+                          : 'bg-secondary/50 text-secondary-foreground rounded-bl-sm'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      {/* Use RecipeMessageDisplay for AI messages with recipes */}
+                      {msg.role === 'assistant' && hasRecipes(msg.content) ? (
+                        <RecipeMessageDisplay 
+                          message={msg.content} 
+                          onSaveRecipe={(recipe) => {
+                            setRecipeToSave({
+                              title: recipe.title,
+                              description: recipe.description,
+                              ingredients: ['See chat for full ingredients list'],
+                              instructions: ['See chat for detailed instructions'],
+                              mood_tags: ['comfort', 'nourishing'],
+                              prep_time: recipe.cookingTime || '30 min',
+                              cook_time: recipe.cookingTime || '30 min',
+                              complexity: recipe.difficulty?.toLowerCase() || 'standard',
+                              nutritional_highlights: 'Rich in mood-boosting nutrients',
+                              dietary_info: [],
+                              image_url: recipe.imageUrl,
+                              cuisine_type: recipe.cuisineHint
+                            });
+                            setShowRecipeDialog(true);
+                          }}
+                        />
+                      ) : (
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      )}
                     </div>
                   </div>
                   
-                  {/* Show save button for AI messages with recipes */}
-                  {msg.role === 'assistant' && msg.content.length > 200 && (
+                  {/* Show save button for AI messages without visual recipe cards */}
+                  {msg.role === 'assistant' && msg.content.length > 200 && !hasRecipes(msg.content) && (
                     msg.content.match(/ingredient|recipe|meal/i) && (
                       <div className="flex justify-start mt-2 ml-2">
                         <Button
