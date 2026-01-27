@@ -606,7 +606,9 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             session_id=f"{request.session_id}-{uuid.uuid4().hex[:8]}",  # Unique session to avoid context buildup
             system_message=system_msg
         )
-        chat.with_model("openai", "gpt-4o")
+        # Use gpt-4o-mini for faster recipe generation, gpt-4o for general chat
+        model_name = "gpt-4o-mini" if recipe_params else "gpt-4o"
+        chat.with_model("openai", model_name)
         
         user_message = UserMessage(text=user_text)
         ai_response = await chat.send_message(user_message)
