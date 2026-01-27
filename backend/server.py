@@ -508,6 +508,8 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(new_user)
+        # Remove MongoDB _id from response
+        new_user.pop('_id', None)
         user_data = new_user
     
     # Generate JWT token
