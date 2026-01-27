@@ -160,10 +160,17 @@ A mood-based recipe discovery application where users receive personalized meal 
 - Recipe discovery uses curated static data (MOCKED - not live web search)
 - Voice response latency depends on TTS model speed
 - Shopping partner integration copies list to clipboard (no actual API integration)
+- Phone authentication requires Twilio API keys (not configured)
 
 ## Upcoming Tasks (Backlog)
 
+### P0 - Completed
+- [x] Fix recipe generation stalling (was 2+ minutes, now 29-36 seconds)
+- [x] Fix generic cooking instructions (now includes specific timing, temperatures, sensory cues)
+
 ### P1 - High Priority
+- [ ] Complete Phone Authentication (requires Twilio API keys)
+- [ ] Persist Meal Plans & Subscriptions to backend
 - [ ] Verify image display for previously saved recipes
 - [ ] Improve voice agent response speed (optimize TTS)
 
