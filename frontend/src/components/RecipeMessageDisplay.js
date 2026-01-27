@@ -631,7 +631,7 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   );
 };
 
-// Time Category Section
+// Time Category Section - 3 cards per row grid
 const TimeCategorySection = ({ category, categoryData, onSaveRecipe, onViewRecipe }) => {
   if (categoryData.recipes.length === 0) return null;
   
@@ -644,7 +644,8 @@ const TimeCategorySection = ({ category, categoryData, onSaveRecipe, onViewRecip
           {categoryData.recipes.length} {categoryData.recipes.length === 1 ? 'recipe' : 'recipes'}
         </span>
       </div>
-      <div className="space-y-4">
+      {/* 3-column grid for recipe cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {categoryData.recipes.map((recipe, idx) => (
           <RecipeCard 
             key={idx} 
