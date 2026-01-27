@@ -251,10 +251,9 @@ const ShoppingListPage = () => {
                           {item.checked && <CheckCircle2 size={14} />}
                         </button>
                         
-                        {/* Item Details */}
+                        {/* Item Details - ONLY show clean ingredient name */}
                         <div className="flex-1 min-w-0">
                           <p className={`font-medium ${item.checked ? 'line-through text-muted-foreground' : ''}`}>
-                            <span className="text-primary font-semibold">{item.amount}</span>{' '}
                             {item.item}
                           </p>
                           {item.recipes && item.recipes.length > 0 && (
