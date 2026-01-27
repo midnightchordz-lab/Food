@@ -51,6 +51,20 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+# Phone authentication models
+class PhoneSendOTP(BaseModel):
+    phone_number: str  # E.164 format: +1234567890
+
+class PhoneVerifyOTP(BaseModel):
+    phone_number: str
+    code: str
+
+class PhoneLoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: dict
+    is_new_user: bool = False
+
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
