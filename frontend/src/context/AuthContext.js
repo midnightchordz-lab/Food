@@ -92,6 +92,15 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   };
 
+  // Login with token directly (for phone auth)
+  const loginWithToken = async (accessToken, userData) => {
+    localStorage.setItem('token', accessToken);
+    setToken(accessToken);
+    setUser(userData);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+    return true;
+  };
+
   const updateProfile = async (data) => {
     try {
       const response = await axios.put(`${API}/auth/profile`, data);
