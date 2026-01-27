@@ -188,3 +188,20 @@ A compassionate nutritional expert AI application that suggests meals based on u
     * Storage Instructions
     * 5-star rating system
   - Recipe details generated from templates based on recipe type
+
+- **Jan 27, 2026**: Added SPECIFIC Recipe Instructions (Not Generic)
+  - Created comprehensive DETAILED_RECIPES database with 9+ fully detailed recipes:
+    * Italian: Caprese Quinoa Salad, Spaghetti Carbonara, Margherita Pizza
+    * Indian: Butter Chicken, Palak Paneer
+    * Mexican: Tacos al Pastor
+    * Asian: Pad Thai, Chicken Teriyaki, Ramen
+  - Each recipe has 10-12 SPECIFIC steps with:
+    * Exact ingredient names and measurements
+    * Precise temperatures and heat levels
+    * Timing for each step with clock icons
+    * Sensory cues (e.g., "until golden brown", "fragrant")
+  - Updated recipe parser to handle AI response format:
+    * Now extracts titles from "### Quick Option: Recipe Title" headers
+    * Falls back to **Recipe Title** pattern
+    * Improved hasRecipes detection for time category headers
+  - Category-specific fallback templates for unknown recipes (salad, curry, pasta, etc.)
