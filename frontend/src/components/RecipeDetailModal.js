@@ -1153,7 +1153,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
           <div className="mb-8 p-5 bg-amber-500/10 rounded-xl border border-amber-500/20">
             <h2 className="text-lg font-serif mb-4 flex items-center gap-2">
               <AlertCircle size={20} className="text-amber-600" />
-              Chef's Tips & Pro Tricks
+              Chef&apos;s Tips &amp; Pro Tricks
             </h2>
             <ul className="space-y-3">
               {detailedRecipe.tips.map((tip, idx) => (
