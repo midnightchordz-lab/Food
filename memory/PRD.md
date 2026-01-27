@@ -288,3 +288,18 @@ A mood-based recipe discovery application where users receive personalized meal 
     * Proper capitalization (first letter only)
   - Test Results: 100% pass rate (8/8 features tested)
 
+
+- **Jan 27, 2026**: Fixed P0 Recipe Generation Issues (CRITICAL)
+  - **Issue 1: Recipe Generation Stalling** - FIXED
+    * Root cause: Overly complex system prompt + gpt-4o model causing 60s+ timeouts
+    * Solution: Created optimized `get_recipe_generation_prompt()` function with concise prompt
+    * Switched to `gpt-4o-mini` for recipe generation (faster response)
+    * Response time improved from 2+ minutes to 29-36 seconds
+  - **Issue 2: Generic Cooking Instructions** - FIXED
+    * Root cause: Prompt not enforcing specific instruction format
+    * Solution: Added strict rules requiring [PREP X min], [COOK X min] timing markers
+    * Instructions now include exact temperatures (°F/°C), sensory cues (golden brown, fragrant)
+    * Each recipe has unique, dish-specific instructions (no templates)
+  - Created `is_recipe_generation_request()` helper to detect structured requests from frontend
+  - All 8 tests passing (100% success rate)
+
