@@ -701,7 +701,7 @@ const StarRating = ({ rating, onRate }) => {
 };
 
 // Recipe Detail Modal Component
-const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingList }) => {
+const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingList, fromPlanner = false }) => {
   const [userRating, setUserRating] = useState(0);
   const [servings, setServings] = useState(4);
   const [checkedSteps, setCheckedSteps] = useState({});
