@@ -171,7 +171,7 @@ const ExploreCuisinesPage = () => {
                     className="w-full mt-6 rounded-full bg-primary hover:bg-primary/90 group-hover:scale-105 transition-all"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/recipes/cuisine/${cuisine.name.toLowerCase().split(' ')[0]}`);
+                      navigate(`/discover-recipes/${cuisine.name.toLowerCase().split(' ')[0]}`);
                     }}
                   >
                     <ChefHat size={18} className="mr-2" />
