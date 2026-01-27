@@ -300,6 +300,11 @@ A mood-based recipe discovery application where users receive personalized meal 
     * Solution: Added strict rules requiring [PREP X min], [COOK X min] timing markers
     * Instructions now include exact temperatures (°F/°C), sensory cues (golden brown, fragrant)
     * Each recipe has unique, dish-specific instructions (no templates)
+  - **Issue 3: Frontend Showing Template Instructions** - FIXED
+    * Root cause: RecipeDetailModal was using hardcoded template instructions instead of AI-generated content
+    * Solution: Added parseAIIngredients(), parseAIInstructions(), parseChefTip() helper functions
+    * Updated generateDetailedRecipe() to prioritize AI content from fullContent field
+    * Added parseNumberedRecipes() to handle new AI format "### 1. Recipe Name"
   - Created `is_recipe_generation_request()` helper to detect structured requests from frontend
-  - All 8 tests passing (100% success rate)
+  - All 16 tests passing (100% success rate)
 
