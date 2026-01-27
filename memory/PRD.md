@@ -5,8 +5,15 @@ A mood-based recipe discovery application where users receive personalized meal 
 
 ## Core Features
 
-### 1. Authentication System (COMPLETE)
+### 1. Authentication System (COMPLETE - Updated Jan 27, 2026)
 - JWT-based user authentication
+- **Email Login**: Traditional email/password registration and login
+- **Phone Number Login (Phase 3)**: SMS OTP verification
+  - Country code selector (10+ countries)
+  - Phone number input with formatting
+  - 6-digit OTP verification
+  - Demo mode: OTP shown in toast when Twilio not configured
+  - New user profile setup after first verification
 - User registration with dietary preferences and cuisine preferences
 - Login/logout functionality
 
@@ -48,11 +55,16 @@ A mood-based recipe discovery application where users receive personalized meal 
 - **Home Button**: Visible on all pages
 - **Persistent Navigation**: Stays fixed at top
 
-### 6. Weekly Meal Planner
-- Weekly calendar view
-- Add recipes to specific days/meals
-- Subscription feature for weekly recipe newsletter (planned)
-- Mood-responsive voice tones
+### 6. Weekly Meal Planner (COMPLETE - Phase 4, Jan 27, 2026)
+- **7-Day Calendar View**: Monday through Sunday columns
+- **3 Meal Slots per Day**: Breakfast, Lunch, Dinner (21 total slots)
+- **Week Navigation**: Previous/Next week buttons
+- **AI Plan Generation**: Generate meal plans based on preferences
+- **Subscription Feature**:
+  - Weekly recipe newsletter signup
+  - Customizable preferences: dietary, cuisines, recipes per week, delivery day
+  - Email input for newsletter delivery
+  - Saved to database (email integration pending)
 
 ## Technical Architecture
 
@@ -63,9 +75,14 @@ A mood-based recipe discovery application where users receive personalized meal 
 - **pdf_generator.py**: Shopping list PDF export
 - **ai_meal_planner.py**: AI meal plan generation
 
+### API Endpoints
+- **Phone Auth**: `/api/auth/phone/send-otp`, `/api/auth/phone/verify-otp`
+- **Subscription**: `/api/subscription/recipes` (POST/GET/DELETE)
+- **Weekly Plans**: `/api/weekly-plan`, `/api/weekly-plan/generate`
+
 ### Frontend (React)
-- **Pages**: LandingPage, ChatPage, SavedRecipes, ShoppingListPage, WeeklyPlannerPage, ProfilePage, ExploreCuisinesPage, DiscoverRecipesPage, CuisineRecipesPage
-- **Components**: Navigation, AuthModal, VoiceButton, RecipeRating, RecipeSearchFilter
+- **Pages**: LandingPage, ChatPage, SavedRecipes, ShoppingListPage, WeeklyPlannerPage, ProfilePage
+- **Components**: Navigation, AuthModal (Email/Phone), MoodSelector, MealTypeSelector, CuisineSelector, FoodPreferenceSelector
 - **UI**: Shadcn/UI components, Tailwind CSS
 
 ### Database (MongoDB)
@@ -77,6 +94,7 @@ A mood-based recipe discovery application where users receive personalized meal 
 - weekly_plans
 - recipe_ratings
 - meal_reminders
+- recipe_subscriptions
 
 ### Integrations
 - OpenAI GPT-4o (Chat) - via Emergent LLM Key
