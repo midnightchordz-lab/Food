@@ -265,7 +265,7 @@ const parseRecipesFromSection = (section, category) => {
   
   // Skip patterns - things that are NOT recipe names
   const skipPatterns = [
-    /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|name|total time|prep time)/i,
+    /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name|total time|prep time)/i,
     /^\d+\.\s*$/,
     /^[:\s]*\(\d+/,
   ];
