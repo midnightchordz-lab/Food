@@ -388,21 +388,6 @@ const parseRecipeContent = (title, section, category) => {
     fullContent: section
   };
 };
-    
-    recipes.push({
-      title,
-      description,
-      cookingTime,
-      difficulty,
-      cuisineHint,
-      category,
-      imageUrl: getRecipeImage(title, cuisineHint),
-      fullContent: content
-    });
-  }
-  
-  return recipes;
-};
 
 // Get default time for category
 const getCategoryDefaultTime = (category) => {
