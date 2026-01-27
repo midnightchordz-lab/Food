@@ -155,8 +155,11 @@ export const ShoppingCartProvider = ({ children }) => {
 
   // Add single ingredient to cart
   const addToCart = (ingredient, recipeName) => {
+    // Extract clean ingredient name (remove quantities, measurements, prep instructions)
+    const cleanName = extractIngredientName(ingredient.item);
+    
     const existingIndex = cartItems.findIndex(
-      item => item.item.toLowerCase() === ingredient.item.toLowerCase()
+      item => item.item.toLowerCase() === cleanName.toLowerCase()
     );
 
     if (existingIndex >= 0) {
@@ -166,19 +169,21 @@ export const ShoppingCartProvider = ({ children }) => {
         updated[existingIndex].recipes.push(recipeName);
       }
       setCartItems(updated);
-      toast.success(`Updated ${ingredient.item} in cart`);
+      toast.success(`Updated ${cleanName} in cart`);
     } else {
-      // Add new item
+      // Add new item with clean name
       const newItem = {
         id: Date.now(),
-        ...ingredient,
-        category: categorizeIngredient(ingredient.item),
+        item: cleanName,
+        amount: ingredient.amount || '', // Keep original amount for reference
+        category: categorizeIngredient(cleanName),
         recipes: [recipeName],
         checked: false,
         addedAt: new Date().toISOString(),
       };
       setCartItems(prev => [...prev, newItem]);
-      toast.success(`Added ${ingredient.item} to cart`);
+      toast.success(`Added ${cleanName} to cart`);
+    }
     }
   };
 
