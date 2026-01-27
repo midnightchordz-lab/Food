@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   Calendar, Plus, Sparkles, Crown, Mail, ChevronLeft, ChevronRight,
-  Check, X, Clock, Utensils, Coffee, Sun, Moon, Bell
+  Check, X, Clock, Utensils, Coffee, Sun, Moon, Bell, ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -17,6 +17,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import AIMealPlanGenerator from '@/components/AIMealPlanGenerator';
+import RecipeDetailModal from '@/components/RecipeDetailModal';
+import { useShoppingCart } from '@/context/ShoppingCartContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -42,6 +44,68 @@ const CUISINE_OPTIONS = [
 const RECIPE_COUNTS = [3, 5, 7];
 const DELIVERY_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// Recipe image mapping for common recipes
+const RECIPE_IMAGES = {
+  'omelette': 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800',
+  'masala': 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800',
+  'curry': 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=800',
+  'salad': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
+  'caprese': 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800',
+  'pasta': 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800',
+  'chicken': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800',
+  'fish': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800',
+  'tacos': 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=800',
+  'soup': 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800',
+  'stir-fry': 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800',
+  'rice': 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=800',
+  'thai': 'https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=800',
+  'indian': 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800',
+  'breakfast': 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800',
+  'lunch': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
+  'dinner': 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800',
+  'default': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
+};
+
+// Get image URL for a recipe based on its name
+const getRecipeImage = (recipeName) => {
+  const nameLower = recipeName.toLowerCase();
+  for (const [key, url] of Object.entries(RECIPE_IMAGES)) {
+    if (nameLower.includes(key)) {
+      return url;
+    }
+  }
+  return RECIPE_IMAGES.default;
+};
+
+// Parse recipe name to create a recipe object for the detail modal
+const parseRecipeForModal = (recipeName, mealType, day) => {
+  const cuisineMatch = recipeName.match(/^(Indian|Italian|Mexican|Chinese|Japanese|Thai|Mediterranean|American|Korean|French)/i);
+  const cuisineHint = cuisineMatch ? cuisineMatch[1] : 'International';
+  
+  // Determine difficulty based on meal type
+  let difficulty = 'Medium';
+  let cookingTime = '30 min';
+  if (mealType === 'breakfast') {
+    difficulty = 'Easy';
+    cookingTime = '15-20 min';
+  } else if (mealType === 'dinner') {
+    difficulty = 'Medium';
+    cookingTime = '45-60 min';
+  }
+  
+  return {
+    title: recipeName,
+    description: `A delicious ${mealType} dish perfect for ${day}. This ${cuisineHint.toLowerCase()} inspired recipe brings together fresh flavors and wholesome ingredients for a satisfying meal.`,
+    cookingTime,
+    difficulty,
+    cuisineHint,
+    imageUrl: getRecipeImage(recipeName),
+    mealType,
+    day,
+    category: mealType,
+  };
+};
+
 const WeeklyPlannerPage = () => {
   const [plans, setPlans] = useState([]);
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
@@ -51,6 +115,10 @@ const WeeklyPlannerPage = () => {
   const [selectedMeal, setSelectedMeal] = useState(null);
   const { isAuthenticated, user } = useAuth();
   
+  // Recipe detail modal state
+  const [showRecipeDetail, setShowRecipeDetail] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  
   // Subscription form state
   const [subDietary, setSubDietary] = useState('Vegetarian');
   const [subCuisines, setSubCuisines] = useState(['Italian', 'Mexican']);
@@ -59,6 +127,9 @@ const WeeklyPlannerPage = () => {
   const [subEmail, setSubEmail] = useState('');
   const [subLoading, setSubLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  
+  // Shopping cart
+  const shoppingCart = useShoppingCart();
   
   // Get current week dates
   const getWeekDates = () => {
@@ -110,6 +181,31 @@ const WeeklyPlannerPage = () => {
     return currentPlan.meals?.[day]?.[mealType] || null;
   };
   
+  // Handle clicking on a planned meal to view recipe details
+  const handleMealClick = (recipeName, mealType, day, dayIndex) => {
+    if (recipeName) {
+      const recipe = parseRecipeForModal(recipeName, mealType, day);
+      setSelectedRecipe(recipe);
+      setShowRecipeDetail(true);
+    } else {
+      // Empty slot - open AI generator
+      setSelectedDay(dayIndex);
+      setSelectedMeal(mealType);
+      setShowAIGenerator(true);
+    }
+  };
+  
+  // Handle saving recipe from planner
+  const handleSaveRecipe = async (recipe) => {
+    try {
+      await axios.post(`${API}/recipes/save`, { recipe });
+      toast.success('Recipe saved to your collection!');
+    } catch (error) {
+      console.error('Error saving recipe:', error);
+      toast.error('Failed to save recipe');
+    }
+  };
+  
   const handleSubscribe = async () => {
     if (!subEmail || !subEmail.includes('@')) {
       toast.error('Please enter a valid email address');
@@ -118,7 +214,6 @@ const WeeklyPlannerPage = () => {
     
     setSubLoading(true);
     try {
-      // Save subscription to backend
       await axios.post(`${API}/subscription/recipes`, {
         email: subEmail,
         dietary_preference: subDietary,
@@ -278,26 +373,26 @@ const WeeklyPlannerPage = () => {
                       return (
                         <div
                           key={meal.id}
-                          className={`p-3 rounded-xl transition-all ${
+                          className={`p-3 rounded-xl transition-all cursor-pointer group ${
                             plannedMeal 
-                              ? 'bg-secondary/50' 
-                              : 'bg-secondary/20 border-2 border-dashed border-secondary hover:border-primary/50 cursor-pointer'
+                              ? 'bg-secondary/50 hover:bg-secondary/70 hover:shadow-md' 
+                              : 'bg-secondary/20 border-2 border-dashed border-secondary hover:border-primary/50'
                           }`}
-                          onClick={() => {
-                            if (!plannedMeal) {
-                              setSelectedDay(dayIndex);
-                              setSelectedMeal(meal.id);
-                              setShowAIGenerator(true);
-                            }
-                          }}
+                          onClick={() => handleMealClick(plannedMeal, meal.id, day, dayIndex)}
                           data-testid={`meal-slot-${day}-${meal.id}`}
+                          data-recipe={plannedMeal || ''}
                         >
                           <div className="flex items-center gap-2 mb-1">
                             <Icon size={14} className={meal.color} />
                             <span className="text-xs font-medium text-muted-foreground">{meal.label}</span>
+                            {plannedMeal && (
+                              <ExternalLink size={12} className="ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            )}
                           </div>
                           {plannedMeal ? (
-                            <p className="text-sm font-medium line-clamp-2">{plannedMeal}</p>
+                            <p className="text-sm font-medium line-clamp-2 group-hover:text-primary group-hover:underline transition-colors">
+                              {plannedMeal}
+                            </p>
                           ) : (
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <Plus size={12} /> Add meal
@@ -357,6 +452,18 @@ const WeeklyPlannerPage = () => {
           setSelectedMeal(null);
         }}
         onPlanGenerated={handlePlanGenerated}
+      />
+      
+      {/* Recipe Detail Modal */}
+      <RecipeDetailModal
+        recipe={selectedRecipe}
+        isOpen={showRecipeDetail}
+        onClose={() => {
+          setShowRecipeDetail(false);
+          setSelectedRecipe(null);
+        }}
+        onSave={() => selectedRecipe && handleSaveRecipe(selectedRecipe)}
+        fromPlanner={true}
       />
       
       {/* Subscription Modal */}
