@@ -10,6 +10,7 @@ import useVoiceControls from '@/hooks/useVoiceControls';
 import VoiceButton from '@/components/VoiceButton';
 import LanguageSelector from '@/components/LanguageSelector';
 import RecipeMessageDisplay, { hasRecipes } from '@/components/RecipeMessageDisplay';
+import FoodPreferenceSelector from '@/components/FoodPreferenceSelector';
 import {
   Dialog,
   DialogContent,
@@ -28,8 +29,11 @@ const ChatPage = () => {
   const [showRecipeDialog, setShowRecipeDialog] = useState(false);
   const [recipeToSave, setRecipeToSave] = useState(null);
   const [currentMood, setCurrentMood] = useState(null);
+  const [foodPreference, setFoodPreference] = useState(null);
+  const [showPreferenceSelector, setShowPreferenceSelector] = useState(false);
+  const [pendingMoodMessage, setPendingMoodMessage] = useState(null);
   const messagesEndRef = useRef(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   
   const scrollToBottom = () => {
@@ -53,28 +57,106 @@ const ChatPage = () => {
         if (response.data.messages && response.data.messages.length > 0) {
           setMessages(response.data.messages);
         } else {
-          // Show initial greeting only in UI, don't save to backend
+          // Show initial greeting
           setMessages([{
             role: 'assistant',
-            content: 'Hello! I\'m ready to help with meal planning based on how you\'re feeling. Tell me about your mood today, and I\'ll suggest meals that will nourish both your body and mind.',
+            content: `Hello${user?.name ? `, ${user.name}` : ''}! 👋\n\nI'm your compassionate meal planning companion. I'm here to suggest delicious meals that match both your mood and your taste preferences.\n\nTell me how you're feeling today, and I'll suggest some nourishing recipes to brighten your day!`,
             timestamp: new Date().toISOString()
           }]);
         }
       } catch (error) {
         console.error('Error loading history:', error);
-        // Show initial greeting on error too
         setMessages([{
           role: 'assistant',
-          content: 'Hello! I\'m ready to help with meal planning based on how you\'re feeling. Tell me about your mood today, and I\'ll suggest meals that will nourish both your body and mind.',
+          content: `Hello! 👋\n\nI'm your compassionate meal planning companion. Tell me how you're feeling today, and I'll suggest some nourishing recipes!`,
           timestamp: new Date().toISOString()
         }]);
       }
     };
     loadHistory();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
+  
+  // Handle food preference selection
+  const handlePreferenceSelect = (preferenceId, preferenceLabel) => {
+    setFoodPreference(preferenceId);
+    setShowPreferenceSelector(false);
+    
+    // Add user's selection as a message
+    const userMsg = {
+      role: 'user',
+      content: `I'd like ${preferenceLabel} options please.`,
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, userMsg]);
+    
+    // Now send the original mood message with the preference
+    if (pendingMoodMessage) {
+      sendMessageWithPreference(pendingMoodMessage, preferenceId);
+      setPendingMoodMessage(null);
+    }
+  };
+  
+  // Send message with food preference included
+  const sendMessageWithPreference = async (messageText, preference) => {
+    setIsLoading(true);
+    
+    // Construct the message with preference context
+    const enhancedMessage = `[Food Preference: ${preference}]\n\n${messageText}\n\nPlease provide recipe suggestions organized by cooking time:\n- Quick Option (15-20 min)\n- Moderate Option (20-40 min)\n- Elaborate Option (40-60 min)\n\nFor each recipe include the name, cooking time, difficulty level, and a brief description.`;
+    
+    try {
+      const response = await axios.post(`${API}/chat/send`, {
+        session_id: sessionId,
+        message: enhancedMessage
+      });
+      
+      const assistantMsg = {
+        role: 'assistant',
+        content: response.data.response,
+        timestamp: response.data.timestamp
+      };
+      setMessages(prev => [...prev, assistantMsg]);
+      
+      if (voiceControls && !voiceControls.isMuted) {
+        voiceControls.playResponse(response.data.response, currentMood);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to get recipes. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
+    
+    // Check if this looks like a mood/recipe request
+    const isMoodOrRecipeRequest = messageText.match(/feel|mood|hungry|tired|stressed|happy|sad|anxious|energy|comfort|suggest|recipe|meal|eat|cook|breakfast|lunch|dinner/i);
+    
+    // If it's a recipe request and no preference selected yet, show selector
+    if (isMoodOrRecipeRequest && !foodPreference) {
+      const userMsg = {
+        role: 'user',
+        content: messageText,
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, userMsg]);
+      
+      // Show preference selector
+      setPendingMoodMessage(messageText);
+      setShowPreferenceSelector(true);
+      
+      // Add assistant message asking for preference
+      const askPreferenceMsg = {
+        role: 'assistant',
+        content: "I'd love to help you with some delicious meal suggestions! 🍽️\n\nFirst, let me know your food preference so I can tailor the recipes just for you:",
+        timestamp: new Date().toISOString(),
+        showPreferenceSelector: true
+      };
+      setMessages(prev => [...prev, askPreferenceMsg]);
+      setInputMessage('');
+      return;
+    }
     
     const userMsg = {
       role: 'user',
@@ -86,9 +168,15 @@ const ChatPage = () => {
     setIsLoading(true);
     
     try {
+      // If we have a food preference, include it in recipe requests
+      let finalMessage = messageText;
+      if (foodPreference && isMoodOrRecipeRequest) {
+        finalMessage = `[Food Preference: ${foodPreference}]\n\n${messageText}\n\nPlease provide recipe suggestions organized by cooking time:\n- Quick Option (15-20 min)\n- Moderate Option (20-40 min)  \n- Elaborate Option (40-60 min)\n\nFor each recipe include the name with cooking time in parentheses, difficulty level (Easy/Medium/Hard), and a brief appetizing description.`;
+      }
+      
       const response = await axios.post(`${API}/chat/send`, {
         session_id: sessionId,
-        message: messageText
+        message: finalMessage
       });
       
       const assistantMsg = {
