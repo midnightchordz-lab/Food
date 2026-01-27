@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2, Heart, BookOpen } from 'lucide-react';
+import { Send, Loader2, Heart, BookOpen, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import useVoiceControls from '@/hooks/useVoiceControls';
-import VoiceButton from '@/components/VoiceButton';
-import LanguageSelector from '@/components/LanguageSelector';
 import RecipeMessageDisplay, { hasRecipes } from '@/components/RecipeMessageDisplay';
-import FoodPreferenceSelector from '@/components/FoodPreferenceSelector';
+import MoodSelector, { MOODS } from '@/components/MoodSelector';
+import MealTypeSelector, { MEAL_TYPES } from '@/components/MealTypeSelector';
+import FoodPreferenceSelector, { FOOD_PREFERENCES } from '@/components/FoodPreferenceSelector';
+import CuisineSelector, { CUISINES } from '@/components/CuisineSelector';
 import {
   Dialog,
   DialogContent,
@@ -21,142 +21,310 @@ import {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Chat state persistence key
+const CHAT_STORAGE_KEY = 'moodfood_chat_state';
+
 const ChatPage = () => {
+  // Core state
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId] = useState(() => `session-${Date.now()}`);
+  const [sessionId] = useState(() => {
+    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return parsed.sessionId || `session-${Date.now()}`;
+    }
+    return `session-${Date.now()}`;
+  });
+  
+  // Recipe dialog state
   const [showRecipeDialog, setShowRecipeDialog] = useState(false);
   const [recipeToSave, setRecipeToSave] = useState(null);
-  const [currentMood, setCurrentMood] = useState(null);
-  const [foodPreference, setFoodPreference] = useState(null);
-  const [showPreferenceSelector, setShowPreferenceSelector] = useState(false);
-  const [pendingMoodMessage, setPendingMoodMessage] = useState(null);
+  
+  // Flow state - tracks where user is in the conversation
+  const [flowStep, setFlowStep] = useState('greeting'); // greeting, mood, mealType, dietaryPref, cuisine, recipes
+  const [selectedMood, setSelectedMood] = useState(null);
+  const [selectedMealType, setSelectedMealType] = useState(null);
+  const [selectedDietaryPref, setSelectedDietaryPref] = useState(null);
+  const [selectedCuisines, setSelectedCuisines] = useState([]);
+  
   const messagesEndRef = useRef(null);
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   
-  const scrollToBottom = () => {
+  // Scroll to bottom when messages change
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
   
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
   
+  // Save chat state to localStorage for persistence
+  useEffect(() => {
+    if (messages.length > 0) {
+      const stateToSave = {
+        sessionId,
+        messages,
+        flowStep,
+        selectedMood,
+        selectedMealType,
+        selectedDietaryPref,
+        selectedCuisines,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(stateToSave));
+    }
+  }, [messages, flowStep, selectedMood, selectedMealType, selectedDietaryPref, selectedCuisines, sessionId]);
+  
+  // Load saved chat state on mount
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/');
       return;
     }
     
-    // Load chat history
-    const loadHistory = async () => {
+    // Try to restore previous chat state
+    const savedState = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (savedState) {
       try {
-        const response = await axios.get(`${API}/chat/history/${sessionId}`);
-        if (response.data.messages && response.data.messages.length > 0) {
-          setMessages(response.data.messages);
-        } else {
-          // Show initial greeting
-          setMessages([{
-            role: 'assistant',
-            content: `Hello${user?.name ? `, ${user.name}` : ''}! 👋\n\nI'm your compassionate meal planning companion. I'm here to suggest delicious meals that match both your mood and your taste preferences.\n\nTell me how you're feeling today, and I'll suggest some nourishing recipes to brighten your day!`,
-            timestamp: new Date().toISOString()
-          }]);
+        const parsed = JSON.parse(savedState);
+        // Only restore if less than 24 hours old
+        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 24 * 60 * 60 * 1000) {
+          if (parsed.messages && parsed.messages.length > 0) {
+            setMessages(parsed.messages);
+            setFlowStep(parsed.flowStep || 'greeting');
+            setSelectedMood(parsed.selectedMood);
+            setSelectedMealType(parsed.selectedMealType);
+            setSelectedDietaryPref(parsed.selectedDietaryPref);
+            setSelectedCuisines(parsed.selectedCuisines || []);
+            return;
+          }
         }
-      } catch (error) {
-        console.error('Error loading history:', error);
-        setMessages([{
-          role: 'assistant',
-          content: `Hello! 👋\n\nI'm your compassionate meal planning companion. Tell me how you're feeling today, and I'll suggest some nourishing recipes!`,
-          timestamp: new Date().toISOString()
-        }]);
+      } catch (e) {
+        console.error('Error parsing saved chat state:', e);
       }
-    };
-    loadHistory();
-  }, [isAuthenticated, user]);
-  
-  // Handle food preference selection
-  const handlePreferenceSelect = (preferenceId, preferenceLabel) => {
-    setFoodPreference(preferenceId);
-    setShowPreferenceSelector(false);
+    }
     
-    // Add user's selection as a message
+    // Show initial greeting with mood selector
+    setMessages([{
+      role: 'assistant',
+      content: `Hi${user?.name ? ` ${user.name}` : ''}! 👋\n\nWelcome to MoodFood! I'm here to suggest delicious meals that match your mood, preferences, and cravings.\n\nLet's start by understanding how you're feeling today:`,
+      timestamp: new Date().toISOString(),
+      showMoodSelector: true
+    }]);
+    setFlowStep('mood');
+  }, [isAuthenticated, user, navigate]);
+  
+  // Handle mood selection
+  const handleMoodSelect = (moodId, moodLabel, moodDescription) => {
+    setSelectedMood(moodId);
+    
+    // Add user's mood as a message
     const userMsg = {
       role: 'user',
-      content: `I'd like ${preferenceLabel} options please.`,
+      content: `I'm feeling ${moodLabel.toLowerCase()} today`,
       timestamp: new Date().toISOString()
     };
-    setMessages(prev => [...prev, userMsg]);
     
-    // Now send the original mood message with the preference
-    if (pendingMoodMessage) {
-      sendMessageWithPreference(pendingMoodMessage, preferenceId);
-      setPendingMoodMessage(null);
+    // AI response asking for meal type
+    const mood = MOODS.find(m => m.id === moodId);
+    const aiMsg = {
+      role: 'assistant',
+      content: `${mood?.emoji} ${moodLabel}! ${moodDescription}\n\nPerfect! Let's find some delicious meals to match that mood.\n\nWhat meal are you planning?`,
+      timestamp: new Date().toISOString(),
+      showMealTypeSelector: true
+    };
+    
+    setMessages(prev => [...prev, userMsg, aiMsg]);
+    setFlowStep('mealType');
+  };
+  
+  // Handle meal type selection
+  const handleMealTypeSelect = (mealTypeId, mealTypeLabel) => {
+    setSelectedMealType(mealTypeId);
+    
+    const userMsg = {
+      role: 'user',
+      content: `I'm looking for ${mealTypeLabel.toLowerCase()}`,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Check if user has dietary preference saved
+    const savedPref = user?.dietary_preferences || null;
+    
+    let aiMsg;
+    if (savedPref) {
+      // Confirm saved preference
+      const prefLabel = FOOD_PREFERENCES.find(p => p.id === savedPref)?.label || savedPref;
+      aiMsg = {
+        role: 'assistant',
+        content: `Great choice for ${mealTypeLabel.toLowerCase()}! 🍽️\n\nJust to confirm, you're ${prefLabel}, right?`,
+        timestamp: new Date().toISOString(),
+        showDietaryConfirm: true,
+        savedPref: savedPref
+      };
+      setSelectedDietaryPref(savedPref);
+    } else {
+      // Ask for dietary preference
+      aiMsg = {
+        role: 'assistant',
+        content: `Great choice for ${mealTypeLabel.toLowerCase()}! 🍽️\n\nWhat's your dietary preference?`,
+        timestamp: new Date().toISOString(),
+        showDietarySelector: true
+      };
+    }
+    
+    setMessages(prev => [...prev, userMsg, aiMsg]);
+    setFlowStep('dietaryPref');
+  };
+  
+  // Handle dietary preference selection
+  const handleDietaryPrefSelect = (prefId, prefLabel) => {
+    setSelectedDietaryPref(prefId);
+    
+    const userMsg = {
+      role: 'user',
+      content: `I prefer ${prefLabel} food`,
+      timestamp: new Date().toISOString()
+    };
+    
+    const aiMsg = {
+      role: 'assistant',
+      content: `${prefLabel} it is! 🌟\n\nNow, what cuisine are you in the mood for?`,
+      timestamp: new Date().toISOString(),
+      showCuisineSelector: true
+    };
+    
+    setMessages(prev => [...prev, userMsg, aiMsg]);
+    setFlowStep('cuisine');
+  };
+  
+  // Handle dietary confirmation
+  const handleDietaryConfirm = (confirmed, savedPref) => {
+    if (confirmed) {
+      const prefLabel = FOOD_PREFERENCES.find(p => p.id === savedPref)?.label || savedPref;
+      const userMsg = {
+        role: 'user',
+        content: `Yes, I'm ${prefLabel}`,
+        timestamp: new Date().toISOString()
+      };
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: `Perfect! 🌟\n\nNow, what cuisine are you in the mood for?`,
+        timestamp: new Date().toISOString(),
+        showCuisineSelector: true
+      };
+      
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      setFlowStep('cuisine');
+    } else {
+      // Show dietary selector to change
+      const userMsg = {
+        role: 'user',
+        content: `I'd like to change my preference`,
+        timestamp: new Date().toISOString()
+      };
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: `No problem! What's your dietary preference today?`,
+        timestamp: new Date().toISOString(),
+        showDietarySelector: true
+      };
+      
+      setSelectedDietaryPref(null);
+      setMessages(prev => [...prev, userMsg, aiMsg]);
     }
   };
   
-  // Send message with food preference included
-  const sendMessageWithPreference = async (messageText, preference) => {
+  // Handle cuisine selection
+  const handleCuisineSelect = async (cuisineIds, cuisineLabels) => {
+    setSelectedCuisines(cuisineIds);
+    
+    const userMsg = {
+      role: 'user',
+      content: cuisineIds.includes('any') 
+        ? `Surprise me with something delicious!` 
+        : `I'm in the mood for ${cuisineLabels}`,
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, userMsg]);
+    setFlowStep('recipes');
+    
+    // Now fetch recipes
+    await fetchRecipes(cuisineIds);
+  };
+  
+  // Fetch recipes based on all selections
+  const fetchRecipes = async (cuisineIds) => {
     setIsLoading(true);
     
-    // Construct the message with preference context
-    const enhancedMessage = `[Food Preference: ${preference}]\n\n${messageText}\n\nPlease provide recipe suggestions organized by cooking time:\n- Quick Option (15-20 min)\n- Moderate Option (20-40 min)\n- Elaborate Option (40-60 min)\n\nFor each recipe include the name, cooking time, difficulty level, and a brief description.`;
+    const mood = MOODS.find(m => m.id === selectedMood);
+    const mealType = MEAL_TYPES.find(m => m.id === selectedMealType);
+    const dietaryPref = FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref);
+    const cuisineLabels = cuisineIds.includes('any') 
+      ? 'any cuisine' 
+      : cuisineIds.map(id => CUISINES.find(c => c.id === id)?.label).join(', ');
     
+    const enhancedMessage = `
+[User Preferences]
+- Mood: ${mood?.label} (${mood?.description})
+- Meal Type: ${mealType?.label}
+- Dietary Preference: ${dietaryPref?.label}
+- Cuisine(s): ${cuisineLabels}
+
+Please suggest 6 delicious ${mealType?.label?.toLowerCase()} recipes that:
+1. Match the ${mood?.label?.toLowerCase()} mood (${mood?.description})
+2. Are appropriate for ${mealType?.label?.toLowerCase()} time
+3. Are ${dietaryPref?.label?.toLowerCase()} friendly
+4. Feature ${cuisineLabels} style cooking
+
+For EACH recipe provide:
+- Recipe name with cooking time in parentheses
+- Difficulty level (Easy/Medium/Hard)
+- Brief appetizing description (2-3 sentences)
+- Key mood-boosting benefits
+
+Format each recipe clearly with the name as a header.
+`;
+
     try {
       const response = await axios.post(`${API}/chat/send`, {
         session_id: sessionId,
         message: enhancedMessage
       });
       
-      const assistantMsg = {
+      const aiMsg = {
         role: 'assistant',
         content: response.data.response,
         timestamp: response.data.timestamp
       };
-      setMessages(prev => [...prev, assistantMsg]);
       
-      if (voiceControls && !voiceControls.isMuted) {
-        voiceControls.playResponse(response.data.response, currentMood);
-      }
+      setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error fetching recipes:', error);
       toast.error('Failed to get recipes. Please try again.');
+      
+      const errorMsg = {
+        role: 'assistant',
+        content: `I'm sorry, I had trouble finding recipes. Let me try again...`,
+        timestamp: new Date().toISOString(),
+        showRetryButton: true
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
   };
   
+  // Handle free-form message sending
   const sendMessage = async (messageText) => {
-    if (!messageText.trim()) return;
-    
-    // Check if this looks like a mood/recipe request
-    const isMoodOrRecipeRequest = messageText.match(/feel|mood|hungry|tired|stressed|happy|sad|anxious|energy|comfort|suggest|recipe|meal|eat|cook|breakfast|lunch|dinner/i);
-    
-    // If it's a recipe request and no preference selected yet, show selector
-    if (isMoodOrRecipeRequest && !foodPreference) {
-      const userMsg = {
-        role: 'user',
-        content: messageText,
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, userMsg]);
-      
-      // Show preference selector
-      setPendingMoodMessage(messageText);
-      setShowPreferenceSelector(true);
-      
-      // Add assistant message asking for preference
-      const askPreferenceMsg = {
-        role: 'assistant',
-        content: "I'd love to help you with some delicious meal suggestions! 🍽️\n\nFirst, let me know your food preference so I can tailor the recipes just for you:",
-        timestamp: new Date().toISOString(),
-        showPreferenceSelector: true
-      };
-      setMessages(prev => [...prev, askPreferenceMsg]);
-      setInputMessage('');
-      return;
-    }
+    if (!messageText.trim() || isLoading) return;
     
     const userMsg = {
       role: 'user',
@@ -168,28 +336,23 @@ const ChatPage = () => {
     setIsLoading(true);
     
     try {
-      // If we have a food preference, include it in recipe requests
-      let finalMessage = messageText;
-      if (foodPreference && isMoodOrRecipeRequest) {
-        finalMessage = `[Food Preference: ${foodPreference}]\n\n${messageText}\n\nPlease provide recipe suggestions organized by cooking time:\n- Quick Option (15-20 min)\n- Moderate Option (20-40 min)  \n- Elaborate Option (40-60 min)\n\nFor each recipe include the name with cooking time in parentheses, difficulty level (Easy/Medium/Hard), and a brief appetizing description.`;
+      // Include context in the message
+      let contextMessage = messageText;
+      if (selectedMood || selectedMealType || selectedDietaryPref) {
+        contextMessage = `[Context: Mood=${selectedMood || 'not set'}, MealType=${selectedMealType || 'not set'}, Dietary=${selectedDietaryPref || 'not set'}, Cuisines=${selectedCuisines.join(',') || 'not set'}]\n\n${messageText}`;
       }
       
       const response = await axios.post(`${API}/chat/send`, {
         session_id: sessionId,
-        message: finalMessage
+        message: contextMessage
       });
       
-      const assistantMsg = {
+      const aiMsg = {
         role: 'assistant',
         content: response.data.response,
         timestamp: response.data.timestamp
       };
-      setMessages(prev => [...prev, assistantMsg]);
-      
-      // Auto-play voice response if not muted
-      if (voiceControls && !voiceControls.isMuted) {
-        voiceControls.playResponse(response.data.response, currentMood);
-      }
+      setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message. Please try again.');
@@ -197,22 +360,6 @@ const ChatPage = () => {
       setIsLoading(false);
     }
   };
-  
-  const handleVoiceTranscription = (text, detectedMood) => {
-    // Update current mood
-    if (detectedMood) {
-      setCurrentMood(detectedMood);
-    }
-    
-    // Send the transcribed text
-    sendMessage(text);
-  };
-  
-  // Voice controls - now defined after handleVoiceTranscription
-  const voiceControls = useVoiceControls({
-    onTranscription: handleVoiceTranscription,
-    autoPlayResponse: true
-  });
   
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -226,84 +373,23 @@ const ChatPage = () => {
     }
   };
   
-  const extractRecipeFromMessage = (message) => {
-    // Simple recipe extraction - looks for common patterns
-    const lines = message.split('\n');
-    let title = '';
-    let description = '';
-    let ingredients = [];
-    let instructions = [];
-    let prepTime = '30 min';
-    let cookTime = '30 min';
-    let complexity = 'standard';
-    
-    // Try to find title (often in bold or first line)
-    const titleMatch = message.match(/\*\*(.+?)\*\*/);
-    if (titleMatch) {
-      title = titleMatch[1];
-    } else {
-      // Use first substantial line
-      const firstLine = lines.find(l => l.trim().length > 10);
-      if (firstLine) title = firstLine.trim().substring(0, 100);
-    }
-    
-    // Extract ingredients (lines with measurements)
-    const ingredientSection = message.match(/Ingredients?:?\s*([\s\S]*?)(?=Instructions?|Directions?|Steps?|$)/i);
-    if (ingredientSection) {
-      ingredients = ingredientSection[1]
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => l && !l.match(/^[#*]/))
-        .slice(0, 20);
-    }
-    
-    // Extract instructions
-    const instructionSection = message.match(/(?:Instructions?|Directions?|Steps?):?\s*([\s\S]*?)$/i);
-    if (instructionSection) {
-      instructions = instructionSection[1]
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => l && !l.match(/^[#*]/))
-        .slice(0, 15);
-    }
-    
-    // Extract times
-    const prepMatch = message.match(/(?:prep|preparation)\s*time:?\s*(\d+[-\s]*\d*\s*(?:min|minutes|hour|hours))/i);
-    if (prepMatch) prepTime = prepMatch[1];
-    
-    const cookMatch = message.match(/(?:cook|cooking)\s*time:?\s*(\d+[-\s]*\d*\s*(?:min|minutes|hour|hours))/i);
-    if (cookMatch) cookTime = cookMatch[1];
-    
-    // Determine complexity
-    if (message.match(/quick|easy|simple|15[-\s]*20\s*min/i)) {
-      complexity = 'quick';
-    } else if (message.match(/involved|complex|hour|therapeutic/i)) {
-      complexity = 'involved';
-    }
-    
-    // Get description (first paragraph)
-    description = lines.find(l => l.length > 30)?.substring(0, 200) || 'A delicious mood-based meal';
-    
-    return {
-      title: title || 'Mood-Based Recipe',
-      description,
-      ingredients: ingredients.length > 0 ? ingredients : ['See chat for details'],
-      instructions: instructions.length > 0 ? instructions : ['See chat for details'],
-      mood_tags: ['comfort', 'nourishing'],
-      prep_time: prepTime,
-      cook_time: cookTime,
-      complexity,
-      nutritional_highlights: 'Rich in mood-boosting nutrients',
-      dietary_info: []
-    };
+  // Start new conversation
+  const handleNewConversation = () => {
+    localStorage.removeItem(CHAT_STORAGE_KEY);
+    setMessages([{
+      role: 'assistant',
+      content: `Hi${user?.name ? ` ${user.name}` : ''}! 👋\n\nLet's find you some delicious meals!\n\nHow are you feeling today?`,
+      timestamp: new Date().toISOString(),
+      showMoodSelector: true
+    }]);
+    setFlowStep('mood');
+    setSelectedMood(null);
+    setSelectedMealType(null);
+    setSelectedDietaryPref(null);
+    setSelectedCuisines([]);
   };
   
-  const handleSaveRecipe = (message) => {
-    const recipe = extractRecipeFromMessage(message);
-    setRecipeToSave(recipe);
-    setShowRecipeDialog(true);
-  };
-  
+  // Save recipe
   const confirmSaveRecipe = async () => {
     if (!recipeToSave) return;
     
@@ -325,46 +411,69 @@ const ChatPage = () => {
     <>
       <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8" data-testid="chat-page">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <div className="text-center mb-4">
-              <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="chat-title">
-                How are you feeling today?
-              </h1>
-              <p className="text-muted-foreground" data-testid="chat-subtitle">
-                Share your mood, and I'll suggest meals that nourish both body and mind.
-              </p>
-              {currentMood && (
-                <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-accent/10 text-accent rounded-full text-sm">
-                  <span>Current mood: {currentMood}</span>
-                </div>
-              )}
-              {foodPreference && (
-                <div className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm ml-2">
-                  <span className="capitalize">🍽️ {foodPreference.replace('-', ' ')}</span>
-                  <button 
-                    onClick={() => setFoodPreference(null)}
-                    className="ml-1 hover:opacity-70"
-                    title="Change preference"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-serif" data-testid="chat-title">
+                  MoodFood Chat
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Personalized recipes based on how you feel
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/')}
+                  className="rounded-full"
+                  data-testid="home-button"
+                >
+                  <Home size={16} className="mr-1" />
+                  Home
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNewConversation}
+                  className="rounded-full"
+                  data-testid="new-chat-button"
+                >
+                  New Chat
+                </Button>
+              </div>
             </div>
             
-            {/* Language Selector for Voice */}
-            {voiceControls && (
-              <div className="flex justify-center">
-                <LanguageSelector
-                  selectedLanguage={voiceControls.currentLanguage}
-                  onLanguageChange={voiceControls.setCurrentLanguage}
-                />
+            {/* Current selections indicator */}
+            {(selectedMood || selectedMealType || selectedDietaryPref) && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {selectedMood && (
+                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                    {MOODS.find(m => m.id === selectedMood)?.emoji} {MOODS.find(m => m.id === selectedMood)?.label}
+                  </span>
+                )}
+                {selectedMealType && (
+                  <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium">
+                    {MEAL_TYPES.find(m => m.id === selectedMealType)?.emoji} {MEAL_TYPES.find(m => m.id === selectedMealType)?.label}
+                  </span>
+                )}
+                {selectedDietaryPref && (
+                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                    🍽️ {FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref)?.label}
+                  </span>
+                )}
+                {selectedCuisines.length > 0 && (
+                  <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                    🌍 {selectedCuisines.includes('any') ? 'Any Cuisine' : selectedCuisines.map(id => CUISINES.find(c => c.id === id)?.label).join(', ')}
+                  </span>
+                )}
               </div>
             )}
           </div>
           
           {/* Messages Container */}
-          <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-6 mb-6 chat-container" data-testid="messages-container">
+          <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-6 mb-6 min-h-[400px] max-h-[60vh] overflow-y-auto" data-testid="messages-container">
             <div className="space-y-4">
               {messages.map((msg, idx) => (
                 <div key={idx}>
@@ -379,7 +488,7 @@ const ChatPage = () => {
                           : 'bg-secondary/50 text-secondary-foreground rounded-bl-sm'
                       }`}
                     >
-                      {/* Use RecipeMessageDisplay for AI messages with recipes */}
+                      {/* Recipe display for AI messages */}
                       {msg.role === 'assistant' && hasRecipes(msg.content) ? (
                         <RecipeMessageDisplay 
                           message={msg.content} 
@@ -387,14 +496,14 @@ const ChatPage = () => {
                             setRecipeToSave({
                               title: recipe.title,
                               description: recipe.description,
-                              ingredients: ['See chat for full ingredients list'],
-                              instructions: ['See chat for detailed instructions'],
-                              mood_tags: ['comfort', 'nourishing'],
+                              ingredients: ['See recipe details'],
+                              instructions: ['See recipe details'],
+                              mood_tags: [selectedMood || 'comfort'],
                               prep_time: recipe.cookingTime || '30 min',
                               cook_time: recipe.cookingTime || '30 min',
-                              complexity: recipe.difficulty?.toLowerCase() || 'standard',
-                              nutritional_highlights: 'Rich in mood-boosting nutrients',
-                              dietary_info: [],
+                              complexity: recipe.difficulty?.toLowerCase() || 'medium',
+                              nutritional_highlights: 'Mood-boosting nutrients',
+                              dietary_info: [selectedDietaryPref],
                               image_url: recipe.imageUrl,
                               cuisine_type: recipe.cuisineHint
                             });
@@ -407,32 +516,74 @@ const ChatPage = () => {
                     </div>
                   </div>
                   
-                  {/* Show Food Preference Selector after the message that asks for it */}
-                  {msg.showPreferenceSelector && showPreferenceSelector && (
+                  {/* Interactive selectors based on message flags */}
+                  {msg.showMoodSelector && flowStep === 'mood' && (
                     <div className="mt-4 ml-2">
-                      <FoodPreferenceSelector 
-                        onSelect={handlePreferenceSelect}
-                        selectedPreference={foodPreference}
+                      <MoodSelector 
+                        onSelect={handleMoodSelect}
+                        selectedMood={selectedMood}
                       />
                     </div>
                   )}
                   
-                  {/* Show save button for AI messages without visual recipe cards */}
-                  {msg.role === 'assistant' && msg.content.length > 200 && !hasRecipes(msg.content) && !msg.showPreferenceSelector && (
-                    msg.content.match(/ingredient|recipe|meal/i) && (
-                      <div className="flex justify-start mt-2 ml-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSaveRecipe(msg.content)}
-                          className="rounded-full text-xs"
-                          data-testid={`save-recipe-${idx}`}
-                        >
-                          <Heart size={14} className="mr-1" />
-                          Save Recipe
-                        </Button>
-                      </div>
-                    )
+                  {msg.showMealTypeSelector && flowStep === 'mealType' && (
+                    <div className="mt-4 ml-2">
+                      <MealTypeSelector 
+                        onSelect={handleMealTypeSelect}
+                        selectedMealType={selectedMealType}
+                      />
+                    </div>
+                  )}
+                  
+                  {msg.showDietarySelector && flowStep === 'dietaryPref' && (
+                    <div className="mt-4 ml-2">
+                      <FoodPreferenceSelector 
+                        onSelect={handleDietaryPrefSelect}
+                        selectedPreference={selectedDietaryPref}
+                      />
+                    </div>
+                  )}
+                  
+                  {msg.showDietaryConfirm && flowStep === 'dietaryPref' && (
+                    <div className="mt-4 ml-2 flex gap-3">
+                      <Button
+                        onClick={() => handleDietaryConfirm(true, msg.savedPref)}
+                        className="rounded-full bg-green-600 hover:bg-green-700"
+                        data-testid="confirm-dietary-yes"
+                      >
+                        Yes, that's right
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleDietaryConfirm(false, msg.savedPref)}
+                        className="rounded-full"
+                        data-testid="confirm-dietary-change"
+                      >
+                        No, I want to change
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {msg.showCuisineSelector && flowStep === 'cuisine' && (
+                    <div className="mt-4 ml-2">
+                      <CuisineSelector 
+                        onSelect={handleCuisineSelect}
+                        selectedCuisines={selectedCuisines}
+                        allowMultiple={true}
+                      />
+                    </div>
+                  )}
+                  
+                  {msg.showRetryButton && (
+                    <div className="mt-4 ml-2">
+                      <Button
+                        onClick={() => fetchRecipes(selectedCuisines)}
+                        className="rounded-full"
+                        data-testid="retry-button"
+                      >
+                        Try Again
+                      </Button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -441,7 +592,7 @@ const ChatPage = () => {
                 <div className="flex justify-start" data-testid="loading-indicator">
                   <div className="bg-secondary rounded-2xl rounded-bl-sm px-5 py-3 flex items-center gap-2">
                     <Loader2 className="animate-spin" size={18} />
-                    <span>Thinking...</span>
+                    <span>Finding delicious recipes...</span>
                   </div>
                 </div>
               )}
@@ -450,43 +601,33 @@ const ChatPage = () => {
             </div>
           </div>
           
-          {/* Input Form */}
-          <div className="flex gap-3 items-end" data-testid="message-form">
-            {voiceControls && (
-              <VoiceButton
-                isRecording={voiceControls.isRecording}
-                isProcessing={voiceControls.isProcessing}
-                isMuted={voiceControls.isMuted}
-                onStartRecording={voiceControls.startRecording}
-                onStopRecording={voiceControls.stopRecording}
-                onToggleMute={voiceControls.toggleMute}
-                size="lg"
+          {/* Input Form - only show after flow is complete or for follow-up questions */}
+          {(flowStep === 'recipes' || messages.some(m => hasRecipes(m.content))) && (
+            <form onSubmit={handleSubmit} className="flex gap-3 items-end" data-testid="message-form">
+              <Textarea
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask follow-up questions or request more recipes..."
+                className="flex-1 rounded-2xl resize-none min-h-[60px] max-h-[120px] bg-card border-border/60 focus:border-primary"
+                disabled={isLoading}
+                data-testid="message-input"
               />
-            )}
-            
-            <Textarea
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Tell me how you're feeling..."
-              className="flex-1 rounded-2xl resize-none min-h-[60px] max-h-[120px] bg-card border-border/60 focus:border-primary"
-              disabled={isLoading || (voiceControls && voiceControls.isRecording)}
-              data-testid="message-input"
-            />
-            <Button
-              onClick={handleSubmit}
-              size="lg"
-              disabled={isLoading || !inputMessage.trim() || (voiceControls && voiceControls.isRecording)}
-              className="rounded-full px-6 bg-primary hover:bg-primary/90 active:scale-95 transition-all"
-              data-testid="send-button"
-            >
-              <Send size={20} />
-            </Button>
-          </div>
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isLoading || !inputMessage.trim()}
+                className="rounded-full px-6 bg-primary hover:bg-primary/90 active:scale-95 transition-all"
+                data-testid="send-button"
+              >
+                <Send size={20} />
+              </Button>
+            </form>
+          )}
         </div>
       </div>
       
-      {/* Recipe Save Confirmation Dialog */}
+      {/* Recipe Save Dialog */}
       <Dialog open={showRecipeDialog} onOpenChange={setShowRecipeDialog}>
         <DialogContent className="max-w-md" data-testid="recipe-save-dialog">
           <DialogHeader>
