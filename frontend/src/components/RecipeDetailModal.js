@@ -929,28 +929,71 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
           <div className="grid md:grid-cols-2 gap-8 mb-8">
             {/* Ingredients */}
             <div>
-              <h2 className="text-xl font-serif mb-4 flex items-center gap-2">
-                <Leaf size={22} className="text-green-600" />
-                Ingredients
-                <span className="text-sm font-normal text-muted-foreground">(for {servings} servings)</span>
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-serif flex items-center gap-2">
+                  <Leaf size={22} className="text-green-600" />
+                  Ingredients
+                  <span className="text-sm font-normal text-muted-foreground">(for {servings} servings)</span>
+                </h2>
+                {shoppingCart && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={handleAddAllToCart}
+                    className="rounded-full text-xs"
+                    data-testid="add-all-ingredients-btn"
+                  >
+                    <ShoppingCart size={14} className="mr-1.5" />
+                    Add All
+                  </Button>
+                )}
+              </div>
               <ul className="space-y-2">
                 {detailedRecipe.ingredients.map((ing, idx) => (
                   <li 
                     key={idx} 
-                    className={`flex items-start gap-3 p-2 rounded-lg transition-colors cursor-pointer ${
-                      checkedIngredients[idx] ? 'bg-green-50 line-through text-muted-foreground' : 'hover:bg-secondary/30'
+                    className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
+                      checkedIngredients[idx] ? 'bg-green-50' : 'hover:bg-secondary/30'
                     }`}
-                    onClick={() => setCheckedIngredients(prev => ({ ...prev, [idx]: !prev[idx] }))}
                   >
-                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                      checkedIngredients[idx] ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                    }`}>
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => setCheckedIngredients(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                        checkedIngredients[idx] ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-primary'
+                      }`}
+                      data-testid={`ingredient-checkbox-${idx}`}
+                    >
                       {checkedIngredients[idx] && <Check size={14} className="text-white" />}
-                    </div>
-                    <span>
+                    </button>
+                    
+                    {/* Ingredient text */}
+                    <span className={`flex-1 ${checkedIngredients[idx] ? 'line-through text-muted-foreground' : ''}`}>
                       <strong className="text-primary">{scaleAmount(ing.amount, detailedRecipe.servings)}</strong> {ing.item}
                     </span>
+                    
+                    {/* Add to Cart button */}
+                    {shoppingCart && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddIngredient({
+                            amount: scaleAmount(ing.amount, detailedRecipe.servings),
+                            item: ing.item
+                          }, idx);
+                        }}
+                        disabled={addedIngredients[idx]}
+                        className={`p-1.5 rounded-full transition-all flex-shrink-0 ${
+                          addedIngredients[idx] 
+                            ? 'bg-green-100 text-green-600' 
+                            : 'hover:bg-primary/10 text-muted-foreground hover:text-primary'
+                        }`}
+                        title={addedIngredients[idx] ? 'Added to cart' : 'Add to cart'}
+                        data-testid={`add-ingredient-${idx}`}
+                      >
+                        {addedIngredients[idx] ? <Check size={16} /> : <Plus size={16} />}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
