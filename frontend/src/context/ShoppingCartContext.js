@@ -55,6 +55,7 @@ export const ShoppingCartProvider = ({ children }) => {
   const [groceryList, setGroceryList] = useState([]);
   const [preferredPartner, setPreferredPartner] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -62,25 +63,44 @@ export const ShoppingCartProvider = ({ children }) => {
     const savedList = localStorage.getItem('groceryList');
     const savedPartner = localStorage.getItem('preferredPartner');
     
-    if (savedCart) setCartItems(JSON.parse(savedCart));
-    if (savedList) setGroceryList(JSON.parse(savedList));
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (e) {
+        console.error('Error parsing shoppingCart from localStorage:', e);
+      }
+    }
+    if (savedList) {
+      try {
+        setGroceryList(JSON.parse(savedList));
+      } catch (e) {
+        console.error('Error parsing groceryList from localStorage:', e);
+      }
+    }
     if (savedPartner) setPreferredPartner(savedPartner);
+    
+    // Mark as initialized after loading
+    setIsInitialized(true);
   }, []);
 
-  // Save to localStorage on changes
+  // Save to localStorage on changes - only after initial load is complete
   useEffect(() => {
-    localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (isInitialized) {
+      localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
+    }
+  }, [cartItems, isInitialized]);
 
   useEffect(() => {
-    localStorage.setItem('groceryList', JSON.stringify(groceryList));
-  }, [groceryList]);
+    if (isInitialized) {
+      localStorage.setItem('groceryList', JSON.stringify(groceryList));
+    }
+  }, [groceryList, isInitialized]);
 
   useEffect(() => {
-    if (preferredPartner) {
+    if (preferredPartner && isInitialized) {
       localStorage.setItem('preferredPartner', preferredPartner);
     }
-  }, [preferredPartner]);
+  }, [preferredPartner, isInitialized]);
 
   // Add single ingredient to cart
   const addToCart = (ingredient, recipeName) => {
