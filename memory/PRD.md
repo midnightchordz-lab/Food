@@ -289,6 +289,14 @@ A mood-based recipe discovery application where users receive personalized meal 
   - Test Results: 100% pass rate (8/8 features tested)
 
 
+- **Jan 28, 2026**: Added Calorie Target to Weekly Meal Planner (ENHANCEMENT)
+  - **4 Presets**: Weight Loss (1500), Maintenance (2000), Active (2500), Muscle Gain (3000)
+  - **Custom Input**: Users can set any calorie target between 1000-5000
+  - **Smart Distribution**: Breakfast 25%, Lunch 35%, Dinner 40%
+  - **Calorie Labels**: Generated meals include approximate calories e.g. "Greek Yogurt Parfait (~350cal)"
+  - **Optional Feature**: Enabled via checkbox, plans work without calorie constraints too
+  - Testing: 100% backend, 100% frontend pass rate
+
 - **Jan 28, 2026**: Added Dietary Preference to Weekly Meal Planner (FEATURE)
   - **5 Dietary Options**: Vegetarian, Vegan, Non-Vegetarian, Pescatarian, Eggetarian
   - **UI**: Selectable cards with icons and descriptions in AI Meal Plan Generator modal
