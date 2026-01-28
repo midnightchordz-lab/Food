@@ -758,7 +758,7 @@ def detect_mood_change(message: str) -> dict:
         context_end = message.find("]") + 1
         user_message = message[context_end:].strip()
     
-    lower_msg = user_message.lower()
+    lower_msg = user_message.lower().strip()
     
     # Check for mood change indicators
     is_mood_change = False
@@ -768,7 +768,6 @@ def detect_mood_change(message: str) -> dict:
             break
     
     # Also check for direct mood statements - prioritize words that appear LATER in the message
-    # (more likely to be the NEW mood the user wants)
     detected_mood = None
     best_position = -1
     
@@ -782,8 +781,13 @@ def detect_mood_change(message: str) -> dict:
                     detected_mood = mood
                     best_position = pos
     
-    # If we detect a new mood with context suggesting change, it's a mood change
-    if detected_mood and (is_mood_change or "now" in lower_msg or "feeling" in lower_msg):
+    # Check if this is a SHORT direct mood statement (user just typed the mood word)
+    # This handles cases like user typing "cozy" after AI asks "How are you feeling?"
+    word_count = len(lower_msg.split())
+    is_direct_mood_response = detected_mood and word_count <= 5
+    
+    # If we detect a mood with context suggesting change OR it's a direct short response
+    if detected_mood and (is_mood_change or is_direct_mood_response or "now" in lower_msg or "feeling" in lower_msg):
         return {"is_mood_change": True, "new_mood": detected_mood}
     elif is_mood_change:
         return {"is_mood_change": True, "new_mood": None}  # Need clarification
