@@ -1072,6 +1072,75 @@ async def get_meal_preferences(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class WeekOffsetRequest(BaseModel):
+    week_offset: int = 0
+
+
+@api_router.post("/weekly-plan/generate-for-week")
+async def generate_plan_for_week(request: WeekOffsetRequest, current_user: User = Depends(get_current_user)):
+    """Generate plan for a specific week (by offset from current week) using saved preferences"""
+    try:
+        # Get saved preferences
+        prefs = await db.meal_preferences.find_one(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        )
+        if not prefs:
+            raise HTTPException(status_code=400, detail="No meal preferences found. Please set your preferences first.")
+        
+        # Calculate target week's start date
+        today = datetime.now(timezone.utc)
+        current_week_start = today - timedelta(days=today.weekday())
+        target_week_start = current_week_start + timedelta(days=request.week_offset * 7)
+        target_week_str = target_week_start.strftime('%Y-%m-%d')
+        
+        # Check if plan already exists
+        existing = await db.weekly_plans.find_one(
+            {"user_id": current_user.id, "week_start": target_week_str},
+            {"_id": 0}
+        )
+        
+        if existing:
+            return {"message": "Plan for this week already exists", "plan": existing, "already_exists": True}
+        
+        # Get previously used recipes (last 8 weeks to ensure variety)
+        used_recipes = await get_used_recipes(current_user.id, weeks=8)
+        
+        # Generate new plan
+        meals = await generate_ai_meal_plan(
+            current_user,
+            prefs.get('mood', 'balanced'),
+            prefs.get('dietary_preference', 'non-vegetarian'),
+            prefs.get('calorie_target'),
+            prefs.get('focus_areas', []),
+            prefs.get('cuisine_preferences', []),
+            exclude_recipes=used_recipes
+        )
+        
+        # Save the plan
+        plan = WeeklyPlan(
+            user_id=current_user.id,
+            week_start=target_week_str,
+            meals=meals
+        )
+        plan_dict = plan.model_dump()
+        plan_dict['created_at'] = plan_dict['created_at'].isoformat()
+        await db.weekly_plans.insert_one(plan_dict)
+        
+        # Remove _id before returning
+        plan_dict.pop('_id', None)
+        
+        # Track used recipes
+        await track_used_recipes(current_user.id, meals, target_week_str)
+        
+        return {"message": f"Meal plan for week of {target_week_str} generated!", "plan": plan_dict, "already_exists": False}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error generating plan for week: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.post("/weekly-plan/generate-next")
 async def generate_next_week_plan(current_user: User = Depends(get_current_user)):
     """Generate plan for the next week using saved preferences"""
