@@ -862,6 +862,45 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             "user_id": current_user.id
         })
         
+        # Extract context from message if provided
+        context = {}
+        if "[Context:" in request.message:
+            context_match = request.message.split("[Context:")[1].split("]")[0] if "[Context:" in request.message else ""
+            for part in context_match.split(","):
+                if "=" in part:
+                    key, value = part.strip().split("=", 1)
+                    if value and value.lower() != "not set":
+                        context[key.lower().replace("dietary", "dietary_pref").replace("mealtype", "meal_type")] = value
+        
+        # Check if this is a mood change request FIRST
+        mood_change = is_mood_change_request(request.message, context)
+        
+        if mood_change.get("is_mood_change"):
+            # Handle mood change
+            if mood_change.get("needs_clarification"):
+                ai_response = mood_change["response"]
+            else:
+                new_mood = mood_change.get("new_mood")
+                ai_response = mood_change["response"]
+                logging.info(f"Mood change detected: new_mood={new_mood}")
+            
+            assistant_msg = ChatMessage(
+                session_id=request.session_id,
+                role="assistant",
+                content=ai_response
+            )
+            await db.chat_messages.insert_one({
+                **assistant_msg.model_dump(),
+                "timestamp": assistant_msg.timestamp.isoformat(),
+                "user_id": current_user.id
+            })
+            
+            return ChatResponse(
+                session_id=request.session_id,
+                response=ai_response,
+                timestamp=assistant_msg.timestamp
+            )
+        
         # Check if this is a recipe generation request
         recipe_params = is_recipe_generation_request(request.message)
         
