@@ -933,6 +933,7 @@ async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User 
         meals = await generate_ai_meal_plan(
             current_user,
             request.mood,
+            request.dietary_preference,
             request.focus_areas,
             request.cuisine_preferences
         )
