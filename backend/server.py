@@ -164,6 +164,36 @@ class WeeklyPlanCreate(BaseModel):
     week_start: str
     meals: Dict[str, Any]
 
+# Meal Preferences for Continuous Planning
+class MealPreferences(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    dietary_preference: str = "non-vegetarian"
+    calorie_target: Optional[int] = None
+    focus_areas: List[str] = []
+    cuisine_preferences: List[str] = []
+    mood: str = "balanced"
+    is_active: bool = True  # When True, auto-generates weekly plans
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MealPreferencesCreate(BaseModel):
+    dietary_preference: str = "non-vegetarian"
+    calorie_target: Optional[int] = None
+    focus_areas: List[str] = []
+    cuisine_preferences: List[str] = []
+    mood: str = "balanced"
+    is_active: bool = True
+
+# Track used recipes to avoid repetition
+class UsedRecipe(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    user_id: str
+    recipe_name: str
+    used_date: str
+    week_start: str
+
 class AIWeeklyPlanRequest(BaseModel):
     mood: str
     dietary_preference: Optional[str] = "non-vegetarian"
