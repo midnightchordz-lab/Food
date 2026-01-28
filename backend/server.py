@@ -724,6 +724,72 @@ async def get_chat_history(session_id: str, current_user: User = Depends(get_cur
         logging.error(f"Error fetching history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# Detailed Recipe Generation Request Model
+class DetailedRecipeRequest(BaseModel):
+    recipe_title: str
+    cuisine: str = "International"
+    meal_type: str = "Dinner"
+    dietary_pref: str = "Any"
+
+
+@api_router.post("/recipes/detailed")
+async def get_detailed_recipe(request: DetailedRecipeRequest, current_user: User = Depends(get_current_user)):
+    """Generate a comprehensive detailed recipe with professional-grade instructions"""
+    try:
+        logging.info(f"Generating detailed recipe for: {request.recipe_title}")
+        
+        # Check cache first (in database)
+        cached = await db.detailed_recipes.find_one(
+            {"title_lower": request.recipe_title.lower().strip()},
+            {"_id": 0}
+        )
+        if cached and cached.get("detailed_content"):
+            logging.info(f"Found cached detailed recipe for: {request.recipe_title}")
+            return {"recipe": cached["detailed_content"], "cached": True}
+        
+        # Generate new detailed recipe
+        system_msg = get_detailed_recipe_prompt(
+            recipe_title=request.recipe_title,
+            cuisine=request.cuisine,
+            meal_type=request.meal_type,
+            dietary_pref=request.dietary_pref
+        )
+        
+        chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"detailed-{uuid.uuid4().hex[:8]}",
+            system_message=system_msg
+        )
+        chat.with_model("openai", "gpt-4o")  # Use gpt-4o for detailed recipes (better quality)
+        
+        user_message = UserMessage(text=f"Generate the complete detailed recipe for {request.recipe_title}")
+        detailed_content = await chat.send_message(user_message)
+        
+        # Cache in database
+        await db.detailed_recipes.update_one(
+            {"title_lower": request.recipe_title.lower().strip()},
+            {
+                "$set": {
+                    "title": request.recipe_title,
+                    "title_lower": request.recipe_title.lower().strip(),
+                    "cuisine": request.cuisine,
+                    "meal_type": request.meal_type,
+                    "dietary_pref": request.dietary_pref,
+                    "detailed_content": detailed_content,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "user_id": current_user.id
+                }
+            },
+            upsert=True
+        )
+        
+        return {"recipe": detailed_content, "cached": False}
+    except Exception as e:
+        logging.error(f"Error generating detailed recipe: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Recipe endpoints
 @api_router.post("/recipes/save", response_model=SavedRecipe)
 async def save_recipe(request: SaveRecipeRequest, current_user: User = Depends(get_current_user)):
