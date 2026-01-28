@@ -50,7 +50,7 @@ const ChatPage = () => {
   const [selectedCuisines, setSelectedCuisines] = useState([]);
   
   const messagesEndRef = useRef(null);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
   
   // Scroll to bottom when messages change
