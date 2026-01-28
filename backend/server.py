@@ -666,6 +666,167 @@ async def update_profile(profile_data: UserProfileUpdate, current_user: User = D
     updated_user = await db.users.find_one({"id": current_user.id}, {"_id": 0, "hashed_password": 0})
     return User(**updated_user)
 
+
+# Mood change detection patterns and mood mapping
+MOOD_CHANGE_PATTERNS = [
+    r"mood (has |is )?changed?",
+    r"feeling different",
+    r"not in that mood",
+    r"changed my mind",
+    r"actually.*feeling",
+    r"now (feeling|i'm|i feel)",
+    r"instead.*feeling",
+]
+
+MOOD_KEYWORDS = {
+    "happy": ["happy", "joyful", "cheerful", "pleased", "delighted", "great", "wonderful"],
+    "sad": ["sad", "down", "blue", "melancholy", "upset", "depressed"],
+    "angry": ["angry", "mad", "furious", "irritated", "frustrated", "annoyed"],
+    "excited": ["excited", "thrilled", "pumped", "enthusiastic", "hyped"],
+    "calm": ["calm", "peaceful", "relaxed", "tranquil", "serene", "chill"],
+    "stressed": ["stressed", "anxious", "tense", "overwhelmed", "worried"],
+    "cozy": ["cozy", "comfortable", "snug", "warm", "content", "homey"],
+    "romantic": ["romantic", "loving", "amorous", "intimate"],
+    "energetic": ["energetic", "lively", "active", "vibrant", "dynamic"]
+}
+
+MOOD_RESPONSES = {
+    "happy": {
+        "acknowledgment": "I can feel your positive energy!",
+        "description": "vibrant, fresh, and colorful dishes",
+        "emotion": "Let's celebrate that wonderful feeling with bright flavors!",
+        "message": "Bright, vibrant meals can enhance that wonderful feeling."
+    },
+    "sad": {
+        "acknowledgment": "I understand you're feeling down.",
+        "description": "comforting, warm, and nostalgic dishes",
+        "emotion": "Let me suggest some soul-soothing comfort food to help.",
+        "message": "Comforting meals can provide warmth when you need it most."
+    },
+    "angry": {
+        "acknowledgment": "I understand you're feeling frustrated.",
+        "description": "bold, spicy, and intense flavors",
+        "emotion": "Sometimes strong flavors can be satisfying when emotions run high.",
+        "message": "Bold flavors can be surprisingly satisfying."
+    },
+    "excited": {
+        "acknowledgment": "I can sense your excitement!",
+        "description": "fun, creative, and adventurous dishes",
+        "emotion": "Let's match that energy with something special!",
+        "message": "Adventurous dishes match that exciting energy!"
+    },
+    "calm": {
+        "acknowledgment": "I understand you're seeking tranquility.",
+        "description": "balanced, light, and zen-like dishes",
+        "emotion": "Let's find peaceful, mindful meals that promote calm.",
+        "message": "Balanced meals support peaceful moments."
+    },
+    "stressed": {
+        "acknowledgment": "I understand you're feeling overwhelmed.",
+        "description": "simple, quick, and stress-free meals",
+        "emotion": "Let me suggest easy dishes that won't add to your stress.",
+        "message": "Simple, easy meals mean one less thing to worry about."
+    },
+    "cozy": {
+        "acknowledgment": "I understand you're craving comfort and warmth.",
+        "description": "warm, hearty, and snuggly dishes",
+        "emotion": "Let's bring that warmth to your meal!",
+        "message": "Cozy meals are comforting and satisfying, just what you need to wrap up a day."
+    },
+    "romantic": {
+        "acknowledgment": "I understand you're in a romantic mood.",
+        "description": "elegant, intimate, and special dishes",
+        "emotion": "Let's create something special for a romantic moment.",
+        "message": "Special meals create memorable moments."
+    },
+    "energetic": {
+        "acknowledgment": "I can feel your energy!",
+        "description": "fresh, protein-packed, and revitalizing dishes",
+        "emotion": "Let's fuel that vitality with energizing meals!",
+        "message": "Nutritious meals sustain that great energy!"
+    }
+}
+
+
+def detect_mood_change(message: str) -> dict:
+    """Detect if user is indicating a mood change and extract new mood"""
+    import re
+    lower_msg = message.lower()
+    
+    # Check for mood change indicators
+    is_mood_change = False
+    for pattern in MOOD_CHANGE_PATTERNS:
+        if re.search(pattern, lower_msg):
+            is_mood_change = True
+            break
+    
+    # Also check for direct mood statements
+    detected_mood = None
+    for mood, keywords in MOOD_KEYWORDS.items():
+        if any(keyword in lower_msg for keyword in keywords):
+            detected_mood = mood
+            break
+    
+    # If we detect a new mood with context suggesting change, it's a mood change
+    if detected_mood and (is_mood_change or "now" in lower_msg or "feeling" in lower_msg):
+        return {"is_mood_change": True, "new_mood": detected_mood}
+    elif is_mood_change:
+        return {"is_mood_change": True, "new_mood": None}  # Need clarification
+    
+    return {"is_mood_change": False, "new_mood": None}
+
+
+def get_mood_change_response(new_mood: str, dietary_pref: str = None, meal_type: str = None, cuisines: str = None) -> str:
+    """Generate empathetic response for mood change"""
+    mood_data = MOOD_RESPONSES.get(new_mood, MOOD_RESPONSES["happy"])
+    
+    # Build context-aware response
+    dietary_text = f"a {dietary_pref}" if dietary_pref else "a"
+    meal_text = meal_type if meal_type else "meal"
+    cuisine_text = f" with {cuisines} flavors" if cuisines and cuisines != "any cuisine" else ""
+    
+    response = f"""{mood_data['acknowledgment']} If you're feeling {new_mood} and looking for {dietary_text} {meal_text}{cuisine_text}, {mood_data['emotion'].lower()}
+
+It's great to personalize your meals to match your feelings. {mood_data['message']}
+
+Would you like me to suggest some {mood_data['description']} that match your new mood?"""
+    
+    return response
+
+
+def is_mood_change_request(message: str, context: dict = None) -> dict:
+    """Detect mood change and prepare response data"""
+    result = detect_mood_change(message)
+    
+    if result["is_mood_change"]:
+        if result["new_mood"]:
+            # Extract context from message if available
+            dietary_pref = None
+            meal_type = None
+            cuisines = None
+            
+            if context:
+                dietary_pref = context.get("dietary_pref")
+                meal_type = context.get("meal_type") 
+                cuisines = context.get("cuisines")
+            
+            return {
+                "is_mood_change": True,
+                "new_mood": result["new_mood"],
+                "needs_clarification": False,
+                "response": get_mood_change_response(result["new_mood"], dietary_pref, meal_type, cuisines)
+            }
+        else:
+            return {
+                "is_mood_change": True,
+                "new_mood": None,
+                "needs_clarification": True,
+                "response": "I noticed your mood has changed. How are you feeling now? Are you feeling happy, sad, excited, calm, cozy, stressed, energetic, or something else?"
+            }
+    
+    return {"is_mood_change": False}
+
+
 # Helper to detect recipe generation requests from the frontend
 def is_recipe_generation_request(message: str) -> dict:
     """Detect if message is a structured recipe request and extract parameters"""
