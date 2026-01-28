@@ -1075,7 +1075,10 @@ async def generate_next_week_plan(current_user: User = Depends(get_current_user)
     """Generate plan for the next week using saved preferences"""
     try:
         # Get saved preferences
-        prefs = await db.meal_preferences.find_one({"user_id": current_user.id})
+        prefs = await db.meal_preferences.find_one(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        )
         if not prefs:
             raise HTTPException(status_code=400, detail="No meal preferences found. Please set your preferences first.")
         
