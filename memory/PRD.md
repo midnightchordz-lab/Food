@@ -358,6 +358,20 @@ A mood-based recipe discovery application where users receive personalized meal 
     - Includes responsible drinking disclaimer
   - Testing: 100% backend, 100% frontend pass rate
 
+- **Jan 28, 2026**: Fixed Dynamic Drink Pairings (BUG FIX)
+  - **Issue**: Drink pairings showed generic fallback ("Sparkling Citrus Mocktail", "House Wine Pairing") instead of dish-specific drinks
+  - **Root Cause**: Frontend parsing regex didn't handle bullet format from AI (- **Name:** Description)
+  - **Solution**: 
+    - Updated regex in parseDetailedRecipe() to handle bullet format: `/-?\s*\*\*([^*]+)\*\*:?\s*([^\n]+)/g`
+    - Added `.replace(/:$/, '')` to remove trailing colon from drink names
+    - Changed fallback to informative message: "Click View Full Recipe to load specific pairings"
+    - Cleared 25 old cached recipes without drink pairings
+  - **Result**: Drinks now match cuisine:
+    - Thai: Thai Iced Tea, Coconut Water, Riesling
+    - Italian: Barolo, Pinot Grigio, Limoncello Spritz
+    - Indian: Mango Lassi, Riesling, IPA Beer
+  - Testing: 100% pass rate
+
 - **Jan 28, 2026**: Fixed Session Persistence Bug (P0 CRITICAL)
   - **Issue**: Users were being logged out when navigating between protected pages (Chat, Planner, etc.)
   - **Root Cause**: Protected pages were checking `isAuthenticated` before the AuthContext finished loading user from token
