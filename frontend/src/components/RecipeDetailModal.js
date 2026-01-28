@@ -493,7 +493,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
             )}
             
             {/* Main Content Tabs */}
-            <div className="px-6 py-2 border-b bg-muted/20 sticky top-0 z-10">
+            <div className="px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm">
               <div className="flex gap-1 overflow-x-auto">
                 {['instructions', 'ingredients', 'tips', 'nutrition', 'storage'].map((tab) => (
                   <Button
