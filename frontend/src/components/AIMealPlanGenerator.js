@@ -65,6 +65,7 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
   const [focusAreas, setFocusAreas] = useState([]);
   const [cuisinePreferences, setCuisinePreferences] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [generationMode, setGenerationMode] = useState('manual'); // 'manual' or 'auto'
 
   const toggleFocus = (area) => {
     setFocusAreas(prev =>
