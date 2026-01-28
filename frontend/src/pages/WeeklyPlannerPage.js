@@ -114,7 +114,7 @@ const WeeklyPlannerPage = () => {
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedMeal, setSelectedMeal] = useState(null);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   
   // Recipe detail modal state
   const [showRecipeDetail, setShowRecipeDetail] = useState(false);
