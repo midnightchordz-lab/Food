@@ -166,6 +166,7 @@ class WeeklyPlanCreate(BaseModel):
 
 class AIWeeklyPlanRequest(BaseModel):
     mood: str
+    dietary_preference: Optional[str] = "non-vegetarian"
     focus_areas: Optional[List[str]] = []
     cuisine_preferences: Optional[List[str]] = []
 
