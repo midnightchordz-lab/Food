@@ -422,14 +422,18 @@ Format each recipe clearly with the name as a header.
     try {
       // Check if user is mentioning a mood change
       const lowerText = messageText.toLowerCase();
+      // Check if user is mentioning a mood change or stating a new mood
       const moodChangeIndicators = [
         'mood has changed', 'mood changed', 'feeling different',
         'not in that mood', 'changed my mind', 'actually feeling',
-        'now feeling', "i'm feeling", 'i feel', 'feeling now'
+        'now feeling', "i'm feeling", 'i feel', 'feeling now', 'feeling'
       ];
       
       const isMoodChange = moodChangeIndicators.some(indicator => lowerText.includes(indicator));
-      const detectedMood = detectMoodFromText(messageText);
+      const detectedMoodFromUser = detectMoodFromText(messageText);
+      
+      // If user just types a mood word directly (like "cozy"), treat it as a mood change
+      const isDirectMoodStatement = detectedMoodFromUser && messageText.trim().split(/\s+/).length <= 5;
       
       // Include context in the message
       let contextMessage = messageText;
@@ -446,13 +450,14 @@ Format each recipe clearly with the name as a header.
       const responseText = response.data.response.toLowerCase();
       const isAIMoodChangeResponse = responseText.includes('mood has shifted') || 
                                       responseText.includes('mood has changed') ||
-                                      responseText.includes('feeling') && responseText.includes('looking for');
+                                      (responseText.includes("you're feeling") && responseText.includes('looking for'));
       
-      // Update mood if detected in user's message
-      if (isMoodChange && detectedMood) {
-        const newMoodObj = MOODS.find(m => m.id === detectedMood);
+      // Update mood ONLY from user's message, never from AI response
+      const shouldUpdateMood = (isMoodChange || isDirectMoodStatement) && detectedMoodFromUser;
+      if (shouldUpdateMood) {
+        const newMoodObj = MOODS.find(m => m.id === detectedMoodFromUser);
         if (newMoodObj) {
-          setSelectedMood(detectedMood);
+          setSelectedMood(detectedMoodFromUser);
         }
       }
       
@@ -460,14 +465,14 @@ Format each recipe clearly with the name as a header.
         role: 'assistant',
         content: response.data.response,
         timestamp: response.data.timestamp,
-        isMoodChange: isMoodChange || isAIMoodChangeResponse,
-        showMoodChangeRecipeOption: (isMoodChange || isAIMoodChangeResponse) && selectedMealType && selectedDietaryPref,
-        newMood: detectedMood
+        isMoodChange: isMoodChange || isDirectMoodStatement || isAIMoodChangeResponse,
+        showMoodChangeRecipeOption: (shouldUpdateMood || isAIMoodChangeResponse) && selectedMealType && selectedDietaryPref,
+        newMood: detectedMoodFromUser  // Only use mood detected from USER message
       };
       setMessages(prev => [...prev, aiMsg]);
       
       // Update flow step if mood changed
-      if (isMoodChange && detectedMood) {
+      if (shouldUpdateMood) {
         setFlowStep('mood_changed');
       }
     } catch (error) {
