@@ -3,7 +3,7 @@ import {
   Heart, Clock, ChefHat, Utensils, Users, Flame, Printer, 
   Share2, Star, ShoppingCart, BookOpen, X, ChevronRight, ChevronLeft,
   Timer, Leaf, AlertCircle, Check, Plus, Loader2, RefreshCw,
-  Thermometer, Package, Info, AlertTriangle
+  Thermometer, Package, Info, AlertTriangle, Wine, GlassWater
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
