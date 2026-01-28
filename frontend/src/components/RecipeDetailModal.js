@@ -527,7 +527,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
             {/* Main Content Tabs */}
             <div className="px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm">
               <div className="flex gap-1 overflow-x-auto">
-                {['instructions', 'ingredients', 'tips', 'nutrition', 'storage'].map((tab) => (
+                {['instructions', 'ingredients', 'drinks', 'tips', 'nutrition', 'storage'].map((tab) => (
                   <Button
                     key={tab}
                     variant={activeSection === tab ? 'default' : 'ghost'}
@@ -537,10 +537,11 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   >
                     {tab === 'instructions' && <BookOpen size={14} className="mr-1" />}
                     {tab === 'ingredients' && <Utensils size={14} className="mr-1" />}
+                    {tab === 'drinks' && <Wine size={14} className="mr-1" />}
                     {tab === 'tips' && <AlertCircle size={14} className="mr-1" />}
                     {tab === 'nutrition' && <Leaf size={14} className="mr-1" />}
                     {tab === 'storage' && <Package size={14} className="mr-1" />}
-                    {tab}
+                    {tab === 'drinks' ? 'Drink Pairings' : tab}
                   </Button>
                 ))}
               </div>
