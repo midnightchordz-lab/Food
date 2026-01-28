@@ -344,3 +344,29 @@ A mood-based recipe discovery application where users receive personalized meal 
   - Created `is_recipe_generation_request()` helper to detect structured requests from frontend
   - All 16 tests passing (100% success rate)
 
+- **Jan 28, 2026**: Implemented Drink Pairings Feature (COMPLETE)
+  - **Chat Recipes**: All recipes suggested via chat now include drink pairings section
+  - **Detailed Recipes**: Recipe detail modal shows "Drink Pairings" tab with Non-Alcoholic and Alcoholic options
+  - **Meal Planner**: Weekly meal plans include `dinner_pairing` with drink suggestions
+  - **Backend Changes**:
+    - `get_recipe_generation_prompt()` updated to include 🍹 Drink Pairings section
+    - `get_detailed_recipe_prompt()` includes 🍷 Drink Pairings with specific recommendations
+    - `ai_meal_planner.py` generates `dinner_pairing` object for each day
+  - **Frontend Changes**:
+    - RecipeDetailModal.js parses drink pairings from AI response
+    - New "Drinks" tab displays Non-Alcoholic (teal) and Alcoholic 21+ (purple) sections
+    - Includes responsible drinking disclaimer
+  - Testing: 100% backend, 100% frontend pass rate
+
+- **Jan 28, 2026**: Fixed Session Persistence Bug (P0 CRITICAL)
+  - **Issue**: Users were being logged out when navigating between protected pages (Chat, Planner, etc.)
+  - **Root Cause**: Protected pages were checking `isAuthenticated` before the AuthContext finished loading user from token
+  - **Solution**: Added `loading` state check to all protected pages:
+    - ChatPage.js - waits for auth loading before redirect
+    - WeeklyPlannerPage.js - shows loading spinner while verifying auth
+    - ProfilePage.js - shows loading spinner while verifying auth  
+    - SavedRecipes.js - shows loading spinner while verifying auth
+    - ShoppingListPage.js - shows loading spinner while verifying auth
+  - **Impact**: Users now stay logged in seamlessly when navigating the app
+  - Testing: All protected pages verified to maintain session
+
