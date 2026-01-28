@@ -751,7 +751,14 @@ MOOD_RESPONSES = {
 def detect_mood_change(message: str) -> dict:
     """Detect if user is indicating a mood change and extract new mood"""
     import re
-    lower_msg = message.lower()
+    
+    # Extract just the user message (after context if present)
+    user_message = message
+    if "[Context:" in message and "]" in message:
+        context_end = message.find("]") + 1
+        user_message = message[context_end:].strip()
+    
+    lower_msg = user_message.lower()
     
     # Check for mood change indicators
     is_mood_change = False
@@ -760,12 +767,20 @@ def detect_mood_change(message: str) -> dict:
             is_mood_change = True
             break
     
-    # Also check for direct mood statements
+    # Also check for direct mood statements - prioritize words that appear LATER in the message
+    # (more likely to be the NEW mood the user wants)
     detected_mood = None
+    best_position = -1
+    
     for mood, keywords in MOOD_KEYWORDS.items():
-        if any(keyword in lower_msg for keyword in keywords):
-            detected_mood = mood
-            break
+        for keyword in keywords:
+            pos = lower_msg.find(keyword)
+            if pos != -1 and pos > best_position:
+                # Make sure it's not preceded by "from" (e.g., "changed from happy to cozy")
+                prefix = lower_msg[max(0, pos-10):pos]
+                if "from " not in prefix:
+                    detected_mood = mood
+                    best_position = pos
     
     # If we detect a new mood with context suggesting change, it's a mood change
     if detected_mood and (is_mood_change or "now" in lower_msg or "feeling" in lower_msg):
