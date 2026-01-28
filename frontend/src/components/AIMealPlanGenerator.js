@@ -9,12 +9,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Leaf, Fish, Drumstick, Carrot, Egg } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+const DIETARY_PREFERENCES = [
+  { id: 'vegetarian', label: 'Vegetarian', icon: Leaf, description: 'No meat or fish', color: 'text-green-600 bg-green-50 border-green-200' },
+  { id: 'vegan', label: 'Vegan', icon: Carrot, description: 'No animal products', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+  { id: 'non-vegetarian', label: 'Non-Vegetarian', icon: Drumstick, description: 'Includes meat & poultry', color: 'text-red-600 bg-red-50 border-red-200' },
+  { id: 'pescatarian', label: 'Pescatarian', icon: Fish, description: 'Fish & seafood, no meat', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  { id: 'eggetarian', label: 'Eggetarian', icon: Egg, description: 'Vegetarian + eggs', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+];
 
 const FOCUS_AREAS = [
   'Weight Management',
