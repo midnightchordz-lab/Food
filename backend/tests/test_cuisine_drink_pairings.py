@@ -225,10 +225,11 @@ class TestNonGenericDrinkPairings:
     
     def test_no_generic_fallback_drinks(self, auth_token):
         """Test that recipes don't show generic fallback drinks"""
+        # Use unique recipe names to avoid cached recipes without drink pairings
         cuisines_to_test = [
-            ("Pad Thai", "Thai"),
-            ("Spaghetti Carbonara", "Italian"),
-            ("Butter Chicken", "Indian")
+            ("Tom Yum Goong Soup", "Thai"),
+            ("Osso Buco alla Milanese", "Italian"),
+            ("Lamb Rogan Josh", "Indian")
         ]
         
         generic_fallbacks = [
