@@ -156,9 +156,22 @@ const WeeklyPlannerPage = () => {
   useEffect(() => {
     if (isAuthenticated) {
       loadPlans();
+      loadMealPreferences();
       setSubEmail(user?.email || '');
     }
   }, [isAuthenticated, user]);
+  
+  const loadMealPreferences = async () => {
+    try {
+      const response = await axios.get(`${API}/meal-preferences`);
+      if (response.data.preferences) {
+        setMealPreferences(response.data.preferences);
+        setIsContinuousPlanningActive(response.data.preferences.is_active || false);
+      }
+    } catch (error) {
+      console.error('Error loading meal preferences:', error);
+    }
+  };
   
   const loadPlans = async () => {
     try {
