@@ -35,11 +35,12 @@ class TestThaiCuisineDrinkPairings:
     
     def test_thai_detailed_recipe_drink_pairings(self, auth_token):
         """Test POST /api/recipes/detailed for Thai cuisine returns Thai-specific drinks"""
+        # Use unique recipe name to avoid cached recipes without drink pairings
         response = requests.post(
             f"{BASE_URL}/api/recipes/detailed",
             headers={"Authorization": f"Bearer {auth_token}"},
             json={
-                "recipe_title": "Pad Thai",
+                "recipe_title": "Tom Yum Goong Soup",
                 "cuisine": "Thai",
                 "meal_type": "Dinner",
                 "dietary_pref": "Any"
@@ -81,11 +82,12 @@ class TestItalianCuisineDrinkPairings:
     
     def test_italian_detailed_recipe_drink_pairings(self, auth_token):
         """Test POST /api/recipes/detailed for Italian cuisine returns Italian-specific drinks"""
+        # Use unique recipe name to avoid cached recipes without drink pairings
         response = requests.post(
             f"{BASE_URL}/api/recipes/detailed",
             headers={"Authorization": f"Bearer {auth_token}"},
             json={
-                "recipe_title": "Spaghetti Carbonara",
+                "recipe_title": "Osso Buco alla Milanese",
                 "cuisine": "Italian",
                 "meal_type": "Dinner",
                 "dietary_pref": "Any"
@@ -126,11 +128,12 @@ class TestIndianCuisineDrinkPairings:
     
     def test_indian_detailed_recipe_drink_pairings(self, auth_token):
         """Test POST /api/recipes/detailed for Indian cuisine returns Indian-specific drinks"""
+        # Use unique recipe name to avoid cached recipes without drink pairings
         response = requests.post(
             f"{BASE_URL}/api/recipes/detailed",
             headers={"Authorization": f"Bearer {auth_token}"},
             json={
-                "recipe_title": "Butter Chicken",
+                "recipe_title": "Lamb Rogan Josh",
                 "cuisine": "Indian",
                 "meal_type": "Dinner",
                 "dietary_pref": "Any"
