@@ -327,6 +327,78 @@ Format each recipe clearly with the name as a header.
     }
   };
   
+  // Detect mood from text
+  const detectMoodFromText = (text) => {
+    const moodKeywords = {
+      happy: ['happy', 'joyful', 'cheerful', 'pleased', 'delighted', 'great', 'wonderful'],
+      sad: ['sad', 'down', 'blue', 'melancholy', 'upset', 'depressed'],
+      angry: ['angry', 'mad', 'furious', 'irritated', 'frustrated', 'annoyed'],
+      excited: ['excited', 'thrilled', 'pumped', 'enthusiastic', 'hyped'],
+      calm: ['calm', 'peaceful', 'relaxed', 'tranquil', 'serene', 'chill'],
+      stressed: ['stressed', 'anxious', 'tense', 'overwhelmed', 'worried'],
+      cozy: ['cozy', 'comfortable', 'snug', 'warm', 'content', 'homey'],
+      romantic: ['romantic', 'loving', 'amorous', 'intimate'],
+      energetic: ['energetic', 'lively', 'active', 'vibrant', 'dynamic']
+    };
+    
+    const lowerText = text.toLowerCase();
+    for (const [mood, keywords] of Object.entries(moodKeywords)) {
+      if (keywords.some(keyword => lowerText.includes(keyword))) {
+        return mood;
+      }
+    }
+    return null;
+  };
+  
+  // Handle mood change from user input
+  const handleMoodChange = async (newMoodId) => {
+    const mood = MOODS.find(m => m.id === newMoodId);
+    const previousMood = MOODS.find(m => m.id === selectedMood);
+    
+    setSelectedMood(newMoodId);
+    
+    const userMsg = {
+      role: 'user',
+      content: `My mood has changed. I'm feeling ${mood?.label.toLowerCase()} now.`,
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setIsLoading(true);
+    
+    try {
+      const contextMessage = `[Context: Mood=${selectedMood || 'not set'}, MealType=${selectedMealType || 'not set'}, Dietary=${selectedDietaryPref || 'not set'}, Cuisines=${selectedCuisines.join(',') || 'not set'}]\n\nMy mood has changed from ${previousMood?.label || 'unknown'} to ${mood?.label}. I'm feeling ${mood?.label.toLowerCase()} now.`;
+      
+      const response = await axios.post(`${API}/chat/send`, {
+        session_id: sessionId,
+        message: contextMessage
+      });
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: response.data.response,
+        timestamp: response.data.timestamp,
+        isMoodChange: true,
+        showMoodChangeRecipeOption: true,
+        newMood: newMoodId
+      };
+      setMessages(prev => [...prev, aiMsg]);
+      
+      // Keep in recipes flow step to allow getting new recipes
+      setFlowStep('mood_changed');
+    } catch (error) {
+      console.error('Error handling mood change:', error);
+      toast.error('Failed to process mood change');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Get new recipes for changed mood
+  const getRecipesForNewMood = async () => {
+    setFlowStep('recipes');
+    await fetchRecipes(selectedCuisines);
+  };
+  
   // Handle free-form message sending
   const sendMessage = async (messageText) => {
     if (!messageText.trim() || isLoading) return;
