@@ -188,28 +188,38 @@ const parseDetailedRecipe = (markdown) => {
                        markdown.match(/## Drink Pairings([\s\S]*?)(?=##|$)/i);
   if (drinkSection) {
     const drinkText = drinkSection[1];
-    // Parse non-alcoholic section
+    // Parse non-alcoholic section - handles both bullet format (- **Name:**) and inline format (**Name:**)
     const nonAlcSection = drinkText.match(/\*\*Non-Alcoholic:\*\*([\s\S]*?)(?=\*\*Alcoholic|$)/i);
     if (nonAlcSection) {
-      const nonAlcMatches = nonAlcSection[1].matchAll(/\*\*([^*]+)\*\*:\s*([^\n*]+)/g);
+      // Match both formats: "- **Name:** Description" and "**Name:** Description"
+      const nonAlcMatches = nonAlcSection[1].matchAll(/-?\s*\*\*([^*]+)\*\*:?\s*([^\n]+)/g);
       sections.drinkPairings = sections.drinkPairings || { nonAlcoholic: [], alcoholic: [] };
       for (const match of nonAlcMatches) {
-        sections.drinkPairings.nonAlcoholic.push({
-          name: match[1].trim(),
-          description: match[2].trim()
-        });
+        const name = match[1].trim();
+        const desc = match[2].trim();
+        if (name && desc) {
+          sections.drinkPairings.nonAlcoholic.push({
+            name: name,
+            description: desc
+          });
+        }
       }
     }
-    // Parse alcoholic section
+    // Parse alcoholic section - handles both bullet format and inline format
     const alcSection = drinkText.match(/\*\*Alcoholic[^:]*:\*\*([\s\S]*?)$/i);
     if (alcSection) {
-      const alcMatches = alcSection[1].matchAll(/\*\*([^*]+)\*\*:\s*([^\n*]+)/g);
+      // Match both formats: "- **Name:** Description" and "**Name:** Description"
+      const alcMatches = alcSection[1].matchAll(/-?\s*\*\*([^*]+)\*\*:?\s*([^\n]+)/g);
       sections.drinkPairings = sections.drinkPairings || { nonAlcoholic: [], alcoholic: [] };
       for (const match of alcMatches) {
-        sections.drinkPairings.alcoholic.push({
-          name: match[1].trim(),
-          description: match[2].trim()
-        });
+        const name = match[1].trim();
+        const desc = match[2].trim();
+        if (name && desc) {
+          sections.drinkPairings.alcoholic.push({
+            name: name,
+            description: desc
+          });
+        }
       }
     }
   }
