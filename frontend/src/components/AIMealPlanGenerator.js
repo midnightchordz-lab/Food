@@ -190,6 +190,82 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
             </div>
           </div>
 
+          {/* Calorie Target Section */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-lg flex items-center gap-2">
+                <Target size={20} className="text-primary" />
+                Daily Calorie Target (Optional)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="enable-calories"
+                  checked={enableCalorieTarget}
+                  onCheckedChange={(checked) => setEnableCalorieTarget(checked)}
+                  data-testid="enable-calorie-target"
+                />
+                <Label htmlFor="enable-calories" className="text-sm cursor-pointer">
+                  Enable
+                </Label>
+              </div>
+            </div>
+            
+            {enableCalorieTarget && (
+              <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
+                {/* Preset buttons */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {CALORIE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => handleCaloriePreset(preset.calories)}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        calorieTarget === preset.calories
+                          ? `${preset.color} border-current`
+                          : 'bg-card border-border hover:border-primary/50'
+                      }`}
+                      data-testid={`calorie-preset-${preset.calories}`}
+                    >
+                      <p className="font-medium text-sm">{preset.label}</p>
+                      <p className="text-xs text-muted-foreground">{preset.description}</p>
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Custom input */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <Label className="text-sm text-muted-foreground mb-2 block">
+                      Or set custom target:
+                    </Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        min={1000}
+                        max={5000}
+                        step={100}
+                        value={calorieTarget}
+                        onChange={(e) => setCalorieTarget(parseInt(e.target.value) || 2000)}
+                        className="w-24"
+                        data-testid="calorie-input"
+                      />
+                      <span className="text-sm text-muted-foreground">calories/day</span>
+                    </div>
+                  </div>
+                  <div className="text-center p-3 bg-primary/10 rounded-lg">
+                    <Flame className="w-6 h-6 text-orange-500 mx-auto mb-1" />
+                    <p className="text-2xl font-bold text-primary">{calorieTarget}</p>
+                    <p className="text-xs text-muted-foreground">cal/day</p>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-muted-foreground">
+                  💡 Tip: Breakfast ~25%, Lunch ~35%, Dinner ~40% of daily calories
+                </p>
+              </div>
+            )}
+          </div>
+
           <div>
             <Label className="text-lg mb-3 block">Focus Areas (Optional)</Label>
             <div className="grid grid-cols-2 gap-3">
