@@ -11,9 +11,9 @@ DIETARY_DESCRIPTIONS = {
     "eggetarian": "Eggetarian - Vegetarian with eggs allowed. No meat, poultry, fish, but eggs are included."
 }
 
-async def generate_ai_meal_plan(user, mood, dietary_preference=None, focus_areas=None, cuisine_preferences=None):
+async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None):
     """
-    Generate a personalized weekly meal plan using AI based on user preferences, dietary choice, and mood.
+    Generate a personalized weekly meal plan using AI based on user preferences, dietary choice, calorie target, and mood.
     """
     # Get dietary restriction description
     dietary_desc = DIETARY_DESCRIPTIONS.get(dietary_preference, DIETARY_DESCRIPTIONS["non-vegetarian"])
@@ -21,6 +21,24 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, focus_areas
     # Additional user dietary restrictions
     user_restrictions = user.dietary_restrictions if user.dietary_restrictions else []
     
+    # Calorie distribution (breakfast 25%, lunch 35%, dinner 40%)
+    calorie_section = ""
+    if calorie_target:
+        breakfast_cal = int(calorie_target * 0.25)
+        lunch_cal = int(calorie_target * 0.35)
+        dinner_cal = int(calorie_target * 0.40)
+        calorie_section = f"""
+    CALORIE REQUIREMENTS (STRICT):
+    - Daily Target: {calorie_target} calories
+    - Breakfast: ~{breakfast_cal} calories each
+    - Lunch: ~{lunch_cal} calories each
+    - Dinner: ~{dinner_cal} calories each
+    
+    Each meal MUST fit within these calorie ranges. Suggest portion-appropriate meals.
+    For lower calorie targets (<1800): Focus on lean proteins, vegetables, whole grains
+    For higher calorie targets (>2500): Include healthy fats, complex carbs, protein-rich foods
+    """
+
     system_message = f"""You are an expert meal planning assistant specializing in mood-based nutrition and global cuisines.
     
     User Profile:
@@ -29,7 +47,7 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, focus_areas
     - Current Mood/Energy: {mood}
     - Focus Areas: {', '.join(focus_areas) if focus_areas else 'Balanced nutrition'}
     - Cuisine Preferences: {', '.join(cuisine_preferences) if cuisine_preferences else 'Variety'}
-    
+    {calorie_section}
     CRITICAL RULES FOR DIETARY PREFERENCE:
     - If VEGETARIAN: NO meat, chicken, fish, seafood, or any animal flesh
     - If VEGAN: NO meat, fish, eggs, dairy, butter, cheese, honey, or ANY animal products
@@ -41,24 +59,26 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, focus_areas
     
     Requirements:
     1. ALL meals MUST strictly follow the dietary preference - this is non-negotiable
-    2. Incorporate global cuisines for variety (Italian, Mexican, Asian, Indian, Mediterranean, etc.)
-    3. Match the user's current mood and energy level
-    4. Include simple meals for busy days and more elaborate ones for relaxed days
-    5. Ensure nutritional balance across the week
-    6. Consider meal prep efficiency (some ingredients used multiple times)
+    2. {"ALL meals MUST fit within the specified calorie ranges" if calorie_target else "Consider balanced nutrition"}
+    3. Incorporate global cuisines for variety (Italian, Mexican, Asian, Indian, Mediterranean, etc.)
+    4. Match the user's current mood and energy level
+    5. Include simple meals for busy days and more elaborate ones for relaxed days
+    6. Ensure nutritional balance across the week
+    7. Consider meal prep efficiency (some ingredients used multiple times)
     
     Respond ONLY with a JSON object in this exact format:
     {{
-      "Monday": {{"breakfast": "meal name", "lunch": "meal name", "dinner": "meal name"}},
-      "Tuesday": {{"breakfast": "meal name", "lunch": "meal name", "dinner": "meal name"}},
-      "Wednesday": {{"breakfast": "meal name", "lunch": "meal name", "dinner": "meal name"}},
-      "Thursday": {{"breakfast": "meal name", "lunch": "meal name", "dinner": "meal name"}},
-      "Friday": {{"breakfast": "meal name", "lunch": "meal name", "dinner": "meal name"}},
-      "Saturday": {{"breakfast": "meal name", "lunch": "meal name", "dinner": "meal name"}},
-      "Sunday": {{"breakfast": "meal name", "lunch": "meal name", "dinner": "meal name"}}
+      "Monday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
+      "Tuesday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
+      "Wednesday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
+      "Thursday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
+      "Friday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
+      "Saturday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
+      "Sunday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}}
     }}
     
-    Make meal names descriptive and appetizing. Include cuisine origin when relevant (e.g., "Thai Green Curry with Jasmine Rice" or "Italian Caprese Pasta").
+    {"Include approximate calories in parentheses after each meal name, e.g., 'Greek Yogurt Parfait (~350cal)'" if calorie_target else "Make meal names descriptive and appetizing."}
+    Include cuisine origin when relevant (e.g., "Thai Green Curry with Jasmine Rice" or "Italian Caprese Pasta").
     DOUBLE-CHECK that every meal complies with the {dietary_desc.split(' - ')[0]} dietary requirement before including it.
     """
     
