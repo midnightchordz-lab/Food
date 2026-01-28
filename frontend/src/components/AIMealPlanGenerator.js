@@ -123,6 +123,8 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
   const resetForm = () => {
     setMood('');
     setDietaryPreference('');
+    setCalorieTarget(2000);
+    setEnableCalorieTarget(false);
     setFocusAreas([]);
     setCuisinePreferences([]);
   };
