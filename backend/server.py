@@ -387,6 +387,16 @@ Follow this EXACT format:
 - **Storage:** [How to store, container type, duration]
 - **Reheating:** [Best method, temperature, time]
 
+## 🍷 Drink Pairings
+
+**Non-Alcoholic:**
+- **[Mocktail/Beverage Name]:** [Brief description of why it pairs well - flavor notes, how it complements the dish]
+- **[Alternative Option]:** [Another non-alcoholic option]
+
+**Alcoholic (21+):**
+- **[Wine/Beer/Cocktail Name]:** [Specific recommendation with why it pairs - e.g., "Pinot Grigio - its citrus notes complement the seafood"]
+- **[Alternative Option]:** [Another alcoholic option]
+
 ## 🔄 Variations
 1. **[Variation Name]:** [Brief description]
 2. **[Variation Name]:** [Brief description]
