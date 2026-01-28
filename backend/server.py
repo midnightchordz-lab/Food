@@ -282,6 +282,95 @@ def get_conversational_system_message():
 Be warm, concise, and helpful. Ask clarifying questions if needed."""
 
 
+def get_detailed_recipe_prompt(recipe_title: str, cuisine: str, meal_type: str, dietary_pref: str):
+    """Generate a comprehensive detailed recipe with professional-grade instructions"""
+    return f"""You are a professional chef instructor. Generate a COMPLETE, DETAILED recipe for "{recipe_title}".
+
+Follow this EXACT format:
+
+# {recipe_title.upper()}
+
+## Recipe Information
+- **Cuisine:** {cuisine}
+- **Meal Type:** {meal_type}
+- **Difficulty:** [Easy/Medium/Hard]
+- **Servings:** [number]
+- **Prep Time:** [X minutes]
+- **Cook Time:** [X minutes]
+- **Total Time:** [X minutes]
+- **Dietary Tags:** [{dietary_pref}, plus any applicable: Gluten-Free, Dairy-Free, High-Protein, Low-Carb]
+
+## Description
+[Write 2-3 sentences describing the dish, its origins, and what makes it special. Include sensory descriptions - taste, texture, aroma.]
+
+## 🥕 Ingredients
+
+**For the Main Component:**
+- [Exact quantity] [Ingredient name]
+- [Continue listing 4-6 ingredients]
+
+**For the Sauce/Seasoning:**
+- [Exact quantity] [Ingredient name]
+- [Continue listing 3-5 ingredients]
+
+**For Garnish:**
+- [Optional ingredients]
+
+## 🔧 Equipment Needed
+- [List 6-8 specific tools: pan sizes, utensils, bowls]
+
+## 📋 Step-by-Step Instructions
+
+**Step 1** ([X] minutes)
+[Detailed instruction with EXACT measurements, specific techniques, tool to use]
+*Visual Cue:* [What to look for to know this step is complete]
+
+**Step 2** ([X] minutes)
+[Continue with detailed instructions]
+*Important:* [Critical technique note if applicable]
+
+[Continue for 10-15 steps, each with timing and visual cues]
+
+**Final Step** ([X] minutes)
+[Plating and serving instructions]
+*Serving Suggestion:* [What to serve with this dish]
+
+## 💡 Chef's Tips
+1. [Specific tip about temperature, timing, or technique]
+2. [Tip about ingredient selection or substitution]
+3. [Tip about common pitfalls to avoid]
+4. [Pro tip for restaurant-quality results]
+
+## 📊 Nutritional Information (Per Serving)
+- Calories: [X] kcal
+- Protein: [X]g
+- Carbohydrates: [X]g
+- Fat: [X]g
+- Fiber: [X]g
+- Sodium: [X]mg
+
+## 🥡 Storage & Reheating
+- **Storage:** [How to store, container type, duration]
+- **Reheating:** [Best method, temperature, time]
+
+## 🔄 Variations
+1. **[Variation Name]:** [Brief description]
+2. **[Variation Name]:** [Brief description]
+
+## ⚠️ Common Mistakes to Avoid
+1. [Mistake and why it happens]
+2. [Mistake and how to prevent it]
+3. [Mistake and the correct technique]
+
+CRITICAL RULES:
+- Every step MUST have specific timing
+- Every step MUST have exact measurements and temperatures
+- Include visual/audio cues for EVERY step (e.g., "until golden brown", "when it starts sizzling")
+- NO generic phrases like "cook until done" or "season to taste"
+- Use SPECIFIC pan sizes, heat levels, and cooking times
+- Include technique notes where critical"""
+
+
 def get_recipe_generation_prompt(mood: str, meal_type: str, dietary_pref: str, cuisines: str):
     """Generate a focused prompt for recipe suggestions with detailed instructions"""
     return f"""You are an expert chef. Generate EXACTLY 4 {dietary_pref} {cuisines} {meal_type} recipes matching a {mood} mood.
