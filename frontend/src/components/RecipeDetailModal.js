@@ -195,7 +195,7 @@ const parseDetailedRecipe = (markdown) => {
       const nonAlcMatches = nonAlcSection[1].matchAll(/-?\s*\*\*([^*]+)\*\*:?\s*([^\n]+)/g);
       sections.drinkPairings = sections.drinkPairings || { nonAlcoholic: [], alcoholic: [] };
       for (const match of nonAlcMatches) {
-        const name = match[1].trim();
+        const name = match[1].trim().replace(/:$/, ''); // Remove trailing colon
         const desc = match[2].trim();
         if (name && desc) {
           sections.drinkPairings.nonAlcoholic.push({
@@ -212,7 +212,7 @@ const parseDetailedRecipe = (markdown) => {
       const alcMatches = alcSection[1].matchAll(/-?\s*\*\*([^*]+)\*\*:?\s*([^\n]+)/g);
       sections.drinkPairings = sections.drinkPairings || { nonAlcoholic: [], alcoholic: [] };
       for (const match of alcMatches) {
-        const name = match[1].trim();
+        const name = match[1].trim().replace(/:$/, ''); // Remove trailing colon
         const desc = match[2].trim();
         if (name && desc) {
           sections.drinkPairings.alcoholic.push({
