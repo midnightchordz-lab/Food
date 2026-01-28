@@ -182,6 +182,37 @@ const parseDetailedRecipe = (markdown) => {
     sections.nutrition.sodium = nutritionText.match(/Sodium:\s*([^\n]+)/i)?.[1]?.trim() || '';
   }
   
+  // Extract Drink Pairings
+  const drinkSection = markdown.match(/## 🍷 Drink Pairings([\s\S]*?)(?=##|$)/i) ||
+                       markdown.match(/## Drink Pairings([\s\S]*?)(?=##|$)/i);
+  if (drinkSection) {
+    const drinkText = drinkSection[1];
+    // Parse non-alcoholic section
+    const nonAlcSection = drinkText.match(/\*\*Non-Alcoholic:\*\*([\s\S]*?)(?=\*\*Alcoholic|$)/i);
+    if (nonAlcSection) {
+      const nonAlcMatches = nonAlcSection[1].matchAll(/\*\*([^*]+)\*\*:\s*([^\n*]+)/g);
+      sections.drinkPairings = sections.drinkPairings || { nonAlcoholic: [], alcoholic: [] };
+      for (const match of nonAlcMatches) {
+        sections.drinkPairings.nonAlcoholic.push({
+          name: match[1].trim(),
+          description: match[2].trim()
+        });
+      }
+    }
+    // Parse alcoholic section
+    const alcSection = drinkText.match(/\*\*Alcoholic[^:]*:\*\*([\s\S]*?)$/i);
+    if (alcSection) {
+      const alcMatches = alcSection[1].matchAll(/\*\*([^*]+)\*\*:\s*([^\n*]+)/g);
+      sections.drinkPairings = sections.drinkPairings || { nonAlcoholic: [], alcoholic: [] };
+      for (const match of alcMatches) {
+        sections.drinkPairings.alcoholic.push({
+          name: match[1].trim(),
+          description: match[2].trim()
+        });
+      }
+    }
+  }
+  
   // Extract Storage
   const storageSection = markdown.match(/## 🥡 Storage & Reheating([\s\S]*?)(?=##|$)/i) ||
                          markdown.match(/## Storage([\s\S]*?)(?=##|$)/i);
