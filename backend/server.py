@@ -988,6 +988,218 @@ async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User 
         logging.error(f"Error generating AI meal plan: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ============== CONTINUOUS MEAL PLANNING ==============
+
+@api_router.post("/meal-preferences")
+async def save_meal_preferences(request: MealPreferencesCreate, current_user: User = Depends(get_current_user)):
+    """Save user meal preferences for continuous planning"""
+    try:
+        # Update or create preferences
+        prefs = MealPreferences(
+            user_id=current_user.id,
+            **request.model_dump()
+        )
+        prefs_dict = prefs.model_dump()
+        prefs_dict['created_at'] = prefs_dict['created_at'].isoformat()
+        prefs_dict['updated_at'] = prefs_dict['updated_at'].isoformat()
+        
+        await db.meal_preferences.update_one(
+            {"user_id": current_user.id},
+            {"$set": prefs_dict},
+            upsert=True
+        )
+        
+        # If active, generate the first week's plan immediately
+        if request.is_active:
+            today = datetime.now(timezone.utc)
+            week_start = today - timedelta(days=today.weekday())
+            week_start_str = week_start.strftime('%Y-%m-%d')
+            
+            # Check if plan already exists for this week
+            existing = await db.weekly_plans.find_one({
+                "user_id": current_user.id,
+                "week_start": week_start_str
+            })
+            
+            if not existing:
+                # Get previously used recipes
+                used_recipes = await get_used_recipes(current_user.id)
+                
+                # Generate new plan
+                meals = await generate_ai_meal_plan(
+                    current_user,
+                    request.mood,
+                    request.dietary_preference,
+                    request.calorie_target,
+                    request.focus_areas,
+                    request.cuisine_preferences,
+                    exclude_recipes=used_recipes
+                )
+                
+                # Save the plan
+                plan = WeeklyPlan(
+                    user_id=current_user.id,
+                    week_start=week_start_str,
+                    meals=meals
+                )
+                plan_dict = plan.model_dump()
+                plan_dict['created_at'] = plan_dict['created_at'].isoformat()
+                await db.weekly_plans.insert_one(plan_dict)
+                
+                # Track used recipes
+                await track_used_recipes(current_user.id, meals, week_start_str)
+        
+        return {"message": "Meal preferences saved successfully!", "preferences": prefs_dict}
+    except Exception as e:
+        logging.error(f"Error saving meal preferences: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/meal-preferences")
+async def get_meal_preferences(current_user: User = Depends(get_current_user)):
+    """Get user's saved meal preferences"""
+    try:
+        prefs = await db.meal_preferences.find_one(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        )
+        return {"preferences": prefs}
+    except Exception as e:
+        logging.error(f"Error fetching meal preferences: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/weekly-plan/generate-next")
+async def generate_next_week_plan(current_user: User = Depends(get_current_user)):
+    """Generate plan for the next week using saved preferences"""
+    try:
+        # Get saved preferences
+        prefs = await db.meal_preferences.find_one({"user_id": current_user.id})
+        if not prefs:
+            raise HTTPException(status_code=400, detail="No meal preferences found. Please set your preferences first.")
+        
+        if not prefs.get('is_active', False):
+            raise HTTPException(status_code=400, detail="Continuous planning is not active. Enable it in preferences.")
+        
+        # Calculate next week's start date
+        today = datetime.now(timezone.utc)
+        current_week_start = today - timedelta(days=today.weekday())
+        next_week_start = current_week_start + timedelta(days=7)
+        next_week_str = next_week_start.strftime('%Y-%m-%d')
+        
+        # Check if plan already exists
+        existing = await db.weekly_plans.find_one({
+            "user_id": current_user.id,
+            "week_start": next_week_str
+        })
+        
+        if existing:
+            return {"message": "Plan for next week already exists", "plan": existing, "already_exists": True}
+        
+        # Get previously used recipes (last 8 weeks to ensure variety)
+        used_recipes = await get_used_recipes(current_user.id, weeks=8)
+        
+        # Generate new plan
+        meals = await generate_ai_meal_plan(
+            current_user,
+            prefs.get('mood', 'balanced'),
+            prefs.get('dietary_preference', 'non-vegetarian'),
+            prefs.get('calorie_target'),
+            prefs.get('focus_areas', []),
+            prefs.get('cuisine_preferences', []),
+            exclude_recipes=used_recipes
+        )
+        
+        # Save the plan
+        plan = WeeklyPlan(
+            user_id=current_user.id,
+            week_start=next_week_str,
+            meals=meals
+        )
+        plan_dict = plan.model_dump()
+        plan_dict['created_at'] = plan_dict['created_at'].isoformat()
+        await db.weekly_plans.insert_one(plan_dict)
+        
+        # Track used recipes
+        await track_used_recipes(current_user.id, meals, next_week_str)
+        
+        return {"message": "Next week's meal plan generated!", "plan": plan_dict, "already_exists": False}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error generating next week plan: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/weekly-plan/current")
+async def get_current_week_plan(current_user: User = Depends(get_current_user)):
+    """Get the meal plan for the current week"""
+    try:
+        today = datetime.now(timezone.utc)
+        week_start = today - timedelta(days=today.weekday())
+        week_start_str = week_start.strftime('%Y-%m-%d')
+        
+        plan = await db.weekly_plans.find_one(
+            {"user_id": current_user.id, "week_start": week_start_str},
+            {"_id": 0}
+        )
+        
+        # Also get preferences
+        prefs = await db.meal_preferences.find_one(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        )
+        
+        return {
+            "plan": plan,
+            "preferences": prefs,
+            "week_start": week_start_str,
+            "has_plan": plan is not None,
+            "has_preferences": prefs is not None
+        }
+    except Exception as e:
+        logging.error(f"Error fetching current week plan: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def get_used_recipes(user_id: str, weeks: int = 8) -> List[str]:
+    """Get list of recipes used in the last N weeks"""
+    try:
+        cutoff_date = datetime.now(timezone.utc) - timedelta(weeks=weeks)
+        cutoff_str = cutoff_date.strftime('%Y-%m-%d')
+        
+        used = await db.used_recipes.find(
+            {"user_id": user_id, "week_start": {"$gte": cutoff_str}}
+        ).to_list(length=500)
+        
+        return [r['recipe_name'] for r in used]
+    except Exception as e:
+        logging.error(f"Error getting used recipes: {e}")
+        return []
+
+
+async def track_used_recipes(user_id: str, meals: Dict, week_start: str):
+    """Track recipes used in a weekly plan to avoid repetition"""
+    try:
+        recipes_to_track = []
+        for day, day_meals in meals.items():
+            for meal_type, recipe_name in day_meals.items():
+                # Clean recipe name (remove calorie info if present)
+                clean_name = recipe_name.split('(~')[0].strip() if '(~' in recipe_name else recipe_name
+                recipes_to_track.append({
+                    "user_id": user_id,
+                    "recipe_name": clean_name,
+                    "used_date": datetime.now(timezone.utc).isoformat(),
+                    "week_start": week_start
+                })
+        
+        if recipes_to_track:
+            await db.used_recipes.insert_many(recipes_to_track)
+    except Exception as e:
+        logging.error(f"Error tracking used recipes: {e}")
+
+
 # ============== RECIPE SUBSCRIPTION ==============
 class RecipeSubscription(BaseModel):
     email: str
