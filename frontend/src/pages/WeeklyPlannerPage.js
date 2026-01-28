@@ -358,20 +358,43 @@ const WeeklyPlannerPage = () => {
             </div>
           </div>
           
-          {/* Continuous Planning Status Banner */}
+          {/* Meal Planning Status Banner */}
           {mealPreferences && (
-            <div className="bg-gradient-to-r from-green-500/10 via-emerald-500/5 to-teal-500/10 rounded-2xl p-4 mb-6 border border-green-500/20">
+            <div className={`rounded-2xl p-4 mb-6 border ${
+              mealPreferences.generation_mode === 'auto'
+                ? 'bg-gradient-to-r from-green-500/10 via-emerald-500/5 to-teal-500/10 border-green-500/20'
+                : 'bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-sky-500/10 border-blue-500/20'
+            }`}>
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <Check className="text-green-600" size={20} />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    mealPreferences.generation_mode === 'auto' ? 'bg-green-500/20' : 'bg-blue-500/20'
+                  }`}>
+                    {mealPreferences.generation_mode === 'auto' ? (
+                      <RefreshCw className="text-green-600" size={20} />
+                    ) : (
+                      <Check className="text-blue-600" size={20} />
+                    )}
                   </div>
                   <div>
-                    <h3 className="font-medium text-green-800 dark:text-green-200">Continuous Meal Planning Active</h3>
+                    <h3 className={`font-medium ${
+                      mealPreferences.generation_mode === 'auto' 
+                        ? 'text-green-800 dark:text-green-200' 
+                        : 'text-blue-800 dark:text-blue-200'
+                    }`}>
+                      {mealPreferences.generation_mode === 'auto' 
+                        ? '🔄 Auto-Generation Active' 
+                        : '👆 Manual Mode Active'}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       {mealPreferences.dietary_preference?.charAt(0).toUpperCase() + mealPreferences.dietary_preference?.slice(1)} • 
                       {mealPreferences.calorie_target ? ` ${mealPreferences.calorie_target} cal/day • ` : ' '}
                       {mealPreferences.cuisine_preferences?.length > 0 ? mealPreferences.cuisine_preferences.join(', ') : 'All cuisines'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {mealPreferences.generation_mode === 'auto' 
+                        ? 'New unique plans are generated automatically each week'
+                        : 'Click "Generate Next Week" to create new plans'}
                     </p>
                   </div>
                 </div>
@@ -384,21 +407,23 @@ const WeeklyPlannerPage = () => {
                   >
                     Update Preferences
                   </Button>
-                  <Button
-                    onClick={generateNextWeekPlan}
-                    disabled={generatingNextWeek}
-                    className="rounded-full bg-green-600 hover:bg-green-700"
-                    data-testid="generate-next-week-btn"
-                  >
-                    {generatingNextWeek ? (
-                      <>Generating...</>
-                    ) : (
-                      <>
-                        <Plus className="mr-1" size={16} />
-                        Generate Next Week
-                      </>
-                    )}
-                  </Button>
+                  {mealPreferences.generation_mode === 'manual' && (
+                    <Button
+                      onClick={generateNextWeekPlan}
+                      disabled={generatingNextWeek}
+                      className="rounded-full bg-blue-600 hover:bg-blue-700"
+                      data-testid="generate-next-week-btn"
+                    >
+                      {generatingNextWeek ? (
+                        <>Generating...</>
+                      ) : (
+                        <>
+                          <Plus className="mr-1" size={16} />
+                          Generate Next Week
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
