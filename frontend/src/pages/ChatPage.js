@@ -413,6 +413,17 @@ Format each recipe clearly with the name as a header.
     setIsLoading(true);
     
     try {
+      // Check if user is mentioning a mood change
+      const lowerText = messageText.toLowerCase();
+      const moodChangeIndicators = [
+        'mood has changed', 'mood changed', 'feeling different',
+        'not in that mood', 'changed my mind', 'actually feeling',
+        'now feeling', "i'm feeling", 'i feel', 'feeling now'
+      ];
+      
+      const isMoodChange = moodChangeIndicators.some(indicator => lowerText.includes(indicator));
+      const detectedMood = detectMoodFromText(messageText);
+      
       // Include context in the message
       let contextMessage = messageText;
       if (selectedMood || selectedMealType || selectedDietaryPref) {
@@ -424,12 +435,34 @@ Format each recipe clearly with the name as a header.
         message: contextMessage
       });
       
+      // Check if the response indicates a mood change acknowledgment
+      const responseText = response.data.response.toLowerCase();
+      const isAIMoodChangeResponse = responseText.includes('mood has shifted') || 
+                                      responseText.includes('mood has changed') ||
+                                      responseText.includes('feeling') && responseText.includes('looking for');
+      
+      // Update mood if detected in user's message
+      if (isMoodChange && detectedMood) {
+        const newMoodObj = MOODS.find(m => m.id === detectedMood);
+        if (newMoodObj) {
+          setSelectedMood(detectedMood);
+        }
+      }
+      
       const aiMsg = {
         role: 'assistant',
         content: response.data.response,
-        timestamp: response.data.timestamp
+        timestamp: response.data.timestamp,
+        isMoodChange: isMoodChange || isAIMoodChangeResponse,
+        showMoodChangeRecipeOption: (isMoodChange || isAIMoodChangeResponse) && selectedMealType && selectedDietaryPref,
+        newMood: detectedMood
       };
       setMessages(prev => [...prev, aiMsg]);
+      
+      // Update flow step if mood changed
+      if (isMoodChange && detectedMood) {
+        setFlowStep('mood_changed');
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message. Please try again.');
