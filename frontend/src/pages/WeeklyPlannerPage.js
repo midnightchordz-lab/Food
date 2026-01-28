@@ -184,6 +184,32 @@ const WeeklyPlannerPage = () => {
   
   const handlePlanGenerated = (newPlan) => {
     setPlans(prev => [newPlan, ...prev]);
+    // Reload preferences to get the updated state
+    loadMealPreferences();
+  };
+  
+  const generateNextWeekPlan = async () => {
+    if (!mealPreferences?.is_active) {
+      toast.error('Please set your meal preferences first');
+      setShowAIGenerator(true);
+      return;
+    }
+    
+    setGeneratingNextWeek(true);
+    try {
+      const response = await axios.post(`${API}/weekly-plan/generate-next`);
+      if (response.data.already_exists) {
+        toast.info('Next week\'s plan already exists!');
+      } else {
+        toast.success('Next week\'s meal plan generated!');
+        loadPlans();
+      }
+    } catch (error) {
+      console.error('Error generating next week plan:', error);
+      toast.error(error.response?.data?.detail || 'Failed to generate next week\'s plan');
+    } finally {
+      setGeneratingNextWeek(false);
+    }
   };
   
   const getCurrentPlan = () => {
