@@ -167,9 +167,36 @@ const WeeklyPlannerPage = () => {
       if (response.data.preferences) {
         setMealPreferences(response.data.preferences);
         setIsContinuousPlanningActive(response.data.preferences.is_active || false);
+        
+        // If auto mode is enabled, check if we need to auto-generate for current week
+        if (response.data.preferences.generation_mode === 'auto') {
+          await checkAndAutoGenerate();
+        }
       }
     } catch (error) {
       console.error('Error loading meal preferences:', error);
+    }
+  };
+  
+  const checkAndAutoGenerate = async () => {
+    try {
+      // Check if current week has a plan
+      const currentResponse = await axios.get(`${API}/weekly-plan/current`);
+      if (!currentResponse.data.has_plan && currentResponse.data.has_preferences) {
+        // Auto-generate current week's plan
+        toast.info('Auto-generating this week\'s meal plan...');
+        const genResponse = await axios.post(`${API}/weekly-plan/generate`, {
+          mood: mealPreferences?.mood || 'balanced',
+          dietary_preference: mealPreferences?.dietary_preference || 'non-vegetarian',
+          calorie_target: mealPreferences?.calorie_target,
+          focus_areas: mealPreferences?.focus_areas || [],
+          cuisine_preferences: mealPreferences?.cuisine_preferences || []
+        });
+        toast.success('This week\'s plan auto-generated!');
+        loadPlans();
+      }
+    } catch (error) {
+      console.error('Error auto-generating plan:', error);
     }
   };
   
