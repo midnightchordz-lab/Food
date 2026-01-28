@@ -101,17 +101,18 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
 
     setGenerating(true);
     try {
-      // First, save the preferences for continuous planning
+      // Save preferences with the chosen generation mode
       await axios.post(`${API}/meal-preferences`, {
         dietary_preference: dietaryPreference,
         calorie_target: enableCalorieTarget ? calorieTarget : null,
         focus_areas: focusAreas,
         cuisine_preferences: cuisinePreferences,
         mood: mood.trim(),
-        is_active: true  // Enable continuous planning
+        is_active: true,
+        generation_mode: generationMode  // 'manual' or 'auto'
       });
       
-      // Then generate the meal plan
+      // Generate the meal plan
       const response = await axios.post(`${API}/weekly-plan/generate`, {
         mood: mood.trim(),
         dietary_preference: dietaryPreference,
@@ -120,7 +121,10 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
         cuisine_preferences: cuisinePreferences
       });
       
-      toast.success('Meal plan generated! Your preferences are saved for continuous planning.');
+      const modeMsg = generationMode === 'auto' 
+        ? 'Auto-generation enabled! Plans will be created automatically each week.'
+        : 'Plan generated! Use "Generate Next Week" button for future weeks.';
+      toast.success(modeMsg);
       onPlanGenerated(response.data.plan);
       onClose();
       resetForm();
@@ -139,6 +143,7 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
     setEnableCalorieTarget(false);
     setFocusAreas([]);
     setCuisinePreferences([]);
+    setGenerationMode('manual');
   };
 
   return (
