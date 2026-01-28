@@ -331,6 +331,52 @@ const WeeklyPlannerPage = () => {
             </div>
           </div>
           
+          {/* Continuous Planning Status Banner */}
+          {mealPreferences && (
+            <div className="bg-gradient-to-r from-green-500/10 via-emerald-500/5 to-teal-500/10 rounded-2xl p-4 mb-6 border border-green-500/20">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <Check className="text-green-600" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-green-800 dark:text-green-200">Continuous Meal Planning Active</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {mealPreferences.dietary_preference?.charAt(0).toUpperCase() + mealPreferences.dietary_preference?.slice(1)} • 
+                      {mealPreferences.calorie_target ? ` ${mealPreferences.calorie_target} cal/day • ` : ' '}
+                      {mealPreferences.cuisine_preferences?.length > 0 ? mealPreferences.cuisine_preferences.join(', ') : 'All cuisines'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAIGenerator(true)}
+                    className="rounded-full"
+                  >
+                    Update Preferences
+                  </Button>
+                  <Button
+                    onClick={generateNextWeekPlan}
+                    disabled={generatingNextWeek}
+                    className="rounded-full bg-green-600 hover:bg-green-700"
+                    data-testid="generate-next-week-btn"
+                  >
+                    {generatingNextWeek ? (
+                      <>Generating...</>
+                    ) : (
+                      <>
+                        <Plus className="mr-1" size={16} />
+                        Generate Next Week
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Subscription Banner */}
           <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 rounded-2xl p-6 mb-8 border border-primary/20">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
