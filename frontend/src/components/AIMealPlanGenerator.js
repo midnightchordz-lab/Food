@@ -133,6 +133,44 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
             />
           </div>
 
+          {/* Dietary Preference Section */}
+          <div>
+            <Label className="text-lg mb-3 block">
+              Dietary Preference <span className="text-red-500">*</span>
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {DIETARY_PREFERENCES.map((pref) => {
+                const Icon = pref.icon;
+                const isSelected = dietaryPreference === pref.id;
+                return (
+                  <button
+                    key={pref.id}
+                    type="button"
+                    onClick={() => setDietaryPreference(pref.id)}
+                    className={`p-4 rounded-xl border-2 transition-all text-left ${
+                      isSelected
+                        ? `${pref.color} border-current ring-2 ring-offset-2`
+                        : 'bg-card border-border hover:border-primary/50'
+                    }`}
+                    data-testid={`dietary-${pref.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${isSelected ? 'bg-white/50' : 'bg-muted'}`}>
+                        <Icon size={20} className={isSelected ? '' : 'text-muted-foreground'} />
+                      </div>
+                      <div>
+                        <p className="font-medium">{pref.label}</p>
+                        <p className={`text-xs ${isSelected ? '' : 'text-muted-foreground'}`}>
+                          {pref.description}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <Label className="text-lg mb-3 block">Focus Areas (Optional)</Label>
             <div className="grid grid-cols-2 gap-3">
