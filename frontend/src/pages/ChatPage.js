@@ -762,8 +762,8 @@ Format each recipe clearly with the name as a header.
             </div>
           </div>
           
-          {/* Input Form - only show after flow is complete or for follow-up questions */}
-          {(flowStep === 'recipes' || messages.some(m => hasRecipes(m.content))) && (
+          {/* Input Form - show for recipes, mood changes, or follow-up questions */}
+          {(flowStep === 'recipes' || flowStep === 'mood_changed' || messages.some(m => hasRecipes(m.content))) && (
             <form onSubmit={handleSubmit} className="flex gap-3 items-end" data-testid="message-form">
               <Textarea
                 value={inputMessage}
