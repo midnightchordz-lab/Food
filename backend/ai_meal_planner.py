@@ -84,14 +84,55 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     
     Respond ONLY with a JSON object in this exact format:
     {{
-      "Monday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
-      "Tuesday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
-      "Wednesday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
-      "Thursday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
-      "Friday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
-      "Saturday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}},
-      "Sunday": {{"breakfast": "meal name (~Xcal)", "lunch": "meal name (~Xcal)", "dinner": "meal name (~Xcal)"}}
+      "Monday": {{
+        "breakfast": "meal name (~Xcal)",
+        "lunch": "meal name (~Xcal)",
+        "dinner": "meal name (~Xcal)",
+        "dinner_pairing": {{"non_alcoholic": "Mocktail/Beverage name", "alcoholic": "Wine/Beer/Cocktail name"}}
+      }},
+      "Tuesday": {{
+        "breakfast": "meal name (~Xcal)",
+        "lunch": "meal name (~Xcal)", 
+        "dinner": "meal name (~Xcal)",
+        "dinner_pairing": {{"non_alcoholic": "Mocktail/Beverage name", "alcoholic": "Wine/Beer/Cocktail name"}}
+      }},
+      "Wednesday": {{
+        "breakfast": "meal name (~Xcal)",
+        "lunch": "meal name (~Xcal)",
+        "dinner": "meal name (~Xcal)",
+        "dinner_pairing": {{"non_alcoholic": "Mocktail/Beverage name", "alcoholic": "Wine/Beer/Cocktail name"}}
+      }},
+      "Thursday": {{
+        "breakfast": "meal name (~Xcal)",
+        "lunch": "meal name (~Xcal)",
+        "dinner": "meal name (~Xcal)",
+        "dinner_pairing": {{"non_alcoholic": "Mocktail/Beverage name", "alcoholic": "Wine/Beer/Cocktail name"}}
+      }},
+      "Friday": {{
+        "breakfast": "meal name (~Xcal)",
+        "lunch": "meal name (~Xcal)",
+        "dinner": "meal name (~Xcal)",
+        "dinner_pairing": {{"non_alcoholic": "Mocktail/Beverage name", "alcoholic": "Wine/Beer/Cocktail name"}}
+      }},
+      "Saturday": {{
+        "breakfast": "meal name (~Xcal)",
+        "lunch": "meal name (~Xcal)",
+        "dinner": "meal name (~Xcal)",
+        "dinner_pairing": {{"non_alcoholic": "Mocktail/Beverage name", "alcoholic": "Wine/Beer/Cocktail name"}}
+      }},
+      "Sunday": {{
+        "breakfast": "meal name (~Xcal)",
+        "lunch": "meal name (~Xcal)",
+        "dinner": "meal name (~Xcal)",
+        "dinner_pairing": {{"non_alcoholic": "Mocktail/Beverage name", "alcoholic": "Wine/Beer/Cocktail name"}}
+      }}
     }}
+    
+    DRINK PAIRING RULES:
+    - Each dinner MUST have drink pairings (both non-alcoholic and alcoholic options)
+    - Non-alcoholic: Suggest specific mocktails, fresh juices, sparkling waters, or specialty beverages
+    - Alcoholic: Suggest specific wines (Pinot Grigio, Cabernet Sauvignon), beers, or cocktails that complement the dish
+    - Pairings must match the cuisine and flavors of the dinner
     
     {"Include approximate calories in parentheses after each meal name, e.g., 'Greek Yogurt Parfait (~350cal)'" if calorie_target else "Make meal names descriptive and appetizing."}
     Include cuisine origin when relevant (e.g., "Thai Green Curry with Jasmine Rice" or "Italian Caprese Pasta").
