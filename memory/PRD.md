@@ -289,6 +289,14 @@ A mood-based recipe discovery application where users receive personalized meal 
   - Test Results: 100% pass rate (8/8 features tested)
 
 
+- **Jan 28, 2026**: Added Dietary Preference to Weekly Meal Planner (FEATURE)
+  - **5 Dietary Options**: Vegetarian, Vegan, Non-Vegetarian, Pescatarian, Eggetarian
+  - **UI**: Selectable cards with icons and descriptions in AI Meal Plan Generator modal
+  - **Validation**: Dietary preference is required before generating a plan
+  - **Backend**: AI prompt enforces strict dietary rules (no meat in vegetarian, no animal products in vegan, etc.)
+  - **Fallbacks**: Dietary-appropriate backup plans if AI fails
+  - Testing: 100% backend, 100% frontend pass rate
+
 - **Jan 28, 2026**: Implemented Comprehensive Professional Recipe Detail View (MAJOR FEATURE)
   - **New Backend Endpoint**: `/api/recipes/detailed` generates professional-grade recipes using GPT-4o
   - **10 Recipe Sections**: Recipe Information, Description, Ingredients (categorized), Equipment Needed, Step-by-Step Instructions (with timing/visual cues), Chef's Tips, Nutritional Information, Storage & Reheating, Variations, Common Mistakes
