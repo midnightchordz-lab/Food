@@ -33,6 +33,7 @@ const parseDetailedRecipe = (markdown) => {
     tips: [],
     nutrition: {},
     storage: {},
+    drinkPairings: { nonAlcoholic: [], alcoholic: [] },
     variations: [],
     mistakes: []
   };
