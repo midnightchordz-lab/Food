@@ -1089,10 +1089,10 @@ async def generate_next_week_plan(current_user: User = Depends(get_current_user)
         next_week_str = next_week_start.strftime('%Y-%m-%d')
         
         # Check if plan already exists
-        existing = await db.weekly_plans.find_one({
-            "user_id": current_user.id,
-            "week_start": next_week_str
-        })
+        existing = await db.weekly_plans.find_one(
+            {"user_id": current_user.id, "week_start": next_week_str},
+            {"_id": 0}
+        )
         
         if existing:
             return {"message": "Plan for next week already exists", "plan": existing, "already_exists": True}
