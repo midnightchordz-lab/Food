@@ -40,12 +40,21 @@ const CUISINE_OPTIONS = [
 ];
 
 const ProfilePage = () => {
-  const { user, updateProfile, isAuthenticated } = useAuth();
+  const { user, updateProfile, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
   const [dietaryRestrictions, setDietaryRestrictions] = useState(user?.dietary_restrictions || []);
   const [cuisinePreferences, setCuisinePreferences] = useState(user?.cuisine_preferences || []);
   const [saving, setSaving] = useState(false);
+
+  // Wait for loading to complete before redirecting
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     navigate('/');
