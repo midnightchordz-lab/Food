@@ -119,6 +119,11 @@ const WeeklyPlannerPage = () => {
   const [showRecipeDetail, setShowRecipeDetail] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   
+  // Continuous meal planning state
+  const [mealPreferences, setMealPreferences] = useState(null);
+  const [isContinuousPlanningActive, setIsContinuousPlanningActive] = useState(false);
+  const [generatingNextWeek, setGeneratingNextWeek] = useState(false);
+  
   // Subscription form state
   const [subDietary, setSubDietary] = useState('Vegetarian');
   const [subCuisines, setSubCuisines] = useState(['Italian', 'Mexican']);
