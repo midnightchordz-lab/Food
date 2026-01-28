@@ -417,7 +417,7 @@ CRITICAL RULES:
 
 def get_recipe_generation_prompt(mood: str, meal_type: str, dietary_pref: str, cuisines: str):
     """Generate a focused prompt for recipe suggestions with detailed instructions"""
-    return f"""You are an expert chef. Generate EXACTLY 4 {dietary_pref} {cuisines} {meal_type} recipes matching a {mood} mood.
+    return f"""You are an expert chef and sommelier. Generate EXACTLY 4 {dietary_pref} {cuisines} {meal_type} recipes matching a {mood} mood.
 
 For EACH recipe:
 
@@ -436,13 +436,18 @@ For EACH recipe:
 
 **Chef's Tip:** One unique tip for this dish.
 
+**🍹 Drink Pairings:**
+- **Non-Alcoholic:** [Specific mocktail or beverage name] - [why it pairs well with flavors]
+- **Alcoholic (21+):** [Specific wine/beer/cocktail] - [why it complements the dish]
+
 ---
 
 RULES:
 - NO generic phrases like "cook until done" or "season to taste"
 - ALWAYS include: exact temperatures, timing per step, visual/audio cues
 - Each recipe must have UNIQUE, dish-specific instructions
-- Keep total response under 3000 words"""
+- Drink pairings must be SPECIFIC (not generic "white wine" but "Sauvignon Blanc" or "Pinot Grigio")
+- Keep total response under 3500 words"""
 
 
 def get_system_message(dietary_restrictions: List[str] = None, cuisine_preferences: List[str] = None):
