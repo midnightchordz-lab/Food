@@ -744,6 +744,65 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                 </div>
               )}
               
+              {/* Drink Pairings Section */}
+              {activeSection === 'drinks' && (
+                <div className="space-y-6">
+                  <h3 className="text-xl font-serif font-semibold flex items-center gap-2">
+                    <Wine size={22} className="text-primary" />
+                    Drink Pairings
+                  </h3>
+                  
+                  {/* Non-Alcoholic Section */}
+                  <div className="space-y-3">
+                    <h4 className="text-lg font-medium flex items-center gap-2 text-teal-700">
+                      <GlassWater size={20} />
+                      Non-Alcoholic Options
+                    </h4>
+                    <div className="grid gap-3">
+                      {parsedRecipe?.drinkPairings?.nonAlcoholic?.length > 0 ? (
+                        parsedRecipe.drinkPairings.nonAlcoholic.map((drink, idx) => (
+                          <div key={idx} className="p-4 bg-teal-50 rounded-xl border border-teal-100">
+                            <p className="font-semibold text-teal-800">{drink.name}</p>
+                            <p className="text-sm text-teal-600 mt-1">{drink.description}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-4 bg-teal-50 rounded-xl border border-teal-100">
+                          <p className="font-semibold text-teal-800">Sparkling Citrus Mocktail</p>
+                          <p className="text-sm text-teal-600 mt-1">A refreshing blend of sparkling water, fresh citrus, and mint that complements most dishes</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Alcoholic Section */}
+                  <div className="space-y-3">
+                    <h4 className="text-lg font-medium flex items-center gap-2 text-purple-700">
+                      <Wine size={20} />
+                      Alcoholic Options (21+)
+                    </h4>
+                    <div className="grid gap-3">
+                      {parsedRecipe?.drinkPairings?.alcoholic?.length > 0 ? (
+                        parsedRecipe.drinkPairings.alcoholic.map((drink, idx) => (
+                          <div key={idx} className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                            <p className="font-semibold text-purple-800">{drink.name}</p>
+                            <p className="text-sm text-purple-600 mt-1">{drink.description}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                          <p className="font-semibold text-purple-800">House Wine Pairing</p>
+                          <p className="text-sm text-purple-600 mt-1">A light white wine for seafood/chicken or a medium-bodied red for beef/lamb dishes</p>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      🍷 Please drink responsibly. Must be 21+ to consume alcoholic beverages.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               {/* Chef's Tips Section */}
               {activeSection === 'tips' && (
                 <div className="space-y-4">
