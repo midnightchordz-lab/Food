@@ -1,6 +1,7 @@
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import os
 import json
+from typing import List, Optional
 
 # Dietary preference descriptions for AI prompt
 DIETARY_DESCRIPTIONS = {
@@ -11,15 +12,29 @@ DIETARY_DESCRIPTIONS = {
     "eggetarian": "Eggetarian - Vegetarian with eggs allowed. No meat, poultry, fish, but eggs are included."
 }
 
-async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None):
+async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None, exclude_recipes: Optional[List[str]] = None):
     """
     Generate a personalized weekly meal plan using AI based on user preferences, dietary choice, calorie target, and mood.
+    Excludes previously used recipes to ensure variety.
     """
     # Get dietary restriction description
     dietary_desc = DIETARY_DESCRIPTIONS.get(dietary_preference, DIETARY_DESCRIPTIONS["non-vegetarian"])
     
     # Additional user dietary restrictions
     user_restrictions = user.dietary_restrictions if user.dietary_restrictions else []
+    
+    # Build exclusion list for variety
+    exclusion_section = ""
+    if exclude_recipes and len(exclude_recipes) > 0:
+        # Limit to last 50 recipes to keep prompt manageable
+        recent_exclusions = exclude_recipes[-50:] if len(exclude_recipes) > 50 else exclude_recipes
+        exclusion_section = f"""
+    RECIPES TO AVOID (already used recently - DO NOT REPEAT):
+    {', '.join(recent_exclusions[:25])}
+    {"... and " + str(len(recent_exclusions) - 25) + " more" if len(recent_exclusions) > 25 else ""}
+    
+    Generate COMPLETELY DIFFERENT recipes from the ones listed above. Be creative and suggest new dishes!
+    """
     
     # Calorie distribution (breakfast 25%, lunch 35%, dinner 40%)
     calorie_section = ""
