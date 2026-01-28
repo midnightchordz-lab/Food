@@ -1,190 +1,190 @@
 <analysis>**original_problem_statement:**
 The user's vision is a comprehensive, mood-based recipe discovery application named MoodFood. The application should provide a highly personalized and professional user experience.
 
-Key requirements from the latest detailed user prompts include:
+Key requirements from the latest user prompts include:
 1.  **Authentication:** Support for Email, Google OAuth, and Phone Number (via Twilio SMS verification).
-2.  **Persistent Chat Flow:** The chat history must be preserved when navigating between different sections of the app.
-3.  **Advanced Recipe Discovery:** A multi-step chat flow where the user first selects their , then  (Breakfast, Lunch, Dinner), , and finally .
+2.  **Continuous Meal Planning:** Once a user sets their meal preferences (dietary type, cuisines, calorie target, generation mode), the meal planner must automatically generate unique, non-repeating recipes week after week if set to Auto mode.
+3.  **Advanced Recipe Discovery:** A multi-step chat flow where the user first selects their , then , , and finally .
 4.  **Professional UI/UX:**
-    *   A clean, modern design with a specific color palette (Sage Green accent) and typography.
-    *   Recipe suggestions displayed in a 3-column card grid with high-quality images.
-    *   A detailed recipe view showing a hero image, ingredients (names only), and **specific, non-generic, step-by-step cooking instructions**.
-5.  **Integrated Shopping List:** A persistent, app-wide shopping list that automatically syncs when users add ingredients from recipes. The list must show clean ingredient names (no quantities/measurements) and be organized by grocery category.
-6.  **Meal Planner:** A full-featured weekly calendar where users can schedule meals. This includes a subscription feature for a weekly recipe newsletter. Critically, planned recipes on the calendar must be clickable, opening the full recipe detail view.
+    *   A clean, modern design with a specific color palette.
+    *   Recipe suggestions displayed in a 3-column card grid.
+    *   A highly detailed recipe view showing a hero image, ingredients, equipment, step-by-step instructions with visual cues and timings, chef's tips, nutritional info, storage instructions, variations, and common mistakes. **This format is critical and must not be changed.**
+    *   **Drink Pairings:** Recipes should include suggestions for both alcoholic (e.g., wine) and non-alcoholic (e.g., mocktail) beverages.
+5.  **Integrated Shopping List:** A persistent, app-wide shopping list that automatically syncs when users add ingredients from recipes.
+6.  **Meal Planner:** A full-featured weekly calendar where users can schedule meals, with support for dietary preferences and calorie targets.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application (FastAPI + React + MongoDB) that has evolved significantly. It features a multi-step chat flow (Mood, Meal, Diet, Cuisine) and a navigation bar with Home, Chat, List, and Planner tabs. The critical bug with the shopping list has been fixed; it now uses a single, persistent data store () and automatically cleans ingredient names. A full-featured  has been implemented with a calendar, a UI for newsletter subscriptions, and clickable recipes that open a detailed modal. The UI and placeholder backend routes for Twilio-based phone authentication are also in place.
+A full-stack application (FastAPI + React + MongoDB) featuring a multi-step chat flow for recipe discovery. The backend has been significantly optimized to handle complex AI prompts for recipe generation without timing out. A comprehensive, professional-grade recipe detail modal () is implemented, fetching and displaying detailed information including ingredients, equipment, step-by-step instructions, and more.
+
+The  now includes a full-featured AI meal plan generator supporting dietary preferences, calorie targets, and a toggle for Manual vs. Auto generation modes. The continuous planning feature is implemented, allowing the app to generate unique meal plans for future weeks by excluding previously suggested recipes. Drink pairing suggestions (both alcoholic and non-alcoholic) have been integrated into all recipe generation logic and are displayed in a dedicated tab in the recipe detail view.
 
 **Last working item**:
--   **Last item agent was working**: Addressing a critical user request to replace the generic, template-based cooking instructions with unique, specific, and detailed instructions for every single recipe. The user provided an extremely detailed prompt with rules and examples. The agent acknowledged the task and was about to modify the backend and .
--   **Status**: NOT STARTED
--   **Agent Testing Done**: N
--   **Which testing method agent to use?**: both. The backend AI prompt logic in  needs to be updated and can be verified by checking the API response structure. The frontend  will need to render these new structured instructions, which requires visual verification via the  or the .
+-   **Last item agent was working**: Implementing drink pairings (alcoholic and non-alcoholic) for all recipes. This involved updating AI prompts on the backend for chat, the detailed recipe view, and the meal planner. The frontend  was updated to parse and display this new information in a dedicated Drinks tab.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N (Only basic checks were performed. No comprehensive testing was done after the implementation.)
+-   **Which testing method agent to use?**: both. The backend API responses for , , and  need to be verified to ensure drink pairing data is included. The frontend requires visual verification with the  to confirm the Drinks tab and its content render correctly in the .
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: Generate Specific, Detailed, Unique Cooking Instructions (Priority: P0)
--   **Issue 2**: Backend Recipe Generation Stalls (Priority: P0)
--   **Issue 3**: Voice agent response is slow (Priority: P1)
--   **Issue 4**: Verify image display for previously saved recipes (Priority: P2)
+-   **Issue 1**: Session persistence is unreliable (Priority: P0)
+-   **Issue 2**: Voice agent response is slow (Priority: P1)
+-   **Issue 3**: Verify image display for previously saved recipes (Priority: P2)
 
 **Issues Detail:**
--   **Issue 1: Generate Specific, Detailed, Unique Cooking Instructions**
-    -   **Attempted fixes**: None. The agent was just about to begin implementation.
+-   **Issue 1: Session persistence is unreliable**
+    -   **Attempted fixes**: None. The agent encountered this issue repeatedly during UI testing (e.g., being redirected to the landing/login page after a successful login and navigation) but always worked around it instead of debugging the root cause.
     -   **Next debug checklist**:
-        1.  In , modify the AI prompt generation logic for the  endpoint. The new prompt must incorporate the strict rules from the user's latest feedback (message #331) to force the LLM to generate specific steps with ingredients, timings, temperatures, and techniques.
-        2.  Ensure the backend can parse and structure this detailed response.
-        3.  Update the  component to render the new detailed, multi-step instructions, including any tips or chef's notes provided by the AI.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is the most critical feature for the app's usability. Without real instructions, the recipes are useless.
+        1.  In , inspect how the auth token is stored (e.g., , ) and retrieved.
+        2.  Verify that after login/registration, the token is set correctly.
+        3.  Check the  and any protected route components to ensure they correctly read the token and update the auth state on initial page load and navigation.
+        4.  Inspect browser developer tools (Application -> Storage) to see if the token is present after navigating between pages.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical usability bug that prevents a seamless logged-in experience. Fixing it will allow users to navigate the app without being logged out, making features like the meal planner usable. It is also a major blocker for effective UI testing.
     -   **Status**: NOT STARTED
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None.
 
--   **Issue 2: Backend Recipe Generation Stalls**
-    -   **Attempted fixes**: None. The agent only observed the issue and checked logs.
-    -   **Next debug checklist**:
-        1.  Investigate the  endpoint in .
-        2.  Log the final prompt sent to the LLM after all four user selections (mood, meal, diet, cuisine) are made.
-        3.  Time the response from the LiteLLM call to determine if it's a timeout or a very long processing time.
-        4.  Simplify the prompt temporarily to see if the issue is with the complexity of the request.
-    -   **Why fix this issue and what will be achieved with the fix?**: The main recipe discovery flow is completely blocked, preventing users from seeing any recipes. This is a show-stopper bug.
-    -   **Status**: NOT STARTED
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?**: backend
-    -   **Blocked on other issue**: Potentially blocks testing for Issue 1.
-
--   **Issue 3: Voice agent response is slow**
+-   **Issue 2: Voice agent response is slow**
     -   **Attempted fixes**: None in this session.
     -   **Next debug checklist**:
         1.  Time the round-trip latency to identify the bottleneck (STT, AI response, or TTS).
         2.  Investigate using smaller, faster OpenAI models for STT/TTS.
     -   **Why fix this issue and what will be achieved with the fix?**: A responsive voice agent is crucial for a good user experience.
     -   **Status**: NOT STARTED
-    -   **Is recurring issue?** Y
+    -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: backend
     -   **Blocked on other issue**: None.
 
--   **Issue 4: Verify image display for previously saved recipes**
+-   **Issue 3: Verify image display for previously saved recipes**
     -   **Attempted fixes**: The agent fixed the image service for new recipes. The fix for old recipes is pending verification.
     -   **Next debug checklist**:
-        1.  Test the user flow: save a recipe, navigate to the Saved Recipes page, and confirm the image appears.
+        1.  Test the user flow: save a recipe, navigate to a Saved Recipes page (if it exists), and confirm the image appears.
     -   **Why fix this issue and what will be achieved with the fix?**: Ensures visual consistency across the app.
     -   **Status**: USER VERIFICATION PENDING
-    -   **Is recurring issue?** Y
+    -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None.
 
 **In progress Task List**:
-None.
+-   **Task 1: Complete and test drink pairing feature** (Priority: P0)
+    -   **Where to resume**: The implementation is done. The next step is to perform end-to-end testing.
+    -   **What will be achieved with this?**: Fulfills the user's request to add alcoholic and non-alcoholic drink suggestions to all recipes.
+    -   **Status**: TESTING PENDING
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on something**: The session persistence issue (Issue 1) may complicate frontend testing.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **P0:** Complete Phone Authentication: Implement the Twilio SMS logic in  using user-provided API keys.
-    -   **P1:** Persist Meal Plans & Subscriptions: Connect the  to backend endpoints to save/load user data.
-    -   **P1:** Implement Shopping Partner Integration (e.g., Instacart, Amazon Fresh).
+    -   **P0:** Complete Phone Authentication: Implement the Twilio SMS verification logic in . This will require requesting API keys from the user.
+    -   **P1:** Persist Meal Plans & Subscriptions to DB: Ensure all user-generated meal plans and newsletter subscriptions are saved to and loaded from the database correctly.
+    -   **P1:** Implement Macro Tracking: Add Protein, Carb, and Fat goal inputs to the meal planner, similar to the calorie target feature.
 -   **Future Tasks:**
-    -   **P2:** Implement Generate AI Plan button in the meal planner.
-    -   **P2:** Refactor  into modular FastAPI routers.
+    -   **P2:** Implement Shopping Partner Integration (e.g., Instacart, Amazon Fresh).
+    -   **P2:** Refactor : Break down the monolithic file into modular FastAPI routers (, , ).
     -   **P2:** Add a recipe rating and review system.
+    -   **P2:** Implement recipe search/filter functionality.
 
 **Completed work in this session**
--   **Critical Bug Fix: Shopping Cart & List Sync (DONE):** Unified the shopping cart and shopping list into a single persistent system using , removing the need for a manual Save to list action.
--   **Critical Bug Fix: Ingredient Name Cleaning (DONE):** Implemented a parser to display only clean ingredient names (e.g., Baby Spinach) in the shopping list and cart, removing quantities and preparation notes.
--   **Feature: Enhanced Chat Flow (DONE):** Implemented the new multi-step conversation flow (Mood -> Meal Type -> Diet -> Cuisine) with dedicated UI components (, , ).
--   **Feature: Phone Authentication UI & Backend Placeholders (DONE):** Added the UI for phone number login to the  and created placeholder endpoints in .
--   **Feature: Meal Planner & Subscription (DONE):** Created a full-featured  with a 7-day calendar view, a UI for newsletter subscriptions, and backend placeholder endpoints.
--   **Feature: Clickable Planner Recipes (DONE):** Made recipes scheduled in the meal planner clickable, opening a  with the correct recipe information.
--   **UI: Recipe Card Grid Layout (DONE):** Updated  to show recipe cards in a 3-column grid.
--   **UI: Navigation Update (DONE):** Added Home and Planner tabs to the main navigation bar.
+-   **P0 Bug Fix - Recipe Generation Stalling & Generic Instructions (DONE):** Optimized all AI recipe generation prompts for speed and detail. The system now reliably returns comprehensive recipes with specific timings, temperatures, and techniques in ~30 seconds instead of timing out after 2+ minutes.
+-   **Feature - Comprehensive Recipe Detail View (DONE):** Completely redesigned the recipe detail modal to match the user's exact specifications, with sections for equipment, ingredients, step-by-step instructions, chef's tips, nutritional info, etc. Implemented a new backend endpoint () for on-demand generation and caching.
+-   **Feature - Meal Planner Enhancements (DONE):**
+    -   Added a **Dietary Preference** selector.
+    -   Added a **Calorie Target** input.
+    -   Implemented **Continuous Meal Planning** to generate unique recipes for future weeks, excluding past suggestions.
+    -   Added a **Manual/Auto Generation Mode** toggle to user preferences.
+    -   Fixed a bug where auto-generation would not trigger for future weeks.
+-   **Feature - Drink Pairings (Implementation DONE):** Updated backend and frontend to generate and display alcoholic and non-alcoholic drink pairings for recipes.
+-   **UI Bug Fix - Sticky Header (DONE):** Fixed an issue in the recipe modal where scrolling content was visible through the sticky tab header.
+-   **UI Tweak - Made with Emergent Badge (DONE):** Located and removed the script that injected the branding badge.
 
 **Earlier issues found/mentioned but not fixed**
--   The new multi-step chat flow causes the AI recipe generation to stall, leaving the UI in a perpetual loading state.
+-   **Issue 1: Session persistence is unreliable.** The agent encountered this frontend authentication issue multiple times, which prevented seamless UI testing and represents a poor user experience. It was consistently worked around but never debugged or fixed.
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: The user has repeatedly complained about generic recipe instructions. The current request (Issue 1) is the latest attempt to fix this for good.
+-   **Issue recurrence in previous fork**: Generic recipe instructions.
 -   **Recurrence count**: 2+
--   **Status**: NOT STARTED
+-   **Status**: RESOLVED. The user's latest, highly-specific format for recipes has been implemented and verified. This should be considered the new standard.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
 -   **Frontend**: React, React Hooks, React Context API, Tailwind CSS
--   **Backend**: FastAPI, Pydantic
+-   **Backend**: FastAPI, Pydantic, LiteLLM
 -   **Database**: MongoDB
--   **Authentication**: JWT
+-   **AI Integration**:  library for interacting with OpenAI models.
 
 **key DB schema**
 -   **users**: {, , , }
--   **saved_recipes**: {, , }
--   **subscriptions**: (New, Schema TBD)
--   **weekly_plans**: (New, Schema TBD)
+-   **weekly_plans**: {, , , , }
+-   **meal_preferences**: (New) {, , , , , }
 
 **changes in tech stack**
--    (v9.10.0) was added as a backend dependency.
+None
 
 **All files of reference**
--   **/app/frontend/src/pages/ChatPage.js**: Rewritten for the new multi-step chat flow.
--   **/app/frontend/src/context/ShoppingCartContext.js**: Modified for list synchronization and ingredient name cleaning.
--   **/app/frontend/src/pages/ShoppingListPage.js**: Rewritten to use the .
--   **/app/frontend/src/pages/WeeklyPlannerPage.js**: Newly created for the meal planner feature.
--   **/app/frontend/src/components/AuthModal.js**: Rewritten to support email and phone authentication tabs.
--   **/app/backend/server.py**: Heavily modified with new placeholder endpoints for phone auth and subscriptions.
--   **/app/memory/PRD.md**: Updated to reflect the new comprehensive product requirements.
+-   
+-   
+-   
+-   
+-   
+-   
+-   
+-   
 
 **Areas that need refactoring**:
--   The  file has grown excessively large and is now unmanageable. It must be broken down into separate FastAPI routers (e.g., , , ).
--   State management in  has become very complex with the new sequential flow; it could benefit from a reducer or state machine pattern.
+-   ****: This is still a monolithic file and is now extremely large. It is a high-priority candidate for being broken down into separate FastAPI routers (e.g., , , ).
+-   ****: This component is now over 800 lines long and handles fetching, parsing, state, and rendering for many complex sections. It should be decomposed into smaller sub-components (e.g., , , ).
+-   ****: This component's logic for fetching plans, handling preferences, and managing auto-generation is complex. This logic could be extracted into custom hooks (e.g., , ) to simplify the component.
+-   **Auth/Session Management**: The repeated UI testing failures strongly suggest the authentication flow and session persistence mechanism need to be reviewed and refactored for robustness.
 
 **key api endpoints**
--   
--   
--   
--    (New, placeholder)
--    (New, placeholder)
--    (New, placeholder)
+-    (Updated)
+-    (New)
+-    (Updated)
+-    (New)
+-    (New)
+-    (New)
+-    (New)
 
 **Critical Info for New Agent**
--   Your immediate priority is to fix the recipe generation. There are two P0 issues:
-    1.  **Instructions:** The user's number one demand is for specific, detailed cooking instructions. You must implement the logic from their detailed prompt (message #331) in the backend.
-    2.  **Stalling:** The recipe generation API call is currently stalling/timing out after the new 4-step chat flow was implemented. This blocks the entire app. You may need to debug this before or during the implementation of specific instructions.
--   The UI for Phone Authentication and the Meal Planner is largely complete, but the backend logic is placeholder. You will need to request the user's Twilio keys to finish the phone auth feature.
--   Refer to  for the complete and up-to-date vision of the application.
+-   **PRIORITY 1: Test the Drink Pairing feature.** The implementation is complete but unverified.
+-   **PRIORITY 2: Address the session persistence issue.** This is a critical usability bug and a blocker for efficient UI testing. Start by investigating  and how the token is handled on page loads.
+-   **Recipe Format is Non-Negotiable:** The user is extremely specific about the current layout and content of the . Do not alter this format unless explicitly instructed to do so.
+-   The next major feature from the backlog is **Phone Authentication**. This will require asking the user for their Twilio API keys.
 
 **documents and test reports created in this job**
--   /app/memory/PRD.md
--   /app/test_reports/iteration_9.json
--   /app/test_reports/iteration_10.json
--   /app/test_reports/iteration_11.json
--   /app/test_reports/iteration_12.json
--   /app/test_reports/iteration_13.json
--   /app/test_reports/iteration_14.json
+-    (updated)
+-   
+-   
+-   
+-   
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request (Done):** Make recipes in the meal planner clickable to open the detail view.
-2.  **Request (Pending):** A detailed prompt demanding the fix for generic cooking instructions.
-3.  **Approval (Done):**  (Implement Phone Auth and Meal Planner).
-4.  **Confirmation (Done):**  (Confirming implementation of both features).
-5.  **Bug Report (Resolved):** .
-6.  **Feature Request (In Progress):** A massive, detailed prompt outlining a complete redesign and new features for the app.
-7.  **Approval (Done):**  (Approving the phased plan for the redesign).
-8.  **Bug Report (Resolved):** .
-9.  **Bug Report (Resolved):** 
-10. **Approval (Done):** .
+1.  **Request:** Add drink pairings (alcoholic & non-alcoholic) to recipes in chat and the meal planner. (IN PROGRESS - TESTING PENDING)
+2.  **Bug Report:** In Auto generation mode, the 3rd week shows up empty instead of being auto-generated. (RESOLVED)
+3.  **Clarification:** The user wants a choice between Manual and Auto generation, not just auto-generation. (RESOLVED)
+4.  **Critical Requirement:** Meal planning must be continuous, generating unique recipes week-over-week, and the recipe detail view format must be preserved. (RESOLVED)
+5.  **Bug Report:** The Made with Emergent badge is still visible after the agent claimed to remove it. (RESOLVED)
+6.  **Request:** Remove the Made with Emergent badge. (RESOLVED)
+7.  **Bug Report:** In the recipe detail modal, the instruction text is visible behind the sticky tab header when scrolling. (RESOLVED)
+8.  **Approval:** add the Enhancement (referring to the calorie target feature). (RESOLVED)
+9.  **Request:** Add a dietary preference option (Veg, Non-Veg, etc.) to the weekly meal planner. (RESOLVED)
+10. **Critical Requirement:** The recipe detail view must be completely redesigned to match a very specific, professional format provided by the user. (RESOLVED)
 
 **Project Health Check:**
 -   **Broken**:
-    -   The core recipe discovery flow is non-functional; the backend stalls when generating recipes for the new 4-step chat flow.
-    -   Phone authentication is UI-only and does not function without backend logic and API keys.
+    -   Frontend session persistence is unreliable. Logged-in users are often logged out when navigating, preventing a consistent experience.
 -   **Mocked**:
-    -   The  endpoint still relies on a static, hardcoded list of recipes.
-    -   The entire recipe generation needs a major overhaul to produce specific, non-generic instructions.
+    -   The Subscribe button for the newsletter is UI-only.
+    -   Phone authentication is UI-only and non-functional.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4o** (Text Generation) — uses Emergent LLM Key
+-   **OpenAI GPT-4o / gpt-4o-mini** (Text Generation) — uses Emergent LLM Key
 -   **OpenAI Whisper** (Speech-to-Text) — uses Emergent LLM Key
 -   **OpenAI TTS** (Text-to-Speech) — uses Emergent LLM Key
 -   **Twilio** (SMS) — requires User API Key. UI and placeholder backend routes are implemented.
@@ -193,11 +193,11 @@ None.
 -   **Testing agent used after significant changes**: YES
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: []
--   **Known regressions**: None currently active.
+-   **Known regressions**: The unreliable frontend session persistence is a significant regression in user experience and testability.
 
 **Credentials to test flow:**
 Use the registration form on the website to create a new user for testing. Phone authentication is not functional yet.
 
 **What agent forgot to execute**
--   The agent did not request the necessary Twilio API keys from the user to complete the phone authentication feature.
--   The agent identified that recipe generation was stalling but did not create a formal plan to debug this P0 issue before finishing the session.</analysis>
+-   The agent never debugged the root cause of the session persistence issue, despite it repeatedly blocking UI testing.
+-   The agent has not yet requested the Twilio API keys from the user, which are required to implement the P0 phone authentication task.</analysis>
