@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Sparkles, Loader2, Leaf, Fish, Drumstick, Carrot, Egg, Flame, Target } from 'lucide-react';
+import { Sparkles, Loader2, Leaf, Fish, Drumstick, Carrot, Egg, Flame, Target, RefreshCw, MousePointer } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
