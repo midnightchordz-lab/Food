@@ -562,13 +562,34 @@ Format each recipe clearly with the name as a header.
               </div>
             </div>
             
-            {/* Current selections indicator */}
+            {/* Current selections indicator with mood change option */}
             {(selectedMood || selectedMealType || selectedDietaryPref) && (
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                 {selectedMood && (
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                    {MOODS.find(m => m.id === selectedMood)?.emoji} {MOODS.find(m => m.id === selectedMood)?.label}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium hover:bg-primary/20 transition-colors cursor-pointer flex items-center gap-1 border border-primary/20"
+                        data-testid="mood-indicator"
+                      >
+                        {MOODS.find(m => m.id === selectedMood)?.emoji} {MOODS.find(m => m.id === selectedMood)?.label}
+                        <RefreshCw size={12} className="ml-1 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Change Mood</div>
+                      {MOODS.map((mood) => (
+                        <DropdownMenuItem 
+                          key={mood.id}
+                          onClick={() => handleMoodChange(mood.id)}
+                          className={`cursor-pointer ${selectedMood === mood.id ? 'bg-primary/10' : ''}`}
+                        >
+                          <span className="mr-2">{mood.emoji}</span>
+                          {mood.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 {selectedMealType && (
                   <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium">
