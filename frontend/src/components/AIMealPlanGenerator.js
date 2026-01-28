@@ -3,13 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Sparkles, Loader2, Leaf, Fish, Drumstick, Carrot, Egg } from 'lucide-react';
+import { Sparkles, Loader2, Leaf, Fish, Drumstick, Carrot, Egg, Flame, Target } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -22,6 +24,13 @@ const DIETARY_PREFERENCES = [
   { id: 'non-vegetarian', label: 'Non-Vegetarian', icon: Drumstick, description: 'Includes meat & poultry', color: 'text-red-600 bg-red-50 border-red-200' },
   { id: 'pescatarian', label: 'Pescatarian', icon: Fish, description: 'Fish & seafood, no meat', color: 'text-blue-600 bg-blue-50 border-blue-200' },
   { id: 'eggetarian', label: 'Eggetarian', icon: Egg, description: 'Vegetarian + eggs', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+];
+
+const CALORIE_PRESETS = [
+  { label: 'Weight Loss', calories: 1500, description: '~1500 cal/day', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+  { label: 'Maintenance', calories: 2000, description: '~2000 cal/day', color: 'text-green-600 bg-green-50 border-green-200' },
+  { label: 'Active', calories: 2500, description: '~2500 cal/day', color: 'text-orange-600 bg-orange-50 border-orange-200' },
+  { label: 'Muscle Gain', calories: 3000, description: '~3000 cal/day', color: 'text-red-600 bg-red-50 border-red-200' },
 ];
 
 const FOCUS_AREAS = [
