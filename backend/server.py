@@ -1124,6 +1124,9 @@ async def generate_next_week_plan(current_user: User = Depends(get_current_user)
         plan_dict['created_at'] = plan_dict['created_at'].isoformat()
         await db.weekly_plans.insert_one(plan_dict)
         
+        # Remove _id before returning (MongoDB adds it during insert)
+        plan_dict.pop('_id', None)
+        
         # Track used recipes
         await track_used_recipes(current_user.id, meals, next_week_str)
         
