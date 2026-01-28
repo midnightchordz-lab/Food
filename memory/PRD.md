@@ -167,6 +167,8 @@ A mood-based recipe discovery application where users receive personalized meal 
 ### P0 - Completed
 - [x] Fix recipe generation stalling (was 2+ minutes, now 29-36 seconds)
 - [x] Fix generic cooking instructions (now includes specific timing, temperatures, sensory cues)
+- [x] Drink Pairings feature - recipes now include alcoholic and non-alcoholic drink suggestions
+- [x] Fix session persistence - users stay logged in when navigating between pages
 
 ### P1 - High Priority
 - [ ] Complete Phone Authentication (requires Twilio API keys)
