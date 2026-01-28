@@ -935,6 +935,7 @@ async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User 
             current_user,
             request.mood,
             request.dietary_preference,
+            request.calorie_target,
             request.focus_areas,
             request.cuisine_preferences
         )
