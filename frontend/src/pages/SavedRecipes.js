@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Heart, Clock, ChefHat, ShoppingCart, Star, Download } from 'lucide-react';
+import { Heart, Clock, ChefHat, ShoppingCart, Star, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,7 +21,7 @@ const SavedRecipes = () => {
   const [filteredRecipes, setFilteredRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [recipeRatings, setRecipeRatings] = useState({});
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   
   useEffect(() => {
     if (isAuthenticated) {

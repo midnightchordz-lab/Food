@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Trash2, Plus, ShoppingCart, Download, Copy, CheckCircle2, 
-  Package, ChevronDown, ChevronUp, X, Store
+  Package, ChevronDown, ChevronUp, X, Store, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -14,7 +14,7 @@ const ShoppingListPage = () => {
   const [newAmount, setNewAmount] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showPartnerModal, setShowPartnerModal] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   
   // Use the unified shopping cart context - THIS IS THE SINGLE SOURCE OF TRUTH
   const {
