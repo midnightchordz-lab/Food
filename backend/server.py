@@ -174,7 +174,8 @@ class MealPreferences(BaseModel):
     focus_areas: List[str] = []
     cuisine_preferences: List[str] = []
     mood: str = "balanced"
-    is_active: bool = True  # When True, auto-generates weekly plans
+    is_active: bool = True
+    generation_mode: str = "manual"  # 'manual' or 'auto'
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -185,6 +186,7 @@ class MealPreferencesCreate(BaseModel):
     cuisine_preferences: List[str] = []
     mood: str = "balanced"
     is_active: bool = True
+    generation_mode: str = "manual"  # 'manual' or 'auto'
 
 # Track used recipes to avoid repetition
 class UsedRecipe(BaseModel):
