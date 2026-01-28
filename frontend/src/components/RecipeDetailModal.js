@@ -777,9 +777,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                           </div>
                         ))
                       ) : (
-                        <div className="p-4 bg-teal-50 rounded-xl border border-teal-100">
-                          <p className="font-semibold text-teal-800">Sparkling Citrus Mocktail</p>
-                          <p className="text-sm text-teal-600 mt-1">A refreshing blend of sparkling water, fresh citrus, and mint that complements most dishes</p>
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <p className="text-gray-500 italic">Click "View Full Recipe" to load specific drink pairings for this dish</p>
                         </div>
                       )}
                     </div>
@@ -800,9 +799,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                           </div>
                         ))
                       ) : (
-                        <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
-                          <p className="font-semibold text-purple-800">House Wine Pairing</p>
-                          <p className="text-sm text-purple-600 mt-1">A light white wine for seafood/chicken or a medium-bodied red for beef/lamb dishes</p>
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <p className="text-gray-500 italic">Click "View Full Recipe" to load specific drink pairings for this dish</p>
                         </div>
                       )}
                     </div>
