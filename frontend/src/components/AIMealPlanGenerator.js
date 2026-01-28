@@ -321,6 +321,65 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
             </div>
           </div>
 
+          {/* Generation Mode Selection */}
+          <div>
+            <Label className="text-lg mb-3 block">
+              Plan Generation Mode <span className="text-red-500">*</span>
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setGenerationMode('manual')}
+                className={`p-4 rounded-xl border-2 transition-all text-left ${
+                  generationMode === 'manual'
+                    ? 'bg-blue-50 border-blue-500 text-blue-700 ring-2 ring-blue-200'
+                    : 'bg-card border-border hover:border-primary/50'
+                }`}
+                data-testid="mode-manual"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${generationMode === 'manual' ? 'bg-blue-100' : 'bg-muted'}`}>
+                    <MousePointer size={20} className={generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'} />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Manual Generation</p>
+                    <p className={`text-sm ${generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'}`}>
+                      Click &quot;Generate Next Week&quot; button each time you want a new plan
+                    </p>
+                  </div>
+                </div>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setGenerationMode('auto')}
+                className={`p-4 rounded-xl border-2 transition-all text-left ${
+                  generationMode === 'auto'
+                    ? 'bg-green-50 border-green-500 text-green-700 ring-2 ring-green-200'
+                    : 'bg-card border-border hover:border-primary/50'
+                }`}
+                data-testid="mode-auto"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${generationMode === 'auto' ? 'bg-green-100' : 'bg-muted'}`}>
+                    <RefreshCw size={20} className={generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'} />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Auto Generation</p>
+                    <p className={`text-sm ${generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'}`}>
+                      Automatically generates unique plans every week
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {generationMode === 'auto' 
+                ? '✨ Auto mode: New plans appear automatically each week with unique, non-repeating recipes'
+                : '👆 Manual mode: You control when new plans are generated'}
+            </p>
+          </div>
+
           <div className="flex gap-3 pt-4">
             <Button
               onClick={handleGenerate}
