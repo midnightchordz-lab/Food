@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   Calendar, Plus, Sparkles, Crown, Mail, ChevronLeft, ChevronRight,
-  Check, X, Clock, Utensils, Coffee, Sun, Moon, Bell, ExternalLink, RefreshCw
+  Check, X, Clock, Utensils, Coffee, Sun, Moon, Bell, ExternalLink, RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
