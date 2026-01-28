@@ -421,6 +421,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
       <DialogContent 
         className="max-w-4xl max-h-[95vh] overflow-y-auto p-0 bg-background"
         data-testid="recipe-detail-modal"
+        hideCloseButton={true}
       >
         <DialogDescription className="sr-only">
           Detailed recipe for {displayTitle}
