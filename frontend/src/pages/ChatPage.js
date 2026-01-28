@@ -81,6 +81,11 @@ const ChatPage = () => {
   
   // Load saved chat state on mount
   useEffect(() => {
+    // Wait for auth loading to complete
+    if (loading) {
+      return;
+    }
+    
     if (!isAuthenticated) {
       navigate('/');
       return;
@@ -116,7 +121,7 @@ const ChatPage = () => {
       showMoodSelector: true
     }]);
     setFlowStep('mood');
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, loading]);
   
   // Handle mood selection
   const handleMoodSelect = (moodId, moodLabel, moodDescription) => {
