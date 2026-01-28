@@ -763,9 +763,9 @@ const WeeklyPlannerPage = () => {
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Check className="text-green-600" size={40} />
               </div>
-              <h3 className="text-xl font-serif mb-2">You're Subscribed!</h3>
+              <h3 className="text-xl font-serif mb-2">You&apos;re Subscribed!</h3>
               <p className="text-muted-foreground mb-4">
-                Check your inbox for a confirmation email. You'll receive {subRecipeCount} personalized recipes every {subDeliveryDay}.
+                Check your inbox for a confirmation email. You&apos;ll receive {subRecipeCount} personalized recipes every {subDeliveryDay}.
               </p>
               <Button
                 onClick={() => setShowSubscribeModal(false)}
