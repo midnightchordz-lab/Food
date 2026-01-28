@@ -723,6 +723,29 @@ Format each recipe clearly with the name as a header.
                       </Button>
                     </div>
                   )}
+                  
+                  {/* Mood change recipe suggestion button */}
+                  {msg.showMoodChangeRecipeOption && msg.isMoodChange && (
+                    <div className="mt-4 ml-2 p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-2xl border border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Sparkles size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Ready for new suggestions?</p>
+                          <p className="text-xs text-muted-foreground">Get recipes matching your new {MOODS.find(m => m.id === selectedMood)?.label?.toLowerCase()} mood</p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={getRecipesForNewMood}
+                        className="rounded-full w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+                        data-testid="get-new-recipes-button"
+                      >
+                        <Sparkles size={16} className="mr-2" />
+                        Show {MOODS.find(m => m.id === selectedMood)?.label} Recipes
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
               
