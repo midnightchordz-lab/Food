@@ -161,42 +161,51 @@ const WeeklyPlannerPage = () => {
     }
   }, [isAuthenticated, user]);
   
+  // Auto-generate plan when navigating to a new week in auto mode
+  useEffect(() => {
+    if (isAuthenticated && mealPreferences?.generation_mode === 'auto') {
+      checkAndAutoGenerateForWeek(currentWeekOffset);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWeekOffset, mealPreferences?.generation_mode]);
+  
   const loadMealPreferences = async () => {
     try {
       const response = await axios.get(`${API}/meal-preferences`);
       if (response.data.preferences) {
         setMealPreferences(response.data.preferences);
         setIsContinuousPlanningActive(response.data.preferences.is_active || false);
-        
-        // If auto mode is enabled, check if we need to auto-generate for current week
-        if (response.data.preferences.generation_mode === 'auto') {
-          await checkAndAutoGenerate();
-        }
       }
     } catch (error) {
       console.error('Error loading meal preferences:', error);
     }
   };
   
-  const checkAndAutoGenerate = async () => {
+  const checkAndAutoGenerateForWeek = async (weekOffset) => {
     try {
-      // Check if current week has a plan
-      const currentResponse = await axios.get(`${API}/weekly-plan/current`);
-      if (!currentResponse.data.has_plan && currentResponse.data.has_preferences) {
-        // Auto-generate current week's plan
-        toast.info('Auto-generating this week\'s meal plan...');
-        const genResponse = await axios.post(`${API}/weekly-plan/generate`, {
-          mood: mealPreferences?.mood || 'balanced',
-          dietary_preference: mealPreferences?.dietary_preference || 'non-vegetarian',
-          calorie_target: mealPreferences?.calorie_target,
-          focus_areas: mealPreferences?.focus_areas || [],
-          cuisine_preferences: mealPreferences?.cuisine_preferences || []
-        });
-        toast.success('This week\'s plan auto-generated!');
-        loadPlans();
-      }
+      // Calculate the week start date for the offset
+      const today = new Date();
+      const currentWeekStart = new Date(today);
+      currentWeekStart.setDate(today.getDate() - today.getDay() + 1); // Monday
+      const targetWeekStart = new Date(currentWeekStart);
+      targetWeekStart.setDate(currentWeekStart.getDate() + (weekOffset * 7));
+      const weekStartStr = targetWeekStart.toISOString().split('T')[0];
+      
+      // Check if we already have a plan for this week
+      const existingPlan = plans.find(p => p.week_start === weekStartStr);
+      if (existingPlan) return; // Already have a plan
+      
+      // Auto-generate plan for this week
+      toast.info(`Auto-generating meal plan for week of ${targetWeekStart.toLocaleDateString()}...`);
+      
+      await axios.post(`${API}/weekly-plan/generate-for-week`, {
+        week_offset: weekOffset
+      });
+      
+      toast.success('Meal plan auto-generated!');
+      loadPlans();
     } catch (error) {
-      console.error('Error auto-generating plan:', error);
+      console.error('Error auto-generating plan for week:', error);
     }
   };
   
