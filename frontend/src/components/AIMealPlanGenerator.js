@@ -60,6 +60,8 @@ const CUISINES = [
 const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
   const [mood, setMood] = useState('');
   const [dietaryPreference, setDietaryPreference] = useState('');
+  const [calorieTarget, setCalorieTarget] = useState(2000);
+  const [enableCalorieTarget, setEnableCalorieTarget] = useState(false);
   const [focusAreas, setFocusAreas] = useState([]);
   const [cuisinePreferences, setCuisinePreferences] = useState([]);
   const [generating, setGenerating] = useState(false);
@@ -80,6 +82,11 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
     );
   };
 
+  const handleCaloriePreset = (calories) => {
+    setCalorieTarget(calories);
+    setEnableCalorieTarget(true);
+  };
+
   const handleGenerate = async () => {
     if (!mood.trim()) {
       toast.error('Please describe how you\'re feeling');
@@ -96,6 +103,7 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
       const response = await axios.post(`${API}/weekly-plan/generate`, {
         mood: mood.trim(),
         dietary_preference: dietaryPreference,
+        calorie_target: enableCalorieTarget ? calorieTarget : null,
         focus_areas: focusAreas,
         cuisine_preferences: cuisinePreferences
       });
