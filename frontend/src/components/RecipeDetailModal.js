@@ -270,13 +270,6 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   
   const shoppingCart = useShoppingCart();
   
-  // Fetch detailed recipe when modal opens
-  useEffect(() => {
-    if (isOpen && recipe?.title) {
-      fetchDetailedRecipe();
-    }
-  }, [isOpen, recipe?.title]);
-  
   const fetchDetailedRecipe = async () => {
     if (!recipe?.title) return;
     
@@ -306,6 +299,14 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
       setIsLoadingDetails(false);
     }
   };
+  
+  // Fetch detailed recipe when modal opens
+  useEffect(() => {
+    if (isOpen && recipe?.title) {
+      fetchDetailedRecipe();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, recipe?.title]);
   
   const handleStepCheck = (stepNum) => {
     setCheckedSteps(prev => ({
