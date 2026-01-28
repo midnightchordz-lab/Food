@@ -63,6 +63,7 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     - Focus Areas: {', '.join(focus_areas) if focus_areas else 'Balanced nutrition'}
     - Cuisine Preferences: {', '.join(cuisine_preferences) if cuisine_preferences else 'Variety'}
     {calorie_section}
+    {exclusion_section}
     CRITICAL RULES FOR DIETARY PREFERENCE:
     - If VEGETARIAN: NO meat, chicken, fish, seafood, or any animal flesh
     - If VEGAN: NO meat, fish, eggs, dairy, butter, cheese, honey, or ANY animal products
