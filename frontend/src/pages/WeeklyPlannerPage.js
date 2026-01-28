@@ -322,6 +322,15 @@ const WeeklyPlannerPage = () => {
     );
   };
   
+  // Show loading spinner while auth is being verified
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center" data-testid="weekly-planner-loading">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
+  
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="weekly-planner-page">
