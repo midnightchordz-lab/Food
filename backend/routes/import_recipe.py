@@ -37,42 +37,84 @@ class ImportSaveRequest(BaseModel):
 
 # ============== PROMPTS ==============
 
-IMPORT_RECIPE_PROMPT = """You are a chef. Convert recipes to this JSON format:
+IMPORT_RECIPE_PROMPT = """You are an expert chef and recipe converter. Convert the provided recipe content into a HIGHLY DETAILED, STANDARDIZED format that a complete beginner can follow.
 
+CRITICAL REQUIREMENTS:
+1. EVERY step must have SPECIFIC timing (e.g., "Cook for 3-4 minutes")
+2. EVERY step must have EXACT temperatures (e.g., "375°F/190°C", "medium-high heat")
+3. EVERY step must have VISUAL or SENSORY cues (e.g., "until golden brown", "when it starts sizzling")
+4. ALL measurements must be precise (e.g., "2 cups", "1/4 teaspoon", not "some" or "a bit")
+5. Include technique descriptions for beginners
+
+OUTPUT FORMAT (JSON):
 {
     "name": "Recipe Title",
-    "description": "2-3 sentence description",
+    "description": "2-3 sentence description of the dish",
     "cuisine": "Italian/Mexican/Indian/etc",
     "difficulty": "Easy/Medium/Hard",
     "prepTime": "X minutes",
     "cookTime": "X minutes", 
     "totalTime": "X minutes",
     "servings": 4,
-    "ingredients": [{"name": "2 cups flour", "category": "pantry", "notes": "optional note"}],
-    "instructions": [{"stepNumber": 1, "instruction": "Step with timing", "time": "5 min", "visualCue": "What to look for"}],
-    "chefTips": ["Tip 1", "Tip 2"],
-    "nutritionPerServing": {"calories": 350, "protein": "15g", "carbs": "45g", "fat": "12g"},
-    "storage": "Storage instructions",
-    "drinkPairings": {"nonAlcoholic": ["Drink"], "alcoholic": ["Wine"]},
-    "variations": ["Variation 1"]
+    "ingredients": [
+        {
+            "name": "2 cups all-purpose flour",
+            "category": "pantry",
+            "notes": "sifted for fluffier results"
+        }
+    ],
+    "instructions": [
+        {
+            "stepNumber": 1,
+            "instruction": "DETAILED step with exact timing, temperature, and technique",
+            "time": "5 minutes",
+            "visualCue": "What to look for to know this step is complete",
+            "technique": "Beginner-friendly explanation"
+        }
+    ],
+    "chefTips": ["Tip 1", "Tip 2", "Tip 3"],
+    "nutritionPerServing": {
+        "calories": 350,
+        "protein": "15g",
+        "carbs": "45g",
+        "fat": "12g",
+        "fiber": "3g"
+    },
+    "storage": "How to store leftovers and for how long",
+    "drinkPairings": {
+        "nonAlcoholic": ["Drink 1 with description"],
+        "alcoholic": ["Wine/beer/cocktail with why it pairs well"]
+    },
+    "variations": ["Variation 1", "Variation 2"],
+    "source": "Original source URL or 'User submitted'"
 }
 
-Include specific timings and temperatures. Output ONLY valid JSON."""
+IMPORTANT: 
+- Do NOT use generic phrases like "cook until done" or "season to taste"
+- Each step should be detailed enough that someone who has never cooked can follow it
+- Output ONLY valid JSON, no other text."""
 
 
 def get_import_system_prompt(source_type: str) -> str:
     """Generate system prompt based on import source type"""
-    source_hints = {
-        "url": "Recipe from website. Parse and convert.",
-        "image": "Recipe from image. OCR may have errors - correct them.",
-        "video": "Recipe from video. Reconstruct from description.",
-        "text": "User-provided text. Fill in missing details."
+    source_context = {
+        "url": "The recipe was extracted from a website. Parse the recipe content and convert it.",
+        "image": "The recipe was extracted from an image. OCR may have errors - use your knowledge to correct likely mistakes.",
+        "video": "The recipe was extracted from a video transcript/description. Reconstruct the full recipe from the spoken instructions.",
+        "text": "The recipe was provided as plain text by the user. It may be informal or incomplete - fill in reasonable details."
     }
     
     return f"""{IMPORT_RECIPE_PROMPT}
 
-Source: {source_hints.get(source_type, source_hints['text'])}
-If incomplete, use culinary expertise to add reasonable details."""
+SOURCE CONTEXT: {source_context.get(source_type, source_context['text'])}
+
+If the recipe is incomplete or missing information, use your culinary expertise to:
+1. Add reasonable cook times and temperatures based on the dish type
+2. Suggest standard portion sizes
+3. Add visual cues for each step
+4. Include storage and reheating instructions
+
+ALWAYS output valid JSON."""
 
 
 # ============== HELPER FUNCTIONS ==============
