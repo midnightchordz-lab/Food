@@ -708,7 +708,7 @@ const ImportRecipePage = () => {
               )}
             </>
           ) : (
-          <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-6">
+          <div className="bg-white/70 dark:bg-card/70 backdrop-blur-sm rounded-3xl border border-white/60 dark:border-border/40 shadow-lg p-6 sm:p-8">
             {/* Back button */}
             <Button
               variant="ghost"
@@ -716,7 +716,7 @@ const ImportRecipePage = () => {
                 setSelectedMethod(null);
                 resetForms();
               }}
-              className="mb-4 rounded-full"
+              className="mb-6 rounded-full hover:bg-primary/10"
             >
               <ArrowLeft size={18} className="mr-2" />
               Back to methods
@@ -725,35 +725,41 @@ const ImportRecipePage = () => {
             {/* URL Import */}
             {selectedMethod === 'url' && (
               <div data-testid="import-from-url">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  🔗 Import from URL
-                </h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400/20 to-indigo-500/20 flex items-center justify-center">
+                    <Link2 size={24} className="text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">Import from URL</h2>
+                    <p className="text-sm text-muted-foreground">Paste a link to any recipe page</p>
+                  </div>
+                </div>
                 
                 <div className="space-y-4">
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <Input
                       type="url"
-                      placeholder="Paste recipe URL (e.g., https://example.com/recipe)"
+                      placeholder="https://example.com/recipe..."
                       value={urlInput}
                       onChange={(e) => setUrlInput(e.target.value)}
-                      className="flex-1"
+                      className="flex-1 h-12 rounded-xl border-border/50 focus:border-primary"
                       data-testid="url-input"
                     />
                     <Button
                       onClick={handleUrlImport}
                       disabled={!urlInput.trim() || isLoading}
-                      className="rounded-full"
+                      className="h-12 px-6 rounded-xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
                       data-testid="import-url-btn"
                     >
                       {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Import'}
                     </Button>
                   </div>
                   
-                  <div className="bg-muted/30 rounded-xl p-4">
-                    <p className="text-sm text-muted-foreground mb-2">Works with most recipe websites including:</p>
+                  <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-4 border border-blue-100/50 dark:border-blue-900/30">
+                    <p className="text-sm font-medium text-blue-900/70 dark:text-blue-100/70 mb-2">Works with most recipe websites:</p>
                     <div className="flex flex-wrap gap-2">
                       {['AllRecipes', 'Food Network', 'Bon Appétit', 'Serious Eats', 'NYT Cooking'].map(site => (
-                        <span key={site} className="px-2 py-1 bg-background rounded-full text-xs">{site}</span>
+                        <span key={site} className="px-3 py-1.5 bg-white/80 dark:bg-background/80 rounded-full text-xs font-medium shadow-sm">{site}</span>
                       ))}
                     </div>
                   </div>
@@ -764,14 +770,20 @@ const ImportRecipePage = () => {
             {/* Image Import */}
             {selectedMethod === 'image' && (
               <div data-testid="import-from-image">
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  📷 Import from Photo
-                </h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400/20 to-pink-500/20 flex items-center justify-center">
+                    <Camera size={24} className="text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold">Import from Photo</h2>
+                    <p className="text-sm text-muted-foreground">Upload an image of your recipe</p>
+                  </div>
+                </div>
                 
                 <div className="space-y-4">
                   <div 
                     className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
-                      imagePreview ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/50'
+                      imagePreview ? 'border-purple-400/50 bg-purple-50/50 dark:bg-purple-950/20' : 'border-border/50 hover:border-purple-400/50 hover:bg-purple-50/30 dark:hover:bg-purple-950/10'
                     }`}
                     onClick={() => document.getElementById('image-upload').click()}
                   >
@@ -789,13 +801,15 @@ const ImportRecipePage = () => {
                         <img 
                           src={imagePreview} 
                           alt="Recipe preview" 
-                          className="max-h-64 mx-auto rounded-xl mb-4"
+                          className="max-h-64 mx-auto rounded-xl mb-4 shadow-lg"
                         />
                         <p className="text-sm text-muted-foreground">Click to change image</p>
                       </div>
                     ) : (
                       <div>
-                        <Upload size={48} className="mx-auto mb-4 text-muted-foreground" />
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center">
+                          <Upload size={32} className="text-purple-500" />
+                        </div>
                         <p className="font-medium mb-1">Click to upload or drag and drop</p>
                         <p className="text-sm text-muted-foreground">Recipe card, cookbook page, or handwritten recipe</p>
                       </div>
