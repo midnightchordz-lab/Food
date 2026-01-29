@@ -101,11 +101,26 @@ const ImportRecipePage = () => {
     setIsLoading(true);
     setLoadingMessage('Fetching recipe from URL...');
     
+    // Progress simulation for better UX
+    const progressMessages = [
+      'Fetching recipe from URL...',
+      'Analyzing recipe content...',
+      'Extracting ingredients and steps...',
+      'Formatting recipe details...',
+      'Almost done...'
+    ];
+    let msgIndex = 0;
+    const progressInterval = setInterval(() => {
+      msgIndex = Math.min(msgIndex + 1, progressMessages.length - 1);
+      setLoadingMessage(progressMessages[msgIndex]);
+    }, 4000);
+    
     try {
       const response = await axios.post(`${API}/import/url`, {
         url: urlInput.trim()
       });
       
+      clearInterval(progressInterval);
       const recipe = response.data.recipe;
       
       // Check if the response contains an error
@@ -124,6 +139,7 @@ const ImportRecipePage = () => {
       setLoadingMessage('');
       toast.success('Recipe extracted successfully!');
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Error importing from URL:', error);
       toast.error(error.response?.data?.detail || 'Failed to import recipe from URL');
     } finally {
