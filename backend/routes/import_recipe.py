@@ -228,30 +228,35 @@ async def import_from_image(request: ImportImageRequest, current_user: User = De
         
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
+        # Simplified prompt for faster processing
         vision_chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"import-vision-{uuid.uuid4().hex[:8]}",
-            system_message=f"""{IMPORT_RECIPE_PROMPT}
+            system_message="""You are a chef. Extract or create a recipe from this image as JSON.
 
-SOURCE CONTEXT: The recipe is being extracted from an image.
+JSON format:
+{
+    "name": "Recipe Title",
+    "description": "Brief description",
+    "cuisine": "Cuisine type",
+    "difficulty": "Easy/Medium/Hard",
+    "prepTime": "X minutes",
+    "cookTime": "X minutes",
+    "servings": 4,
+    "ingredients": [{"name": "ingredient with amount", "category": "pantry/produce/protein"}],
+    "instructions": [{"stepNumber": 1, "instruction": "Step description", "time": "X min"}],
+    "chefTips": ["Tip 1"]
+}
 
-IMPORTANT INSTRUCTIONS:
-1. If the image shows a recipe card or text, extract and convert it
-2. If the image shows a finished dish but no recipe text, identify the dish and create a professional recipe for it
-3. If the image is unclear, use your best judgment to identify any food shown
-4. ALWAYS output a valid recipe JSON - never return an error
-5. Be creative but practical
-
-Output ONLY valid JSON, no other text or markdown code blocks."""
+If showing a dish photo: identify it and create a recipe.
+Output ONLY valid JSON."""
         )
-        vision_chat.with_model("openai", "gpt-4o")
+        # Use gpt-4o-mini for vision - still capable but faster
+        vision_chat.with_model("openai", "gpt-4o-mini")
         
         image_content = ImageContent(image_base64=request.image_data)
         
-        extraction_prompt = """Analyze this image and create a complete, detailed recipe.
-
-If this is a recipe card/text image: Extract all information and convert to the standardized JSON format.
-If this is a photo of food: Identify the dish and create a professional recipe for it.
+        extraction_prompt = "Extract or create a complete recipe from this image. Output JSON only."
 
 Include ALL required fields. Output ONLY the JSON object, no markdown or explanation."""
 
