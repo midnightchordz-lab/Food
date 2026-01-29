@@ -76,19 +76,6 @@ If incomplete, use culinary expertise to add reasonable details."""
 
 # ============== HELPER FUNCTIONS ==============
 
-SOURCE CONTEXT: {source_context.get(source_type, source_context['text'])}
-
-If the recipe is incomplete or missing information, use your culinary expertise to:
-1. Add reasonable cook times and temperatures based on the dish type
-2. Suggest standard portion sizes
-3. Add visual cues for each step
-4. Include storage and reheating instructions
-
-ALWAYS output valid JSON. If you cannot parse a recipe, return an error JSON:
-{{"error": "Unable to parse recipe", "reason": "explanation"}}"""
-
-# ============== HELPER FUNCTIONS ==============
-
 async def extract_recipe_from_url(url: str) -> str:
     """Fetch and extract recipe content from a URL"""
     import httpx
