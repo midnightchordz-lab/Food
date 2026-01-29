@@ -374,14 +374,19 @@ const parseRecipeFromMatch = (match, category) => {
   const [fullMatch, titleFromHeader] = match;
   const title = titleFromHeader?.trim();
   
-  // Skip patterns
+  // Comprehensive skip patterns - NOT recipe names
   const skipPatterns = [
     /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name|total time|prep time)/i,
+    /^(blood sugar|diabetes|health|safety|warning|important|reminder|disclaimer|information|general|overview|summary|conclusion|key|additional|special|meal planning|meal prep)/i,
+    /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
+    /^(about|regarding|for your|please|remember|keep in mind)/i,
+    /^(drink|pairing|beverage|hydration)/i,
+    /:$/,  // Ends with colon
   ];
   
-  if (!title || title.length < 3 || title.length > 120 || skipPatterns.some(p => p.test(title))) {
-    return null;
-  }
+  if (!title || title.length < 3 || title.length > 120) return null;
+  if (skipPatterns.some(p => p.test(title))) return null;
+  if (title.endsWith(':')) return null;
   
   // Extract cooking time from the full match
   const timeMatch = fullMatch.match(/\*\*Cooking\s*Time:?\*\*\s*(\d+[-–]?\d*\s*(?:min|minutes|hours?))/i) ||
