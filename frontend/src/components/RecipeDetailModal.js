@@ -377,16 +377,16 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   };
   
   const handleAddAllIngredients = () => {
-    if (parsedRecipe?.ingredients && shoppingCart?.addToCart) {
-      parsedRecipe.ingredients.forEach((ing, idx) => {
-        shoppingCart.addToCart({
-          name: ing.item,
-          quantity: ing.amount || '1',
-          recipeName: recipe?.title || 'Recipe'
-        });
-        setAddedIngredients(prev => ({ ...prev, [idx]: true }));
+    if (parsedRecipe?.ingredients && shoppingCart?.addAllToCart) {
+      // Use addAllToCart for batch adding (more efficient and reliable)
+      shoppingCart.addAllToCart(parsedRecipe.ingredients, recipe?.title || 'Recipe');
+      
+      // Mark all as added for UI feedback
+      const allAdded = {};
+      parsedRecipe.ingredients.forEach((_, idx) => {
+        allAdded[idx] = true;
       });
-      toast.success(`Added ${parsedRecipe.ingredients.length} ingredients to cart`);
+      setAddedIngredients(allAdded);
     }
   };
   
