@@ -36,48 +36,42 @@ class ImportSaveRequest(BaseModel):
 
 # ============== PROMPTS ==============
 
-IMPORT_RECIPE_PROMPT = """You are an expert chef and recipe converter. Convert the provided recipe content into a HIGHLY DETAILED, STANDARDIZED format that a complete beginner can follow.
+IMPORT_RECIPE_PROMPT = """You are a chef. Convert recipes to this JSON format:
 
-CRITICAL REQUIREMENTS:
-1. EVERY step must have SPECIFIC timing (e.g., "Cook for 3-4 minutes")
-2. EVERY step must have EXACT temperatures (e.g., "375°F/190°C", "medium-high heat")
-3. EVERY step must have VISUAL or SENSORY cues (e.g., "until golden brown", "when it starts sizzling")
-4. ALL measurements must be precise (e.g., "2 cups", "1/4 teaspoon", not "some" or "a bit")
-5. Include technique descriptions for beginners
-
-OUTPUT FORMAT (JSON):
 {
     "name": "Recipe Title",
-    "description": "2-3 sentence description of the dish",
+    "description": "2-3 sentence description",
     "cuisine": "Italian/Mexican/Indian/etc",
     "difficulty": "Easy/Medium/Hard",
     "prepTime": "X minutes",
     "cookTime": "X minutes", 
     "totalTime": "X minutes",
     "servings": 4,
-    "ingredients": [
-        {
-            "name": "2 cups all-purpose flour",
-            "category": "pantry",
-            "notes": "sifted for fluffier results"
-        }
-    ],
-    "instructions": [
-        {
-            "stepNumber": 1,
-            "instruction": "DETAILED step with exact timing, temperature, and technique",
-            "time": "5 minutes",
-            "visualCue": "What to look for to know this step is complete",
-            "technique": "Beginner-friendly explanation"
-        }
-    ],
-    "chefTips": ["Tip 1", "Tip 2", "Tip 3"],
-    "nutritionPerServing": {
-        "calories": 350,
-        "protein": "15g",
-        "carbs": "45g",
-        "fat": "12g",
-        "fiber": "3g"
+    "ingredients": [{"name": "2 cups flour", "category": "pantry", "notes": "optional note"}],
+    "instructions": [{"stepNumber": 1, "instruction": "Step with timing", "time": "5 min", "visualCue": "What to look for"}],
+    "chefTips": ["Tip 1", "Tip 2"],
+    "nutritionPerServing": {"calories": 350, "protein": "15g", "carbs": "45g", "fat": "12g"},
+    "storage": "Storage instructions",
+    "drinkPairings": {"nonAlcoholic": ["Drink"], "alcoholic": ["Wine"]},
+    "variations": ["Variation 1"]
+}
+
+Include specific timings and temperatures. Output ONLY valid JSON."""
+
+
+def get_import_system_prompt(source_type: str) -> str:
+    """Generate system prompt based on import source type"""
+    source_hints = {
+        "url": "Recipe from website. Parse and convert.",
+        "image": "Recipe from image. OCR may have errors - correct them.",
+        "video": "Recipe from video. Reconstruct from description.",
+        "text": "User-provided text. Fill in missing details."
+    }
+    
+    return f"""{IMPORT_RECIPE_PROMPT}
+
+Source: {source_hints.get(source_type, source_hints['text'])}
+If incomplete, use culinary expertise to add reasonable details."""
     },
     "storage": "How to store leftovers and for how long",
     "drinkPairings": {
