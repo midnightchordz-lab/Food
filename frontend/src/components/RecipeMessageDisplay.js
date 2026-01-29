@@ -317,38 +317,87 @@ const parseNumberedRecipes = (message) => {
   
   // Match patterns:
   // - "### 1. Recipe Name"
-  // - "## Recipe 3: Recipe Name"
+  // - "## Recipe 1: Recipe Name" (diabetes format)
   // - "### Recipe Name (Meal Type)"
   // Each section ends at the next ## or ### or ---
-  const recipePattern = /##[#]?\s*(?:Recipe\s*\d+:?)?\s*(?:\d+\.)?\s*([^\n]+)\n([\s\S]*?)(?=##[#]?|---\s*$|$)/g;
   
+  // PATTERN 1: Diabetes format "## Recipe X: Recipe Name"
+  const diabetesPattern = /##\s*Recipe\s*\d+:\s*([^\n]+)\n([\s\S]*?)(?=##\s*Recipe\s*\d+:|---\s*$|$)/gi;
   let match;
-  while ((match = recipePattern.exec(message)) !== null) {
-    let title = match[1].trim()
-      .replace(/\([^)]*\)\s*$/, '')  // Remove trailing (Dinner) etc
-      .replace(/^:\s*/, '')  // Remove leading colon
-      .trim();
+  while ((match = diabetesPattern.exec(message)) !== null) {
+    let title = match[1].trim();
     const content = match[2].trim();
     
-    // Skip empty titles or headers
+    // Skip empty titles
     if (!title || title.length < 3 || title.length > 100) continue;
-    
-    // Skip if matches skip patterns
     if (skipPatterns.some(pattern => pattern.test(title))) continue;
-    
-    // Skip titles that are just colons or end with colons (section headers)
     if (title === ':' || title.endsWith(':')) continue;
     
     // Extract cooking time
-    const timeMatch = content.match(/\*\*(?:Cooking\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i) ||
-                      content.match(/\|\s*\*\*Time:?\*\*\s*(\d+)\s*min/i);
+    const timeMatch = content.match(/\*\*(?:Cook(?:ing)?\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i) ||
+                      content.match(/\*\*Prep\s*Time:?\*\*\s*(\d+)/i);
     const cookingTime = timeMatch ? timeMatch[1] + ' min' : '30 min';
     
     // Extract difficulty
     const diffMatch = content.match(/\*\*Difficulty:?\*\*\s*(Easy|Medium|Hard)/i);
     const difficulty = diffMatch ? diffMatch[1] : 'Medium';
     
-    // Extract description - look for "Why it fits" or first paragraph
+    // Extract description - look for "Why" explanations or first content line
+    const descMatch = content.match(/\*\*Why[^*]+\*\*\s*([^\n]+)/i) ||
+                      content.match(/💚\s*\*\*Why[^*]+\*\*\s*\n([^\n*]+)/i) ||
+                      content.match(/\*\*Description:?\*\*\s*([^\n*]+)/i);
+    let description = descMatch ? descMatch[1].trim().replace(/^[-•]\s*/, '') : '';
+    if (!description) {
+      // Try to get from blood sugar impact info
+      const bloodSugarMatch = content.match(/Blood Sugar Impact:\s*([^\n]+)/i);
+      if (bloodSugarMatch) description = `Blood sugar impact: ${bloodSugarMatch[1].trim()}`;
+    }
+    if (!description) description = `A delicious diabetes-friendly ${title} recipe.`;
+    
+    // Detect cuisine
+    const cuisineHint = detectCuisine(title + ' ' + content);
+    
+    recipes.push({
+      title,
+      description,
+      cookingTime,
+      difficulty,
+      cuisineHint,
+      category: 'moderate',
+      imageUrl: getRecipeImage(title, cuisineHint),
+      fullContent: content
+    });
+  }
+  
+  // If we found recipes in diabetes format, return them
+  if (recipes.length > 0) {
+    return recipes;
+  }
+  
+  // PATTERN 2: Standard format "### 1. Recipe Name" or "### Recipe Name"
+  const recipePattern = /##[#]?\s*(?:\d+\.)?\s*([^\n:]+?)(?:\([^)]*\))?\s*\n([\s\S]*?)(?=##[#]?|---\s*$|$)/g;
+  
+  while ((match = recipePattern.exec(message)) !== null) {
+    let title = match[1].trim()
+      .replace(/\([^)]*\)\s*$/, '')
+      .replace(/^:\s*/, '')
+      .trim();
+    const content = match[2].trim();
+    
+    if (!title || title.length < 3 || title.length > 100) continue;
+    if (skipPatterns.some(pattern => pattern.test(title))) continue;
+    if (title === ':' || title.endsWith(':')) continue;
+    
+    // Skip if title is "Recipe X" - we need the actual name
+    if (/^Recipe\s*\d+$/i.test(title)) continue;
+    
+    const timeMatch = content.match(/\*\*(?:Cooking\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i) ||
+                      content.match(/\|\s*\*\*Time:?\*\*\s*(\d+)\s*min/i);
+    const cookingTime = timeMatch ? timeMatch[1] + ' min' : '30 min';
+    
+    const diffMatch = content.match(/\*\*Difficulty:?\*\*\s*(Easy|Medium|Hard)/i);
+    const difficulty = diffMatch ? diffMatch[1] : 'Medium';
+    
     const descMatch = content.match(/\*\*Why[^*]+\*\*\s*([^\n*]+)/i) ||
                       content.match(/\*\*Description:?\*\*\s*([^\n*]+)/i);
     let description = descMatch ? descMatch[1].trim() : '';
@@ -358,7 +407,6 @@ const parseNumberedRecipes = (message) => {
     }
     if (!description) description = `A delicious ${title} recipe.`;
     
-    // Detect cuisine
     const cuisineMatch = content.match(/\*\*Cuisine:?\*\*\s*([^|\n*]+)/i);
     const cuisineHint = cuisineMatch ? cuisineMatch[1].trim() : detectCuisine(title + ' ' + content);
     
@@ -368,7 +416,7 @@ const parseNumberedRecipes = (message) => {
       cookingTime,
       difficulty,
       cuisineHint,
-      category: 'moderate', // Will be reassigned based on time
+      category: 'moderate',
       imageUrl: getRecipeImage(title, cuisineHint),
       fullContent: content
     });
