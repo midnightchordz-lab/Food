@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Phone, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
+import { Mail, Phone, Loader2, ArrowRight, CheckCircle, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import ExclusionOnboarding from './ExclusionOnboarding';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
