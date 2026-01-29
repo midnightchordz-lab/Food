@@ -608,48 +608,62 @@ const ImportRecipePage = () => {
   }
   
   return (
-    <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8" data-testid="import-recipe-page">
+    <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-amber-50/50 via-background to-orange-50/30 dark:from-amber-950/10 dark:via-background dark:to-orange-950/10" data-testid="import-recipe-page">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-serif mb-2" data-testid="import-title">
-            📥 Import Recipe
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary text-sm font-medium mb-4">
+            <Sparkles size={16} />
+            AI-Powered Conversion
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-serif mb-3 bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent" data-testid="import-title">
+            Import Recipe
           </h1>
-          <p className="text-muted-foreground">
-            Import your favorite recipes from anywhere
+          <p className="text-muted-foreground text-lg max-w-md mx-auto">
+            Bring your favorite recipes from anywhere
           </p>
         </div>
         
         {/* Import Method Selection */}
         {!selectedMethod ? (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {IMPORT_METHODS.map((method) => (
-                <button
-                  key={method.id}
-                  onClick={() => setSelectedMethod(method.id)}
-                  className="p-6 bg-card rounded-2xl border border-border/40 hover:border-primary/50 hover:bg-primary/5 transition-all text-center group"
-                  data-testid={`import-method-${method.id}`}
-                >
-                  <div className="text-4xl mb-3">{method.emoji}</div>
-                  <h3 className="font-medium mb-1">{method.label}</h3>
-                  <p className="text-xs text-muted-foreground">{method.description}</p>
-                </button>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
+              {IMPORT_METHODS.map((method) => {
+                const Icon = method.icon;
+                return (
+                  <button
+                    key={method.id}
+                    onClick={() => setSelectedMethod(method.id)}
+                    className="group p-6 bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-border/40 shadow-lg shadow-black/5 hover:shadow-xl hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 text-left"
+                    data-testid={`import-method-${method.id}`}
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-400/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <Icon size={24} className="text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">{method.label}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{method.description}</p>
+                  </button>
+                );
+              })}
             </div>
             
             {/* Recent Imports */}
             {recentImports.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-lg font-semibold mb-4">Recently Imported</h2>
+              <div className="mt-10 bg-white/60 dark:bg-card/60 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-border/40 p-6 shadow-lg">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <Check size={20} className="text-green-600 dark:text-green-400" />
+                  </div>
+                  <h2 className="text-lg font-semibold">Recently Imported</h2>
+                </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {recentImports.slice(0, 6).map((recipe, idx) => (
                     <div
                       key={idx}
-                      className="p-4 bg-card rounded-xl border border-border/40 cursor-pointer hover:border-primary/50 transition-all"
+                      className="p-4 bg-white/70 dark:bg-background/70 rounded-xl border border-border/30 cursor-pointer hover:border-primary/50 hover:bg-white dark:hover:bg-card transition-all group"
                       onClick={() => navigate(`/saved-recipes`)}
                     >
-                      <h3 className="font-medium text-sm mb-1 truncate">{recipe.title || recipe.name}</h3>
+                      <h3 className="font-medium text-sm mb-1 truncate group-hover:text-primary transition-colors">{recipe.title || recipe.name}</h3>
                       <p className="text-xs text-muted-foreground">
                         Imported {new Date(recipe.import_date || recipe.importDate).toLocaleDateString()}
                       </p>
@@ -660,7 +674,7 @@ const ImportRecipePage = () => {
             )}
           </>
         ) : (
-          <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-6">
+          <div className="bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-3xl border border-white/60 dark:border-border/40 shadow-lg p-6 sm:p-8">
             {/* Back button */}
             <Button
               variant="ghost"
@@ -668,7 +682,7 @@ const ImportRecipePage = () => {
                 setSelectedMethod(null);
                 resetForms();
               }}
-              className="mb-4 rounded-full"
+              className="mb-6 rounded-full hover:bg-primary/10"
             >
               <ArrowLeft size={18} className="mr-2" />
               Back to methods
