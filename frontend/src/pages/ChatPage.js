@@ -661,8 +661,8 @@ Format each recipe clearly with the name as a header.
                   
                   {/* Interactive selectors based on message flags */}
                   {msg.showMoodSelector && flowStep === 'mood' && (
-                    <div className="mt-4 ml-2">
-                      <MoodSelector 
+                    <div className="mt-4 -ml-2 -mr-2 md:ml-2 md:mr-0">
+                      <MoodCarousel 
                         onSelect={handleMoodSelect}
                         selectedMood={selectedMood}
                       />
