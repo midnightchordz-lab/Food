@@ -1,7 +1,8 @@
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import os
 import json
-from typing import List, Optional
+import logging
+from typing import List, Optional, Set
 
 # Dietary preference descriptions for AI prompt
 DIETARY_DESCRIPTIONS = {
@@ -12,7 +13,83 @@ DIETARY_DESCRIPTIONS = {
     "eggetarian": "Eggetarian - Vegetarian with eggs allowed. No meat, poultry, fish, but eggs are included."
 }
 
-async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None, exclude_recipes: Optional[List[str]] = None):
+# Ingredient alias mapping (same as in server.py for consistency)
+INGREDIENT_ALIASES = {
+    'shellfish': ['shrimp', 'shrimps', 'prawn', 'prawns', 'crab', 'crabs', 'lobster', 'lobsters', 'crayfish', 'crawfish', 'clam', 'clams', 'mussel', 'mussels', 'oyster', 'oysters', 'scallop', 'scallops', 'langoustine', 'langoustines'],
+    'shrimp': ['shrimp', 'shrimps', 'prawn', 'prawns', 'jumbo shrimp', 'tiger prawn', 'tiger prawns', 'king prawn', 'king prawns', 'giant prawn', 'giant prawns', 'cocktail shrimp', 'shrimp cocktail', 'prawn cocktail', 'gambas', 'camarones', 'langostino', 'scampi'],
+    'chicken': ['chicken', 'poultry', 'hen', 'chicken breast', 'chicken thigh', 'chicken wing', 'chicken drumstick', 'roast chicken', 'fried chicken', 'grilled chicken', 'chicken tender', 'chicken nugget', 'chicken tikka', 'tandoori chicken', 'butter chicken', 'chicken curry', 'chicken biryani', 'chicken kebab'],
+    'beef': ['beef', 'steak', 'steaks', 'ground beef', 'minced beef', 'veal', 'brisket', 'sirloin', 'ribeye', 'tenderloin', 'filet', 'fillet', 'roast beef', 'corned beef', 'beef ribs', 'prime rib', 'kofta', 'keema', 'beef curry', 'beef stew', 'hamburger', 'burger patty', 'beef patty'],
+    'lamb': ['lamb', 'mutton', 'lamb chop', 'lamb shank', 'leg of lamb', 'lamb shoulder', 'lamb rack', 'ground lamb', 'lamb kebab', 'lamb kofta', 'lamb curry', 'lamb biryani'],
+    'pork': ['pork', 'bacon', 'ham', 'sausage', 'prosciutto', 'pancetta', 'pork belly', 'pork chop', 'pulled pork', 'carnitas', 'chorizo', 'salami', 'pepperoni'],
+    'fish': ['fish', 'cod', 'tilapia', 'bass', 'sea bass', 'trout', 'halibut', 'anchovy', 'sardine', 'mackerel', 'snapper', 'swordfish', 'catfish', 'fish fillet', 'grilled fish', 'fried fish', 'fish curry', 'fish and chips', 'fish taco'],
+    'salmon': ['salmon', 'salmon fillet', 'smoked salmon', 'lox', 'grilled salmon', 'salmon teriyaki'],
+    'tuna': ['tuna', 'tuna fish', 'ahi tuna', 'tuna steak', 'tuna salad', 'tuna roll', 'spicy tuna'],
+    'eggs': ['egg', 'eggs', 'egg white', 'egg yolk', 'omelette', 'omelet', 'meringue', 'custard'],
+    'dairy': ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'yoghurt', 'sour cream', 'ice cream', 'ghee', 'paneer', 'cottage cheese', 'ricotta', 'mozzarella', 'cheddar', 'parmesan'],
+    'peanuts': ['peanut', 'peanuts', 'peanut butter', 'groundnut'],
+    'tree_nuts': ['almond', 'almonds', 'walnut', 'walnuts', 'cashew', 'cashews', 'pecan', 'pistachios', 'hazelnut', 'macadamia'],
+}
+
+
+def get_all_excluded_terms_for_meal_plan(excluded_names: List[str]) -> Set[str]:
+    """Get all excluded terms including aliases"""
+    all_terms = set()
+    for excluded in excluded_names:
+        excluded_lower = excluded.lower().strip()
+        all_terms.add(excluded_lower)
+        # Check direct match
+        if excluded_lower in INGREDIENT_ALIASES:
+            all_terms.update([a.lower() for a in INGREDIENT_ALIASES[excluded_lower]])
+        # Check if it's an alias itself
+        for key, aliases in INGREDIENT_ALIASES.items():
+            if excluded_lower in [a.lower() for a in aliases]:
+                all_terms.update([a.lower() for a in aliases])
+    return all_terms
+
+
+def filter_meal_plan_for_exclusions(meals: dict, excluded_names: List[str]) -> dict:
+    """Filter out meals containing excluded ingredients from the meal plan"""
+    if not excluded_names:
+        return meals
+    
+    all_excluded_terms = get_all_excluded_terms_for_meal_plan(excluded_names)
+    filtered_meals = {}
+    
+    for day, day_meals in meals.items():
+        filtered_day = {}
+        for meal_type, meal_value in day_meals.items():
+            if meal_type == "dinner_pairing":
+                # Keep pairings as is
+                filtered_day[meal_type] = meal_value
+                continue
+            
+            # Check if meal name contains any excluded term
+            meal_name = meal_value.lower() if isinstance(meal_value, str) else str(meal_value).lower()
+            contains_excluded = False
+            
+            for term in all_excluded_terms:
+                if term in meal_name:
+                    logging.warning(f"MEAL PLAN SAFETY: Replacing {meal_type} '{meal_value}' due to excluded term '{term}'")
+                    contains_excluded = True
+                    break
+            
+            if contains_excluded:
+                # Replace with a safe alternative based on meal type
+                safe_alternatives = {
+                    "breakfast": "Fresh fruit bowl with granola and honey",
+                    "lunch": "Mediterranean vegetable salad with quinoa",
+                    "dinner": "Roasted vegetable stir-fry with tofu and rice"
+                }
+                filtered_day[meal_type] = safe_alternatives.get(meal_type, "Seasonal vegetable dish")
+            else:
+                filtered_day[meal_type] = meal_value
+        
+        filtered_meals[day] = filtered_day
+    
+    return filtered_meals
+
+
+async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None, exclude_recipes: Optional[List[str]] = None, user_exclusions: Optional[List[str]] = None):
     """
     Generate a personalized weekly meal plan using AI based on user preferences, dietary choice, calorie target, and mood.
     Excludes previously used recipes to ensure variety.
