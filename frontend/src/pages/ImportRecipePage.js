@@ -820,16 +820,16 @@ const ImportRecipePage = () => {
                     <Button
                       onClick={handleImageImport}
                       disabled={isLoading}
-                      className="w-full h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      className="w-full rounded-full"
                       data-testid="import-image-btn"
                     >
-                      {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : <Sparkles size={18} className="mr-2" />}
+                      {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
                       Extract Recipe from Image
                     </Button>
                   )}
                   
-                  <div className="bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-4 border border-purple-100/50 dark:border-purple-900/30">
-                    <h4 className="font-medium text-sm mb-2 text-purple-900/70 dark:text-purple-100/70">Tips for best results:</h4>
+                  <div className="bg-muted/30 rounded-xl p-4">
+                    <h4 className="font-medium text-sm mb-2">Tips for best results:</h4>
                     <ul className="text-xs text-muted-foreground space-y-1">
                       <li>✓ Ensure text is clear and legible</li>
                       <li>✓ Good lighting with no shadows</li>
@@ -844,55 +844,46 @@ const ImportRecipePage = () => {
             {/* Video Import */}
             {selectedMethod === 'video' && (
               <div data-testid="import-from-video">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-400/20 to-orange-500/20 flex items-center justify-center">
-                    <Video size={24} className="text-red-600 dark:text-red-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">Import from Video</h2>
-                    <p className="text-sm text-muted-foreground">Extract recipes from cooking videos</p>
-                  </div>
-                </div>
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  🎥 Import from Video
+                </h2>
                 
                 <Tabs defaultValue="url" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-4 bg-muted/30 p-1 rounded-xl">
-                    <TabsTrigger value="url" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-card data-[state=active]:shadow-sm">YouTube URL</TabsTrigger>
-                    <TabsTrigger value="file" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-card data-[state=active]:shadow-sm">Upload Video</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="url">YouTube URL</TabsTrigger>
+                    <TabsTrigger value="file">Upload Video</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="url" className="space-y-4">
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <Input
                         type="url"
-                        placeholder="https://youtube.com/watch?v=..."
+                        placeholder="Paste YouTube video URL"
                         value={videoUrl}
                         onChange={(e) => setVideoUrl(e.target.value)}
-                        className="flex-1 h-12 rounded-xl border-border/50 focus:border-red-400"
+                        className="flex-1"
                         data-testid="video-url-input"
                       />
                       <Button
                         onClick={handleVideoImport}
                         disabled={!videoUrl.trim() || isLoading}
-                        className="h-12 px-6 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
+                        className="rounded-full"
                         data-testid="import-video-url-btn"
                       >
                         {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Import'}
                       </Button>
                     </div>
                     
-                    <div className="bg-gradient-to-br from-red-50/50 to-orange-50/50 dark:from-red-950/20 dark:to-orange-950/20 rounded-xl p-4 border border-red-100/50 dark:border-red-900/30">
-                      <p className="text-sm font-medium text-red-900/70 dark:text-red-100/70 mb-2">Supported platforms:</p>
+                    <div className="bg-muted/30 rounded-xl p-4">
+                      <p className="text-sm text-muted-foreground mb-2">Supported platforms:</p>
                       <div className="flex flex-wrap gap-2">
-                        {['YouTube', 'YouTube Shorts'].map(platform => (
-                          <span key={platform} className="px-3 py-1.5 bg-white/80 dark:bg-background/80 rounded-full text-xs font-medium shadow-sm flex items-center gap-1">
-                            <Video size={12} />
-                            {platform}
-                          </span>
+                        {['🎥 YouTube', '📺 YouTube Shorts'].map(platform => (
+                          <span key={platform} className="px-2 py-1 bg-background rounded-full text-xs">{platform}</span>
                         ))}
                       </div>
                     </div>
                     
-                    <div className="flex items-start gap-2 p-3 bg-amber-50/80 text-amber-800 rounded-xl dark:bg-amber-950/30 dark:text-amber-200 border border-amber-200/50 dark:border-amber-800/30">
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-xl dark:bg-amber-950/30 dark:text-amber-200">
                       <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
                       <p className="text-xs">
                         <strong>Tip:</strong> We&apos;ll analyze the video title and description to generate a professional recipe. Works best with cooking tutorial videos.
@@ -903,7 +894,7 @@ const ImportRecipePage = () => {
                   <TabsContent value="file" className="space-y-4">
                     <div 
                       className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
-                        videoFile ? 'border-red-400/50 bg-red-50/50 dark:bg-red-950/20' : 'border-border/50 hover:border-red-400/50 hover:bg-red-50/30 dark:hover:bg-red-950/10'
+                        videoFile ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/50'
                       }`}
                       onClick={() => document.getElementById('video-upload').click()}
                     >
@@ -918,9 +909,7 @@ const ImportRecipePage = () => {
                       
                       {videoFile ? (
                         <div>
-                          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 flex items-center justify-center">
-                            <Video size={32} className="text-red-500" />
-                          </div>
+                          <Video size={48} className="mx-auto mb-4 text-primary" />
                           <p className="font-medium mb-1">{videoFile.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
