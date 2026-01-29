@@ -812,13 +812,16 @@ async def login(credentials: UserLogin):
     return Token(access_token=access_token, token_type="bearer", user=user_response)
 
 # ============== PHONE AUTHENTICATION ==============
-# Twilio credentials - add to .env file:
-# TWILIO_ACCOUNT_SID=your_account_sid
-# TWILIO_AUTH_TOKEN=your_auth_token
-# TWILIO_VERIFY_SERVICE_SID=your_verify_service_sid
+# Twilio credentials from .env file
+# TWILIO_ACCOUNT_SID - your account SID
+# TWILIO_AUTH_TOKEN - your auth token
+# For test mode, use magic number +15005550006 as sender
 
-# In-memory OTP storage for demo (use Redis in production)
+# In-memory OTP storage (use Redis in production)
 otp_storage = {}
+
+# Twilio magic test number for sending
+TWILIO_TEST_FROM_NUMBER = "+15005550006"
 
 @api_router.post("/auth/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
@@ -829,33 +832,51 @@ async def send_phone_otp(request: PhoneSendOTP):
     if not phone.startswith('+') or len(phone) < 10:
         raise HTTPException(status_code=400, detail="Invalid phone number format. Use E.164 format: +1234567890")
     
+    # Generate OTP
+    import random
+    otp = str(random.randint(100000, 999999))
+    
+    # Store OTP locally (with expiration)
+    otp_storage[phone] = {
+        "code": otp,
+        "expires": datetime.now(timezone.utc) + timedelta(minutes=10),
+        "attempts": 0
+    }
+    
     # Check if Twilio is configured
     twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
     twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
-    twilio_verify_sid = os.environ.get('TWILIO_VERIFY_SERVICE_SID')
     
-    if twilio_sid and twilio_token and twilio_verify_sid:
-        # Use Twilio Verify API
+    if twilio_sid and twilio_token:
         try:
             from twilio.rest import Client
             client = Client(twilio_sid, twilio_token)
-            verification = client.verify.v2.services(twilio_verify_sid).verifications.create(
-                to=phone, 
-                channel="sms"
+            
+            # Send SMS with OTP
+            message = client.messages.create(
+                body=f"Your MoodFood verification code is: {otp}. Valid for 10 minutes.",
+                from_=TWILIO_TEST_FROM_NUMBER,  # Use magic test number
+                to=phone
             )
-            return {"status": verification.status, "message": "OTP sent successfully"}
+            
+            logging.info(f"SMS sent to {phone}, SID: {message.sid}, Status: {message.status}")
+            
+            return {
+                "status": "pending",
+                "message": "Verification code sent via SMS",
+                "sid": message.sid
+            }
         except Exception as e:
             logging.error(f"Twilio error: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to send OTP: {str(e)}")
+            # Fall back to demo mode on error
+            logging.info(f"Fallback - Demo OTP for {phone}: {otp}")
+            return {
+                "status": "pending",
+                "message": "Demo mode: OTP generated (SMS failed, check server logs)",
+                "demo_otp": otp  # Remove in production
+            }
     else:
-        # Demo mode - generate and store OTP locally
-        import random
-        otp = str(random.randint(100000, 999999))
-        otp_storage[phone] = {
-            "code": otp,
-            "expires": datetime.now(timezone.utc) + timedelta(minutes=10),
-            "attempts": 0
-        }
+        # Demo mode - no Twilio configured
         logging.info(f"Demo OTP for {phone}: {otp}")
         return {
             "status": "pending", 
@@ -869,35 +890,24 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
     phone = request.phone_number.strip()
     code = request.code.strip()
     
-    # Check if Twilio is configured
-    twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
-    twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
-    twilio_verify_sid = os.environ.get('TWILIO_VERIFY_SERVICE_SID')
-    
     is_valid = False
     
-    if twilio_sid and twilio_token and twilio_verify_sid:
-        # Verify with Twilio
-        try:
-            from twilio.rest import Client
-            client = Client(twilio_sid, twilio_token)
-            verification_check = client.verify.v2.services(twilio_verify_sid).verification_checks.create(
-                to=phone, 
-                code=code
-            )
-            is_valid = verification_check.status == "approved"
-        except Exception as e:
-            logging.error(f"Twilio verification error: {e}")
-            raise HTTPException(status_code=400, detail="Verification failed")
+    # Verify against stored OTP
+    if phone in otp_storage:
+        stored = otp_storage[phone]
+        if stored["expires"] > datetime.now(timezone.utc):
+            stored["attempts"] += 1
+            if stored["attempts"] > 5:
+                del otp_storage[phone]
+                raise HTTPException(status_code=400, detail="Too many attempts. Please request a new code.")
+            if stored["code"] == code:
+                is_valid = True
+                del otp_storage[phone]  # Clear used OTP
+        else:
+            del otp_storage[phone]
+            raise HTTPException(status_code=400, detail="OTP expired. Please request a new code.")
     else:
-        # Demo mode - check local storage
-        if phone in otp_storage:
-            stored = otp_storage[phone]
-            if stored["expires"] > datetime.now(timezone.utc):
-                if stored["code"] == code:
-                    is_valid = True
-                    del otp_storage[phone]  # Clear used OTP
-                else:
+        raise HTTPException(status_code=400, detail="No OTP found for this number. Please request a code first.")
                     stored["attempts"] += 1
                     if stored["attempts"] >= 3:
                         del otp_storage[phone]
