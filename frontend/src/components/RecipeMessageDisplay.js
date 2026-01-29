@@ -424,6 +424,9 @@ const parseRecipesFromSection = (section, category) => {
   // Skip patterns - things that are NOT recipe names
   const skipPatterns = [
     /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name|total time|prep time)/i,
+    /^(blood sugar|diabetes|health|safety|warning|important|reminder|disclaimer|information|general|overview|summary|conclusion|key|additional|special|meal planning|meal prep)/i,
+    /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
+    /^(about|regarding|for your|please|remember|keep in mind)/i,
     /^\d+\.\s*$/,
     /^[:\s]*\(\d+/,
   ];
@@ -433,7 +436,7 @@ const parseRecipesFromSection = (section, category) => {
   const headerMatch = section.match(/###?\s*(?:Quick|Moderate|Elaborate)\s*Option\s*\([^)]+\)\s*[:\-–]\s*(.+?)(?:\n|$)/i);
   if (headerMatch) {
     const title = headerMatch[1].trim();
-    if (title.length >= 3 && title.length <= 120 && !skipPatterns.some(p => p.test(title))) {
+    if (title.length >= 3 && title.length <= 120 && !skipPatterns.some(p => p.test(title)) && !title.endsWith(':')) {
       const recipe = parseRecipeContent(title, section, category);
       if (recipe) recipes.push(recipe);
       return recipes; // One recipe per section in this format
@@ -451,6 +454,9 @@ const parseRecipesFromSection = (section, category) => {
     // Skip if it matches skip patterns
     if (skipPatterns.some(pattern => pattern.test(title))) continue;
     if (title.length < 3 || title.length > 120) continue;
+    
+    // Skip titles that end with a colon (usually section headers)
+    if (title.endsWith(':')) continue;
     
     // Clean title - remove parenthetical time if present
     const titleTimeMatch = title.match(/^(.+?)\s*\((\d+[-–]?\d*\s*(?:min|minutes?))\)$/i);
