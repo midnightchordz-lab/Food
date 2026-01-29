@@ -10,8 +10,8 @@ import time
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-TEST_EMAIL = "testuser@example.com"
-TEST_PASSWORD = "testpass123"
+TEST_EMAIL = "macrouser123@example.com"
+TEST_PASSWORD = "TestPass123"
 
 
 class TestImportRecipeAuth:
