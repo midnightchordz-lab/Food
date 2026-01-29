@@ -308,7 +308,7 @@ INGREDIENT_ALIASES = {
     'milk': ['milk', 'dairy', 'cream', 'buttermilk', 'half-and-half', 'whey', 'casein', 'lactose'],
     'peanuts': ['peanut', 'peanuts', 'peanut butter', 'peanut oil', 'groundnut'],
     'tree_nuts': ['almond', 'walnut', 'cashew', 'pecan', 'pistachio', 'hazelnut', 'macadamia', 'brazil nut', 'pine nut'],
-    'shellfish': ['shrimp', 'prawn', 'crab', 'lobster', 'crayfish', 'clam', 'mussel', 'oyster', 'scallop', 'crawfish'],
+    'shellfish': ['shrimp', 'prawn', 'prawns', 'shrimps', 'crab', 'lobster', 'crayfish', 'clam', 'mussel', 'oyster', 'scallop', 'crawfish'],
     'fish': ['fish', 'salmon', 'tuna', 'cod', 'tilapia', 'bass', 'trout', 'halibut', 'anchovy', 'sardine', 'mackerel'],
     'wheat': ['wheat', 'flour', 'all-purpose flour', 'bread flour', 'whole wheat', 'semolina', 'durum'],
     'soy': ['soy', 'soy sauce', 'tofu', 'edamame', 'soybean', 'miso', 'tempeh', 'soya'],
