@@ -1967,6 +1967,9 @@ async def generate_next_week_plan(current_user: User = Depends(get_current_user)
         # Get previously used recipes (last 8 weeks to ensure variety)
         used_recipes = await get_used_recipes(current_user.id, weeks=8)
         
+        # Get user's excluded ingredients for filtering
+        user_exclusions = await get_user_excluded_ingredients(current_user.id)
+        
         # Generate new plan
         meals = await generate_ai_meal_plan(
             current_user,
@@ -1975,7 +1978,8 @@ async def generate_next_week_plan(current_user: User = Depends(get_current_user)
             prefs.get('calorie_target'),
             prefs.get('focus_areas', []),
             prefs.get('cuisine_preferences', []),
-            exclude_recipes=used_recipes
+            exclude_recipes=used_recipes,
+            user_exclusions=user_exclusions
         )
         
         # Save the plan
