@@ -1088,9 +1088,31 @@ async def get_saved_recipes(current_user: User = Depends(get_current_user)):
         saved = await db.saved_recipes.find({"user_id": current_user.id}, {"_id": 0}).to_list(100)
         recipe_ids = [s['recipe_id'] for s in saved]
         
+        # Look in both regular recipes and imported recipes
         recipes = await db.recipes.find({"id": {"$in": recipe_ids}}, {"_id": 0}).to_list(100)
+        imported = await db.imported_recipes.find({"id": {"$in": recipe_ids}}, {"_id": 0}).to_list(100)
         
-        return {"recipes": recipes}
+        # Convert imported recipes to match the regular recipe format for display
+        for imp in imported:
+            # Convert ingredients from object format to string format for display
+            if imp.get('ingredients') and len(imp['ingredients']) > 0:
+                if isinstance(imp['ingredients'][0], dict):
+                    imp['ingredients'] = [ing.get('name', str(ing)) for ing in imp['ingredients']]
+            
+            # Convert instructions from object format to string format for display
+            if imp.get('instructions') and len(imp['instructions']) > 0:
+                if isinstance(imp['instructions'][0], dict):
+                    imp['instructions'] = [inst.get('instruction', str(inst)) for inst in imp['instructions']]
+            
+            # Add default fields if missing
+            imp['mood_tags'] = imp.get('mood_tags', [imp.get('cuisine_type', 'Imported')])
+            imp['nutritional_highlights'] = imp.get('nutritional_highlights', f"Imported recipe - {imp.get('cuisine_type', 'International')} cuisine")
+            imp['complexity'] = imp.get('complexity', imp.get('difficulty', 'Standard'))
+        
+        # Combine both lists
+        all_recipes = recipes + imported
+        
+        return {"recipes": all_recipes}
     except Exception as e:
         logging.error(f"Error fetching saved recipes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
