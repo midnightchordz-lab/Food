@@ -275,6 +275,12 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
             response_text = '\n'.join(json_lines)
         
         meals = json.loads(response_text)
+        
+        # CRITICAL SAFETY FILTER: Apply post-processing filter for food allergies
+        if user_exclusions and len(user_exclusions) > 0:
+            logging.info(f"Applying meal plan safety filter for exclusions: {user_exclusions}")
+            meals = filter_meal_plan_for_exclusions(meals, user_exclusions)
+        
         return meals
     except json.JSONDecodeError as e:
         # Fallback to dietary-appropriate basic plans
