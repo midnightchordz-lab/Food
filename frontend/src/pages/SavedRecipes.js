@@ -67,13 +67,10 @@ const SavedRecipes = () => {
     }
   };
   
-  const addToShoppingList = async (recipeId) => {
-    try {
-      const response = await axios.post(`${API}/recipes/${recipeId}/add-to-shopping-list`);
-      toast.success(`${response.data.items_added} ingredients added to shopping list!`);
-    } catch (error) {
-      console.error('Error adding to shopping list:', error);
-      toast.error('Failed to add to shopping list');
+  const addToShoppingList = (recipe) => {
+    if (recipe?.ingredients && addAllToCart) {
+      // Use the frontend ShoppingCartContext for immediate updates
+      addAllToCart(recipe.ingredients, recipe.title || 'Saved Recipe');
     }
   };
   
