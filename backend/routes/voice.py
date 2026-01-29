@@ -1,114 +1,131 @@
 """
-Voice Routes - Transcription and Synthesis
+Voice Routes - Transcription and Synthesis with mood awareness
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
+from io import BytesIO
 import os
 import logging
 
-from .deps import db, User, get_current_user
+from .deps import User, get_current_user
 
 router = APIRouter(prefix="/voice", tags=["Voice"])
 
+# ============== MODELS ==============
 
 class VoiceTranscriptionResponse(BaseModel):
     text: str
     detected_mood: Optional[str] = None
-    mood_description: Optional[str] = None
-    confidence: float = 0.0
+
+class VoiceSynthesisRequest(BaseModel):
+    text: str
+    mood: Optional[str] = None
+    language: Optional[str] = 'en'
 
 class VoiceSynthesisResponse(BaseModel):
     audio_base64: str
-    voice_id: str
+    mood: str
     voice_description: str
 
 class LanguagesResponse(BaseModel):
-    languages: List[dict]
+    languages: dict
 
+# ============== ROUTES ==============
 
 @router.post("/transcribe", response_model=VoiceTranscriptionResponse)
-async def transcribe_voice(audio_data: dict, current_user: User = Depends(get_current_user)):
-    """Transcribe audio to text using Whisper"""
+async def transcribe_voice(
+    audio: UploadFile = File(...),
+    language: str = 'en',
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Transcribe audio to text using Whisper with language support.
+    OPTIMIZED for faster response.
+    """
     try:
         from voice_service import transcribe_audio, detect_mood_from_text
         
-        audio_base64 = audio_data.get("audio", "")
-        language = audio_data.get("language", "en")
+        # Read audio file
+        audio_content = await audio.read()
+        audio_file = BytesIO(audio_content)
+        audio_file.name = audio.filename or "audio.webm"
         
-        if not audio_base64:
-            raise HTTPException(status_code=400, detail="No audio data provided")
+        # Transcribe with language hint for faster processing
+        text = await transcribe_audio(audio_file, os.environ['EMERGENT_LLM_KEY'], language=language)
         
-        text = await transcribe_audio(audio_base64, language)
-        
-        if not text:
-            return VoiceTranscriptionResponse(text="", detected_mood=None, confidence=0.0)
-        
-        mood_info = detect_mood_from_text(text)
+        # Detect mood from transcribed text
+        detected_mood = detect_mood_from_text(text)
         
         return VoiceTranscriptionResponse(
             text=text,
-            detected_mood=mood_info.get("mood"),
-            mood_description=mood_info.get("description"),
-            confidence=mood_info.get("confidence", 0.8)
+            detected_mood=detected_mood if detected_mood != 'default' else None
         )
     except Exception as e:
-        logging.error(f"Transcription error: {e}")
+        logging.error(f"Error transcribing audio: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/synthesize", response_model=VoiceSynthesisResponse)
-async def synthesize_speech(data: dict, current_user: User = Depends(get_current_user)):
-    """Generate speech from text"""
+async def synthesize_speech(
+    request: VoiceSynthesisRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Convert text to speech with mood-appropriate voice.
+    OPTIMIZED: Using tts-1 model for 2x faster response.
+    """
     try:
-        from voice_service import generate_mood_aware_speech, get_voice_description
+        from voice_service import generate_mood_aware_speech, detect_mood_from_text, get_voice_description
         
-        text = data.get("text", "")
-        mood = data.get("mood", "happy")
-        language = data.get("language", "en")
+        # Detect mood if not provided
+        mood = request.mood or detect_mood_from_text(request.text)
         
-        if not text:
-            raise HTTPException(status_code=400, detail="No text provided")
+        # Generate speech (optimized with tts-1 and text truncation)
+        audio_base64 = await generate_mood_aware_speech(
+            text=request.text,
+            mood=mood,
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            language=request.language or 'en',
+            model="tts-1",  # Faster model
+            return_base64=True
+        )
         
-        audio_base64 = await generate_mood_aware_speech(text, mood, language)
         voice_description = get_voice_description(mood)
         
         return VoiceSynthesisResponse(
             audio_base64=audio_base64,
-            voice_id=f"mood_{mood}",
+            mood=mood,
             voice_description=voice_description
         )
     except Exception as e:
-        logging.error(f"Speech synthesis error: {e}")
+        logging.error(f"Error synthesizing speech: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/languages", response_model=LanguagesResponse)
 async def get_supported_languages():
-    """Get list of supported languages"""
-    return LanguagesResponse(languages=[
-        {"code": "en", "name": "English", "flag": "🇺🇸"},
-        {"code": "hi", "name": "Hindi", "flag": "🇮🇳"},
-        {"code": "es", "name": "Spanish", "flag": "🇪🇸"},
-        {"code": "fr", "name": "French", "flag": "🇫🇷"},
-        {"code": "de", "name": "German", "flag": "🇩🇪"},
-        {"code": "it", "name": "Italian", "flag": "🇮🇹"},
-        {"code": "pt", "name": "Portuguese", "flag": "🇧🇷"},
-        {"code": "ja", "name": "Japanese", "flag": "🇯🇵"},
-        {"code": "ko", "name": "Korean", "flag": "🇰🇷"},
-        {"code": "zh", "name": "Chinese", "flag": "🇨🇳"},
-    ])
+    """
+    Get list of supported languages for voice features.
+    """
+    from voice_service import SUPPORTED_LANGUAGES
+    return LanguagesResponse(languages=SUPPORTED_LANGUAGES)
 
 
 @router.get("/mood-info")
-async def get_mood_voice_info():
-    """Get mood-to-voice mapping info"""
-    from voice_service import get_voice_description
+async def get_mood_voice_info(current_user: User = Depends(get_current_user)):
+    """
+    Get information about available moods and their voice characteristics.
+    """
+    from voice_service import MOOD_VOICE_CONFIG
     
-    moods = ["happy", "sad", "energetic", "calm", "stressed", "romantic", "adventurous", "cozy"]
-    return {
-        "moods": [
-            {"id": m, "description": get_voice_description(m)}
-            for m in moods
-        ]
+    mood_info = {
+        mood: {
+            'voice': config['voice'],
+            'description': config['description'],
+            'speed': config['speed']
+        }
+        for mood, config in MOOD_VOICE_CONFIG.items()
     }
+    
+    return {"moods": mood_info}
