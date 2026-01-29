@@ -683,42 +683,103 @@ const ImportRecipePage = () => {
                   🎥 Import from Video
                 </h2>
                 
-                <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <Input
-                      type="url"
-                      placeholder="Paste video URL (YouTube, etc.)"
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      className="flex-1"
-                      data-testid="video-input"
-                    />
-                    <Button
-                      onClick={handleVideoImport}
-                      disabled={!videoUrl.trim() || isLoading}
-                      className="rounded-full"
-                      data-testid="import-video-btn"
-                    >
-                      {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Import'}
-                    </Button>
-                  </div>
+                <Tabs defaultValue="url" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="url">YouTube URL</TabsTrigger>
+                    <TabsTrigger value="file">Upload Video</TabsTrigger>
+                  </TabsList>
                   
-                  <div className="bg-muted/30 rounded-xl p-4">
-                    <p className="text-sm text-muted-foreground mb-2">Supported platforms:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {['🎥 YouTube', '📺 Vimeo'].map(platform => (
-                        <span key={platform} className="px-2 py-1 bg-background rounded-full text-xs">{platform}</span>
-                      ))}
+                  <TabsContent value="url" className="space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        type="url"
+                        placeholder="Paste YouTube video URL"
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
+                        className="flex-1"
+                        data-testid="video-url-input"
+                      />
+                      <Button
+                        onClick={handleVideoImport}
+                        disabled={!videoUrl.trim() || isLoading}
+                        className="rounded-full"
+                        data-testid="import-video-url-btn"
+                      >
+                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : 'Import'}
+                      </Button>
                     </div>
-                  </div>
+                    
+                    <div className="bg-muted/30 rounded-xl p-4">
+                      <p className="text-sm text-muted-foreground mb-2">Supported platforms:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {['🎥 YouTube', '📺 YouTube Shorts'].map(platform => (
+                          <span key={platform} className="px-2 py-1 bg-background rounded-full text-xs">{platform}</span>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-xl dark:bg-amber-950/30 dark:text-amber-200">
+                      <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
+                      <p className="text-xs">
+                        <strong>Tip:</strong> We'll analyze the video title and description to generate a professional recipe. Works best with cooking tutorial videos.
+                      </p>
+                    </div>
+                  </TabsContent>
                   
-                  <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-xl">
-                    <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
-                    <p className="text-xs">
-                      <strong>Note:</strong> Video must have captions/subtitles for best results. We'll extract the recipe from the video description and captions.
-                    </p>
-                  </div>
-                </div>
+                  <TabsContent value="file" className="space-y-4">
+                    <div 
+                      className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
+                        videoFile ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => document.getElementById('video-upload').click()}
+                    >
+                      <input
+                        id="video-upload"
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleVideoUpload(e.target.files[0])}
+                        className="hidden"
+                        data-testid="video-file-input"
+                      />
+                      
+                      {videoFile ? (
+                        <div>
+                          <Video size={48} className="mx-auto mb-4 text-primary" />
+                          <p className="font-medium mb-1">{videoFile.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-2">Click to change video</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload size={48} className="mx-auto mb-4 text-muted-foreground" />
+                          <p className="font-medium mb-1">Click to upload cooking video</p>
+                          <p className="text-sm text-muted-foreground">MP4, MOV, or WebM up to 100MB</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {videoFile && (
+                      <Button
+                        onClick={handleVideoFileImport}
+                        disabled={isLoading}
+                        className="w-full rounded-full"
+                        data-testid="import-video-file-btn"
+                      >
+                        {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
+                        Extract Recipe from Video
+                      </Button>
+                    )}
+                    
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 text-blue-800 rounded-xl dark:bg-blue-950/30 dark:text-blue-200">
+                      <Sparkles size={18} className="mt-0.5 flex-shrink-0" />
+                      <p className="text-xs">
+                        <strong>AI-Powered:</strong> We'll use AI to transcribe and analyze your video to extract the complete recipe with all steps and ingredients.
+                      </p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
             
