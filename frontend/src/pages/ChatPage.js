@@ -187,6 +187,7 @@ const ChatPage = () => {
   // Handle mood selection
   const handleMoodSelect = (moodId, moodLabel, moodDescription) => {
     setSelectedMood(moodId);
+    setIsInitialLoad(false); // User has interacted, enable scroll to bottom
     
     // Add user's mood as a message
     const userMsg = {
