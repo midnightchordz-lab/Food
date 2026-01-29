@@ -276,7 +276,7 @@ const ChatPage = () => {
   const fetchRecipes = async (cuisineIds) => {
     setIsLoading(true);
     
-    const mood = MOODS.find(m => m.id === selectedMood);
+    const mood = MOOD_IMAGES.find(m => m.id === selectedMood);
     const mealType = MEAL_TYPES.find(m => m.id === selectedMealType);
     const dietaryPref = FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref);
     const cuisineLabels = cuisineIds.includes('any') 
