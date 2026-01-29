@@ -2607,18 +2607,32 @@ Video URL: {request.video_url}"""
         chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"import-video-{uuid.uuid4().hex[:8]}",
-            system_message=get_import_system_prompt("video")
+            system_message=f"""{IMPORT_RECIPE_PROMPT}
+
+SOURCE CONTEXT: The recipe information comes from a cooking video. You should generate a complete, professional recipe based on the video title and any description provided. Even if the information is minimal, use your culinary expertise to create a detailed recipe that matches the dish name or topic.
+
+IMPORTANT: 
+- ALWAYS generate a valid recipe JSON - never return an error
+- If the video title mentions a dish name, create a complete recipe for that dish
+- If the title is vague (like "How to Cook"), create a popular, beginner-friendly recipe
+- Be creative but practical - assume the video is about home cooking
+- Output ONLY valid JSON, no other text"""
         )
         chat.with_model("openai", "gpt-4o")
         
-        prompt = f"""Based on this cooking video information, generate a complete, detailed recipe.
+        # Create a more directive prompt
+        prompt = f"""Generate a complete, detailed recipe based on this cooking video.
 
 {video_info}
 
-If the video title/description mentions a specific dish, create a professional-grade recipe for that dish.
-If the information is limited, make reasonable assumptions based on the dish name and create a comprehensive recipe.
+IMPORTANT INSTRUCTIONS:
+1. Look at the video title and extract the dish name or cooking topic
+2. Create a professional-grade recipe for that dish
+3. If the title doesn't clearly indicate a dish (e.g., "Cooking Tutorial"), create a classic recipe like "Classic Beef Stew" or "Homemade Pasta"
+4. Include ALL required fields: name, description, cuisine, difficulty, prepTime, cookTime, totalTime, servings, ingredients, instructions, chefTips, nutritionPerServing, storage, drinkPairings, variations
+5. Each instruction step must have: stepNumber, instruction (detailed), time, visualCue, technique
 
-Output the recipe in the standardized JSON format specified."""
+Output ONLY the JSON object, no markdown code blocks."""
 
         response = await chat.send_message(UserMessage(text=prompt))
         
