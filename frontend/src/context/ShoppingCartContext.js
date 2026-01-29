@@ -231,8 +231,22 @@ export const ShoppingCartProvider = ({ children }) => {
     const updatedCart = [...cartItems];
 
     ingredients.forEach(ing => {
-      // Handle different ingredient formats
-      const ingredientItem = typeof ing === 'string' ? ing : ing?.item;
+      // Handle different ingredient formats - could be:
+      // - string: "2 cups flour"
+      // - object with 'item': { item: "flour", amount: "2 cups" }
+      // - object with 'name': { name: "flour", quantity: "2 cups" }
+      let ingredientItem;
+      let ingredientAmount = '';
+      
+      if (typeof ing === 'string') {
+        ingredientItem = ing;
+      } else if (ing?.item) {
+        ingredientItem = ing.item;
+        ingredientAmount = ing.amount || '';
+      } else if (ing?.name) {
+        ingredientItem = ing.name;
+        ingredientAmount = ing.quantity || '';
+      }
       
       if (!ingredientItem) {
         console.warn('Skipping invalid ingredient:', ing);
@@ -252,16 +266,16 @@ export const ShoppingCartProvider = ({ children }) => {
       );
 
       if (existingIndex >= 0) {
-        if (!updatedCart[existingIndex].recipes.includes(recipeName)) {
+        if (recipeName && !updatedCart[existingIndex].recipes.includes(recipeName)) {
           updatedCart[existingIndex].recipes.push(recipeName);
         }
       } else {
         newItems.push({
           id: Date.now() + Math.random(),
           item: cleanName,
-          amount: (typeof ing === 'object' ? ing.amount : '') || '',
+          amount: ingredientAmount,
           category: categorizeIngredient(cleanName),
-          recipes: [recipeName],
+          recipes: recipeName ? [recipeName] : [],
           checked: false,
           addedAt: new Date().toISOString(),
         });
