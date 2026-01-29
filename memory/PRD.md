@@ -5,7 +5,7 @@ A mood-based recipe discovery application where users receive personalized meal 
 
 ## Core Features
 
-### 1. Authentication System (COMPLETE - Updated Jan 27, 2026)
+### 1. Authentication System (COMPLETE - Updated Jan 29, 2026)
 - JWT-based user authentication
 - **Email Login**: Traditional email/password registration and login
 - **Phone Number Login (Phase 3)**: SMS OTP verification
@@ -15,7 +15,23 @@ A mood-based recipe discovery application where users receive personalized meal 
   - Demo mode: OTP shown in toast when Twilio not configured
   - New user profile setup after first verification
 - User registration with dietary preferences and cuisine preferences
-- Login/logout functionality
+- **NEW: Food Allergy & Exclusion Onboarding (Step 2 of registration)**
+
+### NEW: Food Allergy & Exclusion System (COMPLETE - Jan 29, 2026)
+- **Onboarding Flow**: Users can set food exclusions during registration
+  - Common allergens: Eggs, Milk, Peanuts, Tree Nuts, Soy, Wheat, Fish, Shellfish
+  - Popular exclusions: Beef, Pork, Lamb, Chicken, Shrimp, Tuna, Salmon, etc.
+  - Other ingredients: Garlic, Onion, Cilantro, Mushroom, Coconut, etc.
+  - Custom ingredient input
+  - Category-based selection with "Select All" options
+- **Profile Management**: Users can edit exclusions anytime in Profile
+- **Recipe Filtering**: AI prompts include exclusions to never suggest unsafe recipes
+- **Exclusion Banner**: Shows active exclusions in Chat and Diabetes Meals pages
+- **Database Storage**: `user_exclusions` collection with:
+  - `excluded_ingredients[]` with name, category, severity, reason
+  - `excluded_ingredient_names[]` for quick lookup
+  - `common_allergens{}` object for standard allergens
+- **Ingredient Aliases**: System recognizes variations (eggs/egg, milk/dairy, etc.)
 
 ### 2. Enhanced Chat Flow (COMPLETE - Phase 1, Jan 27, 2026)
 - **Structured Multi-Step Flow**:
