@@ -1790,14 +1790,6 @@ async def get_supported_languages():
     from voice_service import SUPPORTED_LANGUAGES
     return LanguagesResponse(languages=SUPPORTED_LANGUAGES)
 
-@api_router.get("/voice/languages", response_model=LanguagesResponse)
-async def get_supported_languages():
-    """
-    Get list of supported languages for voice features.
-    """
-    from voice_service import SUPPORTED_LANGUAGES
-    return LanguagesResponse(languages=SUPPORTED_LANGUAGES)
-
 # Recipe discovery endpoint - curated recipes organized by cuisine
 @api_router.post("/recipes/discover")
 async def discover_recipes(request: DiscoverRecipeRequest, current_user: User = Depends(get_current_user)):
