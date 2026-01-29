@@ -160,6 +160,22 @@ const DiabetesMealsPage = () => {
     setFlowStep('mood');
   }, [isAuthenticated, user, navigate, loading]);
   
+  // Load user exclusions on mount
+  useEffect(() => {
+    const loadExclusions = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const response = await axios.get(`${API}/exclusions`);
+        if (response.data?.excluded_ingredients) {
+          setUserExclusions(response.data.excluded_ingredients);
+        }
+      } catch (error) {
+        console.error('Error loading exclusions:', error);
+      }
+    };
+    loadExclusions();
+  }, [isAuthenticated]);
+  
   // Handle mood selection
   const handleMoodSelect = (moodId, moodLabel, moodDescription) => {
     setSelectedMood(moodId);
