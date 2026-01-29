@@ -52,8 +52,12 @@ const DIABETES_TYPES = [
   },
 ];
 
-// Chat state persistence key
-const DIABETES_CHAT_STORAGE_KEY = 'moodfood_diabetes_chat_state';
+// Chat state persistence key - user-specific
+const DIABETES_CHAT_STORAGE_KEY_PREFIX = 'moodfood_diabetes_chat_state_';
+
+const getDiabetesStorageKey = (userId) => {
+  return userId ? `${DIABETES_CHAT_STORAGE_KEY_PREFIX}${userId}` : null;
+};
 
 const DiabetesMealsPage = () => {
   // Core state
@@ -61,14 +65,7 @@ const DiabetesMealsPage = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
-  const [sessionId] = useState(() => {
-    const saved = localStorage.getItem(DIABETES_CHAT_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.sessionId || `diabetes-session-${Date.now()}`;
-    }
-    return `diabetes-session-${Date.now()}`;
-  });
+  const [sessionId, setSessionId] = useState(`diabetes-session-${Date.now()}`);
   
   // Recipe dialog state
   const [showRecipeDialog, setShowRecipeDialog] = useState(false);
@@ -87,6 +84,9 @@ const DiabetesMealsPage = () => {
   const [userExclusions, setUserExclusions] = useState([]);
   const [showExclusionsBanner, setShowExclusionsBanner] = useState(true);
   
+  // Track previous user to detect user changes
+  const [previousUserId, setPreviousUserId] = useState(null);
+  
   const messagesEndRef = useRef(null);
   const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -100,26 +100,50 @@ const DiabetesMealsPage = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
   
-  // Save chat state
+  // Clear and reset chat when user changes
   useEffect(() => {
-    if (messages.length > 0) {
-      const stateToSave = {
-        sessionId,
-        messages,
-        flowStep,
-        selectedMood,
-        selectedDiabetesType,
-        diabetesResearch,
-        selectedDietaryPref,
-        selectedMealType,
-        selectedCuisines,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(DIABETES_CHAT_STORAGE_KEY, JSON.stringify(stateToSave));
+    if (user?.id && previousUserId && user.id !== previousUserId) {
+      // User has changed - clear all chat state
+      console.log('User changed in Diabetes page, clearing state');
+      setMessages([]);
+      setFlowStep('greeting');
+      setSelectedMood(null);
+      setSelectedDiabetesType(null);
+      setDiabetesResearch(null);
+      setSelectedDietaryPref(null);
+      setSelectedMealType(null);
+      setSelectedCuisines([]);
+      setSessionId(`diabetes-session-${Date.now()}`);
+      setUserExclusions([]);
     }
-  }, [messages, flowStep, selectedMood, selectedDiabetesType, diabetesResearch, selectedDietaryPref, selectedMealType, selectedCuisines, sessionId]);
+    if (user?.id) {
+      setPreviousUserId(user.id);
+    }
+  }, [user?.id, previousUserId]);
   
-  // Load saved state or show initial greeting
+  // Save chat state (user-specific)
+  useEffect(() => {
+    if (messages.length > 0 && user?.id) {
+      const storageKey = getDiabetesStorageKey(user.id);
+      if (storageKey) {
+        const stateToSave = {
+          sessionId,
+          messages,
+          flowStep,
+          selectedMood,
+          selectedDiabetesType,
+          diabetesResearch,
+          selectedDietaryPref,
+          selectedMealType,
+          selectedCuisines,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+      }
+    }
+  }, [messages, flowStep, selectedMood, selectedDiabetesType, diabetesResearch, selectedDietaryPref, selectedMealType, selectedCuisines, sessionId, user?.id]);
+  
+  // Load saved state or show initial greeting (user-specific)
   useEffect(() => {
     if (loading) return;
     
@@ -128,21 +152,26 @@ const DiabetesMealsPage = () => {
       return;
     }
     
-    const savedState = localStorage.getItem(DIABETES_CHAT_STORAGE_KEY);
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 24 * 60 * 60 * 1000) {
-          if (parsed.messages && parsed.messages.length > 0) {
-            setMessages(parsed.messages);
-            setFlowStep(parsed.flowStep || 'greeting');
-            setSelectedMood(parsed.selectedMood);
-            setSelectedDiabetesType(parsed.selectedDiabetesType);
-            setDiabetesResearch(parsed.diabetesResearch);
-            setSelectedDietaryPref(parsed.selectedDietaryPref);
-            setSelectedMealType(parsed.selectedMealType);
-            setSelectedCuisines(parsed.selectedCuisines || []);
-            return;
+    const storageKey = getDiabetesStorageKey(user?.id);
+    if (storageKey) {
+      const savedState = localStorage.getItem(storageKey);
+      if (savedState) {
+        try {
+          const parsed = JSON.parse(savedState);
+          if (parsed.timestamp && (Date.now() - parsed.timestamp) < 24 * 60 * 60 * 1000) {
+            if (parsed.messages && parsed.messages.length > 0) {
+              setMessages(parsed.messages);
+              setFlowStep(parsed.flowStep || 'greeting');
+              setSelectedMood(parsed.selectedMood);
+              setSelectedDiabetesType(parsed.selectedDiabetesType);
+              setDiabetesResearch(parsed.diabetesResearch);
+              setSelectedDietaryPref(parsed.selectedDietaryPref);
+              setSelectedMealType(parsed.selectedMealType);
+              setSelectedCuisines(parsed.selectedCuisines || []);
+              if (parsed.sessionId) {
+                setSessionId(parsed.sessionId);
+              }
+              return;
           }
         }
       } catch (e) {
