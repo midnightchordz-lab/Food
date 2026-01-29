@@ -594,6 +594,7 @@ const parseRecipesGeneral = (message) => {
     /^(blood sugar|diabetes|health|safety|warning|important|reminder|disclaimer|information|general|overview|summary|conclusion|key|additional|special|meal planning|meal prep)/i,
     /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
     /^(about|regarding|for your|please|remember|keep in mind)/i,
+    /^(drink|pairing|beverage|hydration|safe)/i,
   ];
   
   while ((match = recipePattern.exec(message)) !== null) {
