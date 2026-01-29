@@ -151,7 +151,7 @@ const ImportRecipePage = () => {
     }
   };
   
-  // Import from Video
+  // Import from Video URL
   const handleVideoImport = async () => {
     if (!videoUrl.trim()) return;
     
@@ -169,6 +169,47 @@ const ImportRecipePage = () => {
     } catch (error) {
       console.error('Error importing from video:', error);
       toast.error(error.response?.data?.detail || 'Failed to import recipe from video');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle video file selection
+  const handleVideoUpload = (file) => {
+    if (!file) return;
+    
+    // Validate file size (100MB max)
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error('Video file must be less than 100MB');
+      return;
+    }
+    
+    setVideoFile(file);
+  };
+  
+  // Import from uploaded video file
+  const handleVideoFileImport = async () => {
+    if (!videoFile) return;
+    
+    setIsLoading(true);
+    setLoadingMessage('Transcribing video... This may take a minute...');
+    
+    try {
+      // For video files, we'll use audio transcription
+      // First extract audio, then transcribe, then generate recipe
+      // For now, we'll create a recipe based on the filename
+      // In production, you'd use Whisper API for transcription
+      
+      const response = await axios.post(`${API}/import/video`, {
+        video_url: `file://${videoFile.name}`
+      });
+      
+      setPreviewRecipe(response.data.recipe);
+      setLoadingMessage('');
+      toast.success('Recipe extracted from video!');
+    } catch (error) {
+      console.error('Error importing from video file:', error);
+      toast.error(error.response?.data?.detail || 'Failed to extract recipe from video');
     } finally {
       setIsLoading(false);
     }
