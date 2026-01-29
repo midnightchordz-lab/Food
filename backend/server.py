@@ -390,6 +390,173 @@ def recipe_contains_excluded_ingredient(recipe_ingredients: List[str], excluded_
                 return True
     return False
 
+
+def get_all_excluded_terms(excluded_names: List[str]) -> set:
+    """Get all excluded terms including aliases for a list of exclusions"""
+    all_terms = set()
+    for excluded in excluded_names:
+        all_terms.add(excluded.lower().strip())
+        aliases = get_ingredient_aliases(excluded)
+        all_terms.update([a.lower().strip() for a in aliases])
+    return all_terms
+
+
+def check_text_for_excluded_ingredients(text: str, excluded_terms: set) -> List[str]:
+    """Check if any text contains excluded ingredients. Returns list of found violations."""
+    text_lower = text.lower()
+    found_violations = []
+    
+    for term in excluded_terms:
+        # Check for whole word match or as part of ingredient phrase
+        # Handle terms that might appear in recipe names or ingredients
+        if term in text_lower:
+            found_violations.append(term)
+    
+    return found_violations
+
+
+def filter_unsafe_recipes_from_response(ai_response: str, excluded_names: List[str]) -> tuple:
+    """
+    CRITICAL SAFETY FUNCTION: Post-process AI response to remove any recipes 
+    containing excluded ingredients.
+    
+    Returns: (filtered_response, removed_recipes, violation_details)
+    """
+    import re
+    
+    if not excluded_names:
+        return ai_response, [], []
+    
+    # Get all terms including aliases
+    all_excluded_terms = get_all_excluded_terms(excluded_names)
+    
+    # Parse recipes from the response
+    # Recipes typically start with ### or ## followed by recipe name
+    recipe_pattern = r'(#{2,3}\s*(?:\d+\.?\s*)?([^\n#]+)(?:.*?)(?=#{2,3}\s*(?:\d+\.?\s*)?[A-Z]|$))'
+    
+    # Split response into sections (recipes)
+    sections = re.split(r'(#{2,3}\s*(?:\d+\.?\s*)?[A-Z][^\n]+)', ai_response)
+    
+    removed_recipes = []
+    violation_details = []
+    safe_sections = []
+    current_recipe_title = None
+    
+    for i, section in enumerate(sections):
+        # Check if this is a recipe header
+        header_match = re.match(r'^#{2,3}\s*(?:\d+\.?\s*)?([A-Z][^\n]+)', section)
+        
+        if header_match:
+            current_recipe_title = header_match.group(1).strip()
+            # Check the title itself for violations
+            title_violations = check_text_for_excluded_ingredients(current_recipe_title, all_excluded_terms)
+            
+            if title_violations:
+                logging.warning(f"SAFETY FILTER: Removed recipe '{current_recipe_title}' - title contains: {title_violations}")
+                removed_recipes.append(current_recipe_title)
+                violation_details.append({"recipe": current_recipe_title, "reason": "title", "terms": title_violations})
+                current_recipe_title = None  # Skip this recipe
+                continue
+            
+            safe_sections.append(section)
+        else:
+            # This is recipe content - check it if we have a current recipe
+            if current_recipe_title:
+                content_violations = check_text_for_excluded_ingredients(section, all_excluded_terms)
+                
+                if content_violations:
+                    logging.warning(f"SAFETY FILTER: Removed recipe '{current_recipe_title}' - content contains: {content_violations}")
+                    removed_recipes.append(current_recipe_title)
+                    violation_details.append({"recipe": current_recipe_title, "reason": "content", "terms": content_violations})
+                    # Remove the header we already added
+                    if safe_sections and current_recipe_title in safe_sections[-1]:
+                        safe_sections.pop()
+                    current_recipe_title = None
+                    continue
+                
+                safe_sections.append(section)
+            else:
+                # Content without recipe header (intro text, etc.) - check it too
+                content_violations = check_text_for_excluded_ingredients(section, all_excluded_terms)
+                if not content_violations:
+                    safe_sections.append(section)
+    
+    filtered_response = ''.join(safe_sections)
+    
+    # If ALL recipes were removed, add a helpful message
+    if removed_recipes and not any('###' in s or '##' in s for s in safe_sections):
+        filtered_response = f"""I apologize, but I was unable to provide safe recipe suggestions that don't contain your excluded ingredients ({', '.join(excluded_names)}).
+
+Please try:
+1. Adjusting your cuisine preference to one that doesn't typically use these ingredients
+2. Selecting a different meal type
+3. Let me know if you'd like suggestions for alternative cuisines
+
+Your safety is my top priority, and I will never suggest recipes containing ingredients you've excluded."""
+    elif removed_recipes:
+        # Add a note about removed recipes at the end
+        filtered_response += f"\n\n---\n*Note: {len(removed_recipes)} recipe(s) were automatically filtered out due to containing excluded ingredients.*"
+    
+    return filtered_response, removed_recipes, violation_details
+
+
+def filter_recipe_text_strictly(ai_response: str, excluded_names: List[str]) -> str:
+    """
+    ULTRA-STRICT safety filter that scans every line for excluded terms.
+    This is a secondary filter after the recipe parser.
+    """
+    if not excluded_names:
+        return ai_response
+    
+    all_excluded_terms = get_all_excluded_terms(excluded_names)
+    lines = ai_response.split('\n')
+    safe_lines = []
+    in_unsafe_section = False
+    unsafe_recipe_header = None
+    
+    for line in lines:
+        line_lower = line.lower()
+        is_recipe_header = line.strip().startswith('##') or line.strip().startswith('###')
+        
+        # Check if this line contains any excluded terms
+        has_violation = any(term in line_lower for term in all_excluded_terms)
+        
+        if is_recipe_header:
+            if has_violation:
+                # Recipe title has violation - skip entire recipe
+                in_unsafe_section = True
+                unsafe_recipe_header = line
+                logging.warning(f"STRICT FILTER: Skipping recipe due to header violation: {line.strip()}")
+                continue
+            else:
+                # New safe recipe header
+                in_unsafe_section = False
+                unsafe_recipe_header = None
+                safe_lines.append(line)
+        elif in_unsafe_section:
+            # Skip all content in unsafe section
+            continue
+        elif has_violation:
+            # This line has a violation but isn't a recipe header
+            # If it looks like an ingredient or content, skip the current recipe section
+            if '**' in line or '-' in line.strip()[:2] or any(char.isdigit() for char in line[:3]):
+                # Likely an ingredient or step - mark section as unsafe
+                in_unsafe_section = True
+                logging.warning(f"STRICT FILTER: Content violation found: {line.strip()}")
+                # Remove the recipe header if we can find it
+                while safe_lines and not (safe_lines[-1].strip().startswith('##') or safe_lines[-1].strip().startswith('###')):
+                    safe_lines.pop()
+                if safe_lines and (safe_lines[-1].strip().startswith('##') or safe_lines[-1].strip().startswith('###')):
+                    safe_lines.pop()
+                continue
+            else:
+                # Some other content - just skip this line
+                continue
+        else:
+            safe_lines.append(line)
+    
+    return '\n'.join(safe_lines)
+
 # Auth helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
