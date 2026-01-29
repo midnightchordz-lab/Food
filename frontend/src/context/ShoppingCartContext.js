@@ -206,15 +206,33 @@ export const ShoppingCartProvider = ({ children }) => {
 
   // Add multiple ingredients to cart
   const addAllToCart = (ingredients, recipeName) => {
+    if (!ingredients || !Array.isArray(ingredients)) {
+      console.warn('Invalid ingredients array:', ingredients);
+      return;
+    }
+    
     const newItems = [];
     const updatedCart = [...cartItems];
 
     ingredients.forEach(ing => {
+      // Handle different ingredient formats
+      const ingredientItem = typeof ing === 'string' ? ing : ing?.item;
+      
+      if (!ingredientItem) {
+        console.warn('Skipping invalid ingredient:', ing);
+        return;
+      }
+      
       // Extract clean ingredient name
-      const cleanName = extractIngredientName(ing.item);
+      const cleanName = extractIngredientName(ingredientItem) || ingredientItem;
+      
+      if (!cleanName) {
+        console.warn('Could not extract ingredient name:', ing);
+        return;
+      }
       
       const existingIndex = updatedCart.findIndex(
-        item => item.item.toLowerCase() === cleanName.toLowerCase()
+        item => item.item && cleanName && item.item.toLowerCase() === cleanName.toLowerCase()
       );
 
       if (existingIndex >= 0) {
@@ -225,7 +243,7 @@ export const ShoppingCartProvider = ({ children }) => {
         newItems.push({
           id: Date.now() + Math.random(),
           item: cleanName,
-          amount: ing.amount || '',
+          amount: (typeof ing === 'object' ? ing.amount : '') || '',
           category: categorizeIngredient(cleanName),
           recipes: [recipeName],
           checked: false,
