@@ -2790,6 +2790,22 @@ This restriction applies IN ADDITION to diabetes-safe requirements."""
             UserMessage(text=f"Please generate 3 {request.dietary_pref} {request.meal_type} recipes for {request.cuisines} cuisine that are safe for {request.diabetes_label} and match a {request.mood.lower()} mood.{exclusion_reminder}")
         )
         
+        # CRITICAL SAFETY FILTER: Post-process AI response to remove unsafe recipes
+        if user_exclusions:
+            logging.info(f"Applying safety filter for diabetes recipes, exclusions: {user_exclusions}")
+            # First pass - structured recipe filter
+            filtered_response, removed_recipes, violations = filter_unsafe_recipes_from_response(
+                ai_response, user_exclusions
+            )
+            # Second pass - strict line-by-line filter
+            filtered_response = filter_recipe_text_strictly(filtered_response, user_exclusions)
+            
+            if removed_recipes:
+                logging.warning(f"SAFETY (Diabetes): Removed {len(removed_recipes)} unsafe recipes: {removed_recipes}")
+                logging.warning(f"SAFETY (Diabetes): Violations details: {violations}")
+            
+            ai_response = filtered_response
+        
         # Save to chat history
         await db.diabetes_chat_messages.insert_one({
             "session_id": request.session_id,
