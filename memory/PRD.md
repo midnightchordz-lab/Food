@@ -220,6 +220,11 @@ A mood-based recipe discovery application where users receive personalized meal 
     2. `filter_recipe_text_strictly()` - Second pass line-by-line filter
     3. Word boundary regex matching (r'\b' + term + r'(?:s|es)?\b') to avoid false positives
     4. Removed "hen" from chicken aliases to prevent matching "when", "then", "kitchen"
+  - **PERFORMANCE FIX**: Simplified AI prompt to reduce token count
+    - Reduced verbose exclusion instructions to 3 lines (from ~20 lines)
+    - Reduced recipes requested from 6 to 4
+    - Response time improved from ~2 minutes to ~32 seconds
+    - Safety maintained via backend post-processing filter
   - **FILES MODIFIED**:
     - `backend/server.py`: Added 3 new safety filter functions (lines 404-558)
     - `backend/server.py`: Chat endpoint now applies filter after AI response (line 1457)
