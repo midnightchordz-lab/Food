@@ -278,6 +278,7 @@ const ImportRecipePage = () => {
     setImageFile(null);
     setImagePreview(null);
     setVideoUrl('');
+    setVideoFile(null);
     setTextInput('');
   };
   
