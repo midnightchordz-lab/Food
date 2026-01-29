@@ -2289,6 +2289,467 @@ Always remind them to consult their healthcare provider for personalized medical
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============================================
+# IMPORT RECIPE ENDPOINTS
+# ============================================
+
+class ImportURLRequest(BaseModel):
+    url: str
+
+class ImportImageRequest(BaseModel):
+    image_data: str  # base64 encoded
+    filename: str
+
+class ImportVideoRequest(BaseModel):
+    video_url: str
+
+class ImportTextRequest(BaseModel):
+    recipe_text: str
+
+class ImportSaveRequest(BaseModel):
+    recipe: Dict[str, Any]
+
+# Standard recipe format that all imports convert to
+IMPORT_RECIPE_PROMPT = """You are an expert chef and recipe converter. Convert the provided recipe content into a HIGHLY DETAILED, STANDARDIZED format that a complete beginner can follow.
+
+CRITICAL REQUIREMENTS:
+1. EVERY step must have SPECIFIC timing (e.g., "Cook for 3-4 minutes")
+2. EVERY step must have EXACT temperatures (e.g., "375°F/190°C", "medium-high heat")
+3. EVERY step must have VISUAL or SENSORY cues (e.g., "until golden brown", "when it starts sizzling")
+4. ALL measurements must be precise (e.g., "2 cups", "1/4 teaspoon", not "some" or "a bit")
+5. Include technique descriptions for beginners (e.g., "dice means cut into 1/4-inch cubes")
+
+OUTPUT FORMAT (JSON):
+{
+    "name": "Recipe Title",
+    "description": "2-3 sentence description of the dish, its origin, and what makes it special",
+    "cuisine": "Italian/Mexican/Indian/etc",
+    "difficulty": "Easy/Medium/Hard",
+    "prepTime": "X minutes",
+    "cookTime": "X minutes", 
+    "totalTime": "X minutes",
+    "servings": 4,
+    "ingredients": [
+        {
+            "name": "2 cups all-purpose flour",
+            "category": "pantry",
+            "notes": "sifted for fluffier results"
+        }
+    ],
+    "instructions": [
+        {
+            "stepNumber": 1,
+            "instruction": "DETAILED step with exact timing, temperature, and technique",
+            "time": "5 minutes",
+            "visualCue": "What to look for to know this step is complete",
+            "technique": "Beginner-friendly explanation of any technique used"
+        }
+    ],
+    "chefTips": ["Tip 1", "Tip 2", "Tip 3"],
+    "nutritionPerServing": {
+        "calories": 350,
+        "protein": "15g",
+        "carbs": "45g",
+        "fat": "12g",
+        "fiber": "3g"
+    },
+    "storage": "How to store leftovers and for how long",
+    "drinkPairings": {
+        "nonAlcoholic": ["Drink 1 with description", "Drink 2 with description"],
+        "alcoholic": ["Wine/beer/cocktail with why it pairs well"]
+    },
+    "variations": ["Variation 1", "Variation 2"],
+    "source": "Original source URL or 'User submitted'"
+}
+
+IMPORTANT: 
+- Do NOT use generic phrases like "cook until done" or "season to taste"
+- Each step should be detailed enough that someone who has never cooked can follow it
+- Include equipment needed in the technique notes where relevant
+- Convert any vague instructions into specific ones with measurements and timing"""
+
+
+def get_import_system_prompt(source_type: str) -> str:
+    """Generate system prompt based on import source type"""
+    source_context = {
+        "url": "The recipe was extracted from a website. Parse the recipe content and convert it.",
+        "image": "The recipe was extracted from an image (photo of a recipe card, cookbook page, or handwritten recipe). OCR may have errors - use your knowledge to correct likely mistakes.",
+        "video": "The recipe was extracted from a video transcript/description. Reconstruct the full recipe from the spoken instructions.",
+        "text": "The recipe was provided as plain text by the user. It may be informal or incomplete - fill in reasonable details."
+    }
+    
+    return f"""{IMPORT_RECIPE_PROMPT}
+
+SOURCE CONTEXT: {source_context.get(source_type, source_context['text'])}
+
+If the recipe is incomplete or missing information, use your culinary expertise to:
+1. Add reasonable cook times and temperatures based on the dish type
+2. Suggest standard portion sizes
+3. Add visual cues for each step
+4. Include storage and reheating instructions
+
+ALWAYS output valid JSON. If you cannot parse a recipe, return an error JSON:
+{{"error": "Unable to parse recipe", "reason": "explanation"}}"""
+
+
+async def extract_recipe_from_url(url: str) -> str:
+    """Fetch and extract recipe content from a URL using web scraping"""
+    import httpx
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            
+            # Extract text content, focusing on recipe-related elements
+            html_content = response.text
+            
+            # Simple text extraction (remove scripts, styles, and get readable text)
+            import re
+            # Remove script and style elements
+            html_content = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+            html_content = re.sub(r'<style[^>]*>.*?</style>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+            # Remove HTML tags but keep newlines for structure
+            html_content = re.sub(r'<br\s*/?>', '\n', html_content, flags=re.IGNORECASE)
+            html_content = re.sub(r'</(p|div|h[1-6]|li|tr)>', '\n', html_content, flags=re.IGNORECASE)
+            html_content = re.sub(r'<[^>]+>', ' ', html_content)
+            # Clean up whitespace
+            html_content = re.sub(r'\s+', ' ', html_content)
+            html_content = re.sub(r'\n\s*\n', '\n\n', html_content)
+            
+            # Limit content length for AI processing
+            return html_content[:15000]
+            
+    except Exception as e:
+        logging.error(f"Error fetching URL {url}: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to fetch URL: {str(e)}")
+
+
+async def convert_to_standard_recipe(content: str, source_type: str, source_info: str = None) -> Dict:
+    """Use AI to convert extracted content into standard recipe format"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    
+    llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
+    
+    chat = LlmChat(
+        api_key=llm_api_key,
+        session_id=f"import-{uuid.uuid4().hex[:8]}",
+        system_message=get_import_system_prompt(source_type)
+    )
+    chat.with_model("openai", "gpt-4o")
+    
+    user_prompt = f"""Convert this recipe to the standardized JSON format:
+
+{content}
+
+Remember: Output ONLY valid JSON, no other text."""
+
+    response = await chat.send_message(UserMessage(text=user_prompt))
+    
+    # Parse JSON from response
+    try:
+        # Try to extract JSON from the response
+        json_match = response
+        if "```json" in response:
+            json_match = response.split("```json")[1].split("```")[0]
+        elif "```" in response:
+            json_match = response.split("```")[1].split("```")[0]
+        
+        recipe = json.loads(json_match.strip())
+        
+        # Add metadata
+        recipe['importMethod'] = source_type
+        recipe['originalSource'] = source_info or 'Unknown'
+        recipe['importDate'] = datetime.now(timezone.utc).isoformat()
+        
+        return recipe
+        
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to parse AI response as JSON: {e}")
+        logging.error(f"Response was: {response[:500]}")
+        raise HTTPException(status_code=500, detail="Failed to parse recipe. Please try again.")
+
+
+@api_router.post("/import/url")
+async def import_from_url(request: ImportURLRequest, current_user: User = Depends(get_current_user)):
+    """Import a recipe from a website URL"""
+    try:
+        logging.info(f"Importing recipe from URL: {request.url}")
+        
+        # Validate URL
+        if not request.url.startswith(('http://', 'https://')):
+            raise HTTPException(status_code=400, detail="Invalid URL format")
+        
+        # Extract content from URL
+        content = await extract_recipe_from_url(request.url)
+        
+        if not content or len(content) < 100:
+            raise HTTPException(status_code=400, detail="Could not extract recipe content from URL")
+        
+        # Convert to standard format using AI
+        recipe = await convert_to_standard_recipe(content, "url", request.url)
+        
+        return {"recipe": recipe, "source": request.url}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error importing from URL: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/import/image")
+async def import_from_image(request: ImportImageRequest, current_user: User = Depends(get_current_user)):
+    """Import a recipe from an uploaded image using AI vision"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+        
+        logging.info(f"Importing recipe from image: {request.filename}")
+        
+        llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
+        
+        # First, use vision to extract text from the image
+        vision_chat = LlmChat(
+            api_key=llm_api_key,
+            session_id=f"import-vision-{uuid.uuid4().hex[:8]}",
+            system_message="You are an expert at reading recipes from images. Extract ALL text from the recipe image, including title, ingredients, instructions, and any notes. Be thorough and accurate."
+        )
+        vision_chat.with_model("openai", "gpt-4o")
+        
+        # Create image content
+        image_content = ImageContent(image_base64=request.image_data)
+        
+        # Extract text from image
+        extraction_prompt = """Please extract the complete recipe from this image. Include:
+1. Recipe name/title
+2. All ingredients with quantities
+3. All cooking instructions/steps
+4. Any chef's notes or tips
+5. Cooking times if visible
+6. Serving size if visible
+
+Be thorough - capture every detail you can see."""
+
+        extracted_text = await vision_chat.send_message(
+            UserMessage(text=extraction_prompt, file_contents=[image_content])
+        )
+        
+        logging.info(f"Extracted text from image: {extracted_text[:200]}...")
+        
+        # Now convert the extracted text to standard format
+        recipe = await convert_to_standard_recipe(extracted_text, "image", f"Image: {request.filename}")
+        
+        return {"recipe": recipe, "source": f"Image: {request.filename}"}
+        
+    except Exception as e:
+        logging.error(f"Error importing from image: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/import/video")
+async def import_from_video(request: ImportVideoRequest, current_user: User = Depends(get_current_user)):
+    """Import a recipe from a video URL (YouTube, etc.)"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import httpx
+        
+        logging.info(f"Importing recipe from video: {request.video_url}")
+        
+        llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
+        
+        # Extract video info - try to get description and any available transcript
+        video_info = ""
+        
+        # Check if it's a YouTube URL
+        youtube_patterns = ['youtube.com', 'youtu.be']
+        is_youtube = any(p in request.video_url for p in youtube_patterns)
+        
+        if is_youtube:
+            # Extract video ID
+            video_id = None
+            if 'youtu.be/' in request.video_url:
+                video_id = request.video_url.split('youtu.be/')[-1].split('?')[0]
+            elif 'v=' in request.video_url:
+                video_id = request.video_url.split('v=')[-1].split('&')[0]
+            elif 'shorts/' in request.video_url:
+                video_id = request.video_url.split('shorts/')[-1].split('?')[0]
+            
+            if video_id:
+                # Try to fetch video page for title and description
+                try:
+                    async with httpx.AsyncClient(timeout=15.0) as client:
+                        response = await client.get(
+                            f"https://www.youtube.com/watch?v={video_id}",
+                            headers={'User-Agent': 'Mozilla/5.0'}
+                        )
+                        html = response.text
+                        
+                        # Extract title
+                        import re
+                        title_match = re.search(r'<title>([^<]+)</title>', html)
+                        title = title_match.group(1).replace(' - YouTube', '') if title_match else "Unknown"
+                        
+                        # Extract description from meta tag
+                        desc_match = re.search(r'<meta name="description" content="([^"]+)"', html)
+                        description = desc_match.group(1) if desc_match else ""
+                        
+                        video_info = f"""Video Title: {title}
+Video Description: {description}
+Video URL: {request.video_url}"""
+                        
+                except Exception as e:
+                    logging.warning(f"Could not fetch YouTube info: {e}")
+                    video_info = f"Video URL: {request.video_url}"
+        else:
+            # For other video platforms, just use the URL
+            video_info = f"Video URL: {request.video_url}"
+        
+        # Use AI to generate a recipe based on video info
+        # Since we can't actually watch the video, we'll ask AI to create a recipe
+        # based on the video title/description
+        
+        chat = LlmChat(
+            api_key=llm_api_key,
+            session_id=f"import-video-{uuid.uuid4().hex[:8]}",
+            system_message=get_import_system_prompt("video")
+        )
+        chat.with_model("openai", "gpt-4o")
+        
+        prompt = f"""Based on this cooking video information, generate a complete, detailed recipe.
+
+{video_info}
+
+If the video title/description mentions a specific dish, create a professional-grade recipe for that dish.
+If the information is limited, make reasonable assumptions based on the dish name and create a comprehensive recipe.
+
+Output the recipe in the standardized JSON format specified."""
+
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        # Parse JSON from response
+        try:
+            json_match = response
+            if "```json" in response:
+                json_match = response.split("```json")[1].split("```")[0]
+            elif "```" in response:
+                json_match = response.split("```")[1].split("```")[0]
+            
+            recipe = json.loads(json_match.strip())
+            recipe['importMethod'] = 'video'
+            recipe['originalSource'] = request.video_url
+            recipe['importDate'] = datetime.now(timezone.utc).isoformat()
+            
+            return {"recipe": recipe, "source": request.video_url}
+            
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to parse AI response: {e}")
+            raise HTTPException(status_code=500, detail="Failed to parse recipe from video")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error importing from video: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/import/text")
+async def import_from_text(request: ImportTextRequest, current_user: User = Depends(get_current_user)):
+    """Import a recipe from plain text"""
+    try:
+        logging.info(f"Importing recipe from text ({len(request.recipe_text)} chars)")
+        
+        if len(request.recipe_text) < 20:
+            raise HTTPException(status_code=400, detail="Recipe text is too short")
+        
+        # Convert to standard format using AI
+        recipe = await convert_to_standard_recipe(request.recipe_text, "text", "User submitted")
+        
+        return {"recipe": recipe, "source": "User submitted text"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error importing from text: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/import/save")
+async def save_imported_recipe(request: ImportSaveRequest, current_user: User = Depends(get_current_user)):
+    """Save an imported recipe to the user's collection"""
+    try:
+        recipe_data = request.recipe
+        
+        # Generate a unique ID
+        recipe_id = str(uuid.uuid4())
+        
+        # Prepare recipe for database
+        recipe_doc = {
+            "id": recipe_id,
+            "user_id": current_user.id,
+            "title": recipe_data.get("name", "Untitled Recipe"),
+            "description": recipe_data.get("description", ""),
+            "cuisine_type": recipe_data.get("cuisine", "International"),
+            "difficulty": recipe_data.get("difficulty", "Medium"),
+            "prep_time": recipe_data.get("prepTime", ""),
+            "cook_time": recipe_data.get("cookTime", ""),
+            "total_time": recipe_data.get("totalTime", ""),
+            "servings": recipe_data.get("servings", 4),
+            "ingredients": recipe_data.get("ingredients", []),
+            "instructions": recipe_data.get("instructions", []),
+            "chef_tips": recipe_data.get("chefTips", []),
+            "nutrition": recipe_data.get("nutritionPerServing", {}),
+            "storage": recipe_data.get("storage", ""),
+            "drink_pairings": recipe_data.get("drinkPairings", {}),
+            "variations": recipe_data.get("variations", []),
+            "import_method": recipe_data.get("importMethod", "unknown"),
+            "original_source": recipe_data.get("originalSource", ""),
+            "import_date": recipe_data.get("importDate", datetime.now(timezone.utc).isoformat()),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "image_url": get_food_image(recipe_data.get("name", "food"), recipe_data.get("cuisine", ""))
+        }
+        
+        # Save to imported_recipes collection
+        await db.imported_recipes.insert_one(recipe_doc)
+        
+        # Also save to saved_recipes for consistency
+        saved_entry = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "recipe_id": recipe_id,
+            "saved_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.saved_recipes.insert_one(saved_entry)
+        
+        # Remove _id from response
+        recipe_doc.pop('_id', None)
+        
+        return {"message": "Recipe saved successfully!", "recipe": recipe_doc}
+        
+    except Exception as e:
+        logging.error(f"Error saving imported recipe: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/import/recent")
+async def get_recent_imports(current_user: User = Depends(get_current_user)):
+    """Get user's recently imported recipes"""
+    try:
+        recipes = await db.imported_recipes.find(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        ).sort("import_date", -1).limit(10).to_list(length=10)
+        
+        return {"recipes": recipes}
+        
+    except Exception as e:
+        logging.error(f"Error fetching recent imports: {e}")
+        return {"recipes": []}
+
+
 app.include_router(api_router)
 
 app.add_middleware(
