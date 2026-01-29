@@ -163,7 +163,21 @@ const ImportRecipePage = () => {
         video_url: videoUrl.trim()
       });
       
-      setPreviewRecipe(response.data.recipe);
+      const recipe = response.data.recipe;
+      
+      // Check if the response contains an error
+      if (recipe.error) {
+        toast.error(recipe.reason || 'Could not extract recipe from this video');
+        return;
+      }
+      
+      // Validate the recipe has required fields
+      if (!recipe.name || !recipe.ingredients || !recipe.instructions) {
+        toast.error('Video did not contain enough information for a complete recipe');
+        return;
+      }
+      
+      setPreviewRecipe(recipe);
       setLoadingMessage('');
       toast.success('Recipe extracted from video!');
     } catch (error) {
@@ -204,7 +218,15 @@ const ImportRecipePage = () => {
         video_url: `file://${videoFile.name}`
       });
       
-      setPreviewRecipe(response.data.recipe);
+      const recipe = response.data.recipe;
+      
+      // Check if the response contains an error
+      if (recipe.error) {
+        toast.error(recipe.reason || 'Could not extract recipe from this video');
+        return;
+      }
+      
+      setPreviewRecipe(recipe);
       setLoadingMessage('');
       toast.success('Recipe extracted from video!');
     } catch (error) {
