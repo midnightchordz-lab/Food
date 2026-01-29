@@ -764,7 +764,7 @@ const ImportRecipePage = () => {
                     <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-xl dark:bg-amber-950/30 dark:text-amber-200">
                       <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
                       <p className="text-xs">
-                        <strong>Tip:</strong> We'll analyze the video title and description to generate a professional recipe. Works best with cooking tutorial videos.
+                        <strong>Tip:</strong> We&apos;ll analyze the video title and description to generate a professional recipe. Works best with cooking tutorial videos.
                       </p>
                     </div>
                   </TabsContent>
