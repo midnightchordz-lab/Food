@@ -320,15 +320,31 @@ const ImportRecipePage = () => {
     setIsLoading(true);
     setLoadingMessage('Parsing recipe text...');
     
+    // Progress simulation for better UX
+    const progressMessages = [
+      'Parsing recipe text...',
+      'Identifying ingredients...',
+      'Formatting instructions...',
+      'Adding nutritional info...',
+      'Almost done...'
+    ];
+    let msgIndex = 0;
+    const progressInterval = setInterval(() => {
+      msgIndex = Math.min(msgIndex + 1, progressMessages.length - 1);
+      setLoadingMessage(progressMessages[msgIndex]);
+    }, 4000);
+    
     try {
       const response = await axios.post(`${API}/import/text`, {
         recipe_text: textInput.trim()
       });
       
+      clearInterval(progressInterval);
       setPreviewRecipe(response.data.recipe);
       setLoadingMessage('');
       toast.success('Recipe parsed successfully!');
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Error importing from text:', error);
       toast.error(error.response?.data?.detail || 'Failed to parse recipe text');
     } finally {
