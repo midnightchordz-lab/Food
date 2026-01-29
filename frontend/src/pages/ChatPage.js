@@ -28,22 +28,19 @@ import {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Chat state persistence key
-const CHAT_STORAGE_KEY = 'moodfood_chat_state';
+// Chat state persistence key - will be made user-specific
+const CHAT_STORAGE_KEY_PREFIX = 'moodfood_chat_state_';
+
+const getChatStorageKey = (userId) => {
+  return userId ? `${CHAT_STORAGE_KEY_PREFIX}${userId}` : null;
+};
 
 const ChatPage = () => {
   // Core state
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId] = useState(() => {
-    const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.sessionId || `session-${Date.now()}`;
-    }
-    return `session-${Date.now()}`;
-  });
+  const [sessionId, setSessionId] = useState(`session-${Date.now()}`);
   
   // Recipe dialog state
   const [showRecipeDialog, setShowRecipeDialog] = useState(false);
@@ -60,6 +57,9 @@ const ChatPage = () => {
   const [userExclusions, setUserExclusions] = useState([]);
   const [showExclusionsBanner, setShowExclusionsBanner] = useState(true);
   
+  // Track previous user to detect user changes
+  const [previousUserId, setPreviousUserId] = useState(null);
+  
   const messagesEndRef = useRef(null);
   const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -73,24 +73,46 @@ const ChatPage = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
   
-  // Save chat state to localStorage for persistence
+  // Clear and reset chat when user changes
   useEffect(() => {
-    if (messages.length > 0) {
-      const stateToSave = {
-        sessionId,
-        messages,
-        flowStep,
-        selectedMood,
-        selectedMealType,
-        selectedDietaryPref,
-        selectedCuisines,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(stateToSave));
+    if (user?.id && previousUserId && user.id !== previousUserId) {
+      // User has changed - clear all chat state
+      console.log('User changed, clearing chat state');
+      setMessages([]);
+      setFlowStep('greeting');
+      setSelectedMood(null);
+      setSelectedMealType(null);
+      setSelectedDietaryPref(null);
+      setSelectedCuisines([]);
+      setSessionId(`session-${Date.now()}`);
+      setUserExclusions([]);
     }
-  }, [messages, flowStep, selectedMood, selectedMealType, selectedDietaryPref, selectedCuisines, sessionId]);
+    if (user?.id) {
+      setPreviousUserId(user.id);
+    }
+  }, [user?.id, previousUserId]);
   
-  // Load saved chat state on mount
+  // Save chat state to localStorage for persistence (user-specific)
+  useEffect(() => {
+    if (messages.length > 0 && user?.id) {
+      const storageKey = getChatStorageKey(user.id);
+      if (storageKey) {
+        const stateToSave = {
+          sessionId,
+          messages,
+          flowStep,
+          selectedMood,
+          selectedMealType,
+          selectedDietaryPref,
+          selectedCuisines,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+      }
+    }
+  }, [messages, flowStep, selectedMood, selectedMealType, selectedDietaryPref, selectedCuisines, sessionId, user?.id]);
+  
+  // Load saved chat state on mount (user-specific)
   useEffect(() => {
     // Wait for auth loading to complete
     if (loading) {
@@ -102,25 +124,31 @@ const ChatPage = () => {
       return;
     }
     
-    // Try to restore previous chat state
-    const savedState = localStorage.getItem(CHAT_STORAGE_KEY);
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        // Only restore if less than 24 hours old
-        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 24 * 60 * 60 * 1000) {
-          if (parsed.messages && parsed.messages.length > 0) {
-            setMessages(parsed.messages);
-            setFlowStep(parsed.flowStep || 'greeting');
-            setSelectedMood(parsed.selectedMood);
-            setSelectedMealType(parsed.selectedMealType);
-            setSelectedDietaryPref(parsed.selectedDietaryPref);
-            setSelectedCuisines(parsed.selectedCuisines || []);
-            return;
+    // Try to restore previous chat state for THIS user
+    const storageKey = getChatStorageKey(user?.id);
+    if (storageKey) {
+      const savedState = localStorage.getItem(storageKey);
+      if (savedState) {
+        try {
+          const parsed = JSON.parse(savedState);
+          // Only restore if less than 24 hours old
+          if (parsed.timestamp && (Date.now() - parsed.timestamp) < 24 * 60 * 60 * 1000) {
+            if (parsed.messages && parsed.messages.length > 0) {
+              setMessages(parsed.messages);
+              setFlowStep(parsed.flowStep || 'greeting');
+              setSelectedMood(parsed.selectedMood);
+              setSelectedMealType(parsed.selectedMealType);
+              setSelectedDietaryPref(parsed.selectedDietaryPref);
+              setSelectedCuisines(parsed.selectedCuisines || []);
+              if (parsed.sessionId) {
+                setSessionId(parsed.sessionId);
+              }
+              return;
+            }
           }
+        } catch (e) {
+          console.error('Error parsing saved chat state:', e);
         }
-      } catch (e) {
-        console.error('Error parsing saved chat state:', e);
       }
     }
     
