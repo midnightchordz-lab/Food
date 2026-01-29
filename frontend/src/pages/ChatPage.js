@@ -546,7 +546,12 @@ Format each recipe clearly with the name as a header.
   
   // Start new conversation
   const handleNewConversation = () => {
-    localStorage.removeItem(CHAT_STORAGE_KEY);
+    // Remove user-specific chat storage
+    const storageKey = getChatStorageKey(user?.id);
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+    }
+    setSessionId(`session-${Date.now()}`);
     setMessages([{
       role: 'assistant',
       content: `Hi${user?.name ? ` ${user.name}` : ''}! 👋\n\nLet's find you some delicious meals!\n\nHow are you feeling today?`,
