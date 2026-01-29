@@ -600,6 +600,35 @@ const DiabetesMealsPage = () => {
             )}
           </div>
           
+          {/* Exclusions Banner */}
+          {userExclusions.length > 0 && showExclusionsBanner && (
+            <div className="mb-4 p-3 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center justify-between" data-testid="diabetes-exclusions-banner">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={18} className="text-amber-600 dark:text-amber-400" />
+                <span className="text-sm text-amber-800 dark:text-amber-200">
+                  <strong>Excluding:</strong> {userExclusions.slice(0, 3).map(e => e.name).join(', ')}
+                  {userExclusions.length > 3 && ` +${userExclusions.length - 3} more`}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link to="/profile">
+                  <Button variant="ghost" size="sm" className="text-amber-700 dark:text-amber-300 h-7 px-2">
+                    <Settings size={14} className="mr-1" />
+                    Edit
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowExclusionsBanner(false)}
+                  className="text-amber-700 dark:text-amber-300 h-7 px-2"
+                >
+                  Hide
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Messages Container */}
           <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-6 mb-6 min-h-[400px] max-h-[60vh] overflow-y-auto" data-testid="diabetes-messages-container">
             <div className="space-y-4">
