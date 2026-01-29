@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activity } from 'lucide-react';
+import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activity, Import } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ const Navigation = () => {
     { path: '/', icon: Home, label: 'Home' },
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
     { path: '/diabetes-meals', icon: Activity, label: 'Diabetes', className: 'text-blue-600' },
+    { path: '/import-recipe', icon: Import, label: 'Import' },
     { path: '/shopping-list', icon: ShoppingCart, label: 'List' },
     { path: '/weekly-planner', icon: Calendar, label: 'Planner' },
   ];
