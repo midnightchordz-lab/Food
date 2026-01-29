@@ -189,8 +189,10 @@ A mood-based recipe discovery application where users receive personalized meal 
 - [x] Intelligent mood change detection - users can change mood mid-conversation
 - [x] Diabetes Meals Tab - dedicated section for blood sugar-safe recipes
 - [x] Import Recipe Feature - import recipes from URL, Image, Video, or Text with AI conversion
+- [x] **CRITICAL** Food Allergy & Exclusion System - Backend safety filter for ALL recipe suggestions
 
 ### P1 - High Priority
+- [ ] **Refactor server.py** - File is 3000+ lines, urgently needs modular routers (auth.py, chat.py, exclusions.py, diabetes.py)
 - [ ] Complete Phone Authentication (requires Twilio API keys)
 - [ ] Persist Meal Plans & Subscriptions to backend
 - [x] Verify image display for previously saved recipes - Code verified, displays correctly
