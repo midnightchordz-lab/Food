@@ -508,6 +508,7 @@ def filter_recipe_text_strictly(ai_response: str, excluded_names: List[str]) -> 
     ULTRA-STRICT safety filter that scans every line for excluded terms.
     This is a secondary filter after the recipe parser.
     """
+    import re
     if not excluded_names:
         return ai_response
     
@@ -517,12 +518,20 @@ def filter_recipe_text_strictly(ai_response: str, excluded_names: List[str]) -> 
     in_unsafe_section = False
     unsafe_recipe_header = None
     
+    def has_excluded_term(text: str) -> bool:
+        """Check if text contains any excluded term using word boundaries"""
+        text_lower = text.lower()
+        for term in all_excluded_terms:
+            pattern = r'\b' + re.escape(term) + r'(?:s|es)?\b'
+            if re.search(pattern, text_lower):
+                return True
+        return False
+    
     for line in lines:
-        line_lower = line.lower()
         is_recipe_header = line.strip().startswith('##') or line.strip().startswith('###')
         
         # Check if this line contains any excluded terms
-        has_violation = any(term in line_lower for term in all_excluded_terms)
+        has_violation = has_excluded_term(line)
         
         if is_recipe_header:
             if has_violation:
