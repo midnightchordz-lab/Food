@@ -106,7 +106,21 @@ const ImportRecipePage = () => {
         url: urlInput.trim()
       });
       
-      setPreviewRecipe(response.data.recipe);
+      const recipe = response.data.recipe;
+      
+      // Check if the response contains an error
+      if (recipe.error) {
+        toast.error(recipe.reason || 'Could not extract recipe from this URL');
+        return;
+      }
+      
+      // Validate the recipe has required fields
+      if (!recipe.name || !recipe.ingredients || !recipe.instructions) {
+        toast.error('URL did not contain enough information for a complete recipe');
+        return;
+      }
+      
+      setPreviewRecipe(recipe);
       setLoadingMessage('');
       toast.success('Recipe extracted successfully!');
     } catch (error) {
