@@ -96,12 +96,25 @@ A mood-based recipe discovery application where users receive personalized meal 
 
 ## Technical Architecture
 
-### Backend (FastAPI)
-- **server.py**: Main application with all API endpoints
+### Backend (FastAPI) - REFACTORED Jan 29, 2026
+The monolithic server.py (3691 lines) was refactored into modular routers for better maintainability:
+
+- **server.py**: Lightweight entry point (77 lines) - imports and includes all routers
+- **routes/**:
+  - **auth.py** (215 lines): Registration, login, phone OTP, profile management
+  - **chat.py** (525 lines): AI chat, mood detection, recipe generation prompts
+  - **recipes.py** (411 lines): Save, retrieve, rate, search, discover recipes
+  - **meal_planning.py** (596 lines): Weekly plans, shopping lists, preferences, reminders, subscriptions
+  - **diabetes.py** (632 lines): Diabetes-specific meal planning and chat
+  - **exclusions.py** (369 lines): Food allergy/exclusion management with alias matching
+  - **import_recipe.py** (511 lines): Import from URL, image, video, text
+  - **voice.py** (131 lines): Speech transcription and synthesis
+  - **deps.py** (143 lines): Shared dependencies (db, User model, auth)
 - **image_service.py**: Curated Unsplash images for recipes
 - **voice_service.py**: STT/TTS integration
 - **pdf_generator.py**: Shopping list PDF export
 - **ai_meal_planner.py**: AI meal plan generation
+- **diabetes_meal_planner.py**: Diabetes-specific meal plan generation
 
 ### API Endpoints
 - **Phone Auth**: `/api/auth/phone/send-otp`, `/api/auth/phone/verify-otp`
