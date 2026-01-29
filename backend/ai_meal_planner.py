@@ -93,6 +93,7 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     """
     Generate a personalized weekly meal plan using AI based on user preferences, dietary choice, calorie target, and mood.
     Excludes previously used recipes to ensure variety.
+    Also filters for user food allergies/exclusions.
     """
     # Get dietary restriction description
     dietary_desc = DIETARY_DESCRIPTIONS.get(dietary_preference, DIETARY_DESCRIPTIONS["non-vegetarian"])
@@ -111,6 +112,28 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     {"... and " + str(len(recent_exclusions) - 25) + " more" if len(recent_exclusions) > 25 else ""}
     
     Generate COMPLETELY DIFFERENT recipes from the ones listed above. Be creative and suggest new dishes!
+    """
+    
+    # CRITICAL: Build food allergy/exclusion section
+    allergy_section = ""
+    if user_exclusions and len(user_exclusions) > 0:
+        all_excluded_terms = get_all_excluded_terms_for_meal_plan(user_exclusions)
+        all_terms_str = ", ".join(sorted(all_excluded_terms))
+        allergy_section = f"""
+    🚨🚨🚨 ABSOLUTE MANDATORY FOOD RESTRICTIONS - ZERO TOLERANCE 🚨🚨🚨
+    
+    THE USER HAS SEVERE FOOD ALLERGIES. YOU MUST FOLLOW THESE RULES WITH NO EXCEPTIONS:
+    
+    ❌ COMPLETELY BANNED INGREDIENTS (Never suggest ANY meal containing these):
+    {all_terms_str}
+    
+    CRITICAL RULES:
+    1. DO NOT suggest ANY meal containing these ingredients in ANY form
+    2. PRAWN = SHRIMP - They are the SAME thing. Both are banned.
+    3. If a cuisine typically uses a banned ingredient, suggest a different dish from that cuisine
+    4. Double-check EVERY meal against this banned list before including it
+    
+    VIOLATION OF THESE RULES COULD CAUSE SEVERE ALLERGIC REACTION.
     """
     
     # Calorie distribution (breakfast 25%, lunch 35%, dinner 40%)
@@ -139,6 +162,7 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     - Current Mood/Energy: {mood}
     - Focus Areas: {', '.join(focus_areas) if focus_areas else 'Balanced nutrition'}
     - Cuisine Preferences: {', '.join(cuisine_preferences) if cuisine_preferences else 'Variety'}
+    {allergy_section}
     {calorie_section}
     {exclusion_section}
     CRITICAL RULES FOR DIETARY PREFERENCE:
