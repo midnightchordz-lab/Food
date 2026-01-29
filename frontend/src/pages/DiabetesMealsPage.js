@@ -172,10 +172,11 @@ const DiabetesMealsPage = () => {
                 setSessionId(parsed.sessionId);
               }
               return;
+            }
           }
+        } catch (e) {
+          console.error('Error parsing saved diabetes chat state:', e);
         }
-      } catch (e) {
-        console.error('Error parsing saved diabetes chat state:', e);
       }
     }
     
