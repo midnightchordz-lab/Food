@@ -608,58 +608,106 @@ const ImportRecipePage = () => {
   }
   
   return (
-    <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8" data-testid="import-recipe-page">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-serif mb-2" data-testid="import-title">
-            📥 Import Recipe
-          </h1>
-          <p className="text-muted-foreground">
-            Import your favorite recipes from anywhere
-          </p>
-        </div>
-        
-        {/* Import Method Selection */}
-        {!selectedMethod ? (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {IMPORT_METHODS.map((method) => (
-                <button
-                  key={method.id}
-                  onClick={() => setSelectedMethod(method.id)}
-                  className="p-6 bg-card rounded-2xl border border-border/40 hover:border-primary/50 hover:bg-primary/5 transition-all text-center group"
-                  data-testid={`import-method-${method.id}`}
-                >
-                  <div className="text-4xl mb-3">{method.emoji}</div>
-                  <h3 className="font-medium mb-1">{method.label}</h3>
-                  <p className="text-xs text-muted-foreground">{method.description}</p>
-                </button>
-              ))}
+    <div className="min-h-screen pt-20 pb-6 relative overflow-hidden" data-testid="import-recipe-page">
+      {/* Professional Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-50/80 via-orange-50/40 to-rose-50/60 dark:from-amber-950/20 dark:via-background dark:to-rose-950/10" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent" />
+      
+      {/* Decorative Elements */}
+      <div className="absolute top-32 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-200/20 dark:bg-orange-800/10 rounded-full blur-3xl" />
+      
+      <div className="relative z-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary text-sm font-medium mb-4">
+              <Sparkles size={16} />
+              AI-Powered Recipe Conversion
             </div>
-            
-            {/* Recent Imports */}
-            {recentImports.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-lg font-semibold mb-4">Recently Imported</h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {recentImports.slice(0, 6).map((recipe, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 bg-card rounded-xl border border-border/40 cursor-pointer hover:border-primary/50 transition-all"
-                      onClick={() => navigate(`/saved-recipes`)}
+            <h1 className="text-4xl sm:text-5xl font-serif mb-3 bg-gradient-to-r from-primary via-orange-600 to-rose-600 bg-clip-text text-transparent" data-testid="import-title">
+              Import Recipe
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-md mx-auto">
+              Bring your favorite recipes from anywhere and we&apos;ll convert them into detailed, beginner-friendly instructions
+            </p>
+          </div>
+          
+          {/* Import Method Selection */}
+          {!selectedMethod ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+                {IMPORT_METHODS.map((method, index) => {
+                  const Icon = method.icon;
+                  return (
+                    <button
+                      key={method.id}
+                      onClick={() => setSelectedMethod(method.id)}
+                      className="group relative p-6 bg-white/70 dark:bg-card/70 backdrop-blur-sm rounded-2xl border border-white/50 dark:border-border/40 shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 transition-all duration-300 text-left overflow-hidden"
+                      data-testid={`import-method-${method.id}`}
+                      style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      <h3 className="font-medium text-sm mb-1 truncate">{recipe.title || recipe.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Imported {new Date(recipe.import_date || recipe.importDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                      {/* Gradient overlay on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
+                      {/* Icon with gradient background */}
+                      <div className="relative mb-4">
+                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-orange-400/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <Icon size={28} className="text-primary" />
+                        </div>
+                      </div>
+                      
+                      <h3 className="relative font-semibold text-lg mb-2 group-hover:text-primary transition-colors">{method.label}</h3>
+                      <p className="relative text-sm text-muted-foreground leading-relaxed">{method.description}</p>
+                      
+                      {/* Arrow indicator */}
+                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <ArrowLeft size={16} className="text-primary rotate-180" />
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </>
-        ) : (
+              
+              {/* Recent Imports */}
+              {recentImports.length > 0 && (
+                <div className="mt-10 bg-white/50 dark:bg-card/50 backdrop-blur-sm rounded-3xl border border-white/60 dark:border-border/40 p-6 shadow-lg">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400/20 to-emerald-500/20 flex items-center justify-center">
+                      <Check size={20} className="text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold">Recently Imported</h2>
+                      <p className="text-sm text-muted-foreground">Your latest recipe imports</p>
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {recentImports.slice(0, 6).map((recipe, idx) => (
+                      <div
+                        key={idx}
+                        className="p-4 bg-white/60 dark:bg-background/60 rounded-xl border border-border/30 cursor-pointer hover:border-primary/50 hover:bg-white dark:hover:bg-card transition-all group"
+                        onClick={() => navigate(`/saved-recipes`)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center flex-shrink-0">
+                            <ChefHat size={18} className="text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-medium text-sm mb-1 truncate group-hover:text-primary transition-colors">{recipe.title || recipe.name}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(recipe.import_date || recipe.importDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
           <div className="bg-card rounded-3xl border border-border/40 shadow-sm p-6">
             {/* Back button */}
             <Button
