@@ -226,6 +226,20 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Jan 29, 2026**: FEATURE - Macro Tracking & Meal Plan Persistence
+  - Added MacroTargets model with protein_g, carbs_g, fat_g, fiber_g fields
+  - Updated MealPreferences to include macro_targets
+  - AI meal planner now considers macro targets in meal suggestions
+  - Frontend: New collapsible macro tracking section in AIMealPlanGenerator
+  - Frontend: Macro targets displayed in preference banner (e.g., "150g P / 200g C / 65g F")
+  - Meal plans and subscriptions now properly persisted to MongoDB
+
+- **Jan 29, 2026**: REFACTOR - Server.py Modularization
+  - Split 3691-line server.py into 9 modular router files
+  - New server.py is 77 lines (lightweight entry point)
+  - Routes directory: auth.py, chat.py, recipes.py, meal_planning.py, diabetes.py, exclusions.py, import_recipe.py, voice.py, deps.py
+  - All 45 API tests passed with 100% success rate
+
 - **Jan 29, 2026**: FEATURE - Phone Authentication with Twilio
   - Integrated Twilio SMS for phone OTP verification
   - Added endpoints: `POST /api/auth/phone/send-otp`, `POST /api/auth/phone/verify-otp`
