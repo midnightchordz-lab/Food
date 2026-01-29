@@ -161,6 +161,20 @@ const ImportRecipePage = () => {
     setIsLoading(true);
     setLoadingMessage('Reading recipe from image...');
     
+    // Progress simulation for better UX
+    const progressMessages = [
+      'Reading recipe from image...',
+      'Analyzing photo with AI vision...',
+      'Identifying ingredients...',
+      'Creating recipe steps...',
+      'Almost done...'
+    ];
+    let msgIndex = 0;
+    const progressInterval = setInterval(() => {
+      msgIndex = Math.min(msgIndex + 1, progressMessages.length - 1);
+      setLoadingMessage(progressMessages[msgIndex]);
+    }, 4000);
+    
     try {
       // Convert to base64
       const base64 = await fileToBase64(imageFile);
@@ -170,6 +184,7 @@ const ImportRecipePage = () => {
         filename: imageFile.name
       });
       
+      clearInterval(progressInterval);
       const recipe = response.data.recipe;
       
       // Check if the response contains an error
@@ -188,6 +203,7 @@ const ImportRecipePage = () => {
       setLoadingMessage('');
       toast.success('Recipe extracted from image!');
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Error importing from image:', error);
       toast.error(error.response?.data?.detail || 'Failed to read recipe from image');
     } finally {
