@@ -172,6 +172,7 @@ A mood-based recipe discovery application where users receive personalized meal 
 - [x] Fix dynamic drink pairings - now cuisine-specific (Thai, Italian, Indian)
 - [x] Intelligent mood change detection - users can change mood mid-conversation
 - [x] Diabetes Meals Tab - dedicated section for blood sugar-safe recipes
+- [x] Import Recipe Feature - import recipes from URL, Image, Video, or Text with AI conversion
 
 ### P1 - High Priority
 - [ ] Complete Phone Authentication (requires Twilio API keys)
@@ -192,6 +193,27 @@ A mood-based recipe discovery application where users receive personalized meal 
 - [ ] Actual shopping partner API integrations (Instacart, Amazon Fresh)
 
 ## Changelog
+
+- **Jan 29, 2026**: Implemented Import Recipe Feature (MAJOR FEATURE)
+  - Added "Import" tab to navigation between Diabetes and List
+  - Created Import Recipe page with 4 import method cards:
+    * **From URL**: Scrapes recipe websites, AI extracts and converts recipe
+    * **From Photo**: Uses GPT-4o Vision to OCR and extract recipes from images
+    * **From Video**: Supports YouTube URLs (extracts from title/description) and video file upload
+    * **From Text**: Paste plain text recipe for AI conversion
+  - AI converts ALL imported recipes to standardized detailed format with:
+    * Step-by-step instructions with specific timing (e.g., "5 minutes")
+    * Exact temperatures (e.g., "375°F/190°C")
+    * Visual cues (e.g., "until golden brown")
+    * Technique explanations for beginners
+    * Categorized ingredients
+    * Chef's tips, nutrition info, storage instructions
+    * Drink pairings
+  - Preview and Edit capability before saving
+  - Recently Imported section shows last 10 imports
+  - Backend endpoints: POST /api/import/{url,image,video,text}, POST /api/import/save, GET /api/import/recent
+  - Test results: Backend 93%, Frontend 100%
+
 - **Jan 27, 2026**: Fixed Recipe Discovery feature
   - Fixed `/api/recipes/discover` endpoint (removed broken web_search_tool_v2 import)
   - Updated `image_service.py` with curated Unsplash images for 9 cuisines
