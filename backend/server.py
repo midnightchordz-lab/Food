@@ -2210,7 +2210,7 @@ async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: Use
         )
         chat.with_model("openai", "gpt-4o")
         
-        response = await chat.send_message(
+        ai_response = await chat.send_message(
             UserMessage(text=f"Please generate 3 {request.dietary_pref} {request.meal_type} recipes for {request.cuisines} cuisine that are safe for {request.diabetes_label} and match a {request.mood.lower()} mood.")
         )
         
@@ -2219,14 +2219,14 @@ async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: Use
             "session_id": request.session_id,
             "user_id": current_user.id,
             "role": "assistant",
-            "content": response.text,
+            "content": ai_response,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "is_recipe_response": True,
             "diabetes_type": request.diabetes_type
         })
         
         return {
-            "response": response.text,
+            "response": ai_response,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
