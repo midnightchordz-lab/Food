@@ -2571,10 +2571,9 @@ Output ONLY the JSON object, no markdown or explanation."""
 
 @api_router.post("/import/video")
 async def import_from_video(request: ImportVideoRequest, current_user: User = Depends(get_current_user)):
-    """Import a recipe from a video URL (YouTube, etc.) by extracting transcript"""
+    """Import a recipe from a video URL (YouTube, etc.) by extracting info"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
-        from youtube_transcript_api import YouTubeTranscriptApi
         import httpx
         import re
         
@@ -2583,9 +2582,9 @@ async def import_from_video(request: ImportVideoRequest, current_user: User = De
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
         video_info = ""
-        transcript_text = ""
         video_title = "Unknown"
         video_description = ""
+        channel_name = ""
         
         # Check if it's a YouTube URL
         youtube_patterns = ['youtube.com', 'youtu.be']
@@ -2604,84 +2603,71 @@ async def import_from_video(request: ImportVideoRequest, current_user: User = De
             if video_id:
                 logging.info(f"Extracted video ID: {video_id}")
                 
-                # Try to get video title and description
+                # Fetch comprehensive video info from YouTube page
                 try:
-                    async with httpx.AsyncClient(timeout=15.0) as client:
+                    async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
                         response = await client.get(
                             f"https://www.youtube.com/watch?v={video_id}",
-                            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                            headers={
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                                'Accept-Language': 'en-US,en;q=0.9',
+                            }
                         )
                         html = response.text
                         
-                        # Extract title
-                        title_match = re.search(r'<title>([^<]+)</title>', html)
-                        video_title = title_match.group(1).replace(' - YouTube', '') if title_match else "Unknown"
+                        # Extract title from multiple sources
+                        title_match = re.search(r'"title":"([^"]+)"', html)
+                        if title_match:
+                            video_title = title_match.group(1)
+                        else:
+                            title_match = re.search(r'<title>([^<]+)</title>', html)
+                            video_title = title_match.group(1).replace(' - YouTube', '') if title_match else "Unknown"
                         
-                        # Extract description from meta tag
-                        desc_match = re.search(r'<meta name="description" content="([^"]+)"', html)
-                        video_description = desc_match.group(1) if desc_match else ""
+                        # Extract longer description
+                        desc_patterns = [
+                            r'"shortDescription":"([^"]{0,5000})"',
+                            r'"description":{"simpleText":"([^"]{0,5000})"',
+                            r'<meta name="description" content="([^"]+)"',
+                        ]
+                        for pattern in desc_patterns:
+                            desc_match = re.search(pattern, html, re.DOTALL)
+                            if desc_match:
+                                video_description = desc_match.group(1)
+                                # Unescape common sequences
+                                video_description = video_description.replace('\\n', '\n').replace('\\u0026', '&')
+                                break
+                        
+                        # Extract channel name
+                        channel_match = re.search(r'"ownerChannelName":"([^"]+)"', html)
+                        if channel_match:
+                            channel_name = channel_match.group(1)
                         
                         logging.info(f"Video title: {video_title}")
+                        logging.info(f"Channel: {channel_name}")
+                        logging.info(f"Description length: {len(video_description)}")
                         
                 except Exception as e:
                     logging.warning(f"Could not fetch YouTube page info: {e}")
-                
-                # CRITICAL: Try to get video transcript/captions
-                try:
-                    # Get transcript in English first, then try other languages
-                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                    
-                    transcript = None
-                    # Try to get manually created transcript first (usually better quality)
-                    try:
-                        transcript = transcript_list.find_manually_created_transcript(['en', 'en-US', 'en-GB'])
-                    except:
-                        # Fall back to auto-generated
-                        try:
-                            transcript = transcript_list.find_generated_transcript(['en', 'en-US', 'en-GB'])
-                        except:
-                            # Try any available transcript
-                            try:
-                                for t in transcript_list:
-                                    transcript = t
-                                    break
-                            except:
-                                pass
-                    
-                    if transcript:
-                        transcript_data = transcript.fetch()
-                        # Combine all transcript segments
-                        transcript_text = " ".join([entry['text'] for entry in transcript_data])
-                        logging.info(f"Got transcript with {len(transcript_text)} characters")
-                        
-                except Exception as e:
-                    logging.warning(f"Could not get YouTube transcript: {e}")
-                    transcript_text = ""
         else:
-            # For other video platforms
             video_info = f"Video URL: {request.video_url}"
         
         # Build comprehensive video info for AI
-        if transcript_text:
-            # We have transcript - use it!
-            video_info = f"""Video Title: {video_title}
-Video Description: {video_description}
+        video_info = f"""=== COOKING VIDEO INFORMATION ===
 
-=== VIDEO TRANSCRIPT (What is spoken in the video) ===
-{transcript_text[:12000]}
-=== END TRANSCRIPT ===
-
-This transcript contains the actual spoken content from the cooking video. 
-Extract the recipe being demonstrated, including all ingredients mentioned and cooking steps."""
-        else:
-            # No transcript available - fall back to title/description
-            video_info = f"""Video Title: {video_title}
-Video Description: {video_description}
+Video Title: {video_title}
+Channel: {channel_name}
 Video URL: {request.video_url}
 
-Note: No transcript available. Generate recipe based on video title."""
+Video Description:
+{video_description[:8000] if video_description else 'No description available'}
+
+=== END VIDEO INFO ===
+
+Based on this YouTube cooking video information, create a detailed recipe for the dish being demonstrated.
+The video title and description usually contain the recipe name, ingredients list, and cooking steps.
+Extract all this information to create an accurate recipe."""
         
-        logging.info(f"Video info length: {len(video_info)} chars, has transcript: {bool(transcript_text)}")
+        logging.info(f"Video info prepared, length: {len(video_info)} chars")
         
         # Use AI to generate recipe from video content
         chat = LlmChat(
@@ -2689,22 +2675,18 @@ Note: No transcript available. Generate recipe based on video title."""
             session_id=f"import-video-{uuid.uuid4().hex[:8]}",
             system_message=f"""{IMPORT_RECIPE_PROMPT}
 
-SOURCE CONTEXT: The recipe is being extracted from a cooking video. You have access to the video's transcript (spoken content).
+SOURCE CONTEXT: You are extracting a recipe from a YouTube cooking video. The video title and description contain information about the dish being made.
 
 CRITICAL INSTRUCTIONS:
-1. Carefully read the transcript to identify:
-   - The specific dish being made (use the EXACT name from the video)
-   - All ingredients mentioned with their quantities
-   - All cooking steps in order
-   - Cooking times and temperatures mentioned
-   - Tips or techniques the chef shares
-   
-2. The recipe name MUST match what is being made in the video
-3. Include ALL ingredients mentioned in the transcript
-4. Include ALL steps shown/described in the video
-5. If specific quantities aren't mentioned, use your expertise to provide reasonable amounts
+1. Identify the EXACT dish name from the video title (e.g., "How to Make Perfect Carbonara" → recipe name should be "Perfect Carbonara")
+2. Look for ingredients listed in the video description - many cooking channels list full ingredients there
+3. Look for timestamps or steps in the description that indicate the cooking process
+4. If the channel is known (like Bon Appetit, Joshua Weissman, Babish), use your knowledge of their recipes
+5. Create detailed instructions matching what would typically be shown in such a video
+6. The recipe MUST match what the video is actually about based on its title
 
-ALWAYS output valid JSON. Never return an error response."""
+NEVER return a generic recipe like "Classic Beef Stew" - always match the video's actual content.
+ALWAYS output valid JSON."""
         )
         chat.with_model("openai", "gpt-4o")
         
@@ -2712,12 +2694,9 @@ ALWAYS output valid JSON. Never return an error response."""
 
 {video_info}
 
-Create a detailed recipe JSON with:
-- The exact dish name from the video
-- All ingredients with quantities (estimate if not stated)
-- All cooking steps from the transcript
-- Proper timing for each step
-- Visual cues and techniques
+Create a detailed recipe JSON that matches EXACTLY what this video is demonstrating.
+Use the video title to determine the dish name.
+Extract any ingredients or steps mentioned in the description.
 
 Output ONLY the JSON object."""
 
@@ -2735,9 +2714,10 @@ Output ONLY the JSON object."""
             recipe['importMethod'] = 'video'
             recipe['originalSource'] = request.video_url
             recipe['importDate'] = datetime.now(timezone.utc).isoformat()
-            recipe['hasTranscript'] = bool(transcript_text)
+            recipe['videoTitle'] = video_title
+            recipe['channelName'] = channel_name
             
-            return {"recipe": recipe, "source": request.video_url, "hasTranscript": bool(transcript_text)}
+            return {"recipe": recipe, "source": request.video_url, "videoTitle": video_title}
             
         except json.JSONDecodeError as e:
             logging.error(f"Failed to parse AI response: {e}")
