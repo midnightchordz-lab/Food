@@ -694,7 +694,7 @@ Format each recipe clearly with the name as a header.
                         className="rounded-full bg-green-600 hover:bg-green-700"
                         data-testid="confirm-dietary-yes"
                       >
-                        Yes, that's right
+                        Yes, that&apos;s right
                       </Button>
                       <Button
                         variant="outline"
