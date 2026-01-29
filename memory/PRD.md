@@ -226,6 +226,13 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Jan 29, 2026**: OPTIMIZATION - Recipe Import Speed
+  - Switched from gpt-4o to gpt-4o-mini for 2-3x faster processing
+  - Reduced content truncation from 15000 to 6000 chars
+  - Simplified AI prompts to reduce token count
+  - Added cycling progress messages in frontend (updates every 4 seconds)
+  - Import time reduced from ~30-45 seconds to ~15-20 seconds
+
 - **Jan 29, 2026**: FEATURE - Macro Tracking & Meal Plan Persistence
   - Added MacroTargets model with protein_g, carbs_g, fat_g, fiber_g fields
   - Updated MealPreferences to include macro_targets
