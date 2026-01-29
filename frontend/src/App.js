@@ -12,6 +12,7 @@ import ExploreCuisinesPage from "@/pages/ExploreCuisinesPage";
 import CuisineRecipesPage from "@/pages/CuisineRecipesPage";
 import DiscoverRecipesPage from "@/pages/DiscoverRecipesPage";
 import DiabetesMealsPage from "@/pages/DiabetesMealsPage";
+import DiabetesWeeklyPlannerPage from "@/pages/DiabetesWeeklyPlannerPage";
 import ImportRecipePage from "@/pages/ImportRecipePage";
 import Navigation from "@/components/Navigation";
 import ShoppingCartModal from "@/components/ShoppingCartModal";
