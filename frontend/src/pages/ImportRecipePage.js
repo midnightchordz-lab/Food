@@ -397,7 +397,7 @@ const ImportRecipePage = () => {
           <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 mb-6 flex items-start gap-2">
             <Sparkles className="text-primary mt-0.5 flex-shrink-0" size={18} />
             <p className="text-sm">
-              <strong>AI Enhanced:</strong> We've converted this into our detailed recipe format with specific cooking instructions.
+              <strong>AI Enhanced:</strong> We&apos;ve converted this into our detailed recipe format with specific cooking instructions.
             </p>
           </div>
           
