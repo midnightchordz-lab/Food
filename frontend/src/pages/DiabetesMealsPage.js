@@ -96,9 +96,15 @@ const DiabetesMealsPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
   
+  // Track if this is the initial load
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    // Don't scroll to bottom on initial load - keep greeting visible at top
+    if (!isInitialLoad && messages.length > 1) {
+      scrollToBottom();
+    }
+  }, [messages, scrollToBottom, isInitialLoad]);
   
   // Clear and reset chat when user changes
   useEffect(() => {
