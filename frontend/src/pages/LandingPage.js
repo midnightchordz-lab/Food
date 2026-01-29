@@ -141,7 +141,7 @@ const LandingPage = () => {
             
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12" data-testid="hero-description">
               A compassionate AI chef who understands your mood and suggests meals that heal, comfort, and energize. 
-              Because food is more than fuel—it's therapy.
+              Because food is more than fuel—it&apos;s therapy.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
