@@ -302,7 +302,7 @@ const parseRecipesWithCategories = (message) => {
   return categories;
 };
 
-// Parse numbered recipes format: "### 1. Recipe Name" or "### Recipe Name (Meal Type)"
+// Parse numbered recipes format: "### 1. Recipe Name" or "## Recipe 3: Name" or "### Recipe Name (Meal Type)"
 const parseNumberedRecipes = (message) => {
   const recipes = [];
   
@@ -313,23 +313,31 @@ const parseNumberedRecipes = (message) => {
     /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
     /^(about|regarding|for your|please|remember|keep in mind)/i,
     /^(drink|pairing|beverage|hydration)/i,
-    /:$/,  // Ends with colon
   ];
   
-  // Match patterns like "### 1. Caprese Stuffed Portobello Mushrooms" or "### Recipe Name"
-  // Each section ends at the next ### or ---
-  const recipePattern = /###\s*(?:\d+\.)?\s*([^\n]+)\n([\s\S]*?)(?=###|---\s*$|$)/g;
+  // Match patterns:
+  // - "### 1. Recipe Name"
+  // - "## Recipe 3: Recipe Name"
+  // - "### Recipe Name (Meal Type)"
+  // Each section ends at the next ## or ### or ---
+  const recipePattern = /##[#]?\s*(?:Recipe\s*\d+:?)?\s*(?:\d+\.)?\s*([^\n]+)\n([\s\S]*?)(?=##[#]?|---\s*$|$)/g;
   
   let match;
   while ((match = recipePattern.exec(message)) !== null) {
-    const title = match[1].trim().replace(/\([^)]*\)\s*$/, '').trim(); // Remove trailing (Dinner) etc
+    let title = match[1].trim()
+      .replace(/\([^)]*\)\s*$/, '')  // Remove trailing (Dinner) etc
+      .replace(/^:\s*/, '')  // Remove leading colon
+      .trim();
     const content = match[2].trim();
     
-    // Skip if this looks like a header not a recipe
+    // Skip empty titles or headers
+    if (!title || title.length < 3 || title.length > 100) continue;
+    
+    // Skip if matches skip patterns
     if (skipPatterns.some(pattern => pattern.test(title))) continue;
-    if (title.length < 3 || title.length > 100) continue;
-    // Skip titles ending with colon
-    if (title.endsWith(':')) continue;
+    
+    // Skip titles that are just colons or end with colons (section headers)
+    if (title === ':' || title.endsWith(':')) continue;
     
     // Extract cooking time
     const timeMatch = content.match(/\*\*(?:Cooking\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i) ||
