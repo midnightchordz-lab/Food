@@ -378,28 +378,38 @@ Extract the recipe for this EXACT dish."""
         chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"import-video-{uuid.uuid4().hex[:8]}",
-            system_message=f"""{IMPORT_RECIPE_PROMPT}
+            system_message="""You are a chef creating a recipe from a YouTube cooking video.
 
-SOURCE CONTEXT: You are extracting a recipe from a YouTube cooking video.
+Create a recipe JSON based on the video title and description provided.
+If no description, create an authentic recipe for the dish in the title.
 
-CRITICAL INSTRUCTIONS:
-1. The VIDEO TITLE tells you EXACTLY what dish is being made - use this as the recipe name
-2. If the description contains ingredients or steps, use them
-3. If description is empty, create an authentic recipe for the dish in the title
-4. Match the style of the channel if mentioned
-5. Include detailed steps that would typically be shown in such a video
+JSON format:
+{
+    "name": "Recipe Title",
+    "description": "Brief description",
+    "cuisine": "Cuisine type",
+    "difficulty": "Easy/Medium/Hard",
+    "prepTime": "X minutes",
+    "cookTime": "X minutes",
+    "servings": 4,
+    "ingredients": [{"name": "ingredient", "category": "category"}],
+    "instructions": [{"stepNumber": 1, "instruction": "Step", "time": "X min"}],
+    "chefTips": ["Tip"]
+}
 
-NEVER return an error or refuse. ALWAYS create a valid recipe JSON based on the title."""
+Output ONLY valid JSON."""
         )
-        chat.with_model("openai", "gpt-4o")
+        # Use gpt-4o-mini for faster response
+        chat.with_model("openai", "gpt-4o-mini")
         
-        prompt = f"""Create a detailed recipe based on this cooking video.
+        # Truncate video info to reduce tokens
+        truncated_info = video_info[:4000] if len(video_info) > 4000 else video_info
+        
+        prompt = f"""Create a recipe for: "{video_title}"
 
-{video_info}
+{truncated_info}
 
-The recipe name should match the dish in the video title: "{video_title}"
-
-Output ONLY the JSON object for this recipe."""
+Output JSON only."""
 
         response = await chat.send_message(UserMessage(text=prompt))
         
