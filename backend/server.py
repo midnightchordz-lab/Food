@@ -1227,16 +1227,28 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                 
                 system_msg += f"""
 
-⚠️ CRITICAL FOOD ALLERGIES/EXCLUSIONS - DO NOT SUGGEST ANY RECIPE CONTAINING:
-Excluded ingredients: {exclusion_list}
-Related terms to also avoid: {all_terms_str}
+🚨🚨🚨 ABSOLUTE MANDATORY FOOD RESTRICTIONS - ZERO TOLERANCE 🚨🚨🚨
 
-SAFETY REQUIREMENT: The user has specified these exclusions for health/allergy reasons.
-Every recipe you suggest MUST be completely free of ALL excluded ingredients and their derivatives.
-Double-check each ingredient before including any recipe."""
+THE USER HAS SEVERE ALLERGIES. YOU MUST FOLLOW THESE RULES WITH NO EXCEPTIONS:
+
+❌ COMPLETELY BANNED INGREDIENTS (Never use any of these):
+{all_terms_str}
+
+CRITICAL RULES:
+1. DO NOT suggest ANY recipe containing these ingredients
+2. DO NOT suggest recipes that can be "modified" to remove these
+3. DO NOT include these ingredients in any form (fresh, dried, powdered, oil, sauce, etc.)
+4. PRAWN = SHRIMP - They are the SAME thing. If shrimp is banned, prawns are ALSO banned.
+5. If a cuisine typically uses a banned ingredient, suggest an alternative dish instead
+6. Double-check EVERY ingredient in your recipes against this banned list
+7. If unsure whether an ingredient is related to a banned item, DO NOT include it
+
+VIOLATION OF THESE RULES COULD CAUSE SEVERE ALLERGIC REACTION.
+Think carefully before suggesting each recipe."""
             
-            # Simplified user message for recipe generation
-            user_text = f"Generate 6 {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine."
+            # Add exclusions to user message as well for emphasis
+            exclusion_reminder = f"\n\nREMINDER: I have severe allergies to: {all_terms_str}. Do NOT include ANY recipes with these ingredients. Prawns and shrimp are the SAME - both are banned."
+            user_text = f"Generate 6 {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine.{exclusion_reminder}"
             logging.info(f"Recipe generation request: {recipe_params}, exclusions: {user_exclusions}")
         else:
             # Use general conversational system message
