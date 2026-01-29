@@ -72,6 +72,12 @@ const Navigation = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem asChild>
+                      <Link to="/saved-recipes" className="cursor-pointer" data-testid="saved-recipes-link">
+                        <Heart size={16} className="mr-2" />
+                        Saved Recipes
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/profile" className="cursor-pointer" data-testid="profile-link">
                         <User size={16} className="mr-2" />
                         Profile
