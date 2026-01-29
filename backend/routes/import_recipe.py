@@ -1,5 +1,6 @@
 """
 Import Recipe Routes - Import from URL, image, video, text
+OPTIMIZED: Uses gpt-4o-mini for faster processing
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -82,7 +83,7 @@ async def extract_recipe_from_url(url: str) -> str:
     import re
     
     try:
-        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -103,7 +104,7 @@ async def extract_recipe_from_url(url: str) -> str:
             html_content = re.sub(r'\s+', ' ', html_content)
             html_content = re.sub(r'\n\s*\n', '\n\n', html_content)
             
-            return html_content[:15000]
+            return html_content[:10000]  # Reduced from 15000 for faster processing
             
     except Exception as e:
         logging.error(f"Error fetching URL {url}: {e}")
@@ -122,10 +123,10 @@ async def convert_to_standard_recipe(content: str, source_type: str, source_info
     # Use gpt-4o-mini for faster response (3-5x faster than gpt-4o)
     chat.with_model("openai", "gpt-4o-mini")
     
-    # Truncate content to reduce processing time (keep first 8000 chars)
-    truncated_content = content[:8000] if len(content) > 8000 else content
+    # Truncate content to reduce processing time
+    truncated_content = content[:6000] if len(content) > 6000 else content
     
-    user_prompt = f"""Convert this recipe to JSON format:
+    user_prompt = f"""Convert this recipe to JSON:
 
 {truncated_content}
 
@@ -187,40 +188,26 @@ async def import_from_image(request: ImportImageRequest, current_user: User = De
         
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
-        # Simplified prompt for faster processing
         vision_chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"import-vision-{uuid.uuid4().hex[:8]}",
-            system_message="""You are a chef. Extract or create a recipe from this image as JSON.
+            system_message="""Extract or create a recipe from this image as JSON.
 
 JSON format:
-{
-    "name": "Recipe Title",
-    "description": "Brief description",
-    "cuisine": "Cuisine type",
-    "difficulty": "Easy/Medium/Hard",
-    "prepTime": "X minutes",
-    "cookTime": "X minutes",
-    "servings": 4,
-    "ingredients": [{"name": "ingredient with amount", "category": "pantry/produce/protein"}],
-    "instructions": [{"stepNumber": 1, "instruction": "Step description", "time": "X min"}],
-    "chefTips": ["Tip 1"]
-}
+{"name": "Title", "description": "Brief", "cuisine": "Type", "difficulty": "Easy/Medium/Hard",
+"prepTime": "X min", "cookTime": "X min", "servings": 4,
+"ingredients": [{"name": "ingredient", "category": "pantry"}],
+"instructions": [{"stepNumber": 1, "instruction": "Step", "time": "X min"}],
+"chefTips": ["Tip"]}
 
-If showing a dish photo: identify it and create a recipe.
-Output ONLY valid JSON."""
+If photo of food: identify dish and create recipe. Output ONLY JSON."""
         )
-        # Use gpt-4o-mini for vision - still capable but faster
         vision_chat.with_model("openai", "gpt-4o-mini")
         
         image_content = ImageContent(image_base64=request.image_data)
         
-        extraction_prompt = "Extract or create a complete recipe from this image. Output JSON only."
-
-Include ALL required fields. Output ONLY the JSON object, no markdown or explanation."""
-
         response = await vision_chat.send_message(
-            UserMessage(text=extraction_prompt, file_contents=[image_content])
+            UserMessage(text="Extract or create a recipe. Output JSON only.", file_contents=[image_content])
         )
         
         try:
@@ -258,7 +245,6 @@ async def import_from_video(request: ImportVideoRequest, current_user: User = De
         
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
-        video_info = ""
         video_title = "Unknown"
         video_description = ""
         channel_name = ""
@@ -279,7 +265,7 @@ async def import_from_video(request: ImportVideoRequest, current_user: User = De
                 video_url = f"https://www.youtube.com/watch?v={video_id}"
                 
                 try:
-                    async with httpx.AsyncClient(timeout=15.0) as client:
+                    async with httpx.AsyncClient(timeout=10.0) as client:
                         oembed_url = f"https://www.youtube.com/oembed?url={video_url}&format=json"
                         response = await client.get(oembed_url)
                         
@@ -292,81 +278,40 @@ async def import_from_video(request: ImportVideoRequest, current_user: User = De
                     logging.warning(f"oEmbed failed: {e}")
                 
                 try:
-                    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+                    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
                         response = await client.get(
                             video_url,
-                            headers={
-                                'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)',
-                                'Accept-Language': 'en-US,en;q=0.9',
-                            }
+                            headers={'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)'}
                         )
                         html = response.text
                         
-                        desc_patterns = [
-                            r'"shortDescription":"((?:[^"\\]|\\.)*)"',
-                            r'"description":\s*\{\s*"simpleText":\s*"((?:[^"\\]|\\.)*)"',
-                        ]
-                        
-                        for pattern in desc_patterns:
-                            desc_match = re.search(pattern, html, re.DOTALL)
-                            if desc_match:
-                                video_description = desc_match.group(1)
-                                video_description = video_description.encode().decode('unicode_escape')
-                                video_description = video_description.replace('\\n', '\n')
-                                if len(video_description) > 50:
-                                    break
+                        desc_match = re.search(r'"shortDescription":"((?:[^"\\]|\\.)*)"', html, re.DOTALL)
+                        if desc_match:
+                            video_description = desc_match.group(1)
+                            video_description = video_description.encode().decode('unicode_escape')
+                            video_description = video_description.replace('\\n', '\n')[:3000]
                         
                 except Exception as e:
                     logging.warning(f"Page scrape failed: {e}")
         
-        video_info = f"""=== COOKING VIDEO INFORMATION ===
-
-Video Title: {video_title}
-Channel/Creator: {channel_name}
-Video URL: {request.video_url}
-
-Video Description:
-{video_description[:8000] if video_description else 'No description available - use the video title to identify the recipe'}
-
-=== END VIDEO INFO ===
-
-Based on this YouTube cooking video, create a detailed recipe.
-The VIDEO TITLE clearly indicates what dish is being made: "{video_title}"
-Extract the recipe for this EXACT dish."""
-        
         chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"import-video-{uuid.uuid4().hex[:8]}",
-            system_message="""You are a chef creating a recipe from a YouTube cooking video.
+            system_message="""Create a recipe JSON from video info.
 
-Create a recipe JSON based on the video title and description provided.
-If no description, create an authentic recipe for the dish in the title.
+{"name": "Title", "description": "Brief", "cuisine": "Type", "difficulty": "Easy/Medium/Hard",
+"prepTime": "X min", "cookTime": "X min", "servings": 4,
+"ingredients": [{"name": "ingredient", "category": "pantry"}],
+"instructions": [{"stepNumber": 1, "instruction": "Step", "time": "X min"}],
+"chefTips": ["Tip"]}
 
-JSON format:
-{
-    "name": "Recipe Title",
-    "description": "Brief description",
-    "cuisine": "Cuisine type",
-    "difficulty": "Easy/Medium/Hard",
-    "prepTime": "X minutes",
-    "cookTime": "X minutes",
-    "servings": 4,
-    "ingredients": [{"name": "ingredient", "category": "category"}],
-    "instructions": [{"stepNumber": 1, "instruction": "Step", "time": "X min"}],
-    "chefTips": ["Tip"]
-}
-
-Output ONLY valid JSON."""
+Use video title as recipe name. Output ONLY JSON."""
         )
-        # Use gpt-4o-mini for faster response
         chat.with_model("openai", "gpt-4o-mini")
         
-        # Truncate video info to reduce tokens
-        truncated_info = video_info[:4000] if len(video_info) > 4000 else video_info
-        
-        prompt = f"""Create a recipe for: "{video_title}"
-
-{truncated_info}
+        prompt = f"""Create recipe for: "{video_title}"
+Channel: {channel_name}
+Description: {video_description[:2000] if video_description else 'None'}
 
 Output JSON only."""
 
@@ -426,7 +371,6 @@ async def save_imported_recipe(request: ImportSaveRequest, current_user: User = 
         from image_service import get_food_image
         
         recipe_data = request.recipe
-        
         recipe_id = str(uuid.uuid4())
         
         recipe_doc = {
