@@ -1,7 +1,33 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChefHat, Heart, Sparkles } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
+import { 
+  ChefHat, 
+  Heart, 
+  Sparkles, 
+  MessageCircle, 
+  Import, 
+  Calendar, 
+  ShoppingCart, 
+  Activity, 
+  Mic, 
+  Camera, 
+  Video, 
+  FileText,
+  Star,
+  Globe,
+  Utensils,
+  Brain,
+  Salad,
+  Wine,
+  Check
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/AuthModal';
 
@@ -9,6 +35,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
   
   const handleStartCooking = () => {
     if (isAuthenticated) {
@@ -17,6 +44,75 @@ const LandingPage = () => {
       setShowAuthModal(true);
     }
   };
+  
+  const keyFeatures = [
+    {
+      icon: Brain,
+      title: "Mood-Based Recipe Discovery",
+      description: "Tell us how you're feeling - happy, stressed, tired, cozy - and get personalized recipes that match your emotional state.",
+      highlight: "AI understands your mood",
+      color: "text-purple-500",
+      bgColor: "bg-purple-500/10"
+    },
+    {
+      icon: Activity,
+      title: "Diabetes-Friendly Meal Planning",
+      description: "Specialized tab with research-backed recipes. AI researches your diabetes type first, then suggests blood sugar-safe meals with Net Carbs & Glycemic Index.",
+      highlight: "Evidence-based approach",
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10"
+    },
+    {
+      icon: Import,
+      title: "Import Recipes from Anywhere",
+      description: "Paste a URL, upload a photo of a recipe, share a YouTube cooking video, or type plain text - AI converts ANY recipe into our detailed format.",
+      highlight: "4 import methods",
+      color: "text-green-500",
+      bgColor: "bg-green-500/10"
+    },
+    {
+      icon: Mic,
+      title: "Voice-Enabled Cooking",
+      description: "Talk to your AI chef hands-free! Ask questions, get recipe suggestions, and navigate the app using just your voice.",
+      highlight: "Hands-free experience",
+      color: "text-orange-500",
+      bgColor: "bg-orange-500/10"
+    },
+    {
+      icon: Calendar,
+      title: "Weekly Meal Planner",
+      description: "Drag and drop recipes into your weekly schedule. Plan breakfast, lunch, and dinner for the entire week.",
+      highlight: "Organized meal prep",
+      color: "text-pink-500",
+      bgColor: "bg-pink-500/10"
+    },
+    {
+      icon: ShoppingCart,
+      title: "Smart Shopping List",
+      description: "Automatically generate shopping lists from your recipes. Ingredients are categorized by store section for easy shopping.",
+      highlight: "One-tap grocery lists",
+      color: "text-cyan-500",
+      bgColor: "bg-cyan-500/10"
+    }
+  ];
+
+  const importMethods = [
+    { icon: Globe, label: "From URL", desc: "Paste any recipe website link" },
+    { icon: Camera, label: "From Photo", desc: "Snap a recipe card or cookbook" },
+    { icon: Video, label: "From Video", desc: "YouTube cooking tutorials" },
+    { icon: FileText, label: "From Text", desc: "Paste plain text recipes" }
+  ];
+
+  const recipeFeatures = [
+    "Step-by-step instructions with exact timings",
+    "Precise temperatures (°F and °C)",
+    "Visual cues for each cooking step",
+    "Beginner-friendly technique explanations",
+    "Cuisine-specific drink pairings",
+    "Nutritional information per serving",
+    "Chef's tips and variations",
+    "Storage and reheating instructions"
+  ];
   
   return (
     <>
@@ -62,7 +158,7 @@ const LandingPage = () => {
                 size="lg"
                 variant="outline"
                 className="rounded-full px-8 py-6 text-lg border-2 active:scale-95 transition-all"
-                onClick={handleStartCooking}
+                onClick={() => setShowHowItWorks(true)}
                 data-testid="how-it-works-btn"
               >
                 How It Works
