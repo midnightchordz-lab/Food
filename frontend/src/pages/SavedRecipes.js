@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
+import { useShoppingCart } from '@/context/ShoppingCartContext';
 import { toast } from 'sonner';
 import RecipeSearchFilter from '@/components/RecipeSearchFilter';
 import RecipeRating from '@/components/RecipeRating';
@@ -22,6 +23,7 @@ const SavedRecipes = () => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [recipeRatings, setRecipeRatings] = useState({});
   const { isAuthenticated, loading } = useAuth();
+  const { addAllToCart } = useShoppingCart();
   
   useEffect(() => {
     if (isAuthenticated) {
