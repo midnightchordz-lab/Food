@@ -181,7 +181,7 @@ const LandingPage = () => {
                 </div>
                 <h3 className="text-xl font-serif mb-3">Empathetic AI Chef</h3>
                 <p className="text-muted-foreground">
-                  Share how you're feeling, and receive personalized meal suggestions that address your emotional and physical needs.
+                  Share how you&apos;re feeling, and receive personalized meal suggestions that address your emotional and physical needs.
                 </p>
               </div>
               
