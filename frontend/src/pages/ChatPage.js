@@ -359,8 +359,8 @@ Format each recipe clearly with the name as a header.
   
   // Handle mood change from user input
   const handleMoodChange = async (newMoodId) => {
-    const mood = MOODS.find(m => m.id === newMoodId);
-    const previousMood = MOODS.find(m => m.id === selectedMood);
+    const mood = MOOD_IMAGES.find(m => m.id === newMoodId);
+    const previousMood = MOOD_IMAGES.find(m => m.id === selectedMood);
     
     setSelectedMood(newMoodId);
     
