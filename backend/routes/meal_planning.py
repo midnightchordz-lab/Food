@@ -39,12 +39,20 @@ class WeeklyPlanCreate(BaseModel):
     week_start: str
     meals: Dict[str, Any]
 
+class MacroTargets(BaseModel):
+    """Daily macro nutrient targets"""
+    protein_g: Optional[int] = None  # grams
+    carbs_g: Optional[int] = None    # grams
+    fat_g: Optional[int] = None      # grams
+    fiber_g: Optional[int] = None    # grams
+
 class MealPreferences(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(str(__import__('uuid').uuid4())))
     user_id: str
     dietary_preference: str = "non-vegetarian"
     calorie_target: Optional[int] = None
+    macro_targets: Optional[MacroTargets] = None
     focus_areas: List[str] = []
     cuisine_preferences: List[str] = []
     mood: str = "balanced"
@@ -56,6 +64,7 @@ class MealPreferences(BaseModel):
 class MealPreferencesCreate(BaseModel):
     dietary_preference: str = "non-vegetarian"
     calorie_target: Optional[int] = None
+    macro_targets: Optional[MacroTargets] = None
     focus_areas: List[str] = []
     cuisine_preferences: List[str] = []
     mood: str = "balanced"
