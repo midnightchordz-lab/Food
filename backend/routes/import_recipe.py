@@ -160,13 +160,17 @@ async def convert_to_standard_recipe(content: str, source_type: str, source_info
         session_id=f"import-{uuid.uuid4().hex[:8]}",
         system_message=get_import_system_prompt(source_type)
     )
-    chat.with_model("openai", "gpt-4o")
+    # Use gpt-4o-mini for faster response (3-5x faster than gpt-4o)
+    chat.with_model("openai", "gpt-4o-mini")
     
-    user_prompt = f"""Convert this recipe to the standardized JSON format:
+    # Truncate content to reduce processing time (keep first 8000 chars)
+    truncated_content = content[:8000] if len(content) > 8000 else content
+    
+    user_prompt = f"""Convert this recipe to JSON format:
 
-{content}
+{truncated_content}
 
-Remember: Output ONLY valid JSON, no other text."""
+Output ONLY valid JSON."""
 
     response = await chat.send_message(UserMessage(text=user_prompt))
     
