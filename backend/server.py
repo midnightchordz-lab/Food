@@ -1813,6 +1813,9 @@ async def save_meal_preferences(request: MealPreferencesCreate, current_user: Us
                 # Get previously used recipes
                 used_recipes = await get_used_recipes(current_user.id)
                 
+                # Get user's excluded ingredients for filtering
+                user_exclusions = await get_user_excluded_ingredients(current_user.id)
+                
                 # Generate new plan
                 meals = await generate_ai_meal_plan(
                     current_user,
@@ -1821,7 +1824,8 @@ async def save_meal_preferences(request: MealPreferencesCreate, current_user: Us
                     request.calorie_target,
                     request.focus_areas,
                     request.cuisine_preferences,
-                    exclude_recipes=used_recipes
+                    exclude_recipes=used_recipes,
+                    user_exclusions=user_exclusions
                 )
                 
                 # Save the plan
