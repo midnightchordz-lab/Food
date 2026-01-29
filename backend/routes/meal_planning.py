@@ -346,7 +346,8 @@ async def generate_plan_for_week(request: WeekOffsetRequest, current_user: User 
             prefs.get('focus_areas', []),
             prefs.get('cuisine_preferences', []),
             exclude_recipes=used_recipes,
-            user_exclusions=user_exclusions
+            user_exclusions=user_exclusions,
+            macro_targets=prefs.get('macro_targets')
         )
         
         plan = WeeklyPlan(
