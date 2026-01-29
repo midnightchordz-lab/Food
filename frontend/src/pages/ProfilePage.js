@@ -179,6 +179,9 @@ const ProfilePage = () => {
             </Button>
           </form>
         </div>
+
+        {/* Food Exclusions Section */}
+        <ManageExclusions className="mt-8" />
       </div>
     </div>
   );
