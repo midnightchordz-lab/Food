@@ -929,9 +929,7 @@ const ImportRecipePage = () => {
                         </div>
                       ) : (
                         <div>
-                          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 flex items-center justify-center">
-                            <Upload size={32} className="text-red-500" />
-                          </div>
+                          <Upload size={48} className="mx-auto mb-4 text-muted-foreground" />
                           <p className="font-medium mb-1">Click to upload cooking video</p>
                           <p className="text-sm text-muted-foreground">MP4, MOV, or WebM up to 100MB</p>
                         </div>
@@ -942,15 +940,15 @@ const ImportRecipePage = () => {
                       <Button
                         onClick={handleVideoFileImport}
                         disabled={isLoading}
-                        className="w-full h-12 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
+                        className="w-full rounded-full"
                         data-testid="import-video-file-btn"
                       >
-                        {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : <Sparkles size={18} className="mr-2" />}
+                        {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
                         Extract Recipe from Video
                       </Button>
                     )}
                     
-                    <div className="flex items-start gap-2 p-3 bg-blue-50/80 text-blue-800 rounded-xl dark:bg-blue-950/30 dark:text-blue-200 border border-blue-200/50 dark:border-blue-800/30">
+                    <div className="flex items-start gap-2 p-3 bg-blue-50 text-blue-800 rounded-xl dark:bg-blue-950/30 dark:text-blue-200">
                       <Sparkles size={18} className="mt-0.5 flex-shrink-0" />
                       <p className="text-xs">
                         <strong>AI-Powered:</strong> We&apos;ll use AI to transcribe and analyze your video to extract the complete recipe with all steps and ingredients.
@@ -964,15 +962,9 @@ const ImportRecipePage = () => {
             {/* Text Import */}
             {selectedMethod === 'text' && (
               <div data-testid="import-from-text">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400/20 to-teal-500/20 flex items-center justify-center">
-                    <FileText size={24} className="text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold">Import from Text</h2>
-                    <p className="text-sm text-muted-foreground">Paste or type your recipe</p>
-                  </div>
-                </div>
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  📝 Import from Text
+                </h2>
                 
                 <div className="space-y-4">
                   <Textarea
@@ -992,22 +984,22 @@ Instructions:
 2. Mix butter and sugar...`}
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
-                    className="min-h-[300px] rounded-xl border-border/50 focus:border-emerald-400 resize-none"
+                    className="min-h-[300px]"
                     data-testid="text-input"
                   />
                   
                   <Button
                     onClick={handleTextImport}
                     disabled={!textInput.trim() || isLoading}
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                    className="w-full rounded-full"
                     data-testid="import-text-btn"
                   >
-                    {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : <Sparkles size={18} className="mr-2" />}
-                    Parse & Convert Recipe
+                    {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
+                    Parse Recipe
                   </Button>
                   
-                  <div className="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-xl p-4 border border-emerald-100/50 dark:border-emerald-900/30">
-                    <h4 className="font-medium text-sm mb-2 text-emerald-900/70 dark:text-emerald-100/70">Formatting tips:</h4>
+                  <div className="bg-muted/30 rounded-xl p-4">
+                    <h4 className="font-medium text-sm mb-2">Formatting tips:</h4>
                     <ul className="text-xs text-muted-foreground space-y-1">
                       <li>✓ Include recipe name at the top</li>
                       <li>✓ Separate ingredients and instructions</li>
@@ -1021,7 +1013,7 @@ Instructions:
             
             {/* Loading State */}
             {isLoading && loadingMessage && (
-              <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 to-orange-500/10 rounded-2xl text-center border border-primary/20">
+              <div className="mt-6 p-6 bg-primary/5 rounded-2xl text-center">
                 <Loader2 className="animate-spin mx-auto mb-3 text-primary" size={32} />
                 <p className="font-medium">{loadingMessage}</p>
                 <p className="text-sm text-muted-foreground mt-1">This may take a moment...</p>
