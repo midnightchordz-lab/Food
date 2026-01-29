@@ -577,19 +577,19 @@ Format each recipe clearly with the name as a header.
                         className="px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium hover:bg-primary/20 transition-colors cursor-pointer flex items-center gap-1 border border-primary/20"
                         data-testid="mood-indicator"
                       >
-                        {MOODS.find(m => m.id === selectedMood)?.emoji} {MOODS.find(m => m.id === selectedMood)?.label}
+                        <img src={MOOD_IMAGES.find(m => m.id === selectedMood)?.image} alt="" className="w-4 h-4 rounded-full" /> {MOOD_IMAGES.find(m => m.id === selectedMood)?.label}
                         <RefreshCw size={12} className="ml-1 opacity-60" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-48">
+                    <DropdownMenuContent align="start" className="w-56">
                       <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Change Mood</div>
-                      {MOODS.map((mood) => (
+                      {MOOD_IMAGES.map((mood) => (
                         <DropdownMenuItem 
                           key={mood.id}
                           onClick={() => handleMoodChange(mood.id)}
                           className={`cursor-pointer ${selectedMood === mood.id ? 'bg-primary/10' : ''}`}
                         >
-                          <span className="mr-2">{mood.emoji}</span>
+                          <img src={mood.image} alt="" className="w-6 h-6 rounded-full mr-2" />
                           {mood.label}
                         </DropdownMenuItem>
                       ))}
