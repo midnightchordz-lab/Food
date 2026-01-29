@@ -754,6 +754,182 @@ async def update_profile(profile_data: UserProfileUpdate, current_user: User = D
     return User(**updated_user)
 
 
+# ============== INGREDIENT EXCLUSION ENDPOINTS ==============
+
+@api_router.get("/exclusions")
+async def get_user_exclusions(current_user: User = Depends(get_current_user)):
+    """Get user's food exclusions and allergies"""
+    exclusions = await db.user_exclusions.find_one(
+        {"user_id": current_user.id},
+        {"_id": 0}
+    )
+    
+    if not exclusions:
+        # Return empty default exclusions
+        return {
+            "user_id": current_user.id,
+            "excluded_ingredients": [],
+            "excluded_ingredient_names": [],
+            "common_allergens": {
+                "eggs": False, "milk": False, "peanuts": False, "tree_nuts": False,
+                "soy": False, "wheat": False, "fish": False, "shellfish": False, "sesame": False
+            },
+            "last_updated": None
+        }
+    
+    return exclusions
+
+
+@api_router.post("/exclusions")
+async def save_user_exclusions(exclusion_data: ExclusionCreate, current_user: User = Depends(get_current_user)):
+    """Save user's food exclusions (replaces existing)"""
+    
+    # Build the exclusion document
+    excluded_names = [ing.name.lower() for ing in exclusion_data.excluded_ingredients]
+    
+    # Build common allergens status
+    common_allergens = {
+        "eggs": any(ing.name.lower() in ["eggs", "egg"] for ing in exclusion_data.excluded_ingredients),
+        "milk": any(ing.name.lower() in ["milk", "dairy"] for ing in exclusion_data.excluded_ingredients),
+        "peanuts": any(ing.name.lower() == "peanuts" for ing in exclusion_data.excluded_ingredients),
+        "tree_nuts": any(ing.name.lower() in ["tree nuts", "tree_nuts", "almonds", "walnuts", "cashews"] for ing in exclusion_data.excluded_ingredients),
+        "soy": any(ing.name.lower() == "soy" for ing in exclusion_data.excluded_ingredients),
+        "wheat": any(ing.name.lower() in ["wheat", "gluten"] for ing in exclusion_data.excluded_ingredients),
+        "fish": any(ing.name.lower() == "fish" for ing in exclusion_data.excluded_ingredients),
+        "shellfish": any(ing.name.lower() == "shellfish" for ing in exclusion_data.excluded_ingredients),
+        "sesame": any(ing.name.lower() == "sesame" for ing in exclusion_data.excluded_ingredients),
+    }
+    
+    exclusion_doc = {
+        "user_id": current_user.id,
+        "excluded_ingredients": [ing.model_dump() for ing in exclusion_data.excluded_ingredients],
+        "excluded_ingredient_names": excluded_names,
+        "common_allergens": common_allergens,
+        "last_updated": datetime.now(timezone.utc)
+    }
+    
+    # Upsert the exclusions
+    await db.user_exclusions.update_one(
+        {"user_id": current_user.id},
+        {"$set": exclusion_doc},
+        upsert=True
+    )
+    
+    # Also update the user's dietary restrictions to include allergy info
+    allergy_restrictions = []
+    for ing in exclusion_data.excluded_ingredients:
+        if ing.category == "allergy" or ing.severity in ["severe-allergy", "mild-allergy"]:
+            allergy_restrictions.append(f"{ing.name}-Free")
+    
+    if allergy_restrictions:
+        current_restrictions = current_user.dietary_restrictions or []
+        updated_restrictions = list(set(current_restrictions + allergy_restrictions))
+        await db.users.update_one(
+            {"id": current_user.id},
+            {"$set": {"dietary_restrictions": updated_restrictions}}
+        )
+    
+    return {"message": "Exclusions saved successfully", "excluded_count": len(excluded_names)}
+
+
+@api_router.put("/exclusions")
+async def update_user_exclusions(update_data: ExclusionUpdate, current_user: User = Depends(get_current_user)):
+    """Add or remove specific ingredients from exclusions"""
+    
+    # Get current exclusions
+    current_exclusions = await db.user_exclusions.find_one({"user_id": current_user.id})
+    
+    if not current_exclusions:
+        current_exclusions = {
+            "user_id": current_user.id,
+            "excluded_ingredients": [],
+            "excluded_ingredient_names": [],
+            "common_allergens": {},
+            "last_updated": datetime.now(timezone.utc)
+        }
+    
+    # Convert to list of ExcludedIngredient
+    existing_ingredients = current_exclusions.get("excluded_ingredients", [])
+    existing_names = set(current_exclusions.get("excluded_ingredient_names", []))
+    
+    # Add new ingredients
+    if update_data.add_ingredients:
+        for ing in update_data.add_ingredients:
+            if ing.name.lower() not in existing_names:
+                existing_ingredients.append(ing.model_dump())
+                existing_names.add(ing.name.lower())
+    
+    # Remove specified ingredients
+    if update_data.remove_ingredient_names:
+        remove_set = set(name.lower() for name in update_data.remove_ingredient_names)
+        existing_ingredients = [ing for ing in existing_ingredients if ing["name"].lower() not in remove_set]
+        existing_names = existing_names - remove_set
+    
+    # Update common allergens
+    common_allergens = {
+        "eggs": "eggs" in existing_names or "egg" in existing_names,
+        "milk": "milk" in existing_names or "dairy" in existing_names,
+        "peanuts": "peanuts" in existing_names,
+        "tree_nuts": any(n in existing_names for n in ["tree nuts", "tree_nuts", "almonds", "walnuts", "cashews"]),
+        "soy": "soy" in existing_names,
+        "wheat": "wheat" in existing_names or "gluten" in existing_names,
+        "fish": "fish" in existing_names,
+        "shellfish": "shellfish" in existing_names,
+        "sesame": "sesame" in existing_names,
+    }
+    
+    # Save updated exclusions
+    updated_doc = {
+        "user_id": current_user.id,
+        "excluded_ingredients": existing_ingredients,
+        "excluded_ingredient_names": list(existing_names),
+        "common_allergens": common_allergens,
+        "last_updated": datetime.now(timezone.utc)
+    }
+    
+    await db.user_exclusions.update_one(
+        {"user_id": current_user.id},
+        {"$set": updated_doc},
+        upsert=True
+    )
+    
+    return {"message": "Exclusions updated", "excluded_count": len(existing_names)}
+
+
+@api_router.delete("/exclusions/{ingredient_name}")
+async def remove_single_exclusion(ingredient_name: str, current_user: User = Depends(get_current_user)):
+    """Remove a single ingredient from exclusions"""
+    
+    result = await db.user_exclusions.update_one(
+        {"user_id": current_user.id},
+        {
+            "$pull": {
+                "excluded_ingredients": {"name": {"$regex": f"^{ingredient_name}$", "$options": "i"}},
+            }
+        }
+    )
+    
+    # Also update the names list
+    await db.user_exclusions.update_one(
+        {"user_id": current_user.id},
+        {"$pull": {"excluded_ingredient_names": ingredient_name.lower()}}
+    )
+    
+    return {"message": f"Removed {ingredient_name} from exclusions"}
+
+
+async def get_user_excluded_ingredients(user_id: str) -> List[str]:
+    """Helper function to get user's excluded ingredient names"""
+    exclusions = await db.user_exclusions.find_one(
+        {"user_id": user_id},
+        {"excluded_ingredient_names": 1}
+    )
+    
+    if exclusions:
+        return exclusions.get("excluded_ingredient_names", [])
+    return []
+
+
 # Mood change detection patterns and mood mapping
 MOOD_CHANGE_PATTERNS = [
     r"mood (has |is )?changed?",
