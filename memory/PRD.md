@@ -212,6 +212,18 @@ A mood-based recipe discovery application where users receive personalized meal 
 
 ## Changelog
 
+- **Jan 29, 2026**: FEATURE - Phone Authentication with Twilio
+  - Integrated Twilio SMS for phone OTP verification
+  - Added endpoints: `POST /api/auth/phone/send-otp`, `POST /api/auth/phone/verify-otp`
+  - Features:
+    - 6-digit OTP generation with 10-minute expiry
+    - Rate limiting (5 attempts max)
+    - Automatic user creation on first phone login
+    - Falls back to demo mode if SMS fails
+  - **Note**: Test credentials provided - SMS sends may fail with test accounts
+    - For production: Need a verified Twilio phone number and live credentials
+    - Demo mode works for testing (OTP returned in response)
+  
 - **Jan 29, 2026**: NEW FEATURE - Diabetes Weekly Meal Planner
   - Created `/diabetes-planner` route with full weekly meal planning for diabetes
   - Backend: New module `diabetes_meal_planner.py` with diabetes-specific meal generation
