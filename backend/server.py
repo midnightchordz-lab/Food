@@ -1925,6 +1925,362 @@ async def get_mood_voice_info(current_user: User = Depends(get_current_user)):
     
     return {"moods": mood_info}
 
+
+# ============================================
+# DIABETES MEALS ENDPOINTS
+# ============================================
+
+class DiabetesResearchRequest(BaseModel):
+    diabetes_type: str
+    session_id: str
+
+class DiabetesRecipeRequest(BaseModel):
+    session_id: str
+    mood: str
+    mood_description: Optional[str] = None
+    diabetes_type: str
+    diabetes_label: str
+    dietary_pref: str
+    meal_type: str
+    cuisines: str
+    guidelines: Optional[Dict[str, Any]] = None
+
+class DiabetesChatRequest(BaseModel):
+    session_id: str
+    message: str
+    context: Optional[Dict[str, Any]] = None
+
+
+# Diabetes dietary guidelines database
+DIABETES_GUIDELINES = {
+    "type1": {
+        "name": "Type 1 Diabetes",
+        "overview": "Insulin-dependent diabetes where the pancreas produces little or no insulin",
+        "key_principles": [
+            "Carbohydrate counting is critical for insulin dosing",
+            "Balance carbs with insulin doses",
+            "Consistent meal timing",
+            "Low glycemic index foods preferred",
+            "45-60g carbs per meal typical"
+        ],
+        "recommended_foods": [
+            "Complex carbs (whole grains, legumes)",
+            "High-fiber vegetables",
+            "Lean proteins",
+            "Healthy fats (nuts, avocado, olive oil)",
+            "Low-GI fruits (berries, apples)"
+        ],
+        "avoid_foods": [
+            "Simple sugars (candy, soda, juice)",
+            "Refined carbs (white bread, white rice)",
+            "High-GI foods (potatoes, watermelon)",
+            "Sugary drinks",
+            "Processed foods with hidden sugars"
+        ],
+        "max_carbs_per_meal": 60,
+        "min_fiber_per_meal": 8,
+        "max_glycemic_index": 55,
+        "macro_split": {"carbs": 45, "protein": 30, "fat": 25}
+    },
+    "type2": {
+        "name": "Type 2 Diabetes",
+        "overview": "Insulin resistance where the body doesn't use insulin effectively",
+        "key_principles": [
+            "Lower carbohydrate intake (30-40% of calories)",
+            "Emphasis on non-starchy vegetables",
+            "Lean proteins for satiety",
+            "Healthy fats for insulin sensitivity",
+            "Low glycemic index foods (GI < 55)",
+            "Portion control for weight management"
+        ],
+        "recommended_foods": [
+            "Non-starchy vegetables (unlimited)",
+            "Lean proteins (chicken, fish, tofu)",
+            "Whole grains in moderation",
+            "Legumes and beans",
+            "Foods with cinnamon, turmeric (insulin sensitivity)"
+        ],
+        "avoid_foods": [
+            "Simple carbohydrates",
+            "Sugary foods and drinks",
+            "Trans fats",
+            "Processed meats",
+            "Full-fat dairy",
+            "Fried foods",
+            "High-sodium foods"
+        ],
+        "max_carbs_per_meal": 45,
+        "min_fiber_per_meal": 10,
+        "max_glycemic_index": 55,
+        "macro_split": {"carbs": 35, "protein": 30, "fat": 35}
+    },
+    "gestational": {
+        "name": "Gestational Diabetes",
+        "overview": "Pregnancy-related diabetes that usually resolves after delivery",
+        "key_principles": [
+            "Cannot skip meals (harmful to baby)",
+            "Smaller, frequent meals",
+            "Protein at every meal/snack",
+            "Adequate nutrition for baby",
+            "Morning blood sugar focus"
+        ],
+        "recommended_foods": [
+            "Complex carbs in moderation",
+            "Protein at every meal",
+            "Greek yogurt, nuts, seeds",
+            "Plenty of vegetables",
+            "Whole grains (small portions)"
+        ],
+        "avoid_foods": [
+            "Simple sugars",
+            "Fruit juice",
+            "Large portions of carbs",
+            "Skipping meals (dangerous)",
+            "Sugary cereals"
+        ],
+        "max_carbs_per_meal": 45,
+        "min_fiber_per_meal": 8,
+        "max_glycemic_index": 55,
+        "macro_split": {"carbs": 40, "protein": 30, "fat": 30}
+    },
+    "prediabetes": {
+        "name": "Pre-Diabetes",
+        "overview": "Blood sugar levels higher than normal but not yet diabetes",
+        "key_principles": [
+            "Focus on preventing progression",
+            "Moderate carbohydrate intake",
+            "Weight management support",
+            "Increase fiber intake",
+            "Regular meal timing"
+        ],
+        "recommended_foods": [
+            "Whole grains over refined",
+            "Lots of vegetables",
+            "Lean proteins",
+            "Healthy fats",
+            "Low-GI fruits"
+        ],
+        "avoid_foods": [
+            "Sugary drinks and snacks",
+            "Refined carbohydrates",
+            "Processed foods",
+            "Large portions"
+        ],
+        "max_carbs_per_meal": 50,
+        "min_fiber_per_meal": 8,
+        "max_glycemic_index": 60,
+        "macro_split": {"carbs": 45, "protein": 25, "fat": 30}
+    }
+}
+
+
+@api_router.post("/diabetes/research")
+async def research_diabetes_type(request: DiabetesResearchRequest, current_user: User = Depends(get_current_user)):
+    """Research diabetes type and return dietary guidelines"""
+    try:
+        diabetes_type = request.diabetes_type
+        guidelines = DIABETES_GUIDELINES.get(diabetes_type, DIABETES_GUIDELINES["type2"])
+        
+        # Format summary for user
+        summary = f"""I've researched {guidelines['name']} management. Here's what I understand:
+
+**{guidelines['overview']}**
+
+**Key Dietary Principles:**
+{chr(10).join(['✅ ' + p for p in guidelines['key_principles']])}
+
+**Foods I'll Recommend:**
+{chr(10).join(['• ' + f for f in guidelines['recommended_foods']])}
+
+**Foods I'll Avoid in Suggestions:**
+{chr(10).join(['• ' + f for f in guidelines['avoid_foods']])}
+
+All my recipe suggestions will follow these evidence-based guidelines!
+
+What's your dietary preference?"""
+        
+        return {
+            "summary": summary,
+            "guidelines": {
+                "maxCarbsPerMeal": guidelines["max_carbs_per_meal"],
+                "minFiberPerMeal": guidelines["min_fiber_per_meal"],
+                "maxGlycemicIndex": guidelines["max_glycemic_index"],
+                "macroSplit": guidelines["macro_split"],
+                "avoidFoods": guidelines["avoid_foods"],
+                "recommendedFoods": guidelines["recommended_foods"]
+            }
+        }
+    except Exception as e:
+        logging.error(f"Error researching diabetes type: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def get_diabetes_recipe_prompt(mood: str, diabetes_type: str, diabetes_label: str, dietary_pref: str, meal_type: str, cuisines: str, guidelines: dict = None):
+    """Generate a prompt for diabetes-safe recipes"""
+    
+    max_carbs = guidelines.get("maxCarbsPerMeal", 45) if guidelines else 45
+    min_fiber = guidelines.get("minFiberPerMeal", 8) if guidelines else 8
+    max_gi = guidelines.get("maxGlycemicIndex", 55) if guidelines else 55
+    
+    return f"""You are a certified diabetes educator and nutritionist. Generate EXACTLY 3 delicious {dietary_pref} {meal_type} recipes that are safe for {diabetes_label} management.
+
+**USER CONTEXT:**
+- Mood: {mood}
+- Diabetes Type: {diabetes_label}
+- Dietary Preference: {dietary_pref}
+- Meal Type: {meal_type}
+- Cuisines: {cuisines}
+
+**DIABETES SAFETY REQUIREMENTS (CRITICAL):**
+- Maximum {max_carbs}g net carbs per serving
+- Minimum {min_fiber}g fiber per serving
+- Glycemic Index below {max_gi}
+- Include blood sugar stabilizing ingredients
+- Avoid refined sugars, white flour, high-GI foods
+
+**FOR EACH RECIPE, YOU MUST INCLUDE:**
+
+## Recipe [Number]: [Recipe Name]
+
+🩺 **Diabetes Info:**
+- Net Carbs: [X]g per serving
+- Fiber: [X]g per serving
+- Protein: [X]g per serving
+- Glycemic Index: [Low/Medium] (approximately [X])
+- Blood Sugar Impact: [Low/Moderate]
+
+💚 **Why This is Blood Sugar Safe:**
+[2-3 bullet points explaining why this recipe supports blood sugar control]
+
+**Prep Time:** [X] minutes
+**Cook Time:** [X] minutes
+**Difficulty:** [Easy/Medium]
+**Servings:** [X]
+
+### Ingredients:
+[List ingredients with amounts]
+
+### Instructions:
+[Step-by-step instructions with times and temperatures]
+
+### 🥤 Diabetes-Safe Drink Pairing:
+
+**Non-Alcoholic:**
+- **[Drink Name]:** [Description and why it's diabetes-safe]
+
+**Note for Alcoholic Options (21+):**
+- **[Drink Name]:** [If appropriate, note to enjoy in moderation and monitor blood sugar]
+
+### 💡 Blood Sugar Tips:
+[2-3 tips specific to this recipe for managing blood sugar]
+
+---
+
+**IMPORTANT RULES:**
+1. All nutritional info must be realistic and accurate
+2. Emphasize fiber-rich, low-GI ingredients
+3. Include protein to slow sugar absorption
+4. Make recipes genuinely delicious, not just "healthy"
+5. Drink pairings must be sugar-free or very low sugar
+6. Include portion guidance if the recipe could spike blood sugar with larger portions
+
+Generate recipes that are both medically appropriate AND genuinely appetizing for someone feeling {mood.lower()}."""
+
+
+@api_router.post("/diabetes/recipes")
+async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: User = Depends(get_current_user)):
+    """Generate diabetes-safe recipes based on user preferences"""
+    try:
+        llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
+        chat = LlmChat(api_key=llm_api_key, model="gpt-4o")
+        
+        system_msg = get_diabetes_recipe_prompt(
+            mood=request.mood,
+            diabetes_type=request.diabetes_type,
+            diabetes_label=request.diabetes_label,
+            dietary_pref=request.dietary_pref,
+            meal_type=request.meal_type,
+            cuisines=request.cuisines,
+            guidelines=request.guidelines
+        )
+        
+        response = await chat.send_message(
+            UserMessage(text=f"Please generate 3 {request.dietary_pref} {request.meal_type} recipes for {request.cuisines} cuisine that are safe for {request.diabetes_label} and match a {request.mood.lower()} mood."),
+            system=system_msg
+        )
+        
+        # Save to chat history
+        await db.diabetes_chat_messages.insert_one({
+            "session_id": request.session_id,
+            "user_id": current_user.id,
+            "role": "assistant",
+            "content": response.text,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "is_recipe_response": True,
+            "diabetes_type": request.diabetes_type
+        })
+        
+        return {
+            "response": response.text,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        logging.error(f"Error generating diabetes recipes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/diabetes/chat")
+async def diabetes_chat(request: DiabetesChatRequest, current_user: User = Depends(get_current_user)):
+    """Handle free-form chat in diabetes meals section"""
+    try:
+        llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
+        chat = LlmChat(api_key=llm_api_key, model="gpt-4o-mini")
+        
+        context = request.context or {}
+        diabetes_type = context.get("diabetesType", "type2")
+        guidelines = DIABETES_GUIDELINES.get(diabetes_type, DIABETES_GUIDELINES["type2"])
+        
+        system_msg = f"""You are a helpful diabetes nutrition assistant. The user has {guidelines['name']}.
+
+Key dietary principles for this user:
+{chr(10).join(['- ' + p for p in guidelines['key_principles']])}
+
+Answer their questions helpfully while keeping diabetes management in mind. Be encouraging and supportive.
+If they ask for recipe modifications, ensure your suggestions maintain blood sugar safety.
+Always remind them to consult their healthcare provider for personalized medical advice."""
+        
+        response = await chat.send_message(
+            UserMessage(text=request.message),
+            system=system_msg
+        )
+        
+        # Save to chat history
+        await db.diabetes_chat_messages.insert_one({
+            "session_id": request.session_id,
+            "user_id": current_user.id,
+            "role": "user",
+            "content": request.message,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        await db.diabetes_chat_messages.insert_one({
+            "session_id": request.session_id,
+            "user_id": current_user.id,
+            "role": "assistant",
+            "content": response.text,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {
+            "response": response.text,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        logging.error(f"Error in diabetes chat: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 app.include_router(api_router)
 
 app.add_middleware(
