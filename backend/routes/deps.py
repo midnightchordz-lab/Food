@@ -69,8 +69,7 @@ async def create_indexes():
     except Exception as e:
         logging.warning(f"Index creation warning (may already exist): {e}")
 
-# Run index creation on module load (non-blocking)
-asyncio.get_event_loop().run_until_complete(create_indexes())
+# Index creation will be handled by startup event
 
 # ============== PYDANTIC MODELS ==============
 
