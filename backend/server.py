@@ -69,7 +69,8 @@ class PhoneLoginResponse(BaseModel):
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    email: str
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
     name: str
     dietary_restrictions: List[str] = []
     cuisine_preferences: List[str] = []
