@@ -32,34 +32,38 @@ async def create_indexes():
     """Create database indexes for faster queries"""
     try:
         # Users collection
-        await db.users.create_index("id", unique=True)
-        await db.users.create_index("email", sparse=True)
-        await db.users.create_index("phone_number", sparse=True)
+        await db.users.create_index("id", unique=True, background=True)
+        await db.users.create_index("email", sparse=True, background=True)
+        await db.users.create_index("phone_number", sparse=True, background=True)
         
         # Recipes collection
-        await db.recipes.create_index("id", unique=True)
-        await db.recipes.create_index("title")
-        await db.recipes.create_index([("title", "text"), ("description", "text")])
+        await db.recipes.create_index("id", unique=True, background=True)
+        await db.recipes.create_index("title", background=True)
+        await db.recipes.create_index([("title", "text"), ("description", "text")], background=True)
         
         # Saved recipes
-        await db.saved_recipes.create_index("user_id")
-        await db.saved_recipes.create_index([("user_id", 1), ("recipe_id", 1)])
+        await db.saved_recipes.create_index("user_id", background=True)
+        await db.saved_recipes.create_index([("user_id", 1), ("recipe_id", 1)], background=True)
         
         # Chat messages
-        await db.chat_messages.create_index([("session_id", 1), ("user_id", 1)])
-        await db.chat_messages.create_index("timestamp")
+        await db.chat_messages.create_index([("session_id", 1), ("user_id", 1)], background=True)
+        await db.chat_messages.create_index("timestamp", background=True)
         
         # Weekly plans
-        await db.weekly_plans.create_index([("user_id", 1), ("week_start", 1)])
+        await db.weekly_plans.create_index([("user_id", 1), ("week_start", 1)], background=True)
         
         # Meal preferences
-        await db.meal_preferences.create_index("user_id", unique=True)
+        await db.meal_preferences.create_index("user_id", unique=True, background=True)
         
         # User exclusions
-        await db.user_exclusions.create_index("userId", unique=True)
+        await db.user_exclusions.create_index("userId", unique=True, background=True)
         
         # Shopping lists
-        await db.shopping_lists.create_index("user_id", unique=True)
+        await db.shopping_lists.create_index("user_id", unique=True, background=True)
+        
+        # Imported recipes
+        await db.imported_recipes.create_index("user_id", background=True)
+        await db.imported_recipes.create_index("id", unique=True, background=True)
         
         logging.info("Database indexes created successfully")
     except Exception as e:
