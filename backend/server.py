@@ -2816,17 +2816,23 @@ This restriction applies IN ADDITION to diabetes-safe requirements."""
         # CRITICAL SAFETY FILTER: Post-process AI response to remove unsafe recipes
         if user_exclusions:
             logging.info(f"Applying safety filter for diabetes recipes, exclusions: {user_exclusions}")
+            logging.info(f"Original AI response length: {len(ai_response)}")
+            
             # First pass - structured recipe filter
             filtered_response, removed_recipes, violations = filter_unsafe_recipes_from_response(
                 ai_response, user_exclusions
             )
-            # Second pass - strict line-by-line filter
-            filtered_response = filter_recipe_text_strictly(filtered_response, user_exclusions)
             
             if removed_recipes:
                 logging.warning(f"SAFETY (Diabetes): Removed {len(removed_recipes)} unsafe recipes: {removed_recipes}")
                 logging.warning(f"SAFETY (Diabetes): Violations details: {violations}")
             
+            # Only apply strict filter if we have remaining recipe content
+            has_recipe_content = any(marker in filtered_response for marker in ['###', '**Ingredients', '**Instructions'])
+            if has_recipe_content:
+                filtered_response = filter_recipe_text_strictly(filtered_response, user_exclusions)
+            
+            logging.info(f"Final filtered response length: {len(filtered_response)}")
             ai_response = filtered_response
         
         # Save to chat history
