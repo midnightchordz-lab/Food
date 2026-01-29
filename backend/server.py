@@ -1144,6 +1144,9 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             "user_id": current_user.id
         })
         
+        # Get user's excluded ingredients for filtering
+        user_exclusions = await get_user_excluded_ingredients(current_user.id)
+        
         # Extract context from message if provided
         context = {}
         if "[Context:" in request.message:
@@ -1198,12 +1201,38 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             if current_user.dietary_restrictions:
                 system_msg += f"\n\nDIETARY RESTRICTIONS: {', '.join(current_user.dietary_restrictions)}. All recipes MUST comply."
             
+            # CRITICAL: Add excluded ingredients to system prompt
+            if user_exclusions:
+                exclusion_list = ", ".join(user_exclusions)
+                # Build comprehensive exclusion instructions with aliases
+                all_excluded_terms = set()
+                for excluded in user_exclusions:
+                    all_excluded_terms.add(excluded)
+                    aliases = get_ingredient_aliases(excluded)
+                    all_excluded_terms.update(aliases)
+                all_terms_str = ", ".join(sorted(all_excluded_terms))
+                
+                system_msg += f"""
+
+⚠️ CRITICAL FOOD ALLERGIES/EXCLUSIONS - DO NOT SUGGEST ANY RECIPE CONTAINING:
+Excluded ingredients: {exclusion_list}
+Related terms to also avoid: {all_terms_str}
+
+SAFETY REQUIREMENT: The user has specified these exclusions for health/allergy reasons.
+Every recipe you suggest MUST be completely free of ALL excluded ingredients and their derivatives.
+Double-check each ingredient before including any recipe."""
+            
             # Simplified user message for recipe generation
             user_text = f"Generate 6 {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine."
-            logging.info(f"Recipe generation request: {recipe_params}")
+            logging.info(f"Recipe generation request: {recipe_params}, exclusions: {user_exclusions}")
         else:
             # Use general conversational system message
             system_msg = get_system_message(current_user.dietary_restrictions, current_user.cuisine_preferences)
+            
+            # Also add exclusions to general chat for any food-related queries
+            if user_exclusions:
+                system_msg += f"\n\nIMPORTANT: User has food allergies/exclusions. Never recommend: {', '.join(user_exclusions)}."
+            
             user_text = request.message
         
         chat = LlmChat(
