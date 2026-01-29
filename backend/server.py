@@ -1453,6 +1453,22 @@ Think carefully before suggesting each recipe."""
         user_message = UserMessage(text=user_text)
         ai_response = await chat.send_message(user_message)
         
+        # CRITICAL SAFETY FILTER: Post-process AI response to remove unsafe recipes
+        if recipe_params and user_exclusions:
+            logging.info(f"Applying safety filter for exclusions: {user_exclusions}")
+            # First pass - structured recipe filter
+            filtered_response, removed_recipes, violations = filter_unsafe_recipes_from_response(
+                ai_response, user_exclusions
+            )
+            # Second pass - strict line-by-line filter
+            filtered_response = filter_recipe_text_strictly(filtered_response, user_exclusions)
+            
+            if removed_recipes:
+                logging.warning(f"SAFETY: Removed {len(removed_recipes)} unsafe recipes: {removed_recipes}")
+                logging.warning(f"SAFETY: Violations details: {violations}")
+            
+            ai_response = filtered_response
+        
         assistant_msg = ChatMessage(
             session_id=request.session_id,
             role="assistant",
