@@ -215,6 +215,7 @@ const DiabetesMealsPage = () => {
   // Handle mood selection
   const handleMoodSelect = (moodId, moodLabel, moodDescription) => {
     setSelectedMood(moodId);
+    setIsInitialLoad(false); // User has interacted, enable scroll to bottom
     
     const userMsg = {
       role: 'user',
