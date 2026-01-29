@@ -1744,13 +1744,17 @@ async def get_weekly_plans(current_user: User = Depends(get_current_user)):
 @api_router.post("/weekly-plan/generate")
 async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User = Depends(get_current_user)):
     try:
+        # Get user's excluded ingredients for filtering
+        user_exclusions = await get_user_excluded_ingredients(current_user.id)
+        
         meals = await generate_ai_meal_plan(
             current_user,
             request.mood,
             request.dietary_preference,
             request.calorie_target,
             request.focus_areas,
-            request.cuisine_preferences
+            request.cuisine_preferences,
+            user_exclusions=user_exclusions
         )
         
         # Save the generated plan
