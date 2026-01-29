@@ -2510,6 +2510,9 @@ async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: Use
     try:
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
+        # Get user's excluded ingredients
+        user_exclusions = await get_user_excluded_ingredients(current_user.id)
+        
         system_msg = get_diabetes_recipe_prompt(
             mood=request.mood,
             diabetes_type=request.diabetes_type,
@@ -2519,6 +2522,26 @@ async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: Use
             cuisines=request.cuisines,
             guidelines=request.guidelines
         )
+        
+        # CRITICAL: Add excluded ingredients to system prompt
+        if user_exclusions:
+            exclusion_list = ", ".join(user_exclusions)
+            all_excluded_terms = set()
+            for excluded in user_exclusions:
+                all_excluded_terms.add(excluded)
+                aliases = get_ingredient_aliases(excluded)
+                all_excluded_terms.update(aliases)
+            all_terms_str = ", ".join(sorted(all_excluded_terms))
+            
+            system_msg += f"""
+
+⚠️ CRITICAL FOOD ALLERGIES/EXCLUSIONS - DO NOT INCLUDE ANY RECIPE WITH:
+Excluded ingredients: {exclusion_list}
+Related terms to also avoid: {all_terms_str}
+
+SAFETY REQUIREMENT: The user has specified these exclusions for health/allergy reasons.
+Every recipe MUST be completely free of ALL excluded ingredients and their derivatives.
+This applies IN ADDITION to the diabetes-safe requirements."""
         
         chat = LlmChat(
             api_key=llm_api_key,
