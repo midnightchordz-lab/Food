@@ -62,7 +62,8 @@
   ],
 
   "updated_files": [
-    "/app/backend/tests/test_import_recipe.py"
+    "/app/backend/tests/test_import_recipe.py",
+    "/app/frontend/src/pages/ImportRecipePage.js"
   ],
 
   "success_rate": {
