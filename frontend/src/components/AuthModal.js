@@ -221,6 +221,8 @@ const AuthModal = ({ open, onClose }) => {
     setOtpSent(false);
     setOtpVerified(false);
     setIsNewPhoneUser(false);
+    setRegistrationStep('credentials');
+    setPendingExclusions([]);
   };
 
   const toggleDietary = (option) => {
