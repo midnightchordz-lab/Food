@@ -1,6 +1,4 @@
-import { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 // Mood data with 3D emoji images
 const MOOD_IMAGES = [
@@ -91,18 +89,7 @@ const MOOD_IMAGES = [
 ];
 
 const MoodCarousel = ({ onSelect, selectedMood }) => {
-  const scrollRef = useRef(null);
   const [hoveredMood, setHoveredMood] = useState(null);
-
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = 280;
-      scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
 
   const handleMoodSelect = (mood) => {
     onSelect(mood.id, mood.label, mood.description);
@@ -113,102 +100,85 @@ const MoodCarousel = ({ onSelect, selectedMood }) => {
       <p className="text-xl font-serif mb-2 text-foreground text-center">How are you feeling today?</p>
       <p className="text-sm text-muted-foreground mb-6 text-center">Select your mood and we&apos;ll find the perfect recipe</p>
       
-      <div className="relative">
-        {/* Left Arrow */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg rounded-full hover:bg-background"
-          onClick={() => scroll('left')}
-          data-testid="carousel-left-btn"
-        >
-          <ChevronLeft size={24} />
-        </Button>
-
-        {/* Carousel Container */}
-        <div 
-          ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide px-12 py-4 scroll-smooth"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {MOOD_IMAGES.map((mood) => {
-            const isSelected = selectedMood === mood.id;
-            const isHovered = hoveredMood === mood.id;
-            
-            return (
-              <div
-                key={mood.id}
-                className={`flex-shrink-0 cursor-pointer transition-all duration-300 ${
-                  isSelected ? 'scale-105' : isHovered ? 'scale-102' : ''
+      {/* 2-Row Grid Layout */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 px-2">
+        {MOOD_IMAGES.map((mood) => {
+          const isSelected = selectedMood === mood.id;
+          const isHovered = hoveredMood === mood.id;
+          
+          return (
+            <div
+              key={mood.id}
+              className={`cursor-pointer transition-all duration-300 ease-out transform ${
+                isSelected ? 'scale-105 z-10' : isHovered ? 'scale-102' : 'hover:scale-105'
+              }`}
+              onClick={() => handleMoodSelect(mood)}
+              onMouseEnter={() => setHoveredMood(mood.id)}
+              onMouseLeave={() => setHoveredMood(null)}
+              data-testid={`mood-card-${mood.id}`}
+            >
+              <div 
+                className={`relative rounded-2xl overflow-hidden transition-all duration-300 ease-out ${
+                  isSelected 
+                    ? 'ring-4 ring-primary ring-offset-2 shadow-xl shadow-primary/20' 
+                    : 'hover:shadow-lg border border-border/30'
                 }`}
-                onClick={() => handleMoodSelect(mood)}
-                onMouseEnter={() => setHoveredMood(mood.id)}
-                onMouseLeave={() => setHoveredMood(null)}
-                data-testid={`mood-card-${mood.id}`}
               >
-                <div 
-                  className={`relative w-40 rounded-2xl overflow-hidden transition-all duration-300 ${
-                    isSelected 
-                      ? 'ring-4 ring-primary ring-offset-2 shadow-xl' 
-                      : 'hover:shadow-lg'
-                  }`}
-                >
-                  {/* Mood Image */}
-                  <div className="aspect-square bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
-                    <img 
-                      src={mood.image} 
-                      alt={`${mood.label} mood`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                  
-                  {/* Selection Indicator */}
-                  {isSelected && (
-                    <div className="absolute top-2 right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
-                  
-                  {/* Mood Label */}
-                  <div className={`p-3 bg-gradient-to-r ${mood.color} text-white text-center`}>
-                    <p className="font-semibold text-sm">{mood.label}</p>
-                  </div>
+                {/* Mood Image */}
+                <div className="aspect-square bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-2">
+                  <img 
+                    src={mood.image} 
+                    alt={`${mood.label} mood`}
+                    className={`w-full h-full object-contain transition-transform duration-300 ${
+                      isSelected ? 'scale-110' : ''
+                    }`}
+                    loading="lazy"
+                  />
                 </div>
                 
-                {/* Description tooltip on hover/select */}
-                {(isHovered || isSelected) && (
-                  <div className="mt-2 px-2 text-center animate-in fade-in slide-in-from-top-1 duration-200">
-                    <p className="text-xs text-muted-foreground leading-snug max-w-[160px]">
+                {/* Selection Indicator */}
+                {isSelected && (
+                  <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200">
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
+                
+                {/* Mood Label */}
+                <div className={`py-2 px-1 bg-gradient-to-r ${mood.color} text-white text-center transition-all duration-300`}>
+                  <p className="font-semibold text-xs truncate">{mood.label}</p>
+                </div>
+              </div>
+              
+              {/* Description tooltip on hover/select */}
+              {(isHovered || isSelected) && (
+                <div className="absolute left-1/2 -translate-x-1/2 mt-1 z-20 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="bg-popover border border-border shadow-lg rounded-lg px-3 py-2 max-w-[180px]">
+                    <p className="text-xs text-muted-foreground leading-snug text-center">
                       {mood.description}
                     </p>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Right Arrow */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm shadow-lg rounded-full hover:bg-background"
-          onClick={() => scroll('right')}
-          data-testid="carousel-right-btn"
-        >
-          <ChevronRight size={24} />
-        </Button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       
       {/* Selected mood indicator */}
       {selectedMood && (
-        <div className="mt-4 text-center animate-in fade-in duration-300">
-          <p className="text-sm text-primary font-medium">
-            You selected: <span className="font-bold">{MOOD_IMAGES.find(m => m.id === selectedMood)?.label}</span>
-          </p>
+        <div className="mt-5 text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
+            <img 
+              src={MOOD_IMAGES.find(m => m.id === selectedMood)?.image} 
+              alt="" 
+              className="w-6 h-6 rounded-full"
+            />
+            <p className="text-sm text-primary font-medium">
+              You&apos;re feeling <span className="font-bold">{MOOD_IMAGES.find(m => m.id === selectedMood)?.label}</span>
+            </p>
+          </div>
         </div>
       )}
     </div>
