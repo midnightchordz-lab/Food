@@ -160,11 +160,24 @@ export const ShoppingCartProvider = ({ children }) => {
 
   // Add single ingredient to cart
   const addToCart = (ingredient, recipeName) => {
+    // Handle different ingredient formats
+    const ingredientItem = typeof ingredient === 'string' ? ingredient : ingredient?.item;
+    
+    if (!ingredientItem) {
+      console.warn('Invalid ingredient:', ingredient);
+      return;
+    }
+    
     // Extract clean ingredient name (remove quantities, measurements, prep instructions)
-    const cleanName = extractIngredientName(ingredient.item);
+    const cleanName = extractIngredientName(ingredientItem) || ingredientItem;
+    
+    if (!cleanName) {
+      console.warn('Could not extract ingredient name:', ingredient);
+      return;
+    }
     
     const existingIndex = cartItems.findIndex(
-      item => item.item.toLowerCase() === cleanName.toLowerCase()
+      item => item.item && cleanName && item.item.toLowerCase() === cleanName.toLowerCase()
     );
 
     if (existingIndex >= 0) {
@@ -180,7 +193,7 @@ export const ShoppingCartProvider = ({ children }) => {
       const newItem = {
         id: Date.now(),
         item: cleanName,
-        amount: ingredient.amount || '', // Keep original amount for reference
+        amount: (typeof ingredient === 'object' ? ingredient.amount : '') || '',
         category: categorizeIngredient(cleanName),
         recipes: [recipeName],
         checked: false,
