@@ -335,14 +335,26 @@ INGREDIENT_ALIASES = {
 }
 
 def get_ingredient_aliases(ingredient_name: str) -> List[str]:
-    """Get all aliases for an ingredient"""
-    name_lower = ingredient_name.lower().replace(' ', '_')
+    """Get all aliases for an ingredient, including reverse lookups"""
+    name_lower = ingredient_name.lower().strip()
+    
+    # Direct lookup
     aliases = INGREDIENT_ALIASES.get(name_lower, [])
+    aliases = INGREDIENT_ALIASES.get(name_lower.replace(' ', '_'), aliases)
+    
+    # Reverse lookup - check if this ingredient is in any alias list
     if not aliases:
-        # Also check without underscore
-        name_lower_space = ingredient_name.lower()
-        aliases = INGREDIENT_ALIASES.get(name_lower_space, [ingredient_name.lower()])
-    return aliases if aliases else [ingredient_name.lower()]
+        for key, alias_list in INGREDIENT_ALIASES.items():
+            if name_lower in [a.lower() for a in alias_list]:
+                # Found it! Return all aliases from this group
+                aliases = alias_list
+                break
+    
+    # If still nothing, return just the ingredient itself
+    if not aliases:
+        aliases = [name_lower]
+    
+    return aliases
 
 def recipe_contains_excluded_ingredient(recipe_ingredients: List[str], excluded_names: List[str]) -> bool:
     """Check if a recipe contains any excluded ingredients"""
