@@ -403,13 +403,16 @@ def get_all_excluded_terms(excluded_names: List[str]) -> set:
 
 def check_text_for_excluded_ingredients(text: str, excluded_terms: set) -> List[str]:
     """Check if any text contains excluded ingredients. Returns list of found violations."""
+    import re
     text_lower = text.lower()
     found_violations = []
     
     for term in excluded_terms:
-        # Check for whole word match or as part of ingredient phrase
-        # Handle terms that might appear in recipe names or ingredients
-        if term in text_lower:
+        # Use word boundary matching to avoid false positives
+        # This ensures "hen" doesn't match in "when", "then", "kitchen"
+        # But "chicken" still matches "chicken", "chickens", etc.
+        pattern = r'\b' + re.escape(term) + r'(?:s|es)?\b'
+        if re.search(pattern, text_lower):
             found_violations.append(term)
     
     return found_violations
