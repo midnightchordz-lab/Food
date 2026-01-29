@@ -15,12 +15,7 @@
   "frontend_issues": {
     "ui_bugs": [],
     "integration_issues": [],
-    "design_issues": [
-      {
-        "screen": "Import Recipe - Recently Imported",
-        "issues": ["Shows 'Imported Invalid Date' for some recipes - date formatting issue in frontend"]
-      }
-    ]
+    "design_issues": []
   },
 
   "passed_tests": [
