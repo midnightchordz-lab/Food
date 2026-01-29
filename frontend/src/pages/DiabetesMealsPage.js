@@ -360,7 +360,7 @@ const DiabetesMealsPage = () => {
   const fetchDiabetesRecipes = async (cuisineIds) => {
     setIsLoading(true);
     
-    const mood = MOODS.find(m => m.id === selectedMood);
+    const mood = MOOD_IMAGES.find(m => m.id === selectedMood);
     const diabetesType = DIABETES_TYPES.find(t => t.id === selectedDiabetesType);
     const mealType = MEAL_TYPES.find(m => m.id === selectedMealType);
     const dietaryPref = FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref);
