@@ -45,6 +45,9 @@ const AuthModal = ({ open, onClose }) => {
   // Auth method: 'email' or 'phone'
   const [authMethod, setAuthMethod] = useState('email');
   
+  // Registration step: 'credentials' | 'exclusions'
+  const [registrationStep, setRegistrationStep] = useState('credentials');
+  
   // Email auth state
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -62,25 +65,67 @@ const AuthModal = ({ open, onClose }) => {
   const [otpVerified, setOtpVerified] = useState(false);
   const [isNewPhoneUser, setIsNewPhoneUser] = useState(false);
   
+  // Exclusions state (for onboarding step)
+  const [pendingExclusions, setPendingExclusions] = useState([]);
+  
   const { register, login, loginWithToken } = useAuth();
 
-  // Email authentication
+  // Email authentication - Modified to handle exclusion step
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    let success;
+    
     if (isLogin) {
-      success = await login(email, password);
+      setLoading(true);
+      const success = await login(email, password);
+      setLoading(false);
+      if (success) {
+        onClose();
+        resetForm();
+      }
     } else {
-      success = await register(email, password, name, dietaryRestrictions, cuisinePreferences);
+      // For registration, move to exclusions step first
+      if (registrationStep === 'credentials') {
+        // Validate fields
+        if (!name.trim() || !email.trim() || !password.trim()) {
+          toast.error('Please fill in all required fields');
+          return;
+        }
+        setRegistrationStep('exclusions');
+      }
     }
-
+  };
+  
+  // Complete registration with exclusions
+  const completeRegistration = async (exclusions = []) => {
+    setLoading(true);
+    setPendingExclusions(exclusions);
+    
+    // First register the user
+    const success = await register(email, password, name, dietaryRestrictions, cuisinePreferences);
+    
+    if (success && exclusions.length > 0) {
+      // Save exclusions after registration
+      try {
+        await axios.post(`${API}/exclusions`, {
+          excluded_ingredients: exclusions
+        });
+        toast.success(`${exclusions.length} food exclusions saved!`);
+      } catch (error) {
+        console.error('Error saving exclusions:', error);
+        // Don't fail registration if exclusions fail to save
+      }
+    }
+    
     setLoading(false);
     if (success) {
       onClose();
       resetForm();
     }
+  };
+  
+  // Skip exclusions and complete registration
+  const skipExclusions = async () => {
+    await completeRegistration([]);
   };
 
   // Phone authentication - Send OTP
