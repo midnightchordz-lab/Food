@@ -407,8 +407,9 @@ const WeeklyPlannerPage = () => {
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {mealPreferences.dietary_preference?.charAt(0).toUpperCase() + mealPreferences.dietary_preference?.slice(1)} • 
-                      {mealPreferences.calorie_target ? ` ${mealPreferences.calorie_target} cal/day • ` : ' '}
-                      {mealPreferences.cuisine_preferences?.length > 0 ? mealPreferences.cuisine_preferences.join(', ') : 'All cuisines'}
+                      {mealPreferences.calorie_target ? ` ${mealPreferences.calorie_target} cal/day` : ''}
+                      {mealPreferences.macro_targets?.protein_g ? ` • ${mealPreferences.macro_targets.protein_g}g P / ${mealPreferences.macro_targets.carbs_g}g C / ${mealPreferences.macro_targets.fat_g}g F` : ''}
+                      {mealPreferences.cuisine_preferences?.length > 0 ? ` • ${mealPreferences.cuisine_preferences.join(', ')}` : ''}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {mealPreferences.generation_mode === 'auto' 
