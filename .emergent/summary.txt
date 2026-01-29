@@ -1,115 +1,121 @@
 <analysis>**original_problem_statement:**
-The user's vision is a comprehensive, mood-based recipe discovery application named MoodFood. The application should provide a highly personalized and professional user experience.
+The user's vision is a comprehensive, mood-based recipe discovery application named MoodFood. Initially, this involved features like recipe import, diabetes-focused meal planning, and UI enhancements.
 
-Latest CRITICAL REQUIREMENTS from the user:
-1.  **Import Recipe Feature:** A dedicated Import Recipe tab allowing users to import recipes from four sources: URL, Image, Video, and Text. The core requirement is that the AI must automatically convert these imported recipes into the app's standardized, highly-detailed format, including specific timings, temperatures, and techniques, making them usable by a complete beginner. A preview and edit step is required before saving.
-2.  **Diabetes-Focused Meal Planning:** A dedicated Diabetes Meals tab that follows a strict, research-first conversation flow. Before suggesting recipes, the AI *must* use a web search tool to research the user's specified diabetes type (Type 1, 2, Gestational) and communicate its findings. All subsequent recipe suggestions must align with these evidence-based guidelines.
-3.  **Intelligent Mood Change Detection:** The chat assistant must intelligently detect when a user's mood has changed mid-conversation and automatically adapt its recipe suggestions.
-4.  **UI/UX Enhancements:**
-    *   Create a How It Works modal on the landing page explaining the app's key features.
-    *   Generate and integrate new 3D-style emoji images for mood selection.
-    *   Redesign the mood selection interface into a 2-row grid for better visibility and a smoother user experience.
-5.  **Bug Fixes:**
-    *   Fix the issue where imported recipes are saved but not displayed correctly from the Saved Recipes page.
-    *   Fix the issue where ingredients added from a recipe modal do not appear in the shopping list.
+The current and most critical requirement is to implement a comprehensive, safety-first food allergy and ingredient exclusion system. This system must:
+1.  Ask users for allergies and exclusions during the sign-up process.
+2.  Allow users to manage their exclusions at any time from their profile.
+3.  Strictly filter **ALL** recipe suggestions across all modules (Chat, Diabetes Meals, Meal Planner) to ensure recipes with excluded ingredients are **NEVER** shown.
+4.  Robustly handle ingredient aliases (e.g., shrimp exclusion must also block prawn; chicken must block all poultry). User safety is the absolute top priority.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack React and FastAPI app with a MongoDB database. The core chat flow, diabetes meal planning, and intelligent mood detection are functional. The Import Recipe feature is now fully implemented across all four methods (URL, Image, Video, Text), including the complex AI-driven conversion of imported data into a standardized, detailed format. The UI has been significantly enhanced with a new How It Works modal and a visually appealing 2-row mood selection grid using custom 3D emoji images. Critical bugs related to saving/viewing imported recipes and adding items to the shopping list have been resolved.
+The application is a full-stack React and FastAPI app. Most of the original features are functional. The agent has implemented the foundational pieces of the food allergy and exclusion system:
+-   **Backend**: New MongoDB schema and API endpoints () to store and manage user exclusions have been created in . The recipe generation logic for both the Chat and Diabetes modules has been updated to inject a list of excluded ingredients and aliases into the AI prompt.
+-   **Frontend**: A new multi-step registration flow was created in  to include an  component. A  component was added to the . Banners indicating active exclusions have been added to the  and .
+-   Several bugs related to recipe title parsing in  were fixed.
 
 **Last working item**:
--   **Last item agent was working**: The user requested that the Diabetes Meals page be updated to use the new 2-row mood selection grid, consistent with the main chat page. The agent updated the  file to replace the old  component with the new  component and updated all associated logic to use the new  data structure.
--   **Status**: USER VERIFICATION PENDING
+-   **Last item agent was working**: The user reported a critical bug where the exclusion system was not strict enough, showing a Karahi Prawns recipe even though Shrimp was excluded. The agent's last action was to expand the  map in  and begin creating a function to generate more explicit equivalency statements for the AI prompt to make the filtering more robust.
+-   **Status**: IN PROGRESS
 -   **Agent Testing Done**: N
--   **Which testing method agent to use?**: screenshot tool. The agent should log in, navigate to the Diabetes Meals tab, and take a screenshot to confirm the new 2-row mood grid is displayed correctly at the mood selection step.
+-   **Which testing method agent to use?**: both. A backend test is needed to validate the filtering logic, and a frontend test is required to confirm that the unsafe recipes are not displayed to the user.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: Voice agent response is slow (Priority: P1)
--   **Issue 2**: Verify image display for previously saved recipes (Priority: P2)
+-   **Issue 1**: The food allergy and exclusion system is not strict enough and fails to filter out recipes containing aliases of excluded ingredients. (Priority: P0)
+-   **Issue 2**: Voice agent response is slow. (Priority: P1)
+-   **Issue 3**: Verify image display for previously saved recipes. (Priority: P2)
 
 **Issues Detail:**
--   **Issue 1: Voice agent response is slow**
-    -   **Attempted fixes**: None.
-    -   **Next debug checklist**: Time the round-trip latency to identify the bottleneck (STT, AI response, or TTS). Investigate using smaller, faster models for STT/TTS or stream responses.
-    -   **Why fix this issue and what will be achieved with the fix?**: A responsive voice agent is crucial for a good user experience, especially during hands-free cooking.
-    -   **Status**: NOT STARTED
+-   **Issue 1: The food allergy and exclusion system is not strict enough.**
+    -   **Attempted fixes**: The agent expanded the ingredient alias map in  and made the AI prompt more emphatic and strict. This was insufficient as the AI still failed to comply.
+    -   **Next debug checklist**:
+        1.  **Implement Backend Validation (CRITICAL):** In , add a post-processing validation step. After the AI returns recipe suggestions, iterate through the ingredients of each recipe and manually filter out any that contain an excluded term or one of its aliases. This adds a mandatory safety layer and does not rely on AI compliance.
+        2.  **Complete Prompt Enhancement**: Finish the work on the function that generates explicit equivalency statements (e.g., PRAWN IS THE SAME AS SHRIMP) and integrate it into the prompt-building logic in the chat and diabetes endpoints.
+        3.  **Test Rigorously**: Test with multiple overlapping exclusions (e.g., shrimp, chicken, beef) and verify that no recipes containing these ingredients or their many aliases (prawn, poultry, steak, etc.) are returned.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical user safety feature. A reliable fix will prevent users from being exposed to potential allergens.
+    -   **Status**: IN PROGRESS
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Blocked on other issue**: None
+
+-   **Issue 2: Voice agent response is slow**
+    -   **Attempted fixes**: The agent truncated the text sent to the TTS service in .
+    -   **Next debug checklist**: Systematically time the latency of each step in the voice flow (STT in  -> AI response -> TTS in ). Investigate implementing response streaming for TTS.
+    -   **Status**: IN PROGRESS
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: backend
     -   **Blocked on other issue**: None
 
--   **Issue 2: Verify image display for previously saved recipes**
-    -   **Attempted fixes**: The image service was fixed for new recipes, and a major bug with retrieving saved recipes was fixed. However, explicit verification that images for recipes saved *before* these fixes are displaying correctly has not been done.
-    -   **Next debug checklist**: Test the user flow: log in, navigate to the Saved Recipes page, and confirm that images for older recipes (if any exist for the test user) appear correctly. If none exist, this can be marked as resolved.
-    -   **Why fix this issue and what will be achieved with the fix?**: Ensures visual consistency and a complete user experience for long-term users.
+-   **Issue 3: Verify image display for previously saved recipes**
+    -   **Attempted fixes**: The agent tested with a new user and confirmed the page works, but could not verify this for existing recipes.
+    -   **Next debug checklist**: As a test user, save a recipe with an image. Log out and log back in. Navigate to the Saved Recipes page and confirm the image for the saved recipe is displayed correctly.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None
 
 **In progress Task List**:
-- None
+-   **Task 1: Complete the Food Allergy & Exclusion System**
+    -   **Where to resume**: . The immediate priority is to implement a backend post-processing validation filter on the AI's recipe output. Then, complete the enhancement of the AI prompt.
+    -   **What will be achieved with this?**: A robust, safety-critical feature that reliably filters all recipe suggestions based on user-defined exclusions.
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Blocked on something**: None
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **P1: Refactor :** This file is critically oversized. Break it down into modular FastAPI routers (e.g., , , , ) to improve maintainability.
-    -   **P1: Complete Phone Authentication:** Implement the Twilio SMS verification logic in . This will require requesting API keys from the user.
-    -   **P1: Persist Meal Plans & Subscriptions to DB:** Ensure user-generated meal plans and newsletter subscriptions are saved to and loaded from the database.
+    -   **P1: Refactor :** This monolithic file is now extremely large and complex due to the addition of exclusion logic. It urgently needs to be broken down into modular FastAPI routers (, , ).
+    -   **P1: Complete Phone Authentication:** Implement the Twilio SMS verification logic.
+    -   **P1: Persist Meal Plans & Subscriptions to DB:** Ensure user-generated meal plans and newsletter subscriptions are saved to the database.
     -   **P1: Implement Macro Tracking:** Add Protein, Carb, and Fat goal inputs to the meal planner.
-
 -   **Future Tasks:**
     -   **P2:** Implement Shopping Partner Integration (e.g., Instacart, Amazon Fresh).
     -   **P2:** Add a recipe rating and review system.
     -   **P2:** Implement recipe search/filter functionality.
     -   **P2:** Add a Glucose Logging feature for the Diabetes tab.
-    -   **P2:** Add mini-recipes for suggested drinks.
 
 **Completed work in this session**
--   **Major Feature - Import Recipe (DONE):**
-    -   Implemented backend logic for all four import methods (URL, Text, Image, Video) in .
-    -   Used OpenAI Vision for image import and oEmbed API for reliable YouTube video title extraction.
-    -   Implemented robust AI prompts to convert unstructured data into the app's standard, detailed recipe format.
-    -   Enhanced the  frontend to support all import types, including video file uploads and a preview/edit modal.
--   **UI/UX - Mood Selector Revamp (DONE):**
-    -   Generated 12 new 3D-style emoji images for different moods.
-    -   Created a new  component.
-    -   Replaced the old button-based mood selector with a responsive 2-row grid on both the  and , improving usability.
--   **UI/UX - How It Works Modal (DONE):**
-    -   Implemented a comprehensive modal on  that explains all key features of the app (Mood Discovery, Diabetes Meals, Recipe Import, etc.).
--   **Bug Fix - Saved Recipe Display (FIXED):**
-    -   Corrected the  backend endpoint in  to search both the  and  collections, ensuring imported recipes display correctly when opened from the Saved Recipes page.
--   **Bug Fix - Shopping List (FIXED):**
-    -   Resolved an issue where ingredients were not being added to the shopping list from recipe modals.
-    -   Refactored  and  to consistently use the frontend  (which uses ) instead of a separate, out-of-sync backend API call. This unified the logic and fixed the bug.
--   **Code Quality:**
-    -   Fixed multiple linting errors in both Python () and JavaScript (, ).
-    -   Resolved naming conflicts for Pydantic models in .
+-   **Major Feature - Food Allergy & Exclusion System (V1 Implemented):**
+    -   Created backend models and API endpoints for managing exclusions.
+    -   Integrated an exclusion selection step into the user registration flow.
+    -   Added a profile section for users to manage their exclusions.
+    -   Added banners to the Chat and Diabetes pages to display active exclusions.
+-   **UI Redesign - Import Recipe Page:**
+    -   Redesigned the page with a professional gradient background, improved card styling, and better visual hierarchy.
+-   **Bug Fix - Incorrect Recipe Title Display:**
+    -   Fixed an issue where recipe cards incorrectly displayed titles like Blood Sugar Tips: by improving the frontend parsing logic in .
+-   **Bug Fix - Broken Recipe Card Formatting:**
+    -   Fixed a bug where recipes were displayed as raw markdown by updating the parsing regex in  to handle both  and  headers.
+-   **Verification - Diabetes Page UI:**
+    -   Confirmed the  correctly uses the new  component after fixing a reference error.
 
 **Earlier issues found/mentioned but not fixed**
-- The two issues from the initial handoff (slow voice agent, saved recipe image verification) are still pending.
+-   The two pending issues (slow voice agent, saved recipe image verification) are still outstanding.
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: Generic recipe instructions.
+-   **Issue recurrence in previous fork**: The failure of the exclusion system to filter out aliases (shrimp/prawn) is a new, critical recurring issue that has happened multiple times within this session.
 -   **Recurrence count**: 2+
--   **Status**: RESOLVED. The agent has consistently adhered to the user's requirement for highly-detailed, specific recipe instructions.
+-   **Status**: IN PROGRESS
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Frontend**: React, React Hooks, Context API, Tailwind CSS, Shadcn UI
--   **Backend**: FastAPI, Pydantic, LiteLLM
--   **Database**: MongoDB
--   **AI Integration**: Multi-step AI chains, OpenAI Vision for image analysis, web scraping and oEmbed API for URL/video data extraction.
--   **Dependencies**: , 
+-   **Frontend**: React, Multi-step forms, Conditional Rendering, Context API.
+-   **Backend**: FastAPI, Pydantic, MongoDB, Advanced AI prompt engineering.
+-   **Safety-Critical Logic**: The core of the current work is building a system where user safety (allergies) is paramount, requiring multiple layers of filtering (prompt engineering + mandatory backend validation).
 
 **key DB schema**
-- ****: New collection created to store recipes from the import feature. Contains all standard recipe fields plus import metadata (, , ).
-- ****: This collection was updated. It stores a reference  which can now point to a document in either  or .
+-   ****: A new collection to store user-specific dietary exclusions.
+    -   : String (links to  collection)
+    -   : [String] (e.g., )
+    -   : [{ : String, : String }]
+    -   : { : Boolean, : Boolean, ... }
 
 **changes in tech stack**
-- Added  for attempting to get video captions, though fallback methods (oEmbed) proved more reliable due to IP blocking.
+-   None.
 
 **All files of reference**
 -   
@@ -120,68 +126,59 @@ The application is a full-stack React and FastAPI app with a MongoDB database. T
 -   
 -   
 -   
--   
--   
 
 **Areas that need refactoring**:
--   ****: This file is now critically oversized and complex. It urgently needs to be broken down into separate FastAPI routers (e.g., , , ). This should be a P1 priority.
--   ****: This page contains its own recipe modal logic. It should be refactored to use the shared  component to reduce code duplication and ensure consistent functionality (like the add to cart feature).
+-   ****: This file's complexity is now a major liability. It urgently needs to be refactored into smaller, domain-specific routers (e.g., , , ).
+-   ****: This component's parsing logic has required multiple bug fixes, indicating it is fragile. The various parsing functions should be consolidated into a single, more robust utility to avoid future regressions.
 
 **key api endpoints**
 -   **New Endpoints:**
     -   
     -   
-    -   
-    -   
-    -   
 -   **Updated Endpoints:**
-    -   : Now aggregates recipes from both  and  collections.
-    -   : This endpoint is now being phased out in favor of client-side context management for the shopping list, but remains in the code.
+    -   : Now saves initial exclusions.
+    -   : Logic updated to fetch exclusions and build a strict AI prompt.
+    -   : Logic updated to fetch exclusions and build a strict AI prompt.
 
 **Critical Info for New Agent**
--   Your first action should be to verify the last change: ensure the Diabetes Meals page correctly displays the new 2-row mood selection grid.
--   The highest priority technical debt is the monolithic  file. Propose its refactoring into smaller, manageable routers as your next major task.
--   After addressing the  refactor, proceed with the P1 functional tasks: Phone Authentication, Persisting Meal Plans, and Macro Tracking.
--   The shopping list functionality now relies entirely on the frontend  and . Backend endpoints for the shopping list are effectively deprecated and should not be used for adding items.
+-   **USER SAFETY IS THE #1 PRIORITY.** Your first and most critical task is to fix the exclusion system. Do not rely on the AI's compliance. You **MUST** implement a **backend post-processing validation filter** in . This filter should run after the AI generates recipe suggestions and manually remove any recipes that contain excluded ingredients or their aliases before the data is sent to the frontend. This is a non-negotiable safety net.
+-   Once the backend validation is in place, you can proceed with enhancing the AI prompt as a secondary measure.
+-   The user is attentive and will spot failures in the exclusion logic. Test your fixes thoroughly by excluding multiple ingredients and their known aliases.
+-   The  file is extremely large. Propose refactoring it after the critical exclusion bug is verifiably fixed.
 
 **documents and test reports created in this job**
--    (updated)
--   
--   
+-    (updated with the Food Allergy system requirements)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request:** Apply the 2-row mood grid to the Diabetes page. (IN PROGRESS)
-2.  **Bug Report:** Ingredients are not being added to the shopping list tab. (RESOLVED)
-3.  **Request:** Change the mood selector to a 2-row grid to make movement smoother. (RESOLVED)
-4.  **Request:**  - Generate more mood images, integrate them, and create a carousel. (RESOLVED)
-5.  **Request:** Create 3D emoji images for mood selection based on a provided style. (RESOLVED)
-6.  **Request:** Fix the How It Works button to show a modal with key features, not redirect. (RESOLVED)
-7.  **Bug Report:** Saved recipes are not displaying the correct content when opened. (RESOLVED)
-8.  **Bug Report:** The video import always returns the same Classic Beef Stew recipe, regardless of the URL. It's not analyzing the video. (RESOLVED)
-9.  **Bug Report:** Same issue with image import (not being handled correctly). (RESOLVED)
-10. **Bug Report:** The recipe preview is empty after importing from a video URL. (RESOLVED)
+1.  **Instruction:** Make the exclusion control very strict for ALL exclusion products, not just shrimp. (IN PROGRESS)
+2.  **Bug Report:** Exclusion system still failing, suggesting Karahi Prawns for a Shrimp exclusion. (IN PROGRESS)
+3.  **Bug Report:** Recipe card format has changed to raw markdown. (RESOLVED)
+4.  **Bug Report:** Recipe title is still incorrect after a previous fix. (RESOLVED)
+5.  **Bug Report:** Recipe card title is wrong (Blood Sugar Tips:). (RESOLVED)
+6.  **Bug Report:** Prawns Biryani shows up in search results when Shrimp is excluded. (IN PROGRESS)
+7.  **Feature Request:** Implement a comprehensive food allergy & exclusion system. (IN PROGRESS)
+8.  **Request:** Redesign the Import Recipe page to look more professional. (RESOLVED)
+9.  **User Message:** complete Immediate Action Items. (RESOLVED)
+10. **User Message:** Initial approval to proceed with the agent's plan. (RESOLVED)
 
 **Project Health Check:**
--   **Broken**: None. All reported bugs from this session have been fixed.
--   **Mocked**:
-    -   Phone authentication remains UI-only.
-    -   The Subscribe button for the newsletter is UI-only.
+-   **Broken**: The core recipe suggestion feature is critically broken from a user safety perspective, as the exclusion filter is unreliable.
+-   **Mocked**: Phone authentication, Newsletter subscription.
 
 **3rd Party Integrations**
 -   **OpenAI GPT-4o / gpt-4o-mini** (Text Generation, Recipe Conversion) — uses Emergent LLM Key
 -   **OpenAI Vision Model** (For Image Import) — uses Emergent LLM Key
 -   **Web Search Tool** (For Diabetes Research) — platform-provided
--   **Twilio** (SMS for Phone Auth) — requires User API Key. (Not yet implemented)
--   **youtube-transcript-api**: Installed for video analysis.
+-   **Twilio** (SMS for Phone Auth) — Not yet implemented.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES (For initial implementation of the Import Recipe feature).
+-   **Testing agent used after significant changes**: NO
 -   **Troubleshoot agent used after agent stuck in loop**: NO
--   **Test files created**: []
--   **Known regressions**: None.
+-   **Test files created**: None in this session.
+-   **Known regressions**: The exclusion system's failure to filter aliases is a major regression.
 
 **Credentials to test flow:**
-Use the registration form on the website to create a new user for testing. Phone authentication is not functional yet.
+Use the registration form on the website to create a new user for testing.
 
 **What agent forgot to execute**
-- The agent did not perform a final visual verification (screenshot) after applying the new mood grid to the . This should be the first action for the next agent.</analysis>
+-   The agent has repeatedly tried to fix the exclusion bug by only enhancing the AI prompt. They have forgotten to implement a crucial backend validation step to manually filter the AI's output. This is a critical architectural oversight for a safety-focused feature.</analysis>
