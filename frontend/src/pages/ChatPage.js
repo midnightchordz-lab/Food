@@ -142,7 +142,7 @@ const ChatPage = () => {
     };
     
     // AI response asking for meal type
-    const mood = MOODS.find(m => m.id === moodId);
+    const mood = MOOD_IMAGES.find(m => m.id === moodId);
     const aiMsg = {
       role: 'assistant',
       content: `${mood?.emoji} ${moodLabel}! ${moodDescription}\n\nPerfect! Let's find some delicious meals to match that mood.\n\nWhat meal are you planning?`,
