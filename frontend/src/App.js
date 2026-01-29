@@ -11,6 +11,7 @@ import ProfilePage from "@/pages/ProfilePage";
 import ExploreCuisinesPage from "@/pages/ExploreCuisinesPage";
 import CuisineRecipesPage from "@/pages/CuisineRecipesPage";
 import DiscoverRecipesPage from "@/pages/DiscoverRecipesPage";
+import DiabetesMealsPage from "@/pages/DiabetesMealsPage";
 import Navigation from "@/components/Navigation";
 import ShoppingCartModal from "@/components/ShoppingCartModal";
 import "@/App.css";
