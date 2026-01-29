@@ -16,6 +16,11 @@ const GROCERY_CATEGORIES = {
 
 // Categorize an ingredient
 const categorizeIngredient = (ingredient) => {
+  // Handle undefined, null, or non-string values
+  if (!ingredient || typeof ingredient !== 'string') {
+    return 'other';
+  }
+  
   const lower = ingredient.toLowerCase();
   
   for (const [category, keywords] of Object.entries(GROCERY_CATEGORIES)) {
