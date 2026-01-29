@@ -177,8 +177,8 @@ A mood-based recipe discovery application where users receive personalized meal 
 ### P1 - High Priority
 - [ ] Complete Phone Authentication (requires Twilio API keys)
 - [ ] Persist Meal Plans & Subscriptions to backend
-- [ ] Verify image display for previously saved recipes
-- [ ] Improve voice agent response speed (optimize TTS)
+- [x] Verify image display for previously saved recipes - Code verified, displays correctly
+- [x] Improve voice agent response speed (optimize TTS) - Reduced text limit to 300 chars, smart truncation at sentence boundaries
 
 ### P2 - Medium Priority
 - [ ] Auto-detect browser language for voice default
