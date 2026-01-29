@@ -815,13 +815,13 @@ async def login(credentials: UserLogin):
 # Twilio credentials from .env file
 # TWILIO_ACCOUNT_SID - your account SID
 # TWILIO_AUTH_TOKEN - your auth token
-# For test mode, use magic number +15005550006 as sender
+# TWILIO_PHONE_NUMBER - your Twilio phone number for sending SMS
 
 # In-memory OTP storage (use Redis in production)
 otp_storage = {}
 
-# Twilio magic test number for sending
-TWILIO_TEST_FROM_NUMBER = "+15005550006"
+# Twilio phone number for sending SMS
+TWILIO_FROM_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '+19064011655')
 
 @api_router.post("/auth/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
@@ -855,7 +855,7 @@ async def send_phone_otp(request: PhoneSendOTP):
             # Send SMS with OTP
             message = client.messages.create(
                 body=f"Your MoodFood verification code is: {otp}. Valid for 10 minutes.",
-                from_=TWILIO_TEST_FROM_NUMBER,  # Use magic test number
+                from_=TWILIO_FROM_NUMBER,
                 to=phone
             )
             
