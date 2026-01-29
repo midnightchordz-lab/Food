@@ -908,13 +908,9 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
             raise HTTPException(status_code=400, detail="OTP expired. Please request a new code.")
     else:
         raise HTTPException(status_code=400, detail="No OTP found for this number. Please request a code first.")
-                    stored["attempts"] += 1
-                    if stored["attempts"] >= 3:
-                        del otp_storage[phone]
-                        raise HTTPException(status_code=400, detail="Too many failed attempts. Request new OTP.")
     
     if not is_valid:
-        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        raise HTTPException(status_code=400, detail="Invalid verification code")
     
     # Check if user exists
     existing_user = await db.users.find_one({"phone_number": phone}, {"_id": 0, "hashed_password": 0})
