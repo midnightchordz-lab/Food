@@ -1800,7 +1800,7 @@ async def get_supported_languages():
 
 # Recipe discovery endpoint - curated recipes organized by cuisine
 @api_router.post("/recipes/discover")
-async def discover_recipes(request: RecipeSearchRequest, current_user: User = Depends(get_current_user)):
+async def discover_recipes(request: DiscoverRecipeRequest, current_user: User = Depends(get_current_user)):
     """
     Discover curated recipes organized by cuisine.
     Returns authentic recipes with images, descriptions, cooking times, and difficulty levels.
