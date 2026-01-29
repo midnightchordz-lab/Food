@@ -243,6 +243,11 @@ async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User 
         
         user_exclusions = await get_user_excluded_ingredients(current_user.id)
         
+        # Convert MacroTargets model to dict if present
+        macro_dict = None
+        if request.macro_targets:
+            macro_dict = request.macro_targets.model_dump() if hasattr(request.macro_targets, 'model_dump') else dict(request.macro_targets)
+        
         meals = await generate_ai_meal_plan(
             current_user,
             request.mood,
@@ -250,7 +255,8 @@ async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User 
             request.calorie_target,
             request.focus_areas,
             request.cuisine_preferences,
-            user_exclusions=user_exclusions
+            user_exclusions=user_exclusions,
+            macro_targets=macro_dict
         )
         
         today = datetime.now(timezone.utc)
