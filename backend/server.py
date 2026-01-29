@@ -2936,6 +2936,185 @@ IMPORTANT FOOD RESTRICTIONS: The user has allergies/exclusions to: {exclusion_li
 
 
 # ============================================
+# DIABETES WEEKLY MEAL PLANNER ENDPOINTS
+# ============================================
+
+class DiabetesMealPlanRequest(BaseModel):
+    diabetes_type: str = "type2"
+    dietary_preference: str = "non-vegetarian"
+    cuisine_preferences: Optional[List[str]] = None
+    calorie_target: Optional[int] = None
+
+class DiabetesMealPlanWeekRequest(BaseModel):
+    week_offset: int = 0
+
+@api_router.post("/diabetes/weekly-plan/generate")
+async def generate_diabetes_weekly_plan(request: DiabetesMealPlanRequest, current_user: User = Depends(get_current_user)):
+    """Generate a diabetes-optimized weekly meal plan with exclusion filtering"""
+    try:
+        # Get user's excluded ingredients
+        user_exclusions = await get_user_excluded_ingredients(current_user.id)
+        
+        # Generate the meal plan
+        meals = await generate_diabetes_weekly_meal_plan(
+            current_user,
+            diabetes_type=request.diabetes_type,
+            dietary_preference=request.dietary_preference,
+            cuisine_preferences=request.cuisine_preferences,
+            user_exclusions=user_exclusions,
+            calorie_target=request.calorie_target
+        )
+        
+        # Save the generated plan
+        today = datetime.now(timezone.utc)
+        week_start = today - timedelta(days=today.weekday())
+        week_start_str = week_start.strftime('%Y-%m-%d')
+        
+        plan_data = {
+            "user_id": current_user.id,
+            "week_start": week_start_str,
+            "meals": meals,
+            "diabetes_type": request.diabetes_type,
+            "dietary_preference": request.dietary_preference,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "is_diabetes_plan": True
+        }
+        
+        # Upsert - update if exists, insert if not
+        await db.diabetes_weekly_plans.update_one(
+            {"user_id": current_user.id, "week_start": week_start_str},
+            {"$set": plan_data},
+            upsert=True
+        )
+        
+        return {
+            "plan": plan_data,
+            "message": "Diabetes meal plan generated successfully!",
+            "exclusions_applied": user_exclusions
+        }
+    except Exception as e:
+        logging.error(f"Error generating diabetes meal plan: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/diabetes/weekly-plan")
+async def get_diabetes_weekly_plans(current_user: User = Depends(get_current_user)):
+    """Get all diabetes weekly meal plans for the user"""
+    try:
+        plans = await db.diabetes_weekly_plans.find(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        ).sort("week_start", -1).to_list(length=52)  # Last year of plans
+        
+        return {"plans": plans}
+    except Exception as e:
+        logging.error(f"Error fetching diabetes weekly plans: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/diabetes/weekly-plan/generate-for-week")
+async def generate_diabetes_plan_for_week(request: DiabetesMealPlanWeekRequest, current_user: User = Depends(get_current_user)):
+    """Generate diabetes meal plan for a specific week offset"""
+    try:
+        # Get user's excluded ingredients
+        user_exclusions = await get_user_excluded_ingredients(current_user.id)
+        
+        # Get user's diabetes preferences
+        prefs = await db.diabetes_meal_preferences.find_one(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        )
+        
+        if not prefs:
+            raise HTTPException(status_code=400, detail="Please set your diabetes meal preferences first")
+        
+        # Calculate target week
+        today = datetime.now(timezone.utc)
+        current_week_start = today - timedelta(days=today.weekday())
+        target_week_start = current_week_start + timedelta(weeks=request.week_offset)
+        target_week_str = target_week_start.strftime('%Y-%m-%d')
+        
+        # Check if plan exists
+        existing = await db.diabetes_weekly_plans.find_one(
+            {"user_id": current_user.id, "week_start": target_week_str},
+            {"_id": 0}
+        )
+        
+        if existing:
+            return {"message": "Plan already exists", "plan": existing, "already_exists": True}
+        
+        # Generate new plan
+        meals = await generate_diabetes_weekly_meal_plan(
+            current_user,
+            diabetes_type=prefs.get('diabetes_type', 'type2'),
+            dietary_preference=prefs.get('dietary_preference', 'non-vegetarian'),
+            cuisine_preferences=prefs.get('cuisine_preferences', []),
+            user_exclusions=user_exclusions,
+            calorie_target=prefs.get('calorie_target')
+        )
+        
+        plan_data = {
+            "user_id": current_user.id,
+            "week_start": target_week_str,
+            "meals": meals,
+            "diabetes_type": prefs.get('diabetes_type', 'type2'),
+            "dietary_preference": prefs.get('dietary_preference', 'non-vegetarian'),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "is_diabetes_plan": True
+        }
+        
+        await db.diabetes_weekly_plans.insert_one(plan_data)
+        plan_data.pop('_id', None)
+        
+        return {"message": f"Diabetes meal plan for week of {target_week_str} generated!", "plan": plan_data, "already_exists": False}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error generating diabetes plan for week: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/diabetes/meal-preferences")
+async def save_diabetes_meal_preferences(request: DiabetesMealPlanRequest, current_user: User = Depends(get_current_user)):
+    """Save user's diabetes meal planning preferences"""
+    try:
+        prefs_data = {
+            "user_id": current_user.id,
+            "diabetes_type": request.diabetes_type,
+            "dietary_preference": request.dietary_preference,
+            "cuisine_preferences": request.cuisine_preferences or [],
+            "calorie_target": request.calorie_target,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.diabetes_meal_preferences.update_one(
+            {"user_id": current_user.id},
+            {"$set": prefs_data},
+            upsert=True
+        )
+        
+        return {"message": "Diabetes meal preferences saved!", "preferences": prefs_data}
+    except Exception as e:
+        logging.error(f"Error saving diabetes meal preferences: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/diabetes/meal-preferences")
+async def get_diabetes_meal_preferences(current_user: User = Depends(get_current_user)):
+    """Get user's diabetes meal planning preferences"""
+    try:
+        prefs = await db.diabetes_meal_preferences.find_one(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        )
+        
+        return {"preferences": prefs}
+    except Exception as e:
+        logging.error(f"Error fetching diabetes meal preferences: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
 # IMPORT RECIPE ENDPOINTS
 # ============================================
 
