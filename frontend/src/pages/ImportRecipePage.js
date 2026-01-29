@@ -216,13 +216,28 @@ const ImportRecipePage = () => {
     if (!videoUrl.trim()) return;
     
     setIsLoading(true);
-    setLoadingMessage('Analyzing video for recipe...');
+    setLoadingMessage('Fetching video information...');
+    
+    // Progress simulation for better UX
+    const progressMessages = [
+      'Fetching video information...',
+      'Reading video description...',
+      'Creating recipe from content...',
+      'Adding ingredients and steps...',
+      'Almost done...'
+    ];
+    let msgIndex = 0;
+    const progressInterval = setInterval(() => {
+      msgIndex = Math.min(msgIndex + 1, progressMessages.length - 1);
+      setLoadingMessage(progressMessages[msgIndex]);
+    }, 4000);
     
     try {
       const response = await axios.post(`${API}/import/video`, {
         video_url: videoUrl.trim()
       });
       
+      clearInterval(progressInterval);
       const recipe = response.data.recipe;
       
       // Check if the response contains an error
@@ -241,6 +256,7 @@ const ImportRecipePage = () => {
       setLoadingMessage('');
       toast.success('Recipe extracted from video!');
     } catch (error) {
+      clearInterval(progressInterval);
       console.error('Error importing from video:', error);
       toast.error(error.response?.data?.detail || 'Failed to import recipe from video');
     } finally {
