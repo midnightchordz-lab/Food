@@ -242,6 +242,123 @@ const LandingPage = () => {
       </div>
       
       <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      
+      {/* How It Works Modal */}
+      <Dialog open={showHowItWorks} onOpenChange={setShowHowItWorks}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <div className="sticky top-0 z-10 bg-gradient-to-r from-primary to-accent p-6 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-3xl font-serif text-white flex items-center gap-3">
+                <Sparkles size={32} />
+                Discover MoodFood
+              </DialogTitle>
+              <p className="text-white/90 mt-2">
+                Your AI-powered kitchen companion that understands how you feel
+              </p>
+            </DialogHeader>
+          </div>
+          
+          <div className="p-6 space-y-8">
+            {/* Key Features Grid */}
+            <div>
+              <h3 className="text-xl font-serif mb-4 flex items-center gap-2">
+                <Star className="text-accent" size={24} />
+                Key Features
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {keyFeatures.map((feature, idx) => (
+                  <div 
+                    key={idx} 
+                    className="bg-card border border-border/40 rounded-xl p-4 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 ${feature.bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                        <feature.icon className={feature.color} size={20} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold mb-1">{feature.title}</h4>
+                        <p className="text-sm text-muted-foreground mb-2">{feature.description}</p>
+                        <span className={`inline-block px-2 py-1 ${feature.bgColor} ${feature.color} rounded-full text-xs font-medium`}>
+                          {feature.highlight}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Import Recipe Highlight */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-2xl p-6 border border-green-200/50 dark:border-green-800/50">
+              <h3 className="text-xl font-serif mb-4 flex items-center gap-2">
+                <Import className="text-green-600" size={24} />
+                Import Recipes from Anywhere
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                {importMethods.map((method, idx) => (
+                  <div key={idx} className="bg-white/80 dark:bg-background/80 rounded-xl p-3 text-center">
+                    <method.icon className="mx-auto mb-2 text-green-600" size={24} />
+                    <p className="font-medium text-sm">{method.label}</p>
+                    <p className="text-xs text-muted-foreground">{method.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-green-800 dark:text-green-200 bg-green-100/50 dark:bg-green-900/30 rounded-lg p-3">
+                <strong>AI Magic:</strong> Any recipe you import is automatically converted into our detailed, beginner-friendly format with exact timings, temperatures, and visual cues!
+              </p>
+            </div>
+            
+            {/* Recipe Quality */}
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 rounded-2xl p-6 border border-orange-200/50 dark:border-orange-800/50">
+              <h3 className="text-xl font-serif mb-4 flex items-center gap-2">
+                <Utensils className="text-orange-600" size={24} />
+                Restaurant-Quality Recipes
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Every recipe includes detailed instructions that even complete beginners can follow:
+              </p>
+              <div className="grid md:grid-cols-2 gap-2">
+                {recipeFeatures.map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <Check className="text-orange-600 flex-shrink-0" size={16} />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Drink Pairings */}
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-2xl p-6 border border-purple-200/50 dark:border-purple-800/50">
+              <h3 className="text-xl font-serif mb-3 flex items-center gap-2">
+                <Wine className="text-purple-600" size={24} />
+                Perfect Drink Pairings
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Every recipe includes <strong>cuisine-specific</strong> drink suggestions - both alcoholic and non-alcoholic options. 
+                Italian pasta? Get Chianti recommendations. Thai curry? Discover the perfect lemongrass cooler.
+              </p>
+            </div>
+            
+            {/* CTA */}
+            <div className="text-center pt-4">
+              <Button
+                size="lg"
+                className="rounded-full px-10 py-6 text-lg bg-primary hover:bg-primary/90"
+                onClick={() => {
+                  setShowHowItWorks(false);
+                  handleStartCooking();
+                }}
+              >
+                <ChefHat className="mr-2" size={24} />
+                Start Your Culinary Journey
+              </Button>
+              <p className="text-sm text-muted-foreground mt-3">
+                Free to use • No credit card required
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
