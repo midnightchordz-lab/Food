@@ -85,6 +85,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear all user-specific chat data from localStorage
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('moodfood_chat_state_') || 
+        key.startsWith('moodfood_diabetes_chat_state_')
+      )) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // Clear auth data
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
