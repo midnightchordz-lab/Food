@@ -2749,47 +2749,6 @@ Output ONLY the JSON object."""
     except Exception as e:
         logging.error(f"Error importing from video: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-        
-        # Create a more directive prompt
-        prompt = f"""Generate a complete, detailed recipe based on this cooking video.
-
-{video_info}
-
-IMPORTANT INSTRUCTIONS:
-1. Look at the video title and extract the dish name or cooking topic
-2. Create a professional-grade recipe for that dish
-3. If the title doesn't clearly indicate a dish (e.g., "Cooking Tutorial"), create a classic recipe like "Classic Beef Stew" or "Homemade Pasta"
-4. Include ALL required fields: name, description, cuisine, difficulty, prepTime, cookTime, totalTime, servings, ingredients, instructions, chefTips, nutritionPerServing, storage, drinkPairings, variations
-5. Each instruction step must have: stepNumber, instruction (detailed), time, visualCue, technique
-
-Output ONLY the JSON object, no markdown code blocks."""
-
-        response = await chat.send_message(UserMessage(text=prompt))
-        
-        # Parse JSON from response
-        try:
-            json_match = response
-            if "```json" in response:
-                json_match = response.split("```json")[1].split("```")[0]
-            elif "```" in response:
-                json_match = response.split("```")[1].split("```")[0]
-            
-            recipe = json.loads(json_match.strip())
-            recipe['importMethod'] = 'video'
-            recipe['originalSource'] = request.video_url
-            recipe['importDate'] = datetime.now(timezone.utc).isoformat()
-            
-            return {"recipe": recipe, "source": request.video_url}
-            
-        except json.JSONDecodeError as e:
-            logging.error(f"Failed to parse AI response: {e}")
-            raise HTTPException(status_code=500, detail="Failed to parse recipe from video")
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error importing from video: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @api_router.post("/import/text")
