@@ -2240,7 +2240,6 @@ async def diabetes_chat(request: DiabetesChatRequest, current_user: User = Depen
     """Handle free-form chat in diabetes meals section"""
     try:
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
-        chat = LlmChat(api_key=llm_api_key, model="gpt-4o-mini")
         
         context = request.context or {}
         diabetes_type = context.get("diabetesType", "type2")
@@ -2255,10 +2254,14 @@ Answer their questions helpfully while keeping diabetes management in mind. Be e
 If they ask for recipe modifications, ensure your suggestions maintain blood sugar safety.
 Always remind them to consult their healthcare provider for personalized medical advice."""
         
-        response = await chat.send_message(
-            UserMessage(text=request.message),
-            system=system_msg
+        chat = LlmChat(
+            api_key=llm_api_key,
+            session_id=f"diabetes-chat-{request.session_id}-{uuid.uuid4().hex[:8]}",
+            system_message=system_msg
         )
+        chat.with_model("openai", "gpt-4o-mini")
+        
+        response = await chat.send_message(UserMessage(text=request.message))
         
         # Save to chat history
         await db.diabetes_chat_messages.insert_one({
