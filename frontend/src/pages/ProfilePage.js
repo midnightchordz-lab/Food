@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { User, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ManageExclusions from '@/components/ManageExclusions';
 
 const DIETARY_OPTIONS = [
   'Non-Vegetarian',
