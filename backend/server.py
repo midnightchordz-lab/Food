@@ -2504,38 +2504,65 @@ async def import_from_image(request: ImportImageRequest, current_user: User = De
         
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
-        # First, use vision to extract text from the image
+        # Use vision to extract AND convert recipe from the image in one step
         vision_chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"import-vision-{uuid.uuid4().hex[:8]}",
-            system_message="You are an expert at reading recipes from images. Extract ALL text from the recipe image, including title, ingredients, instructions, and any notes. Be thorough and accurate."
+            system_message=f"""{IMPORT_RECIPE_PROMPT}
+
+SOURCE CONTEXT: The recipe is being extracted from an image (photo of a recipe card, cookbook page, handwritten recipe, or even a photo of a finished dish).
+
+IMPORTANT INSTRUCTIONS:
+1. If the image shows a recipe card or text, extract and convert it to the standardized format
+2. If the image shows a finished dish but no recipe text, identify the dish and create a professional recipe for it
+3. If the image is unclear, use your best judgment to identify any food shown and create a recipe
+4. ALWAYS output a valid recipe JSON - never return an error
+5. Be creative but practical - assume the user wants to recreate what they see
+
+Output ONLY valid JSON, no other text or markdown code blocks."""
         )
         vision_chat.with_model("openai", "gpt-4o")
         
         # Create image content
         image_content = ImageContent(image_base64=request.image_data)
         
-        # Extract text from image
-        extraction_prompt = """Please extract the complete recipe from this image. Include:
-1. Recipe name/title
-2. All ingredients with quantities
-3. All cooking instructions/steps
-4. Any chef's notes or tips
-5. Cooking times if visible
-6. Serving size if visible
+        # Extract and convert recipe from image
+        extraction_prompt = """Analyze this image and create a complete, detailed recipe.
 
-Be thorough - capture every detail you can see."""
+If this is a recipe card/text image: Extract all information and convert to the standardized JSON format.
+If this is a photo of food: Identify the dish and create a professional recipe for it.
 
-        extracted_text = await vision_chat.send_message(
+Include ALL required fields: name, description, cuisine, difficulty, prepTime, cookTime, totalTime, servings, ingredients (with category and notes), instructions (with stepNumber, instruction, time, visualCue, technique), chefTips, nutritionPerServing, storage, drinkPairings, variations.
+
+Output ONLY the JSON object, no markdown or explanation."""
+
+        response = await vision_chat.send_message(
             UserMessage(text=extraction_prompt, file_contents=[image_content])
         )
         
-        logging.info(f"Extracted text from image: {extracted_text[:200]}...")
+        logging.info(f"Vision response: {response[:300]}...")
         
-        # Now convert the extracted text to standard format
-        recipe = await convert_to_standard_recipe(extracted_text, "image", f"Image: {request.filename}")
-        
-        return {"recipe": recipe, "source": f"Image: {request.filename}"}
+        # Parse JSON from response
+        try:
+            json_match = response
+            if "```json" in response:
+                json_match = response.split("```json")[1].split("```")[0]
+            elif "```" in response:
+                json_match = response.split("```")[1].split("```")[0]
+            
+            recipe = json.loads(json_match.strip())
+            
+            # Add metadata
+            recipe['importMethod'] = 'image'
+            recipe['originalSource'] = f"Image: {request.filename}"
+            recipe['importDate'] = datetime.now(timezone.utc).isoformat()
+            
+            return {"recipe": recipe, "source": f"Image: {request.filename}"}
+            
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to parse vision response: {e}")
+            logging.error(f"Response was: {response[:500]}")
+            raise HTTPException(status_code=500, detail="Failed to parse recipe from image. Please try again.")
         
     except Exception as e:
         logging.error(f"Error importing from image: {e}")
