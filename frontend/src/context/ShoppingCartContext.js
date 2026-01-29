@@ -160,8 +160,24 @@ export const ShoppingCartProvider = ({ children }) => {
 
   // Add single ingredient to cart
   const addToCart = (ingredient, recipeName) => {
-    // Handle different ingredient formats
-    const ingredientItem = typeof ingredient === 'string' ? ingredient : ingredient?.item;
+    // Handle different ingredient formats - could be:
+    // - string: "2 cups flour"
+    // - object with 'item': { item: "flour", amount: "2 cups" }
+    // - object with 'name': { name: "flour", quantity: "2 cups", recipeName: "Recipe" }
+    let ingredientItem;
+    let ingredientAmount = '';
+    let recipe = recipeName;
+    
+    if (typeof ingredient === 'string') {
+      ingredientItem = ingredient;
+    } else if (ingredient?.item) {
+      ingredientItem = ingredient.item;
+      ingredientAmount = ingredient.amount || '';
+    } else if (ingredient?.name) {
+      ingredientItem = ingredient.name;
+      ingredientAmount = ingredient.quantity || '';
+      recipe = ingredient.recipeName || recipeName;
+    }
     
     if (!ingredientItem) {
       console.warn('Invalid ingredient:', ingredient);
@@ -183,8 +199,8 @@ export const ShoppingCartProvider = ({ children }) => {
     if (existingIndex >= 0) {
       // Update existing item
       const updated = [...cartItems];
-      if (!updated[existingIndex].recipes.includes(recipeName)) {
-        updated[existingIndex].recipes.push(recipeName);
+      if (recipe && !updated[existingIndex].recipes.includes(recipe)) {
+        updated[existingIndex].recipes.push(recipe);
       }
       setCartItems(updated);
       toast.success(`Updated ${cleanName} in cart`);
@@ -193,9 +209,9 @@ export const ShoppingCartProvider = ({ children }) => {
       const newItem = {
         id: Date.now(),
         item: cleanName,
-        amount: (typeof ingredient === 'object' ? ingredient.amount : '') || '',
+        amount: ingredientAmount,
         category: categorizeIngredient(cleanName),
-        recipes: [recipeName],
+        recipes: recipe ? [recipe] : [],
         checked: false,
         addedAt: new Date().toISOString(),
       };
