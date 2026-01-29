@@ -60,6 +60,7 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/chat" element={<ChatPage />} />
+              <Route path="/diabetes-meals" element={<DiabetesMealsPage />} />
               <Route path="/saved-recipes" element={<SavedRecipes />} />
               <Route path="/shopping-list" element={<ShoppingListPage />} />
               <Route path="/weekly-planner" element={<WeeklyPlannerPage />} />
