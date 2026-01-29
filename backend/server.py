@@ -2757,39 +2757,16 @@ async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: Use
             guidelines=request.guidelines
         )
         
-        # CRITICAL: Add excluded ingredients to system prompt with MAXIMUM emphasis
+        # Add simplified exclusion instructions (backend filter handles safety)
         exclusion_reminder = ""
         if user_exclusions:
-            all_excluded_terms = set()
-            for excluded in user_exclusions:
-                all_excluded_terms.add(excluded)
-                aliases = get_ingredient_aliases(excluded)
-                all_excluded_terms.update(aliases)
-            all_terms_str = ", ".join(sorted(all_excluded_terms))
-            
+            exclusion_list = ", ".join(user_exclusions)
             system_msg += f"""
 
-🚨🚨🚨 ABSOLUTE MANDATORY FOOD RESTRICTIONS - ZERO TOLERANCE 🚨🚨🚨
-
-THE USER HAS SEVERE ALLERGIES. YOU MUST FOLLOW THESE RULES WITH NO EXCEPTIONS:
-
-❌ COMPLETELY BANNED INGREDIENTS (Never use any of these):
-{all_terms_str}
-
-CRITICAL RULES:
-1. DO NOT suggest ANY recipe containing these ingredients
-2. DO NOT suggest recipes that can be "modified" to remove these
-3. DO NOT include these ingredients in any form (fresh, dried, powdered, oil, sauce, etc.)
-4. PRAWN = SHRIMP - They are the SAME thing. If shrimp is banned, prawns are ALSO banned.
-5. CHICKEN includes all poultry. If chicken is banned, do NOT suggest chicken dishes.
-6. BEEF includes steak, ground beef, veal. If beef is banned, do NOT suggest any beef dishes.
-7. If a cuisine typically uses a banned ingredient, suggest an alternative dish instead
-8. Double-check EVERY ingredient in your recipes against this banned list
-
-VIOLATION OF THESE RULES COULD CAUSE SEVERE ALLERGIC REACTION.
-This restriction applies IN ADDITION to diabetes-safe requirements."""
-            
-            exclusion_reminder = f" CRITICAL: I have severe allergies to: {all_terms_str}. Do NOT include ANY recipes with these ingredients. Prawns=shrimp, both banned."
+FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
+- Avoid all variations (e.g., if "shrimp" excluded, also avoid prawns)
+- Choose alternative proteins/ingredients instead"""
+            exclusion_reminder = f" Avoid: {exclusion_list}."
         
         chat = LlmChat(
             api_key=llm_api_key,
