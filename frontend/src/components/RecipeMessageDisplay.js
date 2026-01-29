@@ -567,6 +567,9 @@ const parseRecipesGeneral = (message) => {
   
   const skipPatterns = [
     /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name)/i,
+    /^(blood sugar|diabetes|health|safety|warning|important|reminder|disclaimer|information|general|overview|summary|conclusion|key|additional|special|meal planning|meal prep)/i,
+    /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
+    /^(about|regarding|for your|please|remember|keep in mind)/i,
   ];
   
   while ((match = recipePattern.exec(message)) !== null) {
@@ -575,6 +578,9 @@ const parseRecipesGeneral = (message) => {
     
     if (skipPatterns.some(pattern => pattern.test(title))) continue;
     if (title.length < 3 || title.length > 120) continue;
+    
+    // Skip titles that end with a colon (usually section headers)
+    if (title.endsWith(':')) continue;
     
     // Must look like actual food
     const looksLikeRecipe = title.match(/\b(chicken|beef|pork|fish|salmon|shrimp|tofu|vegetable|soup|salad|curry|pasta|rice|noodle|stew|roast|grilled|baked|fried|steamed|bowl|wrap|taco|pizza|burger|sandwich|quinoa|lentil|bean|egg|mushroom|eggplant|zucchini|spinach|kale)\b/i) ||
