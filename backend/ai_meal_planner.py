@@ -190,6 +190,7 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     - Cuisine Preferences: {', '.join(cuisine_preferences) if cuisine_preferences else 'Variety'}
     {allergy_section}
     {calorie_section}
+    {macro_section}
     {exclusion_section}
     CRITICAL RULES FOR DIETARY PREFERENCE:
     - If VEGETARIAN: NO meat, chicken, fish, seafood, or any animal flesh
