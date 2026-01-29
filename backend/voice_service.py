@@ -95,9 +95,23 @@ async def generate_mood_aware_speech(
     OPTIMIZED for faster response with tts-1 model.
     """
     try:
-        # Limit text length for faster response (max 500 chars)
-        if len(text) > 500:
-            text = text[:497] + "..."
+        # AGGRESSIVE text truncation for faster response (max 300 chars)
+        # Remove markdown formatting for cleaner speech
+        clean_text = text.replace('**', '').replace('*', '').replace('#', '').replace('`', '')
+        clean_text = ' '.join(clean_text.split())  # Normalize whitespace
+        
+        if len(clean_text) > 300:
+            # Smart truncation at sentence boundary
+            truncated = clean_text[:300]
+            last_period = truncated.rfind('.')
+            last_question = truncated.rfind('?')
+            last_exclaim = truncated.rfind('!')
+            cut_point = max(last_period, last_question, last_exclaim)
+            if cut_point > 150:  # Only use sentence boundary if reasonable
+                clean_text = truncated[:cut_point + 1]
+            else:
+                clean_text = truncated[:297] + "..."
+        text = clean_text
         
         # Get voice configuration for mood
         voice_config = MOOD_VOICE_CONFIG.get(mood, MOOD_VOICE_CONFIG['default'])
