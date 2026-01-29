@@ -12,6 +12,7 @@ import os
 import jwt
 import uuid
 import logging
+import asyncio
 
 # Database connection
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
@@ -24,6 +25,48 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
+
+# ============== DATABASE INDEXES ==============
+
+async def create_indexes():
+    """Create database indexes for faster queries"""
+    try:
+        # Users collection
+        await db.users.create_index("id", unique=True)
+        await db.users.create_index("email", sparse=True)
+        await db.users.create_index("phone_number", sparse=True)
+        
+        # Recipes collection
+        await db.recipes.create_index("id", unique=True)
+        await db.recipes.create_index("title")
+        await db.recipes.create_index([("title", "text"), ("description", "text")])
+        
+        # Saved recipes
+        await db.saved_recipes.create_index("user_id")
+        await db.saved_recipes.create_index([("user_id", 1), ("recipe_id", 1)])
+        
+        # Chat messages
+        await db.chat_messages.create_index([("session_id", 1), ("user_id", 1)])
+        await db.chat_messages.create_index("timestamp")
+        
+        # Weekly plans
+        await db.weekly_plans.create_index([("user_id", 1), ("week_start", 1)])
+        
+        # Meal preferences
+        await db.meal_preferences.create_index("user_id", unique=True)
+        
+        # User exclusions
+        await db.user_exclusions.create_index("userId", unique=True)
+        
+        # Shopping lists
+        await db.shopping_lists.create_index("user_id", unique=True)
+        
+        logging.info("Database indexes created successfully")
+    except Exception as e:
+        logging.warning(f"Index creation warning (may already exist): {e}")
+
+# Run index creation on module load (non-blocking)
+asyncio.get_event_loop().run_until_complete(create_indexes())
 
 # ============== PYDANTIC MODELS ==============
 
