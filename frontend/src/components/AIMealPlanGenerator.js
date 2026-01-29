@@ -66,6 +66,12 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
   const [cuisinePreferences, setCuisinePreferences] = useState([]);
   const [generating, setGenerating] = useState(false);
   const [generationMode, setGenerationMode] = useState('manual'); // 'manual' or 'auto'
+  
+  // Macro tracking state
+  const [enableMacros, setEnableMacros] = useState(false);
+  const [proteinTarget, setProteinTarget] = useState(150);
+  const [carbsTarget, setCarbsTarget] = useState(200);
+  const [fatTarget, setFatTarget] = useState(65);
 
   const toggleFocus = (area) => {
     setFocusAreas(prev =>
@@ -86,6 +92,10 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
   const handleCaloriePreset = (calories) => {
     setCalorieTarget(calories);
     setEnableCalorieTarget(true);
+    // Auto-calculate macros based on calorie preset (40% carbs, 30% protein, 30% fat)
+    setProteinTarget(Math.round((calories * 0.30) / 4)); // 4 cal per gram
+    setCarbsTarget(Math.round((calories * 0.40) / 4));   // 4 cal per gram
+    setFatTarget(Math.round((calories * 0.30) / 9));     // 9 cal per gram
   };
 
   const handleGenerate = async () => {
@@ -101,10 +111,18 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
 
     setGenerating(true);
     try {
+      // Build macro targets object if enabled
+      const macroTargets = enableMacros ? {
+        protein_g: proteinTarget,
+        carbs_g: carbsTarget,
+        fat_g: fatTarget
+      } : null;
+      
       // Save preferences with the chosen generation mode
       await axios.post(`${API}/meal-preferences`, {
         dietary_preference: dietaryPreference,
         calorie_target: enableCalorieTarget ? calorieTarget : null,
+        macro_targets: macroTargets,
         focus_areas: focusAreas,
         cuisine_preferences: cuisinePreferences,
         mood: mood.trim(),
@@ -117,6 +135,7 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
         mood: mood.trim(),
         dietary_preference: dietaryPreference,
         calorie_target: enableCalorieTarget ? calorieTarget : null,
+        macro_targets: macroTargets,
         focus_areas: focusAreas,
         cuisine_preferences: cuisinePreferences
       });
@@ -141,6 +160,10 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
     setDietaryPreference('');
     setCalorieTarget(2000);
     setEnableCalorieTarget(false);
+    setEnableMacros(false);
+    setProteinTarget(150);
+    setCarbsTarget(200);
+    setFatTarget(65);
     setFocusAreas([]);
     setCuisinePreferences([]);
     setGenerationMode('manual');
