@@ -660,7 +660,7 @@ const DiabetesMealsPage = () => {
                   {/* Interactive selectors */}
                   {msg.showMoodSelector && flowStep === 'mood' && (
                     <div className="mt-4 ml-2">
-                      <MoodSelector 
+                      <MoodCarousel 
                         onSelect={handleMoodSelect}
                         selectedMood={selectedMood}
                       />
