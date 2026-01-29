@@ -1456,17 +1456,24 @@ Think carefully before suggesting each recipe."""
         # CRITICAL SAFETY FILTER: Post-process AI response to remove unsafe recipes
         if recipe_params and user_exclusions:
             logging.info(f"Applying safety filter for exclusions: {user_exclusions}")
+            logging.info(f"Original AI response length: {len(ai_response)}")
+            
             # First pass - structured recipe filter
             filtered_response, removed_recipes, violations = filter_unsafe_recipes_from_response(
                 ai_response, user_exclusions
             )
-            # Second pass - strict line-by-line filter
-            filtered_response = filter_recipe_text_strictly(filtered_response, user_exclusions)
             
             if removed_recipes:
                 logging.warning(f"SAFETY: Removed {len(removed_recipes)} unsafe recipes: {removed_recipes}")
                 logging.warning(f"SAFETY: Violations details: {violations}")
             
+            # Only apply strict filter if we have remaining recipe content (not just the "all filtered" message)
+            has_recipe_content = any(marker in filtered_response for marker in ['###', '**Ingredients', '**Instructions'])
+            if has_recipe_content:
+                # Second pass - strict line-by-line filter only on actual recipe content
+                filtered_response = filter_recipe_text_strictly(filtered_response, user_exclusions)
+            
+            logging.info(f"Final filtered response length: {len(filtered_response)}")
             ai_response = filtered_response
         
         assistant_msg = ChatMessage(
