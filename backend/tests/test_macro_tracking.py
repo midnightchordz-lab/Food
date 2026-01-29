@@ -36,7 +36,7 @@ class TestMacroTrackingAndPersistence:
         })
         
         if register_response.status_code == 200:
-            self.token = register_response.json().get("token")
+            self.token = register_response.json().get("access_token")
             self.session.headers.update({"Authorization": f"Bearer {self.token}"})
         else:
             pytest.skip(f"Failed to register test user: {register_response.text}")
