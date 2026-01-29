@@ -818,7 +818,7 @@ const ImportRecipePage = () => {
                     <div className="flex items-start gap-2 p-3 bg-blue-50 text-blue-800 rounded-xl dark:bg-blue-950/30 dark:text-blue-200">
                       <Sparkles size={18} className="mt-0.5 flex-shrink-0" />
                       <p className="text-xs">
-                        <strong>AI-Powered:</strong> We'll use AI to transcribe and analyze your video to extract the complete recipe with all steps and ingredients.
+                        <strong>AI-Powered:</strong> We&apos;ll use AI to transcribe and analyze your video to extract the complete recipe with all steps and ingredients.
                       </p>
                     </div>
                   </TabsContent>
