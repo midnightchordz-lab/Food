@@ -297,7 +297,7 @@ const SavedRecipes = () => {
                 <RecipeRating recipeId={selectedRecipe.id} />
                 
                 <Button
-                  onClick={() => addToShoppingList(selectedRecipe.id)}
+                  onClick={() => addToShoppingList(selectedRecipe)}
                   className="w-full rounded-full bg-primary hover:bg-primary/90"
                   data-testid="add-to-shopping-list-button"
                 >
