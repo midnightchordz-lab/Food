@@ -1407,41 +1407,18 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             if current_user.dietary_restrictions:
                 system_msg += f"\n\nDIETARY RESTRICTIONS: {', '.join(current_user.dietary_restrictions)}. All recipes MUST comply."
             
-            # CRITICAL: Add excluded ingredients to system prompt
+            # Add simplified exclusion instructions (backend filter handles safety)
             if user_exclusions:
                 exclusion_list = ", ".join(user_exclusions)
-                # Build comprehensive exclusion instructions with aliases
-                all_excluded_terms = set()
-                for excluded in user_exclusions:
-                    all_excluded_terms.add(excluded)
-                    aliases = get_ingredient_aliases(excluded)
-                    all_excluded_terms.update(aliases)
-                all_terms_str = ", ".join(sorted(all_excluded_terms))
-                
                 system_msg += f"""
 
-🚨🚨🚨 ABSOLUTE MANDATORY FOOD RESTRICTIONS - ZERO TOLERANCE 🚨🚨🚨
-
-THE USER HAS SEVERE ALLERGIES. YOU MUST FOLLOW THESE RULES WITH NO EXCEPTIONS:
-
-❌ COMPLETELY BANNED INGREDIENTS (Never use any of these):
-{all_terms_str}
-
-CRITICAL RULES:
-1. DO NOT suggest ANY recipe containing these ingredients
-2. DO NOT suggest recipes that can be "modified" to remove these
-3. DO NOT include these ingredients in any form (fresh, dried, powdered, oil, sauce, etc.)
-4. PRAWN = SHRIMP - They are the SAME thing. If shrimp is banned, prawns are ALSO banned.
-5. If a cuisine typically uses a banned ingredient, suggest an alternative dish instead
-6. Double-check EVERY ingredient in your recipes against this banned list
-7. If unsure whether an ingredient is related to a banned item, DO NOT include it
-
-VIOLATION OF THESE RULES COULD CAUSE SEVERE ALLERGIC REACTION.
-Think carefully before suggesting each recipe."""
+FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
+- Avoid all variations (e.g., if "shrimp" excluded, also avoid prawns)
+- Choose alternative proteins/ingredients instead"""
             
-            # Add exclusions to user message as well for emphasis
-            exclusion_reminder = f"\n\nREMINDER: I have severe allergies to: {all_terms_str}. Do NOT include ANY recipes with these ingredients. Prawns and shrimp are the SAME - both are banned."
-            user_text = f"Generate 6 {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine.{exclusion_reminder}"
+            user_text = f"Generate 4 {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine."
+            if user_exclusions:
+                user_text += f" Avoid: {exclusion_list}."
             logging.info(f"Recipe generation request: {recipe_params}, exclusions: {user_exclusions}")
         else:
             # Use general conversational system message
