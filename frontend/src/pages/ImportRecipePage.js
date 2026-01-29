@@ -599,9 +599,9 @@ const ImportRecipePage = () => {
                       className="p-4 bg-card rounded-xl border border-border/40 cursor-pointer hover:border-primary/50 transition-all"
                       onClick={() => navigate(`/saved-recipes`)}
                     >
-                      <h3 className="font-medium text-sm mb-1 truncate">{recipe.name}</h3>
+                      <h3 className="font-medium text-sm mb-1 truncate">{recipe.title || recipe.name}</h3>
                       <p className="text-xs text-muted-foreground">
-                        Imported {new Date(recipe.importDate).toLocaleDateString()}
+                        Imported {new Date(recipe.import_date || recipe.importDate).toLocaleDateString()}
                       </p>
                     </div>
                   ))}
