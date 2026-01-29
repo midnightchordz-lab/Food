@@ -476,6 +476,11 @@ async def save_meal_preferences(request: MealPreferencesCreate, current_user: Us
                 used_recipes = await get_used_recipes(current_user.id)
                 user_exclusions = await get_user_excluded_ingredients(current_user.id)
                 
+                # Convert MacroTargets model to dict if present
+                macro_dict = None
+                if request.macro_targets:
+                    macro_dict = request.macro_targets.model_dump() if hasattr(request.macro_targets, 'model_dump') else dict(request.macro_targets)
+                
                 meals = await generate_ai_meal_plan(
                     current_user,
                     request.mood,
@@ -484,7 +489,8 @@ async def save_meal_preferences(request: MealPreferencesCreate, current_user: Us
                     request.focus_areas,
                     request.cuisine_preferences,
                     exclude_recipes=used_recipes,
-                    user_exclusions=user_exclusions
+                    user_exclusions=user_exclusions,
+                    macro_targets=macro_dict
                 )
                 
                 plan = WeeklyPlan(
