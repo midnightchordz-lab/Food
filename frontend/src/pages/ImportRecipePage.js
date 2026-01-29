@@ -341,6 +341,13 @@ const ImportRecipePage = () => {
     }));
   };
   
+  // Handle auth redirect
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/');
+    }
+  }, [loading, isAuthenticated, navigate]);
+  
   if (loading) {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center">
@@ -350,8 +357,11 @@ const ImportRecipePage = () => {
   }
   
   if (!isAuthenticated) {
-    navigate('/');
-    return null;
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
   }
   
   // Recipe Preview Modal
