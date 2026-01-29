@@ -306,6 +306,16 @@ const parseRecipesWithCategories = (message) => {
 const parseNumberedRecipes = (message) => {
   const recipes = [];
   
+  // Comprehensive skip patterns - NOT recipe names
+  const skipPatterns = [
+    /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name|total time|prep time)/i,
+    /^(blood sugar|diabetes|health|safety|warning|important|reminder|disclaimer|information|general|overview|summary|conclusion|key|additional|special|meal planning|meal prep)/i,
+    /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
+    /^(about|regarding|for your|please|remember|keep in mind)/i,
+    /^(drink|pairing|beverage|hydration)/i,
+    /:$/,  // Ends with colon
+  ];
+  
   // Match patterns like "### 1. Caprese Stuffed Portobello Mushrooms" or "### Recipe Name"
   // Each section ends at the next ### or ---
   const recipePattern = /###\s*(?:\d+\.)?\s*([^\n]+)\n([\s\S]*?)(?=###|---\s*$|$)/g;
@@ -316,8 +326,10 @@ const parseNumberedRecipes = (message) => {
     const content = match[2].trim();
     
     // Skip if this looks like a header not a recipe
-    if (title.match(/^(option|tip|note|why|instructions|ingredients)/i)) continue;
+    if (skipPatterns.some(pattern => pattern.test(title))) continue;
     if (title.length < 3 || title.length > 100) continue;
+    // Skip titles ending with colon
+    if (title.endsWith(':')) continue;
     
     // Extract cooking time
     const timeMatch = content.match(/\*\*(?:Cooking\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i) ||
