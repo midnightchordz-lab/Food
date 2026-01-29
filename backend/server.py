@@ -238,7 +238,7 @@ class ReminderCreate(BaseModel):
     meal_type: str
     enabled: bool = True
 
-class RecipeSearchRequest(BaseModel):
+class DiscoverRecipeRequest(BaseModel):
     cuisine: Optional[str] = None
     count: int = 12
 
