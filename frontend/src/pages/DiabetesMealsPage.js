@@ -516,7 +516,12 @@ const DiabetesMealsPage = () => {
   
   // Start new conversation
   const handleNewConversation = () => {
-    localStorage.removeItem(DIABETES_CHAT_STORAGE_KEY);
+    // Remove user-specific storage
+    const storageKey = getDiabetesStorageKey(user?.id);
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+    }
+    setSessionId(`diabetes-session-${Date.now()}`);
     setMessages([{
       role: 'assistant',
       content: `Welcome to Diabetes-Friendly Meals! 🩺\n\nI'm here to help you find delicious meals that support your blood sugar control while matching your mood.\n\nLet's start by understanding how you're feeling today:`,
