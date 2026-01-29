@@ -225,11 +225,15 @@ A mood-based recipe discovery application where users receive personalized meal 
     - Reduced recipes requested from 6 to 4
     - Response time improved from ~2 minutes to ~32 seconds
     - Safety maintained via backend post-processing filter
+  - **DIABETES CHAT FIX**: Updated `/api/diabetes/chat` endpoint to:
+    - Fetch user exclusions and add to system prompt
+    - Apply safety filter to responses
+    - Detect mood changes and update UI accordingly
+    - Frontend now handles mood_change_detected response
   - **FILES MODIFIED**:
-    - `backend/server.py`: Added 3 new safety filter functions (lines 404-558)
-    - `backend/server.py`: Chat endpoint now applies filter after AI response (line 1457)
-    - `backend/server.py`: Diabetes endpoint now applies same filter (line 2817)
+    - `backend/server.py`: Added safety filter functions and updated all chat endpoints
     - `backend/ai_meal_planner.py`: Added user_exclusions parameter and filtering
+    - `frontend/src/pages/DiabetesMealsPage.js`: Handle mood change detection in chat
   - **TESTING**: 100% pass rate (11/11 backend tests) - See `/app/test_reports/iteration_24.json`
   - **VERIFIED**: Prawn (shrimp alias), chicken tikka, butter chicken are all blocked correctly
 
