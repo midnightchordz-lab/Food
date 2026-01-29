@@ -517,7 +517,7 @@ const DiabetesWeeklyPlannerPage = () => {
                 ) : (
                   <Sparkles className="mr-2" size={18} />
                 )}
-                Generate This Week's Plan
+                Generate This Week&apos;s Plan
               </Button>
             </div>
           )}
