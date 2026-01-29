@@ -455,7 +455,7 @@ Format each recipe clearly with the name as a header.
       // Update mood ONLY from user's message, never from AI response
       const shouldUpdateMood = (isMoodChange || isDirectMoodStatement) && detectedMoodFromUser;
       if (shouldUpdateMood) {
-        const newMoodObj = MOODS.find(m => m.id === detectedMoodFromUser);
+        const newMoodObj = MOOD_IMAGES.find(m => m.id === detectedMoodFromUser);
         if (newMoodObj) {
           setSelectedMood(detectedMoodFromUser);
         }
