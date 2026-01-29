@@ -72,6 +72,7 @@ const ImportRecipePage = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoFile, setVideoFile] = useState(null);
   const [textInput, setTextInput] = useState('');
   
   const { isAuthenticated, loading } = useAuth();
