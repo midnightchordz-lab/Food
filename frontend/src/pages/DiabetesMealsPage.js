@@ -573,7 +573,7 @@ const DiabetesMealsPage = () => {
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 {selectedMood && (
                   <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                    {MOODS.find(m => m.id === selectedMood)?.emoji} {MOODS.find(m => m.id === selectedMood)?.label}
+                    <img src={MOOD_IMAGES.find(m => m.id === selectedMood)?.image} alt="" className="w-4 h-4 inline rounded-full mr-1" /> {MOOD_IMAGES.find(m => m.id === selectedMood)?.label}
                   </span>
                 )}
                 {selectedDiabetesType && (
