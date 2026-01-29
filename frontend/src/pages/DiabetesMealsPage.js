@@ -825,7 +825,7 @@ const DiabetesMealsPage = () => {
           <DialogHeader>
             <DialogTitle>Save Recipe</DialogTitle>
           </DialogHeader>
-          <p className="mb-4">Save "{recipeToSave?.title}" to your collection?</p>
+          <p className="mb-4">Save &quot;{recipeToSave?.title}&quot; to your collection?</p>
           <div className="flex gap-3 justify-end">
             <Button variant="outline" onClick={() => setShowRecipeDialog(false)}>
               Cancel
