@@ -276,6 +276,93 @@ class UserProfileUpdate(BaseModel):
     dietary_restrictions: Optional[List[str]] = None
     cuisine_preferences: Optional[List[str]] = None
 
+# ============== INGREDIENT EXCLUSION MODELS ==============
+
+class ExcludedIngredient(BaseModel):
+    name: str
+    category: str = "preference"  # allergy, preference, religious, other
+    severity: str = "preference"  # severe-allergy, mild-allergy, preference
+    reason: Optional[str] = None
+
+class UserExclusions(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    user_id: str
+    excluded_ingredients: List[ExcludedIngredient] = []
+    excluded_ingredient_names: List[str] = []  # lowercase names for quick lookup
+    common_allergens: Dict[str, bool] = {
+        "eggs": False, "milk": False, "peanuts": False, "tree_nuts": False,
+        "soy": False, "wheat": False, "fish": False, "shellfish": False, "sesame": False
+    }
+    last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ExclusionCreate(BaseModel):
+    excluded_ingredients: List[ExcludedIngredient]
+
+class ExclusionUpdate(BaseModel):
+    add_ingredients: Optional[List[ExcludedIngredient]] = []
+    remove_ingredient_names: Optional[List[str]] = []
+
+# Ingredient alias mapping for accurate filtering
+INGREDIENT_ALIASES = {
+    'eggs': ['egg', 'eggs', 'egg white', 'egg yolk', 'whole egg', 'mayonnaise', 'mayo'],
+    'milk': ['milk', 'dairy', 'cream', 'buttermilk', 'half-and-half', 'whey', 'casein', 'lactose'],
+    'peanuts': ['peanut', 'peanuts', 'peanut butter', 'peanut oil', 'groundnut'],
+    'tree_nuts': ['almond', 'walnut', 'cashew', 'pecan', 'pistachio', 'hazelnut', 'macadamia', 'brazil nut', 'pine nut'],
+    'shellfish': ['shrimp', 'prawn', 'crab', 'lobster', 'crayfish', 'clam', 'mussel', 'oyster', 'scallop', 'crawfish'],
+    'fish': ['fish', 'salmon', 'tuna', 'cod', 'tilapia', 'bass', 'trout', 'halibut', 'anchovy', 'sardine', 'mackerel'],
+    'wheat': ['wheat', 'flour', 'all-purpose flour', 'bread flour', 'whole wheat', 'semolina', 'durum'],
+    'soy': ['soy', 'soy sauce', 'tofu', 'edamame', 'soybean', 'miso', 'tempeh', 'soya'],
+    'gluten': ['wheat', 'barley', 'rye', 'flour', 'bread', 'pasta', 'couscous', 'seitan'],
+    'dairy': ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'sour cream', 'ice cream', 'ghee', 'paneer'],
+    'sesame': ['sesame', 'sesame seed', 'sesame oil', 'tahini'],
+    'beef': ['beef', 'steak', 'ground beef', 'veal', 'brisket'],
+    'pork': ['pork', 'bacon', 'ham', 'sausage', 'prosciutto', 'pancetta'],
+    'chicken': ['chicken', 'poultry'],
+    'lamb': ['lamb', 'mutton'],
+    'garlic': ['garlic', 'garlic powder', 'garlic clove'],
+    'onion': ['onion', 'shallot', 'scallion', 'green onion', 'leek'],
+    'cilantro': ['cilantro', 'coriander', 'coriander leaves'],
+    'mushroom': ['mushroom', 'mushrooms', 'shiitake', 'portobello', 'cremini'],
+    'coconut': ['coconut', 'coconut milk', 'coconut oil', 'coconut cream'],
+    'tomato': ['tomato', 'tomatoes', 'tomato sauce', 'tomato paste', 'marinara'],
+    'avocado': ['avocado', 'guacamole'],
+    'honey': ['honey'],
+    'mustard': ['mustard', 'dijon'],
+    'bell_pepper': ['bell pepper', 'capsicum', 'sweet pepper'],
+    'ginger': ['ginger', 'ginger root'],
+    'corn': ['corn', 'cornmeal', 'corn starch', 'maize'],
+}
+
+def get_ingredient_aliases(ingredient_name: str) -> List[str]:
+    """Get all aliases for an ingredient"""
+    name_lower = ingredient_name.lower().replace(' ', '_')
+    aliases = INGREDIENT_ALIASES.get(name_lower, [])
+    if not aliases:
+        # Also check without underscore
+        name_lower_space = ingredient_name.lower()
+        aliases = INGREDIENT_ALIASES.get(name_lower_space, [ingredient_name.lower()])
+    return aliases if aliases else [ingredient_name.lower()]
+
+def recipe_contains_excluded_ingredient(recipe_ingredients: List[str], excluded_names: List[str]) -> bool:
+    """Check if a recipe contains any excluded ingredients"""
+    if not excluded_names:
+        return False
+    
+    # Build full list of terms to check (including aliases)
+    all_excluded_terms = set()
+    for excluded in excluded_names:
+        all_excluded_terms.add(excluded.lower())
+        aliases = get_ingredient_aliases(excluded)
+        all_excluded_terms.update([a.lower() for a in aliases])
+    
+    # Check each recipe ingredient
+    for ing in recipe_ingredients:
+        ing_lower = ing.lower()
+        for term in all_excluded_terms:
+            if term in ing_lower:
+                return True
+    return False
+
 # Auth helper functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
