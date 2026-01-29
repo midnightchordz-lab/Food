@@ -169,6 +169,9 @@ A mood-based recipe discovery application where users receive personalized meal 
 - [x] Fix generic cooking instructions (now includes specific timing, temperatures, sensory cues)
 - [x] Drink Pairings feature - recipes now include alcoholic and non-alcoholic drink suggestions
 - [x] Fix session persistence - users stay logged in when navigating between pages
+- [x] Fix dynamic drink pairings - now cuisine-specific (Thai, Italian, Indian)
+- [x] Intelligent mood change detection - users can change mood mid-conversation
+- [x] Diabetes Meals Tab - dedicated section for blood sugar-safe recipes
 
 ### P1 - High Priority
 - [ ] Complete Phone Authentication (requires Twilio API keys)
