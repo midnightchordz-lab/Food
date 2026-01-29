@@ -413,7 +413,8 @@ async def generate_next_week_plan(current_user: User = Depends(get_current_user)
             prefs.get('focus_areas', []),
             prefs.get('cuisine_preferences', []),
             exclude_recipes=used_recipes,
-            user_exclusions=user_exclusions
+            user_exclusions=user_exclusions,
+            macro_targets=prefs.get('macro_targets')
         )
         
         plan = WeeklyPlan(
