@@ -386,4 +386,40 @@ A mood-based recipe discovery application where users receive personalized meal 
     - ShoppingListPage.js - shows loading spinner while verifying auth
   - **Impact**: Users now stay logged in seamlessly when navigating the app
   - Testing: All protected pages verified to maintain session
+- **Jan 29, 2026**: Implemented Diabetes Meals Tab (MAJOR FEATURE)
+  - **New Tab**: "🩺 Diabetes Meals" in navigation between Chat and List
+  - **Conversation Flow**:
+    1. Mood selection (same as main app)
+    2. Diabetes type selection (Type 1, Type 2, Gestational, Pre-Diabetes)
+    3. AI research of diabetes type with dietary guidelines display
+    4. Dietary preference selection (Vegetarian, Vegan, etc.)
+    5. Meal type selection (Breakfast, Lunch, Dinner, Snack)
+    6. Cuisine selection
+    7. Diabetes-safe recipe generation with drink pairings
+  - **Backend Endpoints**:
+    - `POST /api/diabetes/research` - Returns diabetes-specific dietary guidelines
+    - `POST /api/diabetes/recipes` - Generates blood sugar-safe recipes
+    - `POST /api/diabetes/chat` - Free-form Q&A about diabetes nutrition
+  - **Recipe Features**:
+    - Net Carbs, Fiber, Protein per serving
+    - Glycemic Index and Blood Sugar Impact rating
+    - "Why This is Blood Sugar Safe" explanation
+    - Diabetes-safe drink pairings
+    - Blood sugar tips for each recipe
+  - **Safety Features**:
+    - Medical disclaimer banner at top of page
+    - Bottom disclaimer about consulting healthcare provider
+    - Guidelines database for Type 1, Type 2, Gestational, Pre-Diabetes
+  - **Files Created/Modified**:
+    - `/app/frontend/src/pages/DiabetesMealsPage.js` (new)
+    - `/app/frontend/src/components/Navigation.js` (updated)
+    - `/app/frontend/src/App.js` (route added)
+    - `/app/backend/server.py` (3 new endpoints + DIABETES_GUIDELINES)
+  - Testing: Backend endpoints verified, full flow tested
+
+- **Jan 29, 2026**: Fixed Mood Change Detection Bug
+  - **Issue**: When user typed "cozy", system showed "Show Angry Recipes" button
+  - **Root Cause**: Frontend detected mood from AI response instead of user input
+  - **Solution**: Only detect mood from `messageText` (user input)
+  - **Result**: "cozy" → correctly shows "Show Cozy Recipes"
 
