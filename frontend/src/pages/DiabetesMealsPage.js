@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   Send, Loader2, Heart, Home, Sparkles, AlertCircle, 
-  Activity, Droplets, Search, CheckCircle2, Info
+  Activity, Droplets, Search, CheckCircle2, Info, Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import RecipeMessageDisplay, { hasRecipes } from '@/components/RecipeMessageDisplay';
 import MoodCarousel, { MOOD_IMAGES } from '@/components/MoodCarousel';
 import MealTypeSelector, { MEAL_TYPES } from '@/components/MealTypeSelector';
