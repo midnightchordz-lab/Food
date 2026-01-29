@@ -212,6 +212,24 @@ A mood-based recipe discovery application where users receive personalized meal 
 
 ## Changelog
 
+- **Jan 29, 2026**: NEW FEATURE - Diabetes Weekly Meal Planner
+  - Created `/diabetes-planner` route with full weekly meal planning for diabetes
+  - Backend: New module `diabetes_meal_planner.py` with diabetes-specific meal generation
+  - Backend: Added 5 new endpoints:
+    - `POST /api/diabetes/weekly-plan/generate` - Generate diabetes-optimized meal plan
+    - `GET /api/diabetes/weekly-plan` - Get saved diabetes plans
+    - `POST /api/diabetes/weekly-plan/generate-for-week` - Generate for specific week
+    - `POST /api/diabetes/meal-preferences` - Save diabetes preferences
+    - `GET /api/diabetes/meal-preferences` - Get diabetes preferences
+  - Frontend: New `DiabetesWeeklyPlannerPage.js` with:
+    - Diabetes type selection (Type 1, Type 2, Gestational, Pre-Diabetes)
+    - Weekly calendar view with carb tracking per meal
+    - Exclusion banner showing active food restrictions
+    - Settings modal for preferences (calories, cuisines, dietary)
+    - Blood sugar tips section
+  - Safety: Uses same exclusion filtering as main chat - tested 0 violations
+  - Performance: ~9 second generation time
+
 - **Jan 29, 2026**: CRITICAL FIX - Food Allergy & Exclusion System Safety Filter
   - **PROBLEM**: Recipe filtering was failing - AI suggested "Karahi Prawns" when "Shrimp" was excluded
   - **ROOT CAUSE**: The system relied solely on AI prompt compliance, and the AI would sometimes ignore the exclusion instructions
