@@ -194,6 +194,17 @@ A mood-based recipe discovery application where users receive personalized meal 
 
 ## Changelog
 
+- **Jan 29, 2026**: Fixed Diabetes Meals Page MoodSelector Bug & Voice Optimization
+  - **BUG FIX**: Fixed "MoodSelector is not defined" error on Diabetes Meals page
+    - Replaced `MoodSelector` with `MoodCarousel` component in `DiabetesMealsPage.js`
+    - 2-row mood grid now displays correctly with all 12 3D emoji images
+  - **Voice Agent Optimization**: Improved TTS response speed
+    - Reduced text limit from 500 to 300 characters
+    - Added smart truncation at sentence boundaries (., ?, !)
+    - Removed markdown formatting from text before speech synthesis
+    - TTS response time: ~1.4 seconds for short text
+  - **Verification Complete**: Saved Recipes page displays images correctly
+
 - **Jan 29, 2026**: Implemented Import Recipe Feature (MAJOR FEATURE)
   - Added "Import" tab to navigation between Diabetes and List
   - Created Import Recipe page with 4 import method cards:
