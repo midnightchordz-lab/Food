@@ -302,36 +302,50 @@ class ExclusionUpdate(BaseModel):
     add_ingredients: Optional[List[ExcludedIngredient]] = []
     remove_ingredient_names: Optional[List[str]] = []
 
-# Ingredient alias mapping for accurate filtering
+# Ingredient alias mapping for accurate filtering - COMPREHENSIVE LIST
 INGREDIENT_ALIASES = {
-    'eggs': ['egg', 'eggs', 'egg white', 'egg yolk', 'whole egg', 'mayonnaise', 'mayo'],
-    'milk': ['milk', 'dairy', 'cream', 'buttermilk', 'half-and-half', 'whey', 'casein', 'lactose'],
-    'peanuts': ['peanut', 'peanuts', 'peanut butter', 'peanut oil', 'groundnut'],
-    'tree_nuts': ['almond', 'walnut', 'cashew', 'pecan', 'pistachio', 'hazelnut', 'macadamia', 'brazil nut', 'pine nut'],
-    'shellfish': ['shrimp', 'prawn', 'prawns', 'shrimps', 'crab', 'lobster', 'crayfish', 'clam', 'mussel', 'oyster', 'scallop', 'crawfish'],
-    'fish': ['fish', 'salmon', 'tuna', 'cod', 'tilapia', 'bass', 'trout', 'halibut', 'anchovy', 'sardine', 'mackerel'],
-    'wheat': ['wheat', 'flour', 'all-purpose flour', 'bread flour', 'whole wheat', 'semolina', 'durum'],
-    'soy': ['soy', 'soy sauce', 'tofu', 'edamame', 'soybean', 'miso', 'tempeh', 'soya'],
-    'gluten': ['wheat', 'barley', 'rye', 'flour', 'bread', 'pasta', 'couscous', 'seitan'],
-    'dairy': ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'sour cream', 'ice cream', 'ghee', 'paneer'],
-    'sesame': ['sesame', 'sesame seed', 'sesame oil', 'tahini'],
-    'beef': ['beef', 'steak', 'ground beef', 'veal', 'brisket', 'sirloin', 'ribeye', 'tenderloin'],
-    'pork': ['pork', 'bacon', 'ham', 'sausage', 'prosciutto', 'pancetta', 'pork belly', 'pork chop'],
-    'chicken': ['chicken', 'poultry', 'hen', 'chicken breast', 'chicken thigh', 'chicken wing', 'chicken drumstick'],
-    'lamb': ['lamb', 'mutton', 'lamb chop', 'lamb shank'],
-    'shrimp': ['shrimp', 'prawn', 'prawns', 'shrimps', 'jumbo shrimp', 'tiger prawn', 'king prawn'],
-    'garlic': ['garlic', 'garlic powder', 'garlic clove', 'minced garlic'],
-    'onion': ['onion', 'shallot', 'scallion', 'green onion', 'leek', 'red onion', 'white onion', 'yellow onion'],
-    'cilantro': ['cilantro', 'coriander', 'coriander leaves', 'fresh coriander'],
-    'mushroom': ['mushroom', 'mushrooms', 'shiitake', 'portobello', 'cremini', 'button mushroom', 'oyster mushroom'],
-    'coconut': ['coconut', 'coconut milk', 'coconut oil', 'coconut cream', 'coconut flakes', 'desiccated coconut'],
-    'tomato': ['tomato', 'tomatoes', 'tomato sauce', 'tomato paste', 'marinara', 'cherry tomato', 'sun-dried tomato'],
-    'avocado': ['avocado', 'guacamole'],
-    'honey': ['honey', 'raw honey'],
-    'mustard': ['mustard', 'dijon', 'yellow mustard', 'mustard seed'],
-    'bell_pepper': ['bell pepper', 'capsicum', 'sweet pepper', 'red pepper', 'green pepper', 'yellow pepper'],
-    'ginger': ['ginger', 'ginger root', 'fresh ginger', 'minced ginger'],
-    'corn': ['corn', 'cornmeal', 'corn starch', 'maize', 'sweet corn', 'corn kernel'],
+    # Common Allergens
+    'eggs': ['egg', 'eggs', 'egg white', 'egg yolk', 'whole egg', 'mayonnaise', 'mayo', 'omelette', 'omelet', 'meringue', 'aioli', 'hollandaise', 'béarnaise', 'custard'],
+    'milk': ['milk', 'dairy', 'cream', 'buttermilk', 'half-and-half', 'whey', 'casein', 'lactose', 'whole milk', 'skim milk', 'condensed milk', 'evaporated milk'],
+    'peanuts': ['peanut', 'peanuts', 'peanut butter', 'peanut oil', 'groundnut', 'groundnuts', 'monkey nut'],
+    'tree_nuts': ['almond', 'almonds', 'walnut', 'walnuts', 'cashew', 'cashews', 'pecan', 'pecans', 'pistachio', 'pistachios', 'hazelnut', 'hazelnuts', 'macadamia', 'brazil nut', 'pine nut', 'pine nuts', 'chestnut', 'chestnuts'],
+    'shellfish': ['shrimp', 'shrimps', 'prawn', 'prawns', 'crab', 'crabs', 'lobster', 'lobsters', 'crayfish', 'crawfish', 'clam', 'clams', 'mussel', 'mussels', 'oyster', 'oysters', 'scallop', 'scallops', 'langoustine', 'langoustines'],
+    'wheat': ['wheat', 'flour', 'all-purpose flour', 'bread flour', 'whole wheat', 'semolina', 'durum', 'bulgur', 'farina', 'wheat germ', 'wheat bran'],
+    'soy': ['soy', 'soya', 'soy sauce', 'tofu', 'edamame', 'soybean', 'soybeans', 'miso', 'tempeh', 'soy milk', 'soy protein'],
+    'gluten': ['wheat', 'barley', 'rye', 'flour', 'bread', 'pasta', 'couscous', 'seitan', 'bulgur', 'farro', 'spelt'],
+    'dairy': ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'yoghurt', 'sour cream', 'ice cream', 'ghee', 'paneer', 'cottage cheese', 'ricotta', 'mozzarella', 'cheddar', 'parmesan', 'cream cheese', 'whipped cream', 'half and half'],
+    'sesame': ['sesame', 'sesame seed', 'sesame seeds', 'sesame oil', 'tahini', 'halvah', 'hummus'],
+    
+    # Meats - COMPREHENSIVE
+    'beef': ['beef', 'steak', 'steaks', 'ground beef', 'minced beef', 'beef mince', 'veal', 'brisket', 'sirloin', 'ribeye', 'rib eye', 'tenderloin', 'filet mignon', 'filet', 'fillet', 'roast beef', 'beef roast', 'corned beef', 'pastrami', 'beef ribs', 'short ribs', 'prime rib', 'beef chuck', 'beef round', 'flank steak', 'skirt steak', 'hanger steak', 't-bone', 'porterhouse', 'beef tenderloin', 'beef brisket', 'beef shank', 'oxtail', 'beef tongue', 'beef liver', 'beef heart', 'carne asada', 'bulgogi beef', 'beef kebab', 'beef kebabs', 'kofta', 'keema', 'beef keema', 'beef curry', 'beef stew', 'beef bourguignon', 'beef stroganoff', 'meatballs', 'beef meatballs', 'hamburger', 'burger patty', 'beef patty'],
+    
+    'pork': ['pork', 'bacon', 'ham', 'sausage', 'sausages', 'prosciutto', 'pancetta', 'pork belly', 'pork chop', 'pork chops', 'pork loin', 'pork tenderloin', 'pork ribs', 'spare ribs', 'baby back ribs', 'pulled pork', 'carnitas', 'pork shoulder', 'pork butt', 'boston butt', 'chorizo', 'pork chorizo', 'salami', 'pepperoni', 'mortadella', 'coppa', 'guanciale', 'lard', 'pork fat', 'pork rind', 'chicharron', 'pork crackling', 'gammon', 'pork roast', 'roast pork', 'pork cutlet', 'schnitzel', 'pork schnitzel', 'tonkatsu', 'char siu', 'chinese bbq pork', 'lap cheong', 'chinese sausage', 'bratwurst', 'kielbasa', 'andouille', 'italian sausage', 'breakfast sausage', 'pork sausage', 'hot dog', 'frankfurter', 'wiener'],
+    
+    'chicken': ['chicken', 'poultry', 'hen', 'chicken breast', 'chicken breasts', 'chicken thigh', 'chicken thighs', 'chicken wing', 'chicken wings', 'chicken drumstick', 'chicken drumsticks', 'chicken leg', 'chicken legs', 'whole chicken', 'roast chicken', 'rotisserie chicken', 'fried chicken', 'grilled chicken', 'chicken tender', 'chicken tenders', 'chicken strip', 'chicken strips', 'chicken nugget', 'chicken nuggets', 'chicken fillet', 'chicken cutlet', 'chicken schnitzel', 'chicken katsu', 'chicken tikka', 'tandoori chicken', 'butter chicken', 'chicken curry', 'chicken korma', 'chicken masala', 'chicken biryani', 'chicken kebab', 'chicken kebabs', 'chicken satay', 'chicken teriyaki', 'orange chicken', 'kung pao chicken', 'general tso chicken', 'chicken parmesan', 'chicken parmigiana', 'chicken alfredo', 'chicken cacciatore', 'coq au vin', 'chicken marsala', 'chicken piccata', 'chicken salad', 'chicken soup', 'chicken stock', 'chicken broth', 'chicken liver', 'chicken gizzard', 'chicken heart', 'ground chicken', 'minced chicken'],
+    
+    'lamb': ['lamb', 'mutton', 'lamb chop', 'lamb chops', 'lamb shank', 'lamb shanks', 'lamb leg', 'leg of lamb', 'lamb shoulder', 'lamb rack', 'rack of lamb', 'lamb loin', 'lamb tenderloin', 'lamb ribs', 'lamb cutlet', 'lamb cutlets', 'ground lamb', 'minced lamb', 'lamb mince', 'lamb kebab', 'lamb kebabs', 'lamb kofta', 'lamb keema', 'lamb curry', 'lamb rogan josh', 'lamb biryani', 'lamb korma', 'lamb vindaloo', 'lamb tikka', 'lamb masala', 'shepherd\'s pie', 'shepherds pie', 'lamb stew', 'irish stew', 'lamb gyro', 'lamb shawarma', 'lamb souvlaki', 'lamb moussaka', 'kleftiko', 'lamb roast', 'roast lamb', 'rack of lamb', 'lamb burger'],
+    
+    'shrimp': ['shrimp', 'shrimps', 'prawn', 'prawns', 'jumbo shrimp', 'tiger prawn', 'tiger prawns', 'king prawn', 'king prawns', 'giant prawn', 'giant prawns', 'white shrimp', 'pink shrimp', 'rock shrimp', 'spot prawn', 'bay shrimp', 'cocktail shrimp', 'shrimp cocktail', 'prawn cocktail', 'grilled shrimp', 'fried shrimp', 'tempura shrimp', 'shrimp tempura', 'prawn tempura', 'shrimp scampi', 'garlic shrimp', 'garlic prawns', 'shrimp curry', 'prawn curry', 'shrimp biryani', 'prawn biryani', 'shrimp masala', 'prawn masala', 'shrimp pad thai', 'shrimp fried rice', 'prawn fried rice', 'shrimp stir fry', 'prawn stir fry', 'shrimp pasta', 'prawn pasta', 'shrimp alfredo', 'coconut shrimp', 'coconut prawns', 'popcorn shrimp', 'butterfly shrimp', 'shrimp toast', 'prawn toast', 'har gow', 'siu mai shrimp', 'shrimp dumpling', 'prawn dumpling', 'gambas', 'camarones', 'langostino', 'scampi'],
+    
+    'tuna': ['tuna', 'tuna fish', 'ahi tuna', 'yellowfin tuna', 'bluefin tuna', 'albacore', 'skipjack', 'tuna steak', 'tuna steaks', 'seared tuna', 'grilled tuna', 'tuna sashimi', 'tuna tartare', 'tuna poke', 'poke bowl tuna', 'tuna salad', 'tuna sandwich', 'tuna melt', 'canned tuna', 'tuna mayo', 'tuna roll', 'spicy tuna', 'spicy tuna roll', 'tuna nigiri', 'tuna tataki', 'tuna carpaccio'],
+    
+    'salmon': ['salmon', 'salmon fillet', 'salmon fillets', 'salmon steak', 'salmon steaks', 'smoked salmon', 'lox', 'nova', 'gravlax', 'grilled salmon', 'baked salmon', 'pan seared salmon', 'poached salmon', 'salmon teriyaki', 'teriyaki salmon', 'salmon sashimi', 'salmon nigiri', 'salmon roll', 'salmon poke', 'salmon tartare', 'salmon burger', 'salmon cake', 'salmon cakes', 'salmon patty', 'salmon patties', 'salmon salad', 'canned salmon', 'pink salmon', 'sockeye', 'king salmon', 'atlantic salmon', 'wild salmon', 'coho salmon'],
+    
+    'fish': ['fish', 'cod', 'tilapia', 'bass', 'sea bass', 'trout', 'halibut', 'anchovy', 'anchovies', 'sardine', 'sardines', 'mackerel', 'snapper', 'red snapper', 'grouper', 'mahi mahi', 'swordfish', 'catfish', 'perch', 'flounder', 'sole', 'haddock', 'pollock', 'pike', 'walleye', 'carp', 'eel', 'unagi', 'fish fillet', 'fish fillets', 'fish steak', 'grilled fish', 'fried fish', 'baked fish', 'fish curry', 'fish fry', 'fish and chips', 'fish taco', 'fish tacos', 'fish soup', 'fish stew', 'fish stock', 'fish sauce', 'white fish', 'oily fish'],
+    
+    # Other common exclusions
+    'garlic': ['garlic', 'garlic powder', 'garlic clove', 'garlic cloves', 'minced garlic', 'crushed garlic', 'roasted garlic', 'garlic paste', 'garlic salt', 'garlic bread', 'garlic butter', 'garlic oil', 'black garlic', 'elephant garlic'],
+    'onion': ['onion', 'onions', 'shallot', 'shallots', 'scallion', 'scallions', 'green onion', 'green onions', 'spring onion', 'spring onions', 'leek', 'leeks', 'red onion', 'white onion', 'yellow onion', 'sweet onion', 'vidalia onion', 'pearl onion', 'pearl onions', 'cipollini', 'onion powder', 'dried onion', 'fried onion', 'caramelized onion'],
+    'cilantro': ['cilantro', 'coriander', 'coriander leaves', 'fresh coriander', 'coriander leaf', 'chinese parsley', 'dhania'],
+    'mushroom': ['mushroom', 'mushrooms', 'shiitake', 'portobello', 'portabella', 'cremini', 'button mushroom', 'button mushrooms', 'oyster mushroom', 'oyster mushrooms', 'chanterelle', 'chanterelles', 'morel', 'morels', 'porcini', 'enoki', 'king trumpet', 'maitake', 'wood ear', 'white mushroom', 'baby bella', 'truffle', 'truffles'],
+    'coconut': ['coconut', 'coconut milk', 'coconut oil', 'coconut cream', 'coconut flakes', 'desiccated coconut', 'shredded coconut', 'coconut water', 'coconut butter', 'coconut flour', 'coconut sugar', 'coconut aminos', 'creamed coconut'],
+    'tomato': ['tomato', 'tomatoes', 'tomato sauce', 'tomato paste', 'marinara', 'cherry tomato', 'cherry tomatoes', 'sun-dried tomato', 'sun-dried tomatoes', 'grape tomato', 'grape tomatoes', 'roma tomato', 'plum tomato', 'beefsteak tomato', 'heirloom tomato', 'tomato puree', 'tomato juice', 'diced tomatoes', 'crushed tomatoes', 'stewed tomatoes', 'tomato soup', 'ketchup', 'tomato ketchup'],
+    'avocado': ['avocado', 'avocados', 'guacamole', 'avocado toast', 'avocado oil', 'hass avocado'],
+    'honey': ['honey', 'raw honey', 'manuka honey', 'honeycomb', 'honey mustard'],
+    'mustard': ['mustard', 'dijon', 'dijon mustard', 'yellow mustard', 'mustard seed', 'mustard seeds', 'whole grain mustard', 'honey mustard', 'english mustard', 'french mustard', 'mustard powder', 'mustard oil'],
+    'bell_pepper': ['bell pepper', 'bell peppers', 'capsicum', 'sweet pepper', 'sweet peppers', 'red pepper', 'red bell pepper', 'green pepper', 'green bell pepper', 'yellow pepper', 'yellow bell pepper', 'orange pepper', 'orange bell pepper', 'roasted pepper', 'roasted peppers', 'pimento', 'pimiento'],
+    'ginger': ['ginger', 'ginger root', 'fresh ginger', 'minced ginger', 'grated ginger', 'ground ginger', 'ginger powder', 'pickled ginger', 'crystallized ginger', 'candied ginger', 'ginger paste'],
+    'corn': ['corn', 'cornmeal', 'corn starch', 'cornstarch', 'maize', 'sweet corn', 'corn kernel', 'corn kernels', 'corn on the cob', 'baby corn', 'corn flour', 'polenta', 'grits', 'hominy', 'corn tortilla', 'cornbread', 'popcorn', 'corn syrup', 'high fructose corn syrup'],
 }
 
 def get_ingredient_aliases(ingredient_name: str) -> List[str]:
