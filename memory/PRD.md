@@ -210,6 +210,22 @@ A mood-based recipe discovery application where users receive personalized meal 
 
 ## Changelog
 
+- **Jan 29, 2026**: CRITICAL FIX - Food Allergy & Exclusion System Safety Filter
+  - **PROBLEM**: Recipe filtering was failing - AI suggested "Karahi Prawns" when "Shrimp" was excluded
+  - **ROOT CAUSE**: The system relied solely on AI prompt compliance, and the AI would sometimes ignore the exclusion instructions
+  - **SOLUTION**: Implemented mandatory backend post-processing safety filter:
+    1. `filter_unsafe_recipes_from_response()` - First pass structured recipe filter
+    2. `filter_recipe_text_strictly()` - Second pass line-by-line filter
+    3. Word boundary regex matching (r'\b' + term + r'(?:s|es)?\b') to avoid false positives
+    4. Removed "hen" from chicken aliases to prevent matching "when", "then", "kitchen"
+  - **FILES MODIFIED**:
+    - `backend/server.py`: Added 3 new safety filter functions (lines 404-558)
+    - `backend/server.py`: Chat endpoint now applies filter after AI response (line 1457)
+    - `backend/server.py`: Diabetes endpoint now applies same filter (line 2817)
+    - `backend/ai_meal_planner.py`: Added user_exclusions parameter and filtering
+  - **TESTING**: 100% pass rate (11/11 backend tests) - See `/app/test_reports/iteration_24.json`
+  - **VERIFIED**: Prawn (shrimp alias), chicken tikka, butter chicken are all blocked correctly
+
 - **Jan 29, 2026**: Fixed Diabetes Meals Page MoodSelector Bug & Voice Optimization
   - **BUG FIX**: Fixed "MoodSelector is not defined" error on Diabetes Meals page
     - Replaced `MoodSelector` with `MoodCarousel` component in `DiabetesMealsPage.js`
