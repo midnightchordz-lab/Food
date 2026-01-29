@@ -470,7 +470,7 @@ const AuthModal = ({ open, onClose }) => {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    We'll send you a verification code via SMS
+                    We&apos;ll send you a verification code via SMS
                   </p>
                 </div>
                 
