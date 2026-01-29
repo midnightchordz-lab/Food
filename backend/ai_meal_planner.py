@@ -89,9 +89,9 @@ def filter_meal_plan_for_exclusions(meals: dict, excluded_names: List[str]) -> d
     return filtered_meals
 
 
-async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None, exclude_recipes: Optional[List[str]] = None, user_exclusions: Optional[List[str]] = None):
+async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None, exclude_recipes: Optional[List[str]] = None, user_exclusions: Optional[List[str]] = None, macro_targets: Optional[dict] = None):
     """
-    Generate a personalized weekly meal plan using AI based on user preferences, dietary choice, calorie target, and mood.
+    Generate a personalized weekly meal plan using AI based on user preferences, dietary choice, calorie target, macro targets, and mood.
     Excludes previously used recipes to ensure variety.
     Also filters for user food allergies/exclusions.
     """
@@ -152,6 +152,32 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     Each meal MUST fit within these calorie ranges. Suggest portion-appropriate meals.
     For lower calorie targets (<1800): Focus on lean proteins, vegetables, whole grains
     For higher calorie targets (>2500): Include healthy fats, complex carbs, protein-rich foods
+    """
+    
+    # Macro targets section
+    macro_section = ""
+    if macro_targets:
+        protein = macro_targets.get('protein_g')
+        carbs = macro_targets.get('carbs_g')
+        fat = macro_targets.get('fat_g')
+        fiber = macro_targets.get('fiber_g')
+        
+        if any([protein, carbs, fat, fiber]):
+            macro_section = """
+    DAILY MACRO TARGETS (IMPORTANT):"""
+            if protein:
+                macro_section += f"\n    - Protein: {protein}g daily (prioritize lean proteins, legumes, dairy)"
+            if carbs:
+                macro_section += f"\n    - Carbohydrates: {carbs}g daily (focus on complex carbs, whole grains)"
+            if fat:
+                macro_section += f"\n    - Fat: {fat}g daily (emphasize healthy fats: olive oil, nuts, avocado)"
+            if fiber:
+                macro_section += f"\n    - Fiber: {fiber}g daily (include vegetables, fruits, legumes)"
+            
+            macro_section += """
+    
+    Design meals that collectively hit these daily macro targets when breakfast + lunch + dinner are combined.
+    Include protein-rich foods at every meal. Balance carbs and fats appropriately.
     """
 
     system_message = f"""You are an expert meal planning assistant specializing in mood-based nutrition and global cuisines.
