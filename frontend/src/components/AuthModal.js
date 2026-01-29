@@ -285,115 +285,153 @@ const AuthModal = ({ open, onClose }) => {
 
         {/* Email Authentication */}
         {authMethod === 'email' && (
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <Tabs value={isLogin ? 'login' : 'register'} onValueChange={(v) => setIsLogin(v === 'login')}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login">Log In</TabsTrigger>
-                <TabsTrigger value="register">Sign Up</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <>
+            {/* Step 1: Credentials */}
+            {(isLogin || registrationStep === 'credentials') && (
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <Tabs value={isLogin ? 'login' : 'register'} onValueChange={(v) => {
+                  setIsLogin(v === 'login');
+                  setRegistrationStep('credentials');
+                }}>
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="login">Log In</TabsTrigger>
+                    <TabsTrigger value="register">Sign Up</TabsTrigger>
+                  </TabsList>
+                </Tabs>
 
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="rounded-xl"
-                  placeholder="What should we call you?"
-                  data-testid="name-input"
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="rounded-xl"
+                      placeholder="What should we call you?"
+                      data-testid="name-input"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="rounded-xl"
+                    placeholder="you@example.com"
+                    data-testid="email-input"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="rounded-xl"
+                    placeholder="••••••••"
+                    data-testid="password-input"
+                  />
+                </div>
+
+                {!isLogin && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Dietary Preferences</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {DIETARY_OPTIONS.slice(0, 6).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => toggleDietary(option)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                              dietaryRestrictions.includes(option)
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-secondary hover:bg-secondary/80'
+                            }`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Favorite Cuisines</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {CUISINE_OPTIONS.map((cuisine) => (
+                          <button
+                            key={cuisine.name}
+                            type="button"
+                            onClick={() => toggleCuisine(cuisine.name)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                              cuisinePreferences.includes(cuisine.name)
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-secondary hover:bg-secondary/80'
+                            }`}
+                          >
+                            <span>{cuisine.flag}</span>
+                            {cuisine.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full rounded-xl py-6"
+                  disabled={loading}
+                  data-testid="submit-button"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin mr-2" size={18} />
+                  ) : null}
+                  {isLogin ? 'Log In' : (
+                    <>
+                      Continue
+                      <ArrowRight size={18} className="ml-2" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
+
+            {/* Step 2: Food Exclusions (Registration only) */}
+            {!isLogin && registrationStep === 'exclusions' && (
+              <div className="space-y-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setRegistrationStep('credentials')}
+                  className="mb-2 -ml-2"
+                >
+                  <ArrowLeft size={18} className="mr-2" />
+                  Back
+                </Button>
+                
+                <div className="text-center mb-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full text-primary text-sm font-medium mb-2">
+                    Step 2 of 2
+                  </div>
+                </div>
+                
+                <ExclusionOnboarding
+                  onComplete={completeRegistration}
+                  onSkip={skipExclusions}
                 />
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="rounded-xl"
-                placeholder="you@example.com"
-                data-testid="email-input"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="rounded-xl"
-                placeholder="••••••••"
-                data-testid="password-input"
-              />
-            </div>
-
-            {!isLogin && (
-              <>
-                <div className="space-y-2">
-                  <Label>Dietary Preferences</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {DIETARY_OPTIONS.slice(0, 6).map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => toggleDietary(option)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                          dietaryRestrictions.includes(option)
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary hover:bg-secondary/80'
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Favorite Cuisines</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {CUISINE_OPTIONS.map((cuisine) => (
-                      <button
-                        key={cuisine.name}
-                        type="button"
-                        onClick={() => toggleCuisine(cuisine.name)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
-                          cuisinePreferences.includes(cuisine.name)
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary hover:bg-secondary/80'
-                        }`}
-                      >
-                        <span>{cuisine.flag}</span>
-                        {cuisine.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full rounded-xl py-6"
-              disabled={loading}
-              data-testid="submit-button"
-            >
-              {loading ? (
-                <Loader2 className="animate-spin mr-2" size={18} />
-              ) : null}
-              {isLogin ? 'Log In' : 'Create Account'}
-            </Button>
-          </form>
+          </>
         )}
 
         {/* Phone Authentication */}
