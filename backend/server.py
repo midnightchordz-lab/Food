@@ -2192,7 +2192,6 @@ async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: Use
     """Generate diabetes-safe recipes based on user preferences"""
     try:
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
-        chat = LlmChat(api_key=llm_api_key, model="gpt-4o")
         
         system_msg = get_diabetes_recipe_prompt(
             mood=request.mood,
@@ -2204,9 +2203,15 @@ async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: Use
             guidelines=request.guidelines
         )
         
+        chat = LlmChat(
+            api_key=llm_api_key,
+            session_id=f"diabetes-{request.session_id}-{uuid.uuid4().hex[:8]}",
+            system_message=system_msg
+        )
+        chat.with_model("openai", "gpt-4o")
+        
         response = await chat.send_message(
-            UserMessage(text=f"Please generate 3 {request.dietary_pref} {request.meal_type} recipes for {request.cuisines} cuisine that are safe for {request.diabetes_label} and match a {request.mood.lower()} mood."),
-            system=system_msg
+            UserMessage(text=f"Please generate 3 {request.dietary_pref} {request.meal_type} recipes for {request.cuisines} cuisine that are safe for {request.diabetes_label} and match a {request.mood.lower()} mood.")
         )
         
         # Save to chat history
