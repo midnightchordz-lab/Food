@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import RecipeMessageDisplay, { hasRecipes } from '@/components/RecipeMessageDisplay';
-import MoodSelector, { MOODS } from '@/components/MoodSelector';
+import MoodCarousel, { MOOD_IMAGES } from '@/components/MoodCarousel';
 import MealTypeSelector, { MEAL_TYPES } from '@/components/MealTypeSelector';
 import FoodPreferenceSelector, { FOOD_PREFERENCES } from '@/components/FoodPreferenceSelector';
 import CuisineSelector, { CUISINES } from '@/components/CuisineSelector';
