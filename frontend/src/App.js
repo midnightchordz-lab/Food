@@ -12,6 +12,7 @@ import ExploreCuisinesPage from "@/pages/ExploreCuisinesPage";
 import CuisineRecipesPage from "@/pages/CuisineRecipesPage";
 import DiscoverRecipesPage from "@/pages/DiscoverRecipesPage";
 import DiabetesMealsPage from "@/pages/DiabetesMealsPage";
+import ImportRecipePage from "@/pages/ImportRecipePage";
 import Navigation from "@/components/Navigation";
 import ShoppingCartModal from "@/components/ShoppingCartModal";
 import "@/App.css";
@@ -61,6 +62,7 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/diabetes-meals" element={<DiabetesMealsPage />} />
+              <Route path="/import-recipe" element={<ImportRecipePage />} />
               <Route path="/saved-recipes" element={<SavedRecipes />} />
               <Route path="/shopping-list" element={<ShoppingListPage />} />
               <Route path="/weekly-planner" element={<WeeklyPlannerPage />} />
