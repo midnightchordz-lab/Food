@@ -546,7 +546,7 @@ const AuthModal = ({ open, onClose }) => {
                   </div>
                   <h3 className="font-semibold">Phone Verified!</h3>
                   <p className="text-sm text-muted-foreground">
-                    Let's set up your profile
+                    Let&apos;s set up your profile
                   </p>
                 </div>
                 
