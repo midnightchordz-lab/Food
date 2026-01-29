@@ -83,6 +83,10 @@ const DiabetesMealsPage = () => {
   const [selectedMealType, setSelectedMealType] = useState(null);
   const [selectedCuisines, setSelectedCuisines] = useState([]);
   
+  // Food exclusions state
+  const [userExclusions, setUserExclusions] = useState([]);
+  const [showExclusionsBanner, setShowExclusionsBanner] = useState(true);
+  
   const messagesEndRef = useRef(null);
   const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
