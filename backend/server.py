@@ -66,6 +66,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Startup event - create database indexes
+@app.on_event("startup")
+async def startup_event():
+    from routes.deps import create_indexes
+    await create_indexes()
+    logger.info("Application started with database indexes")
+
 # Shutdown event
 @app.on_event("shutdown")
 async def shutdown_db_client():
