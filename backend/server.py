@@ -2261,7 +2261,7 @@ Always remind them to consult their healthcare provider for personalized medical
         )
         chat.with_model("openai", "gpt-4o-mini")
         
-        response = await chat.send_message(UserMessage(text=request.message))
+        ai_response = await chat.send_message(UserMessage(text=request.message))
         
         # Save to chat history
         await db.diabetes_chat_messages.insert_one({
@@ -2275,12 +2275,12 @@ Always remind them to consult their healthcare provider for personalized medical
             "session_id": request.session_id,
             "user_id": current_user.id,
             "role": "assistant",
-            "content": response.text,
+            "content": ai_response,
             "timestamp": datetime.now(timezone.utc).isoformat()
         })
         
         return {
-            "response": response.text,
+            "response": ai_response,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
