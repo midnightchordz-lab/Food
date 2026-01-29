@@ -451,10 +451,18 @@ const DiabetesMealsPage = () => {
         }
       });
       
+      // Check if mood change was detected
+      if (response.data.mood_change_detected && response.data.new_mood) {
+        setSelectedMood(response.data.new_mood);
+        toast.success(`Mood updated to ${response.data.new_mood}!`);
+      }
+      
       const aiMsg = {
         role: 'assistant',
         content: response.data.response,
-        timestamp: response.data.timestamp || new Date().toISOString()
+        timestamp: response.data.timestamp || new Date().toISOString(),
+        // Show mood selector if mood changed so user can regenerate recipes
+        showMoodChange: response.data.mood_change_detected
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
