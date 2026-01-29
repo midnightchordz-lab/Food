@@ -3,27 +3,26 @@ The user's vision is a comprehensive, mood-based recipe discovery application na
 
 Latest CRITICAL REQUIREMENTS from the user:
 1.  **Import Recipe Feature:** A dedicated Import Recipe tab allowing users to import recipes from four sources: URL, Image, Video, and Text. The core requirement is that the AI must automatically convert these imported recipes into the app's standardized, highly-detailed format, including specific timings, temperatures, and techniques, making them usable by a complete beginner. A preview and edit step is required before saving.
-2.  **Diabetes-Focused Meal Planning:** A dedicated Diabetes Meals tab that follows a strict, research-first conversation flow. Before suggesting recipes, the AI *must* use a web search tool to research the user's specified diabetes type (Type 1, 2, Gestational) and communicate its findings. All subsequent recipe suggestions must align with these evidence-based guidelines, including diabetes-specific nutritional info (Net Carbs, GI) and safe drink pairings.
-3.  **Intelligent Mood Change Detection:** The chat assistant must intelligently detect when a user's mood has changed mid-conversation (e.g., from happy to cozy) and automatically adapt its recipe suggestions without requiring the user to restart the flow, while preserving other preferences like diet and cuisine.
+2.  **Diabetes-Focused Meal Planning:** A dedicated Diabetes Meals tab that follows a strict, research-first conversation flow. Before suggesting recipes, the AI *must* use a web search tool to research the user's specified diabetes type (Type 1, 2, Gestational) and communicate its findings. All subsequent recipe suggestions must align with these evidence-based guidelines.
+3.  **Intelligent Mood Change Detection:** The chat assistant must intelligently detect when a user's mood has changed mid-conversation and automatically adapt its recipe suggestions.
+4.  **UI/UX Enhancements:**
+    *   Create a How It Works modal on the landing page explaining the app's key features.
+    *   Generate and integrate new 3D-style emoji images for mood selection.
+    *   Redesign the mood selection interface into a 2-row grid for better visibility and a smoother user experience.
+5.  **Bug Fixes:**
+    *   Fix the issue where imported recipes are saved but not displayed correctly from the Saved Recipes page.
+    *   Fix the issue where ingredients added from a recipe modal do not appear in the shopping list.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack React and FastAPI app with a MongoDB database. Key implemented features include:
-- A multi-step recipe discovery chat flow.
-- A detailed recipe view modal and weekly meal planner.
-- **Session Persistence:** A critical bug causing users to be logged out has been fixed.
-- **Drink Pairings:** A bug causing generic drink pairings has been fixed; pairings are now cuisine-specific.
-- **Intelligent Mood Change:** The chat flow now detects and adapts to user mood changes.
-- **Diabetes Meals Tab:** A new, functional tab provides research-based, diabetes-friendly meal planning.
-- **Import Recipe Tab (Scaffolding):** The basic page (), navigation link, and backend routes for the import feature have been created.
-- A bug preventing items from being added to the shopping cart from the Diabetes page has been fixed.
+The application is a full-stack React and FastAPI app with a MongoDB database. The core chat flow, diabetes meal planning, and intelligent mood detection are functional. The Import Recipe feature is now fully implemented across all four methods (URL, Image, Video, Text), including the complex AI-driven conversion of imported data into a standardized, detailed format. The UI has been significantly enhanced with a new How It Works modal and a visually appealing 2-row mood selection grid using custom 3D emoji images. Critical bugs related to saving/viewing imported recipes and adding items to the shopping list have been resolved.
 
 **Last working item**:
--   **Last item agent was working**: The user requested a bug fix for an Add to Cart error. The agent identified a  in  where the  function was failing on undefined inputs. The agent added safety checks to , , and  to prevent the crash.
--   **Status**: RESOLVED
--   **Agent Testing Done**: Y (Verified via console logs that the error no longer appears).
--   **Which testing method agent to use?**: NA
+-   **Last item agent was working**: The user requested that the Diabetes Meals page be updated to use the new 2-row mood selection grid, consistent with the main chat page. The agent updated the  file to replace the old  component with the new  component and updated all associated logic to use the new  data structure.
+-   **Status**: USER VERIFICATION PENDING
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: screenshot tool. The agent should log in, navigate to the Diabetes Meals tab, and take a screenshot to confirm the new 2-row mood grid is displayed correctly at the mood selection step.
 -   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
@@ -33,56 +32,59 @@ The application is a full-stack React and FastAPI app with a MongoDB database. K
 **Issues Detail:**
 -   **Issue 1: Voice agent response is slow**
     -   **Attempted fixes**: None.
-    -   **Next debug checklist**: Time the round-trip latency to identify the bottleneck (STT, AI response, or TTS). Investigate using smaller, faster models for STT/TTS.
-    -   **Why fix this issue and what will be achieved with the fix?**: A responsive voice agent is crucial for a good user experience.
+    -   **Next debug checklist**: Time the round-trip latency to identify the bottleneck (STT, AI response, or TTS). Investigate using smaller, faster models for STT/TTS or stream responses.
+    -   **Why fix this issue and what will be achieved with the fix?**: A responsive voice agent is crucial for a good user experience, especially during hands-free cooking.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: backend
     -   **Blocked on other issue**: None
 
 -   **Issue 2: Verify image display for previously saved recipes**
-    -   **Attempted fixes**: The image service was fixed for new recipes, but this fix needs verification for older saved recipes.
-    -   **Next debug checklist**: Test the user flow: save a recipe, navigate to the Saved Recipes page, and confirm the image appears.
-    -   **Why fix this issue and what will be achieved with the fix?**: Ensures visual consistency and a complete user experience.
+    -   **Attempted fixes**: The image service was fixed for new recipes, and a major bug with retrieving saved recipes was fixed. However, explicit verification that images for recipes saved *before* these fixes are displaying correctly has not been done.
+    -   **Next debug checklist**: Test the user flow: log in, navigate to the Saved Recipes page, and confirm that images for older recipes (if any exist for the test user) appear correctly. If none exist, this can be marked as resolved.
+    -   **Why fix this issue and what will be achieved with the fix?**: Ensures visual consistency and a complete user experience for long-term users.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None
 
 **In progress Task List**:
--   **Task 1: Complete and test drink pairing feature**
-    -   **Where to resume**: The feature is now fully implemented and tested.
-    -   **What will be achieved with this?**: Fulfills the user's request to add alcoholic and non-alcoholic drink suggestions to all recipes.
-    -   **Status**: FINISHED
-    -   **Should Test frontend/backend/both after fix?**: N/A
-    -   **Blocked on something**: None
+- None
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **P0: Implement Import Recipe Feature:** This is the next major feature requested by the user. The agent must build the UI for the four import methods (URL, Image, Video, Text) and implement the complex backend logic for AI-driven data extraction and conversion into the app's standard, detailed recipe format.
+    -   **P1: Refactor :** This file is critically oversized. Break it down into modular FastAPI routers (e.g., , , , ) to improve maintainability.
     -   **P1: Complete Phone Authentication:** Implement the Twilio SMS verification logic in . This will require requesting API keys from the user.
     -   **P1: Persist Meal Plans & Subscriptions to DB:** Ensure user-generated meal plans and newsletter subscriptions are saved to and loaded from the database.
     -   **P1: Implement Macro Tracking:** Add Protein, Carb, and Fat goal inputs to the meal planner.
 
 -   **Future Tasks:**
     -   **P2:** Implement Shopping Partner Integration (e.g., Instacart, Amazon Fresh).
-    -   **P2:** Refactor : Break down the monolithic file into modular FastAPI routers.
     -   **P2:** Add a recipe rating and review system.
     -   **P2:** Implement recipe search/filter functionality.
     -   **P2:** Add a Glucose Logging feature for the Diabetes tab.
     -   **P2:** Add mini-recipes for suggested drinks.
 
 **Completed work in this session**
--   **Feature - Drink Pairings (FIXED & COMPLETED):** Fixed a bug causing generic drink pairings. The frontend parsing logic in  was corrected, and old cached recipes were cleared from the backend to ensure all users receive fresh, cuisine-specific pairings.
--   **UI Bug Fix - Duplicate Close Button (FIXED):** Resolved an issue where  showed two 'X' buttons by adding a  prop to the shared  component.
--   **Feature - Intelligent Mood Change Detection (DONE):** Implemented backend logic in  and frontend updates in  to allow the AI to detect and adapt to user mood changes mid-conversation.
--   **Major Feature - Diabetes Meals Tab (DONE):**
-    -   Added a new Diabetes Meals tab and page ().
-    -   Implemented a multi-step flow that first researches the user's diabetes type via a new  endpoint using web search.
-    -   Created a  endpoint to generate recipes that adhere to the research findings.
-    -   The UI displays diabetes-specific info (Net Carbs, GI) and safe drink pairings.
--   **Bug Fix - Add to Cart (FIXED):** Resolved a  in  by adding safety checks to handle potentially undefined ingredients, allowing Add to Cart to work correctly from the Diabetes page.
--   **Feature Scaffolding - Import Recipe Tab (DONE):** Created the initial files (), navigation links, and backend routes for the upcoming Import Recipe feature.
+-   **Major Feature - Import Recipe (DONE):**
+    -   Implemented backend logic for all four import methods (URL, Text, Image, Video) in .
+    -   Used OpenAI Vision for image import and oEmbed API for reliable YouTube video title extraction.
+    -   Implemented robust AI prompts to convert unstructured data into the app's standard, detailed recipe format.
+    -   Enhanced the  frontend to support all import types, including video file uploads and a preview/edit modal.
+-   **UI/UX - Mood Selector Revamp (DONE):**
+    -   Generated 12 new 3D-style emoji images for different moods.
+    -   Created a new  component.
+    -   Replaced the old button-based mood selector with a responsive 2-row grid on both the  and , improving usability.
+-   **UI/UX - How It Works Modal (DONE):**
+    -   Implemented a comprehensive modal on  that explains all key features of the app (Mood Discovery, Diabetes Meals, Recipe Import, etc.).
+-   **Bug Fix - Saved Recipe Display (FIXED):**
+    -   Corrected the  backend endpoint in  to search both the  and  collections, ensuring imported recipes display correctly when opened from the Saved Recipes page.
+-   **Bug Fix - Shopping List (FIXED):**
+    -   Resolved an issue where ingredients were not being added to the shopping list from recipe modals.
+    -   Refactored  and  to consistently use the frontend  (which uses ) instead of a separate, out-of-sync backend API call. This unified the logic and fixed the bug.
+-   **Code Quality:**
+    -   Fixed multiple linting errors in both Python () and JavaScript (, ).
+    -   Resolved naming conflicts for Pydantic models in .
 
 **Earlier issues found/mentioned but not fixed**
 - The two issues from the initial handoff (slow voice agent, saved recipe image verification) are still pending.
@@ -90,7 +92,7 @@ The application is a full-stack React and FastAPI app with a MongoDB database. K
 **Known issue recurrence from previous fork**
 -   **Issue recurrence in previous fork**: Generic recipe instructions.
 -   **Recurrence count**: 2+
--   **Status**: RESOLVED. The agent has consistently adhered to the user's requirement for highly-detailed, specific recipe instructions, especially in the new Diabetes and upcoming Import features.
+-   **Status**: RESOLVED. The agent has consistently adhered to the user's requirement for highly-detailed, specific recipe instructions.
 
 **Code Architecture**
 
@@ -99,13 +101,15 @@ The application is a full-stack React and FastAPI app with a MongoDB database. K
 -   **Frontend**: React, React Hooks, Context API, Tailwind CSS, Shadcn UI
 -   **Backend**: FastAPI, Pydantic, LiteLLM
 -   **Database**: MongoDB
--   **AI Integration**: Multi-step AI chains using , including web search for research () and prompts for data extraction and generation. The Import from Image feature will require a Vision model.
+-   **AI Integration**: Multi-step AI chains, OpenAI Vision for image analysis, web scraping and oEmbed API for URL/video data extraction.
+-   **Dependencies**: , 
 
 **key DB schema**
-- The user's requirements for the Diabetes and Import features imply significant additions to the recipe schema to store diabetes-specific nutritional data, research sources, and import metadata (, ). These schemas (, ) have been detailed in the user prompts but are not yet implemented in the database.
+- ****: New collection created to store recipes from the import feature. Contains all standard recipe fields plus import metadata (, , ).
+- ****: This collection was updated. It stores a reference  which can now point to a document in either  or .
 
 **changes in tech stack**
-- None.
+- Added  for attempting to get video captions, though fallback methods (oEmbed) proved more reliable due to IP blocking.
 
 **All files of reference**
 -   
@@ -120,21 +124,25 @@ The application is a full-stack React and FastAPI app with a MongoDB database. K
 -   
 
 **Areas that need refactoring**:
--   ****: This file is now critically oversized due to the addition of multiple major features. It urgently needs to be broken down into separate FastAPI routers (e.g., , , , ).
--   ** & **: These new pages contain complex state management and logic that could be extracted into custom hooks to improve readability and maintainability.
+-   ****: This file is now critically oversized and complex. It urgently needs to be broken down into separate FastAPI routers (e.g., , , ). This should be a P1 priority.
+-   ****: This page contains its own recipe modal logic. It should be refactored to use the shared  component to reduce code duplication and ensure consistent functionality (like the add to cart feature).
 
 **key api endpoints**
 -   **New Endpoints:**
-    -   : Performs web research on a diabetes type and returns structured guidelines.
-    -   : Generates diabetes-friendly recipes based on research and user preferences.
-    -   : Stubs created for the recipe import feature.
+    -   
+    -   
+    -   
+    -   
+    -   
 -   **Updated Endpoints:**
-    -   : Logic enhanced to detect and handle user mood changes.
+    -   : Now aggregates recipes from both  and  collections.
+    -   : This endpoint is now being phased out in favor of client-side context management for the shopping list, but remains in the code.
 
 **Critical Info for New Agent**
--   **Your immediate P0 task is to build the Import Recipe feature.** The user has provided an extremely detailed product requirements document (PRD) for this. You must follow it precisely, especially the **CRITICAL REQUIREMENT** to use AI to convert any imported recipe into the app's standard, highly-detailed instruction format.
--   Refer to the user's PRDs for the Diabetes Meals and Mood Change features to understand the expected level of detail and quality.
--   The monolithic  is a growing liability. While implementing the import feature, consider proposing its refactoring as a high-priority upcoming task.
+-   Your first action should be to verify the last change: ensure the Diabetes Meals page correctly displays the new 2-row mood selection grid.
+-   The highest priority technical debt is the monolithic  file. Propose its refactoring into smaller, manageable routers as your next major task.
+-   After addressing the  refactor, proceed with the P1 functional tasks: Phone Authentication, Persisting Meal Plans, and Macro Tracking.
+-   The shopping list functionality now relies entirely on the frontend  and . Backend endpoints for the shopping list are effectively deprecated and should not be used for adding items.
 
 **documents and test reports created in this job**
 -    (updated)
@@ -142,37 +150,38 @@ The application is a full-stack React and FastAPI app with a MongoDB database. K
 -   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request:** Implement the Import Recipe feature from multiple sources (URL, Image, Video, Text) with AI conversion to the standard detailed format. (IN PROGRESS)
-2.  **Bug Report:** Add to cart is broken. (RESOLVED)
-3.  **Request:** Implement the Diabetes Meals tab with a research-first approach. (RESOLVED)
-4.  **Confirmation:** The Add to Cart bug fix is working. (RESOLVED)
-5.  **Confirmation:** The diabetes meals feature UI looks correct and the flow is working. (RESOLVED)
-6.  **Request:** Implement intelligent mood change detection in the chat. (RESOLVED)
-7.  **Bug Report:** The mood detection is incorrectly identifying the mood. (RESOLVED)
-8.  **Confirmation:** The mood change detection fix is working correctly. (RESOLVED)
-9.  **Bug Report:** The recipe detail modal has two 'X' close buttons. (RESOLVED)
-10. **Bug Report:** Drink pairings are generic and not cuisine-specific. (RESOLVED)
+1.  **Request:** Apply the 2-row mood grid to the Diabetes page. (IN PROGRESS)
+2.  **Bug Report:** Ingredients are not being added to the shopping list tab. (RESOLVED)
+3.  **Request:** Change the mood selector to a 2-row grid to make movement smoother. (RESOLVED)
+4.  **Request:**  - Generate more mood images, integrate them, and create a carousel. (RESOLVED)
+5.  **Request:** Create 3D emoji images for mood selection based on a provided style. (RESOLVED)
+6.  **Request:** Fix the How It Works button to show a modal with key features, not redirect. (RESOLVED)
+7.  **Bug Report:** Saved recipes are not displaying the correct content when opened. (RESOLVED)
+8.  **Bug Report:** The video import always returns the same Classic Beef Stew recipe, regardless of the URL. It's not analyzing the video. (RESOLVED)
+9.  **Bug Report:** Same issue with image import (not being handled correctly). (RESOLVED)
+10. **Bug Report:** The recipe preview is empty after importing from a video URL. (RESOLVED)
 
 **Project Health Check:**
--   **Broken**: None. The critical session persistence and add to cart bugs have been fixed.
+-   **Broken**: None. All reported bugs from this session have been fixed.
 -   **Mocked**:
     -   Phone authentication remains UI-only.
     -   The Subscribe button for the newsletter is UI-only.
 
 **3rd Party Integrations**
 -   **OpenAI GPT-4o / gpt-4o-mini** (Text Generation, Recipe Conversion) — uses Emergent LLM Key
--   **OpenAI Vision Model** (Implied for Image Import) — uses Emergent LLM Key
+-   **OpenAI Vision Model** (For Image Import) — uses Emergent LLM Key
 -   **Web Search Tool** (For Diabetes Research) — platform-provided
 -   **Twilio** (SMS for Phone Auth) — requires User API Key. (Not yet implemented)
+-   **youtube-transcript-api**: Installed for video analysis.
 
 **Testing status**
--   **Testing agent used after significant changes**: YES (For drink pairing and session persistence fixes).
+-   **Testing agent used after significant changes**: YES (For initial implementation of the Import Recipe feature).
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: []
--   **Known regressions**: None. The session persistence regression from the previous fork was resolved.
+-   **Known regressions**: None.
 
 **Credentials to test flow:**
 Use the registration form on the website to create a new user for testing. Phone authentication is not functional yet.
 
 **What agent forgot to execute**
-- The agent has correctly prioritized the user's most recent critical feature requests. Older, lower-priority tasks from the initial handoff (optimizing the voice agent, verifying old recipe images) have not been addressed yet but were not part of the active work in this session.</analysis>
+- The agent did not perform a final visual verification (screenshot) after applying the new mood grid to the . This should be the first action for the next agent.</analysis>
