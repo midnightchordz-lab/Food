@@ -306,6 +306,125 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
             )}
           </div>
 
+          {/* Macro Targets Section */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-lg flex items-center gap-2">
+                <span className="text-xl">🥩</span>
+                Daily Macro Targets (Optional)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="enable-macros"
+                  checked={enableMacros}
+                  onCheckedChange={(checked) => setEnableMacros(checked)}
+                  data-testid="enable-macro-target"
+                />
+                <Label htmlFor="enable-macros" className="text-sm cursor-pointer">
+                  Enable
+                </Label>
+              </div>
+            </div>
+            
+            {enableMacros && (
+              <div className="space-y-4 p-4 bg-gradient-to-br from-blue-50/50 to-green-50/50 dark:from-blue-950/20 dark:to-green-950/20 rounded-xl border">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Set your daily macro goals. The AI will design meals to help you hit these targets.
+                </p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Protein */}
+                  <div className="p-4 bg-card rounded-lg border border-red-200 dark:border-red-900">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">🥩</span>
+                      <Label className="font-medium text-red-700 dark:text-red-400">Protein</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={50}
+                        max={400}
+                        step={5}
+                        value={proteinTarget}
+                        onChange={(e) => setProteinTarget(parseInt(e.target.value) || 150)}
+                        className="w-20 text-center"
+                        data-testid="protein-input"
+                      />
+                      <span className="text-sm text-muted-foreground">g/day</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {Math.round(proteinTarget * 4)} cal ({enableCalorieTarget ? Math.round((proteinTarget * 4 / calorieTarget) * 100) : '--'}%)
+                    </p>
+                  </div>
+                  
+                  {/* Carbs */}
+                  <div className="p-4 bg-card rounded-lg border border-amber-200 dark:border-amber-900">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">🍞</span>
+                      <Label className="font-medium text-amber-700 dark:text-amber-400">Carbs</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={50}
+                        max={500}
+                        step={5}
+                        value={carbsTarget}
+                        onChange={(e) => setCarbsTarget(parseInt(e.target.value) || 200)}
+                        className="w-20 text-center"
+                        data-testid="carbs-input"
+                      />
+                      <span className="text-sm text-muted-foreground">g/day</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {Math.round(carbsTarget * 4)} cal ({enableCalorieTarget ? Math.round((carbsTarget * 4 / calorieTarget) * 100) : '--'}%)
+                    </p>
+                  </div>
+                  
+                  {/* Fat */}
+                  <div className="p-4 bg-card rounded-lg border border-green-200 dark:border-green-900">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">🥑</span>
+                      <Label className="font-medium text-green-700 dark:text-green-400">Fat</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={20}
+                        max={200}
+                        step={5}
+                        value={fatTarget}
+                        onChange={(e) => setFatTarget(parseInt(e.target.value) || 65)}
+                        className="w-20 text-center"
+                        data-testid="fat-input"
+                      />
+                      <span className="text-sm text-muted-foreground">g/day</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {Math.round(fatTarget * 9)} cal ({enableCalorieTarget ? Math.round((fatTarget * 9 / calorieTarget) * 100) : '--'}%)
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Total calculation */}
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg text-center">
+                  <p className="text-sm">
+                    <span className="font-medium">Macro Total:</span>{' '}
+                    <span className="text-red-600">{proteinTarget}g P</span> +{' '}
+                    <span className="text-amber-600">{carbsTarget}g C</span> +{' '}
+                    <span className="text-green-600">{fatTarget}g F</span> ={' '}
+                    <span className="font-bold">{(proteinTarget * 4) + (carbsTarget * 4) + (fatTarget * 9)} cal</span>
+                  </p>
+                  {enableCalorieTarget && Math.abs(((proteinTarget * 4) + (carbsTarget * 4) + (fatTarget * 9)) - calorieTarget) > 100 && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      ⚠️ Macro total differs from calorie target by {Math.abs(((proteinTarget * 4) + (carbsTarget * 4) + (fatTarget * 9)) - calorieTarget)} cal
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div>
             <Label className="text-lg mb-3 block">Focus Areas (Optional)</Label>
             <div className="grid grid-cols-2 gap-3">
