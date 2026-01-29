@@ -2832,6 +2832,46 @@ async def diabetes_chat(request: DiabetesChatRequest, current_user: User = Depen
         diabetes_type = context.get("diabetesType", "type2")
         guidelines = DIABETES_GUIDELINES.get(diabetes_type, DIABETES_GUIDELINES["type2"])
         
+        # Get user's excluded ingredients for filtering
+        user_exclusions = await get_user_excluded_ingredients(current_user.id)
+        
+        # Check if this is a mood change request
+        mood_change = is_mood_change_request(request.message, context)
+        
+        if mood_change.get("is_mood_change"):
+            new_mood = mood_change.get("new_mood")
+            if new_mood:
+                # Return acknowledgment and prompt to generate new recipes
+                response_text = f"""I see your mood has shifted to {new_mood}. That's completely normal - our feelings can change throughout the day.
+
+{MOOD_RESPONSES.get(new_mood, MOOD_RESPONSES['happy'])['message']}
+
+Would you like me to suggest some new diabetes-friendly recipes that match your {new_mood} mood? Just click "Show Recipes" above to get personalized suggestions!"""
+                
+                # Save to chat history
+                await db.diabetes_chat_messages.insert_one({
+                    "session_id": request.session_id,
+                    "user_id": current_user.id,
+                    "role": "user",
+                    "content": request.message,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
+                await db.diabetes_chat_messages.insert_one({
+                    "session_id": request.session_id,
+                    "user_id": current_user.id,
+                    "role": "assistant",
+                    "content": response_text,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                })
+                
+                return {
+                    "response": response_text,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "mood_change_detected": True,
+                    "new_mood": new_mood
+                }
+        
+        # Build system message with exclusions
         system_msg = f"""You are a helpful diabetes nutrition assistant. The user has {guidelines['name']}.
 
 Key dietary principles for this user:
@@ -2841,6 +2881,15 @@ Answer their questions helpfully while keeping diabetes management in mind. Be e
 If they ask for recipe modifications, ensure your suggestions maintain blood sugar safety.
 Always remind them to consult their healthcare provider for personalized medical advice."""
         
+        # Add exclusion instructions if user has any
+        if user_exclusions:
+            exclusion_list = ", ".join(user_exclusions)
+            system_msg += f"""
+
+IMPORTANT FOOD RESTRICTIONS: The user has allergies/exclusions to: {exclusion_list}
+- NEVER suggest recipes or foods containing these ingredients
+- If asked about recipes with these ingredients, suggest safe alternatives instead"""
+        
         chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"diabetes-chat-{request.session_id}-{uuid.uuid4().hex[:8]}",
@@ -2849,6 +2898,15 @@ Always remind them to consult their healthcare provider for personalized medical
         chat.with_model("openai", "gpt-4o-mini")
         
         ai_response = await chat.send_message(UserMessage(text=request.message))
+        
+        # Apply safety filter to catch any accidental violations
+        if user_exclusions:
+            filtered_response, removed_recipes, violations = filter_unsafe_recipes_from_response(
+                ai_response, user_exclusions
+            )
+            if removed_recipes:
+                logging.warning(f"SAFETY (Diabetes Chat): Filtered content with violations: {violations}")
+            ai_response = filtered_response
         
         # Save to chat history
         await db.diabetes_chat_messages.insert_one({
