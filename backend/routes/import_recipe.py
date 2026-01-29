@@ -233,23 +233,25 @@ async def import_from_image(request: ImportImageRequest, current_user: User = De
         vision_chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"import-vision-{uuid.uuid4().hex[:8]}",
-            system_message="""Extract or create a recipe from this image as JSON.
+            system_message=f"""{IMPORT_RECIPE_PROMPT}
 
-JSON format:
-{"name": "Title", "description": "Brief", "cuisine": "Type", "difficulty": "Easy/Medium/Hard",
-"prepTime": "X min", "cookTime": "X min", "servings": 4,
-"ingredients": [{"name": "ingredient", "category": "pantry"}],
-"instructions": [{"stepNumber": 1, "instruction": "Step", "time": "X min"}],
-"chefTips": ["Tip"]}
+SOURCE CONTEXT: The recipe is being extracted from an image.
 
-If photo of food: identify dish and create recipe. Output ONLY JSON."""
+IMPORTANT INSTRUCTIONS:
+1. If the image shows a recipe card or text, extract and convert it
+2. If the image shows a finished dish but no recipe text, identify the dish and create a professional recipe for it
+3. If the image is unclear, use your best judgment to identify any food shown
+4. ALWAYS output a valid recipe JSON - never return an error
+5. Be creative but practical
+
+Output ONLY valid JSON, no other text or markdown code blocks."""
         )
         vision_chat.with_model("openai", "gpt-4o-mini")
         
         image_content = ImageContent(image_base64=request.image_data)
         
         response = await vision_chat.send_message(
-            UserMessage(text="Extract or create a recipe. Output JSON only.", file_contents=[image_content])
+            UserMessage(text="Analyze this image and create a complete, detailed recipe. If this is a recipe card/text image, extract all information. If this is a photo of food, identify the dish and create a professional recipe for it. Output ONLY the JSON object.", file_contents=[image_content])
         )
         
         try:
