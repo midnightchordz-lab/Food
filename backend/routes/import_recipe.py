@@ -338,26 +338,46 @@ async def import_from_video(request: ImportVideoRequest, current_user: User = De
                 except Exception as e:
                     logging.warning(f"Page scrape failed: {e}")
         
+        video_info = f"""=== COOKING VIDEO INFORMATION ===
+
+Video Title: {video_title}
+Channel/Creator: {channel_name}
+Video URL: {request.video_url}
+
+Video Description:
+{video_description[:6000] if video_description else 'No description available - use the video title to identify the recipe'}
+
+=== END VIDEO INFO ===
+
+Based on this YouTube cooking video, create a detailed recipe.
+The VIDEO TITLE clearly indicates what dish is being made: "{video_title}"
+Extract the recipe for this EXACT dish."""
+        
         chat = LlmChat(
             api_key=llm_api_key,
             session_id=f"import-video-{uuid.uuid4().hex[:8]}",
-            system_message="""Create a recipe JSON from video info.
+            system_message=f"""{IMPORT_RECIPE_PROMPT}
 
-{"name": "Title", "description": "Brief", "cuisine": "Type", "difficulty": "Easy/Medium/Hard",
-"prepTime": "X min", "cookTime": "X min", "servings": 4,
-"ingredients": [{"name": "ingredient", "category": "pantry"}],
-"instructions": [{"stepNumber": 1, "instruction": "Step", "time": "X min"}],
-"chefTips": ["Tip"]}
+SOURCE CONTEXT: You are extracting a recipe from a YouTube cooking video.
 
-Use video title as recipe name. Output ONLY JSON."""
+CRITICAL INSTRUCTIONS:
+1. The VIDEO TITLE tells you EXACTLY what dish is being made - use this as the recipe name
+2. If the description contains ingredients or steps, use them
+3. If description is empty, create an authentic recipe for the dish in the title
+4. Match the style of the channel if mentioned
+5. Include detailed steps that would typically be shown in such a video
+
+NEVER return an error or refuse. ALWAYS create a valid recipe JSON based on the title."""
         )
         chat.with_model("openai", "gpt-4o-mini")
         
-        prompt = f"""Create recipe for: "{video_title}"
-Channel: {channel_name}
-Description: {video_description[:2000] if video_description else 'None'}
+        prompt = f"""Create a detailed recipe based on this cooking video.
 
-Output JSON only."""
+{video_info}
+
+The recipe name should match the dish in the video title: "{video_title}"
+
+Output ONLY the JSON object for this recipe."""
 
         response = await chat.send_message(UserMessage(text=prompt))
         
