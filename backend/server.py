@@ -1120,13 +1120,24 @@ async def get_saved_recipes(current_user: User = Depends(get_current_user)):
 @api_router.post("/recipes/{recipe_id}/add-to-shopping-list")
 async def add_recipe_to_shopping_list(recipe_id: str, current_user: User = Depends(get_current_user)):
     try:
+        # Look in both regular recipes and imported recipes
         recipe = await db.recipes.find_one({"id": recipe_id}, {"_id": 0})
+        if not recipe:
+            recipe = await db.imported_recipes.find_one({"id": recipe_id}, {"_id": 0})
+        
         if not recipe:
             raise HTTPException(status_code=404, detail="Recipe not found")
         
-        existing_list = await db.shopping_lists.find_one({"user_id": current_user.id}, {"_id": 0})
+        # Handle both string and object ingredient formats
+        ingredients_list = recipe.get('ingredients', [])
+        if ingredients_list and isinstance(ingredients_list[0], dict):
+            # Imported recipe format - extract name from object
+            new_items = [{"name": ing.get('name', str(ing)), "checked": False} for ing in ingredients_list]
+        else:
+            # Regular recipe format - ingredients are strings
+            new_items = [{"name": ingredient, "checked": False} for ingredient in ingredients_list]
         
-        new_items = [{"name": ingredient, "checked": False} for ingredient in recipe['ingredients']]
+        existing_list = await db.shopping_lists.find_one({"user_id": current_user.id}, {"_id": 0})
         
         if existing_list:
             updated_items = existing_list['items'] + new_items
