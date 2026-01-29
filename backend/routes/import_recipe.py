@@ -72,31 +72,9 @@ def get_import_system_prompt(source_type: str) -> str:
 
 Source: {source_hints.get(source_type, source_hints['text'])}
 If incomplete, use culinary expertise to add reasonable details."""
-    },
-    "storage": "How to store leftovers and for how long",
-    "drinkPairings": {
-        "nonAlcoholic": ["Drink 1 with description"],
-        "alcoholic": ["Wine/beer/cocktail with why it pairs well"]
-    },
-    "variations": ["Variation 1", "Variation 2"],
-    "source": "Original source URL or 'User submitted'"
-}
-
-IMPORTANT: 
-- Do NOT use generic phrases like "cook until done" or "season to taste"
-- Each step should be detailed enough that someone who has never cooked can follow it"""
 
 
-def get_import_system_prompt(source_type: str) -> str:
-    """Generate system prompt based on import source type"""
-    source_context = {
-        "url": "The recipe was extracted from a website. Parse the recipe content and convert it.",
-        "image": "The recipe was extracted from an image. OCR may have errors - use your knowledge to correct likely mistakes.",
-        "video": "The recipe was extracted from a video transcript/description. Reconstruct the full recipe from the spoken instructions.",
-        "text": "The recipe was provided as plain text by the user. It may be informal or incomplete - fill in reasonable details."
-    }
-    
-    return f"""{IMPORT_RECIPE_PROMPT}
+# ============== HELPER FUNCTIONS ==============
 
 SOURCE CONTEXT: {source_context.get(source_type, source_context['text'])}
 
