@@ -157,19 +157,18 @@ const DiabetesMealsPage = () => {
   }, [isAuthenticated, user, navigate, loading]);
   
   // Handle mood selection
-  const handleMoodSelect = (moodId) => {
+  const handleMoodSelect = (moodId, moodLabel, moodDescription) => {
     setSelectedMood(moodId);
-    const mood = MOODS.find(m => m.id === moodId);
     
     const userMsg = {
       role: 'user',
-      content: `I'm feeling ${mood?.label.toLowerCase()}`,
+      content: `I'm feeling ${moodLabel?.toLowerCase()}`,
       timestamp: new Date().toISOString()
     };
     
     const aiMsg = {
       role: 'assistant',
-      content: `${mood?.emoji} ${mood?.label}! Great to know how you're feeling.\n\nTo provide the best meal suggestions for your blood sugar control, I need to understand your diabetes type.\n\nWhat type of diabetes do you have?`,
+      content: `${moodLabel}! ${moodDescription}\n\nGreat to know how you're feeling. To provide the best meal suggestions for your blood sugar control, I need to understand your diabetes type.\n\nWhat type of diabetes do you have?`,
       timestamp: new Date().toISOString(),
       showDiabetesTypeSelector: true
     };
