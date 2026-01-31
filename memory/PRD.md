@@ -216,6 +216,7 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 - [ ] Voice agent response is slow - Needs latency investigation (STT -> AI -> TTS pipeline)
 
 ### P2 - Medium Priority
+- [ ] **Persist Newsletter Subscriptions to DB** - UI exists, need backend logic to save subscription status
 - [ ] Auto-detect browser language for voice default
 - [ ] Recipe rating and review system enhancements
 - [ ] Meal prep reminders and notifications
