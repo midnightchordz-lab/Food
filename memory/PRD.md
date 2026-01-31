@@ -204,13 +204,16 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 - [x] Import Recipe Feature - import recipes from URL, Image, Video, or Text with AI conversion
 - [x] **CRITICAL** Food Allergy & Exclusion System - Backend safety filter for ALL recipe suggestions
 
+### P0 - Critical (Completed)
+- [x] **Progressive Web App (PWA) Conversion** - COMPLETED Jan 31, 2026. App is now installable on mobile/desktop with offline support. manifest.json, service-worker.js, icons, PWAInstallPrompt component all verified working.
+
 ### P1 - High Priority
 - [x] **Refactor server.py** - COMPLETED Jan 29, 2026. Split 3691-line monolith into 9 modular router files. All 45 API tests passed.
 - [ ] Complete Phone Authentication (requires Twilio API keys)
 - [x] **Persist Meal Plans & Subscriptions to DB** - COMPLETED Jan 29, 2026. Weekly plans saved via /api/weekly-plan/generate and retrieved via /api/weekly-plan. Subscriptions persisted via /api/subscription/recipes.
 - [x] **Implement Macro Tracking** - COMPLETED Jan 29, 2026. Added protein/carbs/fat goal inputs to meal planner. MacroTargets model with protein_g, carbs_g, fat_g, fiber_g fields. UI shows macro distribution and calorie calculations.
 - [x] Verify image display for previously saved recipes - Code verified, displays correctly
-- [x] Improve voice agent response speed (optimize TTS) - Reduced text limit to 300 chars, smart truncation at sentence boundaries
+- [ ] Voice agent response is slow - Needs latency investigation (STT -> AI -> TTS pipeline)
 
 ### P2 - Medium Priority
 - [ ] Auto-detect browser language for voice default
