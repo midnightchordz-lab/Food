@@ -250,10 +250,10 @@ const LandingPage = () => {
             <DialogHeader>
               <DialogTitle className="text-3xl font-serif text-white flex items-center gap-3">
                 <Sparkles size={32} />
-                Discover MoodFood
+                Discover MOOD FOOD
               </DialogTitle>
               <p className="text-white/90 mt-2">
-                Your AI-powered kitchen companion that understands how you feel
+                When Feelings Need Feeding - Your AI-powered kitchen companion
               </p>
             </DialogHeader>
           </div>
