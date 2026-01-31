@@ -77,6 +77,7 @@ function App() {
               <Route path="/discover-recipes/:cuisine" element={<DiscoverRecipesPage />} />
             </Routes>
             <ShoppingCartModal />
+            <PWAInstallPrompt />
           </BrowserRouter>
           <Toaster />
         </div>
