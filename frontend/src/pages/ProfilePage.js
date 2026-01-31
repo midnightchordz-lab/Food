@@ -93,9 +93,10 @@ const ProfilePage = () => {
     <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="profile-page">
       <div className="max-w-2xl mx-auto">
         <div className="mb-12">
-          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-3" data-testid="page-title">
-            Your MOOD FOOD Profile
+          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-1" data-testid="page-title">
+            MOOD FOOD
           </h1>
+          <p className="text-primary font-medium mb-2">When Feelings Need Feeding</p>
           <p className="text-muted-foreground" data-testid="page-description">
             Manage your preferences and dietary restrictions.
           </p>
