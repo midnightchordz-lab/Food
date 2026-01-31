@@ -226,6 +226,17 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Jan 31, 2026**: FEATURE - Progressive Web App (PWA) Conversion (COMPLETE)
+  - App is now installable on mobile and desktop devices
+  - Created `/public/manifest.json` with app metadata, icons, shortcuts
+  - Created `/public/service-worker.js` with caching strategies (cache-first for static, network-first for API)
+  - Created `/public/offline.html` fallback page with MOOD FOOD branding
+  - Created `/public/icons/` with 8 icon sizes (72x72 to 512x512)
+  - Created `PWAInstallPrompt.js` component with iOS-specific instructions
+  - Updated `index.html` with PWA meta tags, Apple touch icons, service worker registration
+  - Added app shortcuts: Chat, Planner, Import Recipe
+  - Testing: 100% pass rate - all PWA features verified (manifest, SW, icons, offline, install prompt)
+
 - **Jan 31, 2026**: BRANDING - Updated app name and tagline
   - App name: "MOOD FOOD"
   - Tagline: "When Feelings Need Feeding"
