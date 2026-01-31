@@ -226,6 +226,12 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Jan 31, 2026**: BRANDING - Updated app name and tagline
+  - App name: "MOOD FOOD"
+  - Tagline: "When Feelings Need Feeding"
+  - Updated across: Landing page, Navigation, Auth modal, Chat page, Planner pages, Import page, Profile page, Saved Recipes page, Discover page
+  - Browser tab title updated
+
 - **Jan 29, 2026**: OPTIMIZATION - Recipe Import Speed
   - Switched from gpt-4o to gpt-4o-mini for 2-3x faster processing
   - Reduced content truncation from 15000 to 6000 chars
