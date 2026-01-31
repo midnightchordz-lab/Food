@@ -581,10 +581,11 @@ const DiabetesMealsPage = () => {
               <div>
                 <h1 className="text-3xl sm:text-4xl font-serif font-bold flex items-center gap-3" data-testid="diabetes-title">
                   <Activity className="text-primary" />
-                  MOOD FOOD for Diabetes
+                  MOOD FOOD
                 </h1>
+                <p className="text-primary font-medium text-sm mt-1">When Feelings Need Feeding</p>
                 <p className="text-muted-foreground text-sm mt-1">
-                  Blood sugar-safe recipes tailored to how you feel
+                  Diabetes-friendly recipes tailored to how you feel
                 </p>
               </div>
               <div className="flex items-center gap-2">
