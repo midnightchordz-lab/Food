@@ -16,6 +16,7 @@ import DiabetesWeeklyPlannerPage from "@/pages/DiabetesWeeklyPlannerPage";
 import ImportRecipePage from "@/pages/ImportRecipePage";
 import Navigation from "@/components/Navigation";
 import ShoppingCartModal from "@/components/ShoppingCartModal";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import "@/App.css";
 import { useEffect } from "react";
 
