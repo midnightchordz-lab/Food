@@ -96,11 +96,12 @@ const DiscoverRecipesPage = () => {
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-3">
-            Discover MOOD FOOD
+          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-1">
+            MOOD FOOD
           </h1>
+          <p className="text-primary font-medium mb-2">When Feelings Need Feeding</p>
           <p className="text-muted-foreground">
-            Explore curated recipes from around the world, organized by regional cuisine
+            Explore curated recipes from around the world
           </p>
         </div>
 
