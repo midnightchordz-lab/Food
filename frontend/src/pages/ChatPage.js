@@ -599,9 +599,9 @@ Format each recipe clearly with the name as a header.
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-3xl sm:text-4xl font-serif font-bold" data-testid="chat-title">
-                  MOOD FOOD Chat
+                  MOOD FOOD
                 </h1>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="text-primary text-sm mt-1 font-medium">
                   When Feelings Need Feeding
                 </p>
               </div>
