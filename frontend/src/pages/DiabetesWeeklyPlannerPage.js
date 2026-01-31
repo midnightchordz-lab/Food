@@ -336,9 +336,12 @@ const DiabetesWeeklyPlannerPage = () => {
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center">
                   <Activity className="text-white" size={20} />
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-serif font-bold" data-testid="page-title">
-                  MOOD FOOD D-Planner
-                </h1>
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-serif font-bold" data-testid="page-title">
+                    MOOD FOOD
+                  </h1>
+                  <p className="text-primary font-medium text-sm">When Feelings Need Feeding</p>
+                </div>
               </div>
               <p className="text-muted-foreground">
                 Diabetes-optimized weekly plans based on your mood
