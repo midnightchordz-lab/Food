@@ -680,11 +680,12 @@ const ImportRecipePage = () => {
             <Sparkles size={16} />
             AI-Powered Conversion
           </div>
-          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-3 bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent" data-testid="import-title">
-            MOOD FOOD Import
+          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-1 bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent" data-testid="import-title">
+            MOOD FOOD
           </h1>
+          <p className="text-primary font-medium mb-2">When Feelings Need Feeding</p>
           <p className="text-muted-foreground text-lg max-w-md mx-auto">
-            Bring your favorite recipes from anywhere
+            Import your favorite recipes from anywhere
           </p>
         </div>
         
