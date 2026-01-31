@@ -205,7 +205,7 @@ const AuthModal = ({ open, onClose }) => {
     
     // For now, just use the token we already have and update profile
     // In a real app, you'd call an update profile endpoint
-    toast.success(`Welcome to MoodFood, ${name}!`);
+    toast.success(`Welcome to MOOD FOOD, ${name}!`);
     onClose();
     resetForm();
   };
@@ -253,10 +253,10 @@ const AuthModal = ({ open, onClose }) => {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" data-testid="auth-modal">
         <DialogHeader className="sticky top-0 bg-background z-10 pb-2">
-          <DialogTitle className="text-3xl font-serif">
-            Welcome to MoodFood
+          <DialogTitle className="text-3xl font-serif font-bold">
+            Welcome to MOOD FOOD
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">Meals that match your mood</p>
+          <p className="text-sm text-muted-foreground">When Feelings Need Feeding</p>
         </DialogHeader>
 
         {/* Auth Method Selector */}
