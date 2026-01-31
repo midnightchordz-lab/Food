@@ -98,11 +98,12 @@ const SavedRecipes = () => {
     <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="saved-recipes-page">
       <div className="max-w-7xl mx-auto">
         <div className="mb-12">
-          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-3" data-testid="page-title">
-            Your MOOD FOOD Collection
+          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-1" data-testid="page-title">
+            MOOD FOOD
           </h1>
+          <p className="text-primary font-medium mb-2">When Feelings Need Feeding</p>
           <p className="text-muted-foreground mb-6" data-testid="page-description">
-            Meals you've saved for later, organized by mood and occasion.
+            Your saved recipes, organized by mood and occasion.
           </p>
           
           <RecipeSearchFilter onSearch={handleSearch} />
