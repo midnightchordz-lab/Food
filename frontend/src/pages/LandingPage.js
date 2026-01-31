@@ -129,17 +129,16 @@ const LandingPage = () => {
           </div>
           
           <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary/50 rounded-full mb-8" data-testid="hero-badge">
-              <Sparkles className="text-accent" size={20} />
-              <span className="text-sm font-medium">When Feelings Need Feeding</span>
-            </div>
-            
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold tracking-tight mb-6" data-testid="hero-title">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold tracking-tight mb-4" data-testid="hero-title">
               MOOD
               <span className="block italic text-primary">FOOD</span>
             </h1>
             
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12" data-testid="hero-description">
+            <p className="text-xl sm:text-2xl font-medium text-muted-foreground mb-8" data-testid="hero-tagline">
+              When Feelings Need Feeding
+            </p>
+            
+            <p className="text-lg sm:text-xl text-muted-foreground/80 max-w-2xl mx-auto mb-12" data-testid="hero-description">
               A compassionate AI chef who understands your mood and suggests meals that heal, comfort, and energize. 
               Because food is more than fuel—it&apos;s therapy.
             </p>
