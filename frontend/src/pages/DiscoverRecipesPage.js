@@ -96,8 +96,8 @@ const DiscoverRecipesPage = () => {
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-4xl sm:text-5xl font-serif mb-3">
-            Discover Authentic Recipes
+          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-3">
+            Discover MOOD FOOD
           </h1>
           <p className="text-muted-foreground">
             Explore curated recipes from around the world, organized by regional cuisine
