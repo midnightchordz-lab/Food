@@ -161,7 +161,7 @@ const ChatPage = () => {
     // Show initial greeting with mood selector
     setMessages([{
       role: 'assistant',
-      content: `Hi${user?.name ? ` ${user.name}` : ''}! 👋\n\nWelcome to MoodFood! I'm here to suggest delicious meals that match your mood, preferences, and cravings.\n\nLet's start by understanding how you're feeling today:`,
+      content: `Hi${user?.name ? ` ${user.name}` : ''}! 👋\n\nWelcome to MOOD FOOD! I'm here to suggest delicious meals that match your mood, preferences, and cravings.\n\nLet's start by understanding how you're feeling today:`,
       timestamp: new Date().toISOString(),
       showMoodSelector: true
     }]);
