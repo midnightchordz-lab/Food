@@ -349,11 +349,11 @@ const WeeklyPlannerPage = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
             <div>
-              <h1 className="text-4xl sm:text-5xl font-serif mb-3" data-testid="page-title">
-                Meal Planner
+              <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-3" data-testid="page-title">
+                MOOD FOOD Planner
               </h1>
               <p className="text-muted-foreground" data-testid="page-description">
-                Plan your weekly meals and get personalized recipe suggestions.
+                Plan your weekly meals based on how you feel.
               </p>
             </div>
             <div className="flex gap-3">
