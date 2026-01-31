@@ -95,7 +95,7 @@
       "name": "Import Recipe",
       "short_name": "Import",
       "description": "Import recipes from anywhere",
-      "url": "/import",
+      "url": "/import-recipe",
       "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
