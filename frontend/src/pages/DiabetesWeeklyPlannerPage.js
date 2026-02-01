@@ -163,7 +163,7 @@ const DiabetesWeeklyPlannerPage = () => {
         const prefs = response.data.preferences;
         setPreferences(prefs);
         setSettingsDiabetesType(prefs.diabetes_type || 'type2');
-        setSettingsDietary(prefs.dietary_preference || 'Non-Vegetarian');
+        setSettingsDietary(Array.isArray(prefs.dietary_preference) ? prefs.dietary_preference : [prefs.dietary_preference || 'Non-Vegetarian']);
         setSettingsCuisines(prefs.cuisine_preferences || ['Indian', 'Mediterranean']);
         setSettingsCalories(prefs.calorie_target || 1800);
       }
