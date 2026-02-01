@@ -618,8 +618,8 @@ const WeeklyPlannerPage = () => {
       
       {/* Subscription Modal */}
       <Dialog open={showSubscribeModal} onOpenChange={setShowSubscribeModal}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" data-testid="subscribe-modal">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0" data-testid="subscribe-modal">
+          <DialogHeader className="px-6 pt-6 pb-2">
             <DialogTitle className="text-2xl font-serif flex items-center gap-2">
               <Crown className="text-primary" size={24} />
               Weekly Recipe Subscription
@@ -630,7 +630,7 @@ const WeeklyPlannerPage = () => {
           </DialogHeader>
           
           {!isSubscribed ? (
-            <div className="space-y-6 mt-4">
+            <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
               {/* Benefits */}
               <div className="bg-primary/5 rounded-xl p-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm">
