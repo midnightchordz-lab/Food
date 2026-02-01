@@ -469,7 +469,9 @@ const getRecipeImage = (title, cuisineHint = '') => {
   }
   
   // FINAL FALLBACK - generic delicious food
-  return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800';
+  const fallbackUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800';
+  console.log(`[IMAGE-MATCH] NO MATCH for "${title}" -> using fallback: ${fallbackUrl}`);
+  return fallbackUrl;
 };
 
 // Difficulty badge colors
