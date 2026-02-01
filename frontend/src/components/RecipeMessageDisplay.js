@@ -1,9 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Heart, Clock, ChefHat, Utensils, ChevronRight, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RecipeDetailModal from './RecipeDetailModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Cache for AI-generated images to avoid re-generation
+const aiImageCache = new Map();
 
 // Function to generate AI image for a recipe
 const generateAIImage = async (recipeName, cuisine = '') => {
