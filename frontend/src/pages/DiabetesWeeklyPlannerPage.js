@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
