@@ -558,7 +558,7 @@ const DiabetesWeeklyPlannerPage = () => {
       
       {/* Settings Modal */}
       <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings size={20} />
@@ -566,7 +566,7 @@ const DiabetesWeeklyPlannerPage = () => {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-2">
             {/* Diabetes Type */}
             <div>
               <label className="text-sm font-medium mb-2 block">Diabetes Type</label>
