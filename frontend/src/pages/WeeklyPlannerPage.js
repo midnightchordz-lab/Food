@@ -670,17 +670,23 @@ const WeeklyPlannerPage = () => {
                 </div>
               </div>
               
-              {/* Dietary Preference */}
+              {/* Dietary Preference - Multi-select */}
               <div className="space-y-2">
-                <Label>Dietary Preference</Label>
+                <Label>Dietary Preference (Select Multiple)</Label>
                 <div className="flex flex-wrap gap-2">
                   {DIETARY_OPTIONS.map((option) => (
                     <button
                       key={option}
                       type="button"
-                      onClick={() => setSubDietary(option)}
+                      onClick={() => {
+                        setSubDietary(prev => 
+                          prev.includes(option) 
+                            ? prev.filter(d => d !== option)
+                            : [...prev, option]
+                        );
+                      }}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                        subDietary === option
+                        subDietary.includes(option)
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary hover:bg-secondary/80'
                       }`}
@@ -689,7 +695,44 @@ const WeeklyPlannerPage = () => {
                     </button>
                   ))}
                 </div>
+                {subDietary.length > 1 && (
+                  <p className="text-xs text-muted-foreground">
+                    Meals will include a mix of: {subDietary.join(' + ')}
+                  </p>
+                )}
               </div>
+              
+              {/* Day-Specific Opt-Out */}
+              {subDietary.length > 1 && subDietary.includes('Non-Vegetarian') && (
+                <div className="space-y-2">
+                  <Label>🗓️ Day-Specific Opt-Out (Vegetarian Days)</Label>
+                  <p className="text-xs text-muted-foreground">Select days for vegetarian-only meals</p>
+                  <div className="grid grid-cols-7 gap-1">
+                    {DAYS.map((day) => (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => {
+                          setSubDayPrefs(prev => ({
+                            ...prev,
+                            [day]: prev[day] === 'Vegetarian' ? null : 'Vegetarian'
+                          }));
+                        }}
+                        className={`p-2 rounded-lg text-xs text-center transition-all ${
+                          subDayPrefs[day] === 'Vegetarian'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-secondary hover:bg-secondary/80'
+                        }`}
+                      >
+                        <div className="font-medium">{day.slice(0, 3)}</div>
+                        {subDayPrefs[day] === 'Vegetarian' && (
+                          <div className="text-[10px]">🥗</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {/* Favorite Cuisines */}
               <div className="space-y-2">
