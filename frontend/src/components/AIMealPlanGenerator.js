@@ -175,7 +175,8 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
 
   const resetForm = () => {
     setMood('');
-    setDietaryPreference('');
+    setDietaryPreferences([]);
+    setDaySpecificPrefs({});
     setCalorieTarget(2000);
     setEnableCalorieTarget(false);
     setEnableMacros(false);
