@@ -559,8 +559,8 @@ const DiabetesWeeklyPlannerPage = () => {
       
       {/* Settings Modal */}
       <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0">
-          <DialogHeader className="px-6 pt-6 pb-2">
+        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-hidden">
+          <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings size={20} />
               Diabetes Meal Preferences
@@ -568,7 +568,7 @@ const DiabetesWeeklyPlannerPage = () => {
           </DialogHeader>
           
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
+          <div className="overflow-y-auto max-h-[50vh] space-y-4 pr-2">
             {/* Diabetes Type */}
             <div>
               <label className="text-sm font-medium mb-2 block">Diabetes Type</label>
