@@ -1056,45 +1056,15 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAIGenerated, setIsAIGenerated] = useState(false);
-  const hasTriedAI = useRef(false);
 
-  // Auto-generate AI image on mount for accurate dish-specific images
+  // Check cache on mount (no auto-generation to keep app fast)
   useEffect(() => {
-    const generateImage = async () => {
-      // Skip if already tried or already has AI image
-      if (hasTriedAI.current || isAIGenerated) return;
-      hasTriedAI.current = true;
-      
-      // Check cache first
-      const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
-      if (aiImageCache.has(cacheKey)) {
-        setImageUrl(aiImageCache.get(cacheKey));
-        setIsAIGenerated(true);
-        return;
-      }
-      
-      // Generate new AI image
-      setIsGenerating(true);
-      try {
-        const aiUrl = await generateAIImage(recipe.title, recipe.cuisineHint);
-        if (aiUrl) {
-          aiImageCache.set(cacheKey, aiUrl);
-          setImageUrl(aiUrl);
-          setIsAIGenerated(true);
-        }
-      } catch (err) {
-        console.error('Auto AI generation failed:', err);
-        // Keep the fallback static image
-      } finally {
-        setIsGenerating(false);
-      }
-    };
-    
-    // Small delay to stagger requests when multiple cards render
-    const delay = Math.random() * 500;
-    const timer = setTimeout(generateImage, delay);
-    return () => clearTimeout(timer);
-  }, [recipe.title, recipe.cuisineHint, isAIGenerated]);
+    const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
+    if (aiImageCache.has(cacheKey)) {
+      setImageUrl(aiImageCache.get(cacheKey));
+      setIsAIGenerated(true);
+    }
+  }, [recipe.title, recipe.cuisineHint]);
 
   const handleGenerateAI = useCallback(async (e) => {
     e.stopPropagation();
