@@ -413,6 +413,33 @@ Format each recipe clearly with the name as a header.
     return null;
   };
   
+  // Detect cuisine from text
+  const detectCuisineFromText = (text) => {
+    const cuisineKeywords = {
+      italian: ['italian', 'italy', 'pasta', 'pizza', 'risotto', 'lasagna', 'spaghetti'],
+      indian: ['indian', 'india', 'curry', 'masala', 'biryani', 'tandoori', 'naan', 'dal'],
+      mexican: ['mexican', 'mexico', 'taco', 'burrito', 'enchilada', 'quesadilla', 'salsa'],
+      chinese: ['chinese', 'china', 'stir-fry', 'dim sum', 'kung pao', 'lo mein', 'wonton'],
+      japanese: ['japanese', 'japan', 'sushi', 'ramen', 'teriyaki', 'tempura', 'miso', 'udon', 'katsu'],
+      thai: ['thai', 'thailand', 'pad thai', 'green curry', 'red curry', 'tom yum', 'satay'],
+      mediterranean: ['mediterranean', 'greek', 'hummus', 'falafel', 'shawarma', 'pita', 'tzatziki'],
+      american: ['american', 'america', 'burger', 'bbq', 'barbecue', 'wings', 'mac and cheese'],
+      korean: ['korean', 'korea', 'kimchi', 'bibimbap', 'bulgogi', 'korean bbq', 'gochujang'],
+      vietnamese: ['vietnamese', 'vietnam', 'pho', 'banh mi', 'spring rolls', 'bun']
+    };
+    
+    const lowerText = text.toLowerCase();
+    const detectedCuisines = [];
+    
+    for (const [cuisine, keywords] of Object.entries(cuisineKeywords)) {
+      if (keywords.some(keyword => lowerText.includes(keyword))) {
+        detectedCuisines.push(cuisine);
+      }
+    }
+    
+    return detectedCuisines.length > 0 ? detectedCuisines : null;
+  };
+  
   // Handle mood change from user input
   const handleMoodChange = async (newMoodId) => {
     const mood = MOOD_IMAGES.find(m => m.id === newMoodId);
