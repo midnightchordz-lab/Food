@@ -602,8 +602,8 @@ GENERIC_FOOD_IMAGES = [
 # SPECIFIC DISH NAMES - These MUST match before generic ingredients
 # These are distinctive dishes that should not fall back to generic protein images
 SPECIFIC_DISHES = {
-    # Japanese specific
-    'yakitori', 'tempura', 'tonkatsu', 'katsu', 'teriyaki', 'donburi', 'gyudon',
+    # Japanese specific dishes (not cooking styles)
+    'yakitori', 'tempura', 'tonkatsu', 'katsu', 'donburi', 'gyudon',
     'ramen', 'udon', 'soba', 'sushi', 'sashimi', 'nigiri', 'maki', 'onigiri',
     'okonomiyaki', 'takoyaki', 'gyoza', 'miso',
     # Korean specific
