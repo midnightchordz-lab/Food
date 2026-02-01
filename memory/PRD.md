@@ -230,6 +230,16 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Jan 31, 2026**: FEATURE - Capacitor Native Mobile App Wrapper (COMPLETE)
+  - Added Capacitor v5 for wrapping the web app as native iOS/Android apps
+  - Installed plugins: splash-screen, status-bar, keyboard, haptics, share, browser, app
+  - Created `/src/capacitor.js` with native feature utilities (haptics, share, browser)
+  - Configured `capacitor.config.json` with app styling (splash, status bar colors)
+  - Added CSS safe area insets for notched devices (iPhone X+)
+  - Added keyboard handling styles for mobile input
+  - Created `MOBILE_BUILD_GUIDE.md` with complete build instructions
+  - Same codebase serves web, PWA, iOS, and Android
+
 - **Jan 31, 2026**: FEATURE - Progressive Web App (PWA) Conversion (COMPLETE)
   - App is now installable on mobile and desktop devices
   - Created `/public/manifest.json` with app metadata, icons, shortcuts
