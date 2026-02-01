@@ -45,9 +45,10 @@ class DiabetesChatRequest(BaseModel):
 
 class DiabetesMealPlanRequest(BaseModel):
     diabetes_type: str = "type2"
-    dietary_preference: str = "non-vegetarian"
+    dietary_preference: Any = "non-vegetarian"  # Can be string or list for multiple preferences
     cuisine_preferences: Optional[List[str]] = None
     calorie_target: Optional[int] = None
+    day_specific_preferences: Optional[Dict[str, str]] = None  # e.g., {"Tuesday": "Vegetarian"}
 
 class DiabetesMealPlanWeekRequest(BaseModel):
     week_offset: int = 0
