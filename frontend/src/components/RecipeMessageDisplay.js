@@ -208,7 +208,7 @@ const GENERIC_FOOD_IMAGES = [
   'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800',
 ];
 
-// HIGH PRIORITY PROTEINS - These MUST match BEFORE cooking styles or generic words
+// HIGH PRIORITY PROTEINS - These MUST match BEFORE cooking styles
 const HIGH_PRIORITY_PROTEINS = new Set([
   'salmon', 'tuna', 'shrimp', 'prawns', 'lobster', 'crab', 'fish', 'duck'
 ]);
@@ -226,71 +226,245 @@ const COOKING_STYLES = new Set([
   'teriyaki', 'grilled', 'baked', 'fried', 'roasted', 'steamed', 'glazed', 'crispy'
 ]);
 
-// Get appropriate image for a recipe - FIXED prioritization
+/**
+ * SIMPLE, DIRECT image matching - NO complex logic
+ * Just find keywords in order of priority
+ */
 const getRecipeImage = (title, cuisineHint = '') => {
-  const searchTerms = (title + ' ' + cuisineHint).toLowerCase();
-  const words = searchTerms.split(/\s+/);
+  const searchText = (title + ' ' + cuisineHint).toLowerCase();
   
-  // STEP 1: Check for HIGH PRIORITY PROTEINS FIRST (salmon, tuna, shrimp)
-  // This MUST happen before anything else
-  for (const word of words) {
-    if (HIGH_PRIORITY_PROTEINS.has(word)) {
-      // Look for exact salmon/tuna/shrimp entries
-      if (FOOD_IMAGES[word]) {
-        return FOOD_IMAGES[word];
-      }
-      // Try compound matches like "teriyaki salmon"
-      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-        if (key.includes(word)) {
-          return url;
-        }
-      }
-    }
+  // PRIORITY 1: Check for HIGH PRIORITY PROTEINS (salmon, shrimp, tuna, fish)
+  // These MUST match first to avoid salmon showing chicken
+  if (searchText.includes('salmon')) {
+    return 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800';
+  }
+  if (searchText.includes('tuna')) {
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800';
+  }
+  if (searchText.includes('shrimp') || searchText.includes('prawn') || searchText.includes('ebi')) {
+    return 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800';
+  }
+  if (searchText.includes('lobster')) {
+    return 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800';
+  }
+  if (searchText.includes('crab')) {
+    return 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800';
+  }
+  if (searchText.includes('cod') || searchText.includes('fish') && !searchText.includes('dish')) {
+    return 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800';
   }
   
-  // STEP 2: Check for SPECIFIC DISHES (yakitori, biryani, etc.)
-  for (const word of words) {
-    if (SPECIFIC_DISHES.has(word)) {
-      if (FOOD_IMAGES[word]) {
-        return FOOD_IMAGES[word];
-      }
-      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-        if (key.includes(word)) {
-          return url;
-        }
-      }
-    }
+  // PRIORITY 2: Check for SPECIFIC JAPANESE dishes
+  if (searchText.includes('tempura')) {
+    return 'https://images.unsplash.com/photo-1581781870027-04212e231e96?w=800';
+  }
+  if (searchText.includes('yakitori')) {
+    return 'https://images.unsplash.com/photo-1708597525178-6c302364f37c?w=800';
+  }
+  if (searchText.includes('ramen')) {
+    return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800';
+  }
+  if (searchText.includes('sushi')) {
+    return 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800';
+  }
+  if (searchText.includes('udon')) {
+    return 'https://images.unsplash.com/photo-1618841557871-b4664fbf0cb3?w=800';
+  }
+  if (searchText.includes('soba')) {
+    return 'https://images.unsplash.com/photo-1618841557871-b4664fbf0cb3?w=800';
+  }
+  if (searchText.includes('katsu')) {
+    return 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800';
+  }
+  if (searchText.includes('miso')) {
+    return 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800';
+  }
+  if (searchText.includes('donburi') || searchText.includes('don ')) {
+    return 'https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=800';
   }
   
-  // STEP 3: Try exact multi-word matches from database (skip pure cooking styles)
-  for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-    // Skip if key is ONLY a cooking style
-    if (COOKING_STYLES.has(key)) continue;
-    if (searchTerms.includes(key) && key.length >= 4) {
-      return url;
-    }
+  // PRIORITY 3: Check for INDIAN dishes
+  if (searchText.includes('biryani')) {
+    return 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=800';
+  }
+  if (searchText.includes('pulao') || searchText.includes('pulav')) {
+    return 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=800';
+  }
+  if (searchText.includes('tikka')) {
+    return 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=800';
+  }
+  if (searchText.includes('tandoori')) {
+    return 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=800';
+  }
+  if (searchText.includes('butter chicken')) {
+    return 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=800';
+  }
+  if (searchText.includes('korma')) {
+    return 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=800';
+  }
+  if (searchText.includes('paneer')) {
+    return 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=800';
+  }
+  if (searchText.includes('dal') || searchText.includes('daal')) {
+    return 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=800';
+  }
+  if (searchText.includes('curry') && searchText.includes('india')) {
+    return 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800';
   }
   
-  // STEP 4: Try other proteins (chicken, beef, etc.)
-  const otherProteins = ['chicken', 'beef', 'pork', 'lamb', 'tofu', 'paneer'];
-  for (const word of words) {
-    if (otherProteins.includes(word)) {
-      if (FOOD_IMAGES[word]) {
-        return FOOD_IMAGES[word];
-      }
-    }
+  // PRIORITY 4: Check for THAI dishes
+  if (searchText.includes('pad thai')) {
+    return 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800';
+  }
+  if (searchText.includes('tom yum')) {
+    return 'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=800';
+  }
+  if (searchText.includes('green curry') || searchText.includes('thai curry')) {
+    return 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=800';
+  }
+  if (searchText.includes('satay')) {
+    return 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=800';
   }
   
-  // STEP 5: Try cuisine fallbacks
-  for (const [cuisine, url] of Object.entries(CUISINE_FALLBACKS)) {
-    if (searchTerms.includes(cuisine)) {
-      return url;
-    }
+  // PRIORITY 5: Check for KOREAN dishes
+  if (searchText.includes('bibimbap')) {
+    return 'https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=800';
+  }
+  if (searchText.includes('bulgogi')) {
+    return 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=800';
+  }
+  if (searchText.includes('kimchi')) {
+    return 'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=800';
   }
   
-  // STEP 6: Return a consistent generic image based on title hash
-  const hash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return GENERIC_FOOD_IMAGES[hash % GENERIC_FOOD_IMAGES.length];
+  // PRIORITY 6: Check for MEXICAN dishes
+  if (searchText.includes('taco')) {
+    return 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=800';
+  }
+  if (searchText.includes('burrito')) {
+    return 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=800';
+  }
+  if (searchText.includes('enchilada')) {
+    return 'https://images.unsplash.com/photo-1534352956036-cd81e27dd615?w=800';
+  }
+  if (searchText.includes('quesadilla')) {
+    return 'https://images.unsplash.com/photo-1618040996337-56904b7850b9?w=800';
+  }
+  
+  // PRIORITY 7: Check for ITALIAN dishes
+  if (searchText.includes('carbonara')) {
+    return 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=800';
+  }
+  if (searchText.includes('lasagna') || searchText.includes('lasagne')) {
+    return 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=800';
+  }
+  if (searchText.includes('risotto')) {
+    return 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=800';
+  }
+  if (searchText.includes('pizza')) {
+    return 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800';
+  }
+  if (searchText.includes('pasta') || searchText.includes('spaghetti') || searchText.includes('penne')) {
+    return 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800';
+  }
+  
+  // PRIORITY 8: Check for CHINESE dishes
+  if (searchText.includes('kung pao')) {
+    return 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=800';
+  }
+  if (searchText.includes('dim sum') || searchText.includes('dumpling')) {
+    return 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=800';
+  }
+  if (searchText.includes('fried rice')) {
+    return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=800';
+  }
+  if (searchText.includes('chow mein') || searchText.includes('lo mein')) {
+    return 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=800';
+  }
+  
+  // PRIORITY 9: Check for VIETNAMESE dishes
+  if (searchText.includes('pho')) {
+    return 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=800';
+  }
+  if (searchText.includes('banh mi')) {
+    return 'https://images.unsplash.com/photo-1600688640154-9619e002df30?w=800';
+  }
+  
+  // PRIORITY 10: Check for MIDDLE EASTERN dishes
+  if (searchText.includes('falafel')) {
+    return 'https://images.unsplash.com/photo-1593001872095-7d5b3868fb1d?w=800';
+  }
+  if (searchText.includes('shawarma')) {
+    return 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=800';
+  }
+  if (searchText.includes('hummus')) {
+    return 'https://images.unsplash.com/photo-1577805947697-89e18249d767?w=800';
+  }
+  if (searchText.includes('shakshuka')) {
+    return 'https://images.unsplash.com/photo-1590412200988-a436970781fa?w=800';
+  }
+  
+  // PRIORITY 11: CHICKEN comes LAST (after all specific dishes checked)
+  if (searchText.includes('chicken') || searchText.includes('teriyaki')) {
+    return 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800';
+  }
+  
+  // PRIORITY 12: Other proteins
+  if (searchText.includes('beef') || searchText.includes('steak')) {
+    return 'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=800';
+  }
+  if (searchText.includes('pork')) {
+    return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800';
+  }
+  if (searchText.includes('lamb')) {
+    return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800';
+  }
+  if (searchText.includes('tofu')) {
+    return 'https://images.unsplash.com/photo-1582452919408-80d02cb4cf45?w=800';
+  }
+  
+  // PRIORITY 13: Generic food types
+  if (searchText.includes('salad')) {
+    return 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800';
+  }
+  if (searchText.includes('soup')) {
+    return 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800';
+  }
+  if (searchText.includes('sandwich')) {
+    return 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=800';
+  }
+  if (searchText.includes('burger')) {
+    return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800';
+  }
+  if (searchText.includes('bowl')) {
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800';
+  }
+  if (searchText.includes('curry')) {
+    return 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=800';
+  }
+  if (searchText.includes('noodle')) {
+    return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800';
+  }
+  if (searchText.includes('rice')) {
+    return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=800';
+  }
+  
+  // CUISINE FALLBACKS
+  if (cuisineHint) {
+    const cuisine = cuisineHint.toLowerCase();
+    if (cuisine.includes('japan')) return 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800';
+    if (cuisine.includes('india')) return 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800';
+    if (cuisine.includes('thai')) return 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800';
+    if (cuisine.includes('korea')) return 'https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=800';
+    if (cuisine.includes('china') || cuisine.includes('chinese')) return 'https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=800';
+    if (cuisine.includes('mexic')) return 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=800';
+    if (cuisine.includes('italy') || cuisine.includes('italian')) return 'https://images.unsplash.com/photo-1498579150354-977475b7ea0b?w=800';
+    if (cuisine.includes('vietnam')) return 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=800';
+    if (cuisine.includes('middle east') || cuisine.includes('mediterranean')) return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800';
+  }
+  
+  // FINAL FALLBACK - generic delicious food
+  return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800';
 };
 
 // Difficulty badge colors
