@@ -231,6 +231,14 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 1, 2026**: BUG FIX - Recipe Image Mismatch (P0 CRITICAL)
+  - **Fixed**: Images now correctly match recipe titles in chat interface
+  - **Issue**: Salmon/Tuna/Shrimp recipes were showing chicken images
+  - **Root Cause**: Frontend's `getRecipeImage()` in `RecipeMessageDisplay.js` was not prioritizing specific proteins
+  - **Solution**: Priority-based matching that checks HIGH PRIORITY PROTEINS (salmon, tuna, shrimp, fish) BEFORE chicken
+  - **Testing**: 100% pass rate - verified with Teriyaki Salmon, Spicy Tuna, Miso Shrimp, etc.
+  - **Files Modified**: `/app/frontend/src/components/RecipeMessageDisplay.js`
+
 - **Jan 31, 2026**: FIX & ENHANCEMENT - Image Service & Global Recipe Database
   - **BUG FIX**: Fixed image mismatch where "Veggie Pulao" showed fried egg image
   - **Improved matching logic**: Prioritizes longer matches, skips common words, requires 4+ char matches
