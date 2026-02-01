@@ -537,37 +537,17 @@ const WeeklyPlannerPage = () => {
                   {/* Meal Slots */}
                   <div className="space-y-3">
                     {MEAL_TYPES.map((meal) => {
-                      const Icon = meal.icon;
                       const plannedMeal = getMealForDayAndType(dayIndex, meal.id);
                       
                       return (
-                        <div
-                          key={meal.id}
-                          className={`p-3 rounded-xl transition-all cursor-pointer group ${
-                            plannedMeal 
-                              ? 'bg-secondary/50 hover:bg-secondary/70 hover:shadow-md' 
-                              : 'bg-secondary/20 border-2 border-dashed border-secondary hover:border-primary/50'
-                          }`}
-                          onClick={() => handleMealClick(plannedMeal, meal.id, day, dayIndex)}
-                          data-testid={`meal-slot-${day}-${meal.id}`}
-                          data-recipe={plannedMeal || ''}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <Icon size={14} className={meal.color} />
-                            <span className="text-xs font-medium text-muted-foreground">{meal.label}</span>
-                            {plannedMeal && (
-                              <ExternalLink size={12} className="ml-auto text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                            )}
-                          </div>
-                          {plannedMeal ? (
-                            <p className="text-sm font-medium line-clamp-2 group-hover:text-primary group-hover:underline transition-colors">
-                              {plannedMeal}
-                            </p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Plus size={12} /> Add meal
-                            </p>
-                          )}
+                        <div key={meal.id} className="relative">
+                          <PlannerMealCard
+                            mealName={plannedMeal}
+                            mealType={meal.id}
+                            onClick={() => handleMealClick(plannedMeal, meal.id, day, dayIndex)}
+                            compact={true}
+                            enableAI={true}
+                          />
                         </div>
                       );
                     })}
