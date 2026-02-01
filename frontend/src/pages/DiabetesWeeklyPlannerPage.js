@@ -119,6 +119,7 @@ const DiabetesWeeklyPlannerPage = () => {
   const [settingsDietary, setSettingsDietary] = useState(['Non-Vegetarian']);
   const [settingsCuisines, setSettingsCuisines] = useState(['Indian', 'Mediterranean']);
   const [settingsCalories, setSettingsCalories] = useState(1800);
+  const [settingsDayPrefs, setSettingsDayPrefs] = useState({});  // Day-specific opt-outs
   const [savingSettings, setSavingSettings] = useState(false);
   
   // Get current week dates
