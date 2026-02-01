@@ -211,18 +211,25 @@ const DiabetesWeeklyPlannerPage = () => {
   const savePreferences = async () => {
     setSavingSettings(true);
     try {
+      // Filter out null/undefined values from day preferences
+      const filteredDayPrefs = Object.fromEntries(
+        Object.entries(settingsDayPrefs).filter(([_, v]) => v)
+      );
+      
       await axios.post(`${API}/diabetes/meal-preferences`, {
         diabetes_type: settingsDiabetesType,
         dietary_preference: settingsDietary,
         cuisine_preferences: settingsCuisines,
-        calorie_target: settingsCalories
+        calorie_target: settingsCalories,
+        day_specific_preferences: Object.keys(filteredDayPrefs).length > 0 ? filteredDayPrefs : null
       });
       
       setPreferences({
         diabetes_type: settingsDiabetesType,
         dietary_preference: settingsDietary,
         cuisine_preferences: settingsCuisines,
-        calorie_target: settingsCalories
+        calorie_target: settingsCalories,
+        day_specific_preferences: filteredDayPrefs
       });
       
       toast.success('Preferences saved!');
