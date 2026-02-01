@@ -596,24 +596,50 @@ GENERIC_FOOD_IMAGES = [
     'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800',
 ]
 
-# Priority ingredients - these should be matched first over cooking styles
-PRIORITY_INGREDIENTS = {
-    'salmon', 'tuna', 'shrimp', 'prawns', 'lobster', 'crab', 'fish', 'cod', 'tilapia',
-    'chicken', 'beef', 'pork', 'lamb', 'duck', 'turkey',
-    'tofu', 'paneer', 'tempeh',
-    'pasta', 'spaghetti', 'lasagna', 'ravioli', 'gnocchi',
-    'rice', 'biryani', 'pulao', 'risotto', 'paella',
-    'ramen', 'pho', 'udon', 'soba', 'noodles',
-    'tacos', 'burrito', 'enchiladas', 'quesadilla',
-    'curry', 'dal', 'dosa', 'idli',
-    'sushi', 'sashimi', 'nigiri',
-    'pizza', 'burger', 'sandwich',
-    'soup', 'stew', 'salad',
+# SPECIFIC DISH NAMES - These MUST match before generic ingredients
+# These are distinctive dishes that should not fall back to generic protein images
+SPECIFIC_DISHES = {
+    # Japanese specific
+    'yakitori', 'tempura', 'tonkatsu', 'katsu', 'teriyaki', 'donburi', 'gyudon',
+    'ramen', 'udon', 'soba', 'sushi', 'sashimi', 'nigiri', 'maki', 'onigiri',
+    'okonomiyaki', 'takoyaki', 'gyoza', 'miso',
+    # Korean specific
+    'bibimbap', 'bulgogi', 'kimchi', 'japchae', 'tteokbokki', 'samgyeopsal',
+    'kimbap', 'gimbap', 'jjigae', 'sundubu',
+    # Chinese specific
+    'kung pao', 'mapo', 'dim sum', 'char siu', 'peking', 'mongolian',
+    'chow mein', 'lo mein', 'wonton', 'baozi', 'congee',
+    # Indian specific
+    'biryani', 'pulao', 'tikka', 'tandoori', 'korma', 'vindaloo', 'masala',
+    'dal', 'paneer', 'dosa', 'idli', 'sambar', 'naan', 'paratha',
+    # Thai specific  
+    'pad thai', 'tom yum', 'tom kha', 'massaman', 'panang', 'larb',
+    # Vietnamese specific
+    'pho', 'banh mi', 'bun cha',
+    # Mexican specific
+    'tacos', 'burrito', 'enchiladas', 'quesadilla', 'mole', 'pozole', 'tamales',
+    # Italian specific
+    'carbonara', 'lasagna', 'risotto', 'gnocchi', 'ravioli', 'bolognese',
+    # Middle Eastern specific
+    'falafel', 'shawarma', 'kebab', 'hummus', 'shakshuka', 'tagine',
+    # Other specific dishes
+    'paella', 'ratatouille', 'schnitzel', 'goulash', 'moussaka', 'souvlaki',
 }
 
-# Cooking styles - these have lower priority than main ingredients
+# Generic ingredients - only match these if no specific dish is found
+GENERIC_INGREDIENTS = {
+    'salmon', 'tuna', 'shrimp', 'prawns', 'lobster', 'crab', 'fish', 'cod', 'tilapia',
+    'chicken', 'beef', 'pork', 'lamb', 'duck', 'turkey',
+    'tofu', 'tempeh',
+    'pasta', 'spaghetti', 'noodles',
+    'rice', 'quinoa',
+    'pizza', 'burger', 'sandwich',
+    'soup', 'stew', 'salad', 'curry',
+}
+
+# Cooking styles - lowest priority
 COOKING_STYLES = {
-    'teriyaki', 'grilled', 'baked', 'fried', 'roasted', 'steamed', 'braised',
+    'grilled', 'baked', 'fried', 'roasted', 'steamed', 'braised',
     'glazed', 'sauteed', 'pan-fried', 'stir-fried', 'smoked', 'bbq', 'barbecue',
     'crispy', 'crunchy', 'creamy', 'spicy', 'tangy', 'sweet', 'sour',
 }
@@ -622,73 +648,83 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
     """
     Get a high-quality food image URL for a recipe.
     Uses curated Unsplash images for reliable, watermark-free results.
-    Improved matching logic: prioritizes main ingredients over cooking styles.
+    
+    MATCHING PRIORITY:
+    1. Exact recipe name match
+    2. Specific dish names (yakitori, ramen, biryani, etc.)
+    3. Multi-word matches in database
+    4. Generic ingredients (chicken, salmon, etc.) - ONLY if no specific dish found
+    5. Cuisine fallback
+    6. Generic food image
     """
     # Normalize recipe name for lookup
     name_lower = recipe_name.lower().strip()
     
-    # Try exact match first
+    # STEP 1: Try exact match first
     if name_lower in FOOD_IMAGES:
         return FOOD_IMAGES[name_lower]
     
     # Extract words from recipe name
     words = name_lower.replace('-', ' ').split()
     
-    # STEP 1: Look for priority ingredients first (salmon, chicken, tofu, etc.)
+    # STEP 2: Look for SPECIFIC DISH NAMES first (yakitori, biryani, ramen, etc.)
+    # These MUST be checked before generic ingredients like "chicken"
     for word in words:
-        if word in PRIORITY_INGREDIENTS:
-            # Try to find this ingredient in our image database
+        if word in SPECIFIC_DISHES:
+            # Find this specific dish in our database
             for key, url in FOOD_IMAGES.items():
-                if word in key.split():
+                if word in key.split() or word == key:
                     return url
     
-    # STEP 2: Try matching full multi-word dish names
+    # Also check for two-word specific dishes
+    for i in range(len(words) - 1):
+        two_word = f"{words[i]} {words[i+1]}"
+        if two_word in SPECIFIC_DISHES or two_word in FOOD_IMAGES:
+            if two_word in FOOD_IMAGES:
+                return FOOD_IMAGES[two_word]
+            for key, url in FOOD_IMAGES.items():
+                if two_word in key:
+                    return url
+    
+    # STEP 3: Try matching multi-word dish names from database
     best_match = None
     best_match_len = 0
     
     for key, url in FOOD_IMAGES.items():
-        # Skip cooking style keys if we're looking for main dishes
-        key_words = set(key.split())
-        if key_words.issubset(COOKING_STYLES):
-            continue
-            
         # Check if key is contained in recipe name
-        if key in name_lower:
-            if len(key) > best_match_len:
-                best_match = url
-                best_match_len = len(key)
+        if key in name_lower and len(key) > best_match_len:
+            best_match = url
+            best_match_len = len(key)
         # Check if recipe name is contained in key
-        elif name_lower in key:
-            if len(name_lower) > best_match_len:
-                best_match = url
-                best_match_len = len(name_lower)
+        elif name_lower in key and len(name_lower) > best_match_len:
+            best_match = url
+            best_match_len = len(name_lower)
     
-    if best_match and best_match_len >= 4:
+    if best_match and best_match_len >= 5:  # Require at least 5 char match
         return best_match
     
-    # STEP 3: Try matching significant words (skip common/style words)
+    # STEP 4: Now try GENERIC INGREDIENTS (only if no specific dish was found)
+    for word in words:
+        if word in GENERIC_INGREDIENTS:
+            for key, url in FOOD_IMAGES.items():
+                if word in key.split():
+                    return url
+    
+    # STEP 5: Try matching any significant word
     skip_words = {'a', 'an', 'the', 'with', 'and', 'or', 'in', 'on', 'of', 'for', 
                   'style', 'spicy', 'mild', 'hot', 'cold', 'fresh', 'homemade',
                   'traditional', 'classic', 'authentic', 'delicious', 'easy',
                   'quick', 'simple', 'healthy', 'light', 'rich', 'creamy',
-                  'bowl', 'plate', 'dish'}
+                  'bowl', 'plate', 'dish', 'skewers', 'skewer'}
     
     significant_words = [w for w in words if w not in skip_words and w not in COOKING_STYLES and len(w) > 3]
     
     for word in significant_words:
         for key, url in FOOD_IMAGES.items():
-            key_words = key.split()
-            if word in key_words:
+            if word in key.split():
                 return url
     
-    # STEP 4: Now try cooking styles as fallback
-    for word in words:
-        if word in COOKING_STYLES:
-            for key, url in FOOD_IMAGES.items():
-                if word in key:
-                    return url
-    
-    # STEP 5: Try cuisine fallback
+    # STEP 6: Try cuisine fallback
     if cuisine:
         cuisine_lower = cuisine.lower()
         if cuisine_lower in CUISINE_FALLBACKS:
