@@ -231,6 +231,18 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 1, 2026**: PERFORMANCE FIX - Disabled Auto AI Image Generation (P0 CRITICAL)
+  - **Fixed**: Site-wide slowness affecting login and all pages
+  - **Issue**: Automatic AI image generation in `PlannerMealCard.jsx` was triggering API calls on every component mount
+  - **Root Cause**: `useEffect` in PlannerMealCard was auto-generating AI images for every meal card, causing 21+ API calls when viewing weekly planner
+  - **Solution**: 
+    - Removed auto-generation from PlannerMealCard.jsx
+    - Added on-demand "AI" button that appears on hover for manual generation
+    - Cache-only check on mount - uses cached images if available, otherwise shows default stock photo
+    - Users can still generate AI images by clicking the sparkle button
+  - **Testing**: Homepage loads in 0.08 seconds (was extremely slow before)
+  - **Files Modified**: `/app/frontend/src/components/PlannerMealCard.jsx`
+
 - **Feb 1, 2026**: FEATURE - Mid-Chat Cuisine & Mood Change Support
   - Users can now change cuisine mid-chat by typing phrases like "switch to Thai", "craving Mexican", "I want Japanese food"
   - System detects cuisine keywords (italian, indian, mexican, chinese, japanese, thai, etc.)
