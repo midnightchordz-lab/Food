@@ -127,8 +127,11 @@ const DiabetesWeeklyPlannerPage = () => {
   // Get current week dates
   const getWeekDates = () => {
     const today = new Date();
+    const dayOfWeek = today.getDay();
     const monday = new Date(today);
-    monday.setDate(today.getDate() - today.getDay() + 1 + (currentWeekOffset * 7));
+    // If Sunday (0), go back 6 days. Otherwise go back (dayOfWeek - 1) days
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    monday.setDate(today.getDate() + daysToMonday + (currentWeekOffset * 7));
     
     return DAYS.map((_, index) => {
       const date = new Date(monday);
