@@ -5,6 +5,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
+from functools import lru_cache
+import hashlib
 import os
 import uuid
 import logging
@@ -20,6 +22,41 @@ from .exclusions import (
 )
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
+
+# ============== RESPONSE CACHE ==============
+# In-memory cache for recipe responses (faster than DB lookups)
+_recipe_cache: Dict[str, Dict[str, Any]] = {}
+CACHE_MAX_SIZE = 100
+CACHE_TTL_SECONDS = 600  # 10 minutes
+
+def get_cache_key(mood: str, meal_type: str, dietary_pref: str, cuisines: str) -> str:
+    """Generate a unique cache key for recipe request"""
+    key_str = f"{mood}:{meal_type}:{dietary_pref}:{cuisines}".lower()
+    return hashlib.md5(key_str.encode()).hexdigest()
+
+def get_cached_recipes(key: str) -> Optional[str]:
+    """Get cached recipe response if not expired"""
+    if key in _recipe_cache:
+        entry = _recipe_cache[key]
+        if datetime.now(timezone.utc).timestamp() - entry['timestamp'] < CACHE_TTL_SECONDS:
+            logging.info(f"Cache HIT for recipe key: {key[:8]}...")
+            return entry['response']
+        else:
+            del _recipe_cache[key]
+    return None
+
+def cache_recipes(key: str, response: str):
+    """Cache recipe response"""
+    # Evict oldest entries if cache is full
+    if len(_recipe_cache) >= CACHE_MAX_SIZE:
+        oldest_key = min(_recipe_cache.keys(), key=lambda k: _recipe_cache[k]['timestamp'])
+        del _recipe_cache[oldest_key]
+    
+    _recipe_cache[key] = {
+        'response': response,
+        'timestamp': datetime.now(timezone.utc).timestamp()
+    }
+    logging.info(f"Cached recipe response for key: {key[:8]}...")
 
 # ============== MODELS ==============
 
