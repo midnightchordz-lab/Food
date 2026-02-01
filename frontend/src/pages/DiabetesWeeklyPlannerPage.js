@@ -698,8 +698,7 @@ const DiabetesWeeklyPlannerPage = () => {
             )}
           </div>
           
-          {/* Fixed Footer with Save Button */}
-          <div className="border-t px-6 py-4 bg-background">
+          <DialogFooter>
             <Button
               onClick={savePreferences}
               disabled={savingSettings}
@@ -712,7 +711,7 @@ const DiabetesWeeklyPlannerPage = () => {
               )}
               Save Preferences
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
