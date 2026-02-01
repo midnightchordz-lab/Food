@@ -562,11 +562,26 @@ Format each recipe clearly with the name as a header.
         'now feeling', "i'm feeling", 'i feel', 'feeling now', 'feeling'
       ];
       
+      // Check if user is mentioning a cuisine change
+      const cuisineChangeIndicators = [
+        'change cuisine', 'switch cuisine', 'different cuisine',
+        'want to try', 'how about', 'let\'s try', 'switch to',
+        'change to', 'prefer', 'in the mood for', 'craving',
+        'want some', 'like some', 'give me', 'show me'
+      ];
+      
       const isMoodChange = moodChangeIndicators.some(indicator => lowerText.includes(indicator));
+      const isCuisineChangeRequest = cuisineChangeIndicators.some(indicator => lowerText.includes(indicator));
       const detectedMoodFromUser = detectMoodFromText(messageText);
+      const detectedCuisinesFromUser = detectCuisineFromText(messageText);
       
       // If user just types a mood word directly (like "cozy"), treat it as a mood change
       const isDirectMoodStatement = detectedMoodFromUser && messageText.trim().split(/\s+/).length <= 5;
+      
+      // Check if user is requesting a different cuisine
+      const isCuisineChange = (isCuisineChangeRequest || detectedCuisinesFromUser) && 
+                              detectedCuisinesFromUser && 
+                              detectedCuisinesFromUser.length > 0;
       
       // Include context in the message
       let contextMessage = messageText;
@@ -594,19 +609,35 @@ Format each recipe clearly with the name as a header.
         }
       }
       
+      // Update cuisines if detected
+      if (isCuisineChange && detectedCuisinesFromUser) {
+        setSelectedCuisines(detectedCuisinesFromUser);
+      }
+      
       const aiMsg = {
         role: 'assistant',
         content: response.data.response,
         timestamp: response.data.timestamp,
+        // Mood change tracking
         isMoodChange: isMoodChange || isDirectMoodStatement || isAIMoodChangeResponse,
-        showMoodChangeRecipeOption: (shouldUpdateMood || isAIMoodChangeResponse) && selectedMealType && selectedDietaryPref,
-        newMood: detectedMoodFromUser  // Only use mood detected from USER message
+        showMoodChangeRecipeOption: (shouldUpdateMood || isAIMoodChangeResponse) && selectedMealType && selectedDietaryPref && !isCuisineChange,
+        newMood: detectedMoodFromUser,
+        // Cuisine change tracking
+        isCuisineChange: isCuisineChange,
+        showCuisineChangeRecipeOption: isCuisineChange && selectedMealType && selectedDietaryPref,
+        newCuisines: detectedCuisinesFromUser,
+        // Combined change (both mood and cuisine)
+        showPreferenceChangeRecipeOption: (shouldUpdateMood || isCuisineChange) && selectedMealType && selectedDietaryPref
       };
       setMessages(prev => [...prev, aiMsg]);
       
-      // Update flow step if mood changed
-      if (shouldUpdateMood) {
+      // Update flow step if preferences changed
+      if (shouldUpdateMood && isCuisineChange) {
+        setFlowStep('preferences_changed');
+      } else if (shouldUpdateMood) {
         setFlowStep('mood_changed');
+      } else if (isCuisineChange) {
+        setFlowStep('cuisine_changed');
       }
     } catch (error) {
       console.error('Error sending message:', error);
