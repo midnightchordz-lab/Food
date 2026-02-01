@@ -203,20 +203,20 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
             />
           </div>
 
-          {/* Dietary Preference Section */}
+          {/* Dietary Preference Section - Multi-Select */}
           <div>
             <Label className="text-lg mb-3 block">
-              Dietary Preference <span className="text-red-500">*</span>
+              Dietary Preference (Select Multiple) <span className="text-red-500">*</span>
             </Label>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {DIETARY_PREFERENCES.map((pref) => {
                 const Icon = pref.icon;
-                const isSelected = dietaryPreference === pref.id;
+                const isSelected = dietaryPreferences.includes(pref.id);
                 return (
                   <button
                     key={pref.id}
                     type="button"
-                    onClick={() => setDietaryPreference(pref.id)}
+                    onClick={() => toggleDietaryPreference(pref.id)}
                     className={`p-4 rounded-xl border-2 transition-all text-left ${
                       isSelected
                         ? `${pref.color} border-current ring-2 ring-offset-2`
@@ -239,7 +239,53 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
                 );
               })}
             </div>
+            {dietaryPreferences.length > 1 && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Meals will include a mix of: {dietaryPreferences.join(' + ')}
+              </p>
+            )}
           </div>
+
+          {/* Day-Specific Opt-Out - Only show when multiple preferences include non-vegetarian */}
+          {dietaryPreferences.length > 1 && dietaryPreferences.includes('non-vegetarian') && (
+            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+              <Label className="text-lg mb-2 block flex items-center gap-2">
+                🗓️ Day-Specific Vegetarian Days
+              </Label>
+              <p className="text-sm text-muted-foreground mb-3">
+                Select days where you prefer vegetarian-only meals
+              </p>
+              <div className="grid grid-cols-7 gap-1">
+                {DAYS.map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => {
+                      setDaySpecificPrefs(prev => ({
+                        ...prev,
+                        [day]: prev[day] === 'Vegetarian' ? null : 'Vegetarian'
+                      }));
+                    }}
+                    className={`p-2 rounded-lg text-xs text-center transition-all ${
+                      daySpecificPrefs[day] === 'Vegetarian'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-white hover:bg-green-100 border'
+                    }`}
+                  >
+                    <div className="font-medium">{day.slice(0, 3)}</div>
+                    {daySpecificPrefs[day] === 'Vegetarian' && (
+                      <div className="text-[10px]">🥗</div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {Object.keys(daySpecificPrefs).filter(d => daySpecificPrefs[d]).length > 0 && (
+                <p className="text-xs text-green-700 mt-2">
+                  Vegetarian days: {Object.keys(daySpecificPrefs).filter(d => daySpecificPrefs[d]).join(', ')}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Calorie Target Section */}
           <div>
