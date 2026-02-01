@@ -10,6 +10,7 @@ from .meal_planning import router as meal_planning_router
 from .diabetes import router as diabetes_router
 from .import_recipe import router as import_router
 from .voice import router as voice_router
+from .image_generation import router as image_router
 
 __all__ = [
     'auth_router',
@@ -19,5 +20,6 @@ __all__ = [
     'meal_planning_router',
     'diabetes_router',
     'import_router',
-    'voice_router'
+    'voice_router',
+    'image_router'
 ]
