@@ -182,7 +182,12 @@ const DiabetesWeeklyPlannerPage = () => {
   };
   
   const getCurrentPlan = () => {
-    const weekKey = weekStart.toISOString().split('T')[0];
+    // Use local date format to match backend's week_start format
+    const year = weekStart.getFullYear();
+    const month = String(weekStart.getMonth() + 1).padStart(2, '0');
+    const day = String(weekStart.getDate()).padStart(2, '0');
+    const weekKey = `${year}-${month}-${day}`;
+    
     return plans.find(p => p.week_start === weekKey) || null;
   };
   
