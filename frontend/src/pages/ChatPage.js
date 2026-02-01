@@ -489,6 +489,56 @@ Format each recipe clearly with the name as a header.
     await fetchRecipes(selectedCuisines);
   };
   
+  // Handle cuisine change from user input
+  const handleCuisineChange = async (newCuisines) => {
+    const previousCuisines = selectedCuisines;
+    setSelectedCuisines(newCuisines);
+    
+    const cuisineLabels = newCuisines.map(c => {
+      const cuisine = CUISINES.find(cu => cu.id === c);
+      return cuisine?.label || c;
+    }).join(', ');
+    
+    const userMsg = {
+      role: 'user',
+      content: `I'd like to switch to ${cuisineLabels} cuisine${newCuisines.length > 1 ? 's' : ''} instead.`,
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setIsLoading(true);
+    
+    try {
+      const contextMessage = `[Context: Mood=${selectedMood || 'not set'}, MealType=${selectedMealType || 'not set'}, Dietary=${selectedDietaryPref || 'not set'}, Previous Cuisines=${previousCuisines.join(',') || 'not set'}]\n\nUser wants to change cuisine from ${previousCuisines.join(', ') || 'none'} to ${newCuisines.join(', ')}. Please acknowledge this change and offer to find new recipes.`;
+      
+      const response = await axios.post(`${API}/chat/send`, {
+        session_id: sessionId,
+        message: contextMessage
+      });
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: response.data.response,
+        timestamp: response.data.timestamp,
+        isCuisineChange: true,
+        showCuisineChangeRecipeOption: true,
+        newCuisines: newCuisines
+      };
+      setMessages(prev => [...prev, aiMsg]);
+      setFlowStep('cuisine_changed');
+    } catch (error) {
+      console.error('Error handling cuisine change:', error);
+      toast.error('Failed to process cuisine change');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Get new recipes for changed cuisine
+  const getRecipesForNewCuisine = async () => {
+    setFlowStep('recipes');
+    await fetchRecipes(selectedCuisines);
+  };
+  
   // Handle free-form message sending
   const sendMessage = async (messageText) => {
     if (!messageText.trim() || isLoading) return;
