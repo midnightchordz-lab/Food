@@ -468,6 +468,36 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
         recipe_params = is_recipe_generation_request(request.message)
         
         if recipe_params:
+            # Check cache first for faster response
+            cache_key = get_cache_key(
+                recipe_params["mood"],
+                recipe_params["meal_type"],
+                recipe_params["dietary_pref"],
+                recipe_params["cuisines"]
+            )
+            
+            # Only use cache if user has no exclusions (exclusions make recipes unique)
+            cached_response = get_cached_recipes(cache_key) if not user_exclusions else None
+            
+            if cached_response:
+                # Return cached response immediately
+                assistant_msg = ChatMessage(
+                    session_id=request.session_id,
+                    role="assistant",
+                    content=cached_response
+                )
+                await db.chat_messages.insert_one({
+                    **assistant_msg.model_dump(),
+                    "timestamp": assistant_msg.timestamp.isoformat(),
+                    "user_id": current_user.id
+                })
+                
+                return ChatResponse(
+                    session_id=request.session_id,
+                    response=cached_response,
+                    timestamp=assistant_msg.timestamp
+                )
+            
             system_msg = get_recipe_generation_prompt(
                 mood=recipe_params["mood"],
                 meal_type=recipe_params["meal_type"],
