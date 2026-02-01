@@ -728,8 +728,12 @@ export const hasRecipes = (message) => {
   const hasTimeCategories = message.match(/###?\s*(Quick|Moderate|Elaborate)\s*Option/i);
   const hasBoldRecipes = message.includes('**') && message.match(/\b(ingredient|recipe|cook|prep|serve|meal|dish)\b/i);
   const hasRecipeStructure = message.match(/\*\*(Cooking Time|Difficulty|Ingredients|Instructions):?\*\*/i);
+  // NEW: Check for numbered list format "1. **Recipe Name**"
+  const hasNumberedRecipes = message.match(/^\d+\.\s*\*\*[^*]+\*\*/m);
+  // NEW: Check for "**Recipe Name**" at start of line
+  const hasBoldTitles = message.match(/^\*\*[A-Z][^*]+\*\*/m);
   
-  return (hasTimeCategories || hasBoldRecipes || hasRecipeStructure) && message.length > 200;
+  return (hasTimeCategories || hasBoldRecipes || hasRecipeStructure || hasNumberedRecipes || hasBoldTitles) && message.length > 200;
 };
 
 // Clickable Recipe Card Component - Compact for 3-per-row grid
