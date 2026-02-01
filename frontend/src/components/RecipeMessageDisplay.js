@@ -410,6 +410,7 @@ const getRecipeImage = (title, cuisineHint = '') => {
   
   // PRIORITY 11: CHICKEN comes LAST (after all specific dishes checked)
   if (searchText.includes('chicken') || searchText.includes('teriyaki')) {
+    console.log(`[IMAGE-MATCH] MATCHED: chicken (fallback) -> returning chicken image`);
     return 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800';
   }
   
