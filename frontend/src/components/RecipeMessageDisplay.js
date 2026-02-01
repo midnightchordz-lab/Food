@@ -814,6 +814,30 @@ export const hasRecipes = (message) => {
 
 // Clickable Recipe Card Component - Compact for 3-per-row grid
 const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
+  const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isAIGenerated, setIsAIGenerated] = useState(false);
+
+  const handleGenerateAI = useCallback(async (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (isGenerating) return;
+    
+    setIsGenerating(true);
+    try {
+      const aiUrl = await generateAIImage(recipe.title, recipe.cuisineHint);
+      if (aiUrl) {
+        setImageUrl(aiUrl);
+        setIsAIGenerated(true);
+      }
+    } catch (err) {
+      console.error('AI generation failed:', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [recipe.title, recipe.cuisineHint, isGenerating]);
+
   return (
     <div 
       className="recipe-visual-card group flex flex-col bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer h-full"
@@ -823,7 +847,7 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
       {/* Recipe Image - Top */}
       <div className="w-full h-44 relative overflow-hidden">
         <img
-          src={recipe.imageUrl}
+          src={imageUrl}
           alt={recipe.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {
@@ -831,6 +855,36 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        
+        {/* AI Generated Badge */}
+        {isAIGenerated && !isGenerating && (
+          <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
+            <Sparkles className="w-3 h-3" />
+            <span>AI</span>
+          </div>
+        )}
+        
+        {/* Loading Overlay */}
+        {isGenerating && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
+            <div className="text-center text-white">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-1" />
+              <p className="text-xs">Generating...</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Generate AI Image Button */}
+        {!isAIGenerated && !isGenerating && (
+          <button
+            onClick={handleGenerateAI}
+            className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg transition-all hover:scale-105 z-10 opacity-0 group-hover:opacity-100"
+            title="Generate accurate AI image"
+          >
+            <Sparkles className="w-3 h-3 text-purple-600" />
+            <span>AI</span>
+          </button>
+        )}
         
         {/* View Recipe overlay on hover */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all duration-300">
