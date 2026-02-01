@@ -92,7 +92,8 @@ const FOOD_IMAGES = {
   // Japanese
   'ramen': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800',
   'sushi': 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800',
-  'teriyaki': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800',
+  'teriyaki chicken': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800',
+  'chicken teriyaki': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800',
   'tempura': 'https://images.unsplash.com/photo-1581781870027-04212e231e96?w=800',
   'miso soup': 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800',
   'udon': 'https://images.unsplash.com/photo-1618841557871-b4664fbf0cb3?w=800',
