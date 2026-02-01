@@ -486,7 +486,8 @@ async def generate_diabetes_weekly_plan(request: DiabetesMealPlanRequest, curren
             dietary_preference=request.dietary_preference,
             cuisine_preferences=request.cuisine_preferences,
             user_exclusions=user_exclusions,
-            calorie_target=request.calorie_target
+            calorie_target=request.calorie_target,
+            day_specific_preferences=request.day_specific_preferences
         )
         
         today = datetime.now(timezone.utc)
@@ -499,6 +500,7 @@ async def generate_diabetes_weekly_plan(request: DiabetesMealPlanRequest, curren
             "meals": meals,
             "diabetes_type": request.diabetes_type,
             "dietary_preference": request.dietary_preference,
+            "day_specific_preferences": request.day_specific_preferences,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "is_diabetes_plan": True
         }
