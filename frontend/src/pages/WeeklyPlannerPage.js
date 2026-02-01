@@ -810,6 +810,7 @@ const WeeklyPlannerPage = () => {
                 Subscribe (Free)
               </Button>
             </div>
+            </>
           ) : (
             <div className="text-center py-8 px-6">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
