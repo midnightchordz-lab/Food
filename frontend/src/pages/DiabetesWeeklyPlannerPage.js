@@ -658,6 +658,42 @@ const DiabetesWeeklyPlannerPage = () => {
               </div>
             </div>
             
+            {/* Day-Specific Dietary Opt-Out */}
+            {settingsDietary.length > 1 && settingsDietary.includes('Non-Vegetarian') && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">🗓️ Day-Specific Opt-Out</label>
+                <p className="text-xs text-muted-foreground mb-3">Select days where you prefer vegetarian-only meals</p>
+                <div className="grid grid-cols-7 gap-1">
+                  {DAYS.map((day) => (
+                    <button
+                      key={day}
+                      onClick={() => {
+                        setSettingsDayPrefs(prev => ({
+                          ...prev,
+                          [day]: prev[day] === 'Vegetarian' ? null : 'Vegetarian'
+                        }));
+                      }}
+                      className={`p-2 rounded-lg text-xs text-center transition-all ${
+                        settingsDayPrefs[day] === 'Vegetarian'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
+                    >
+                      <div className="font-medium">{day.slice(0, 3)}</div>
+                      {settingsDayPrefs[day] === 'Vegetarian' && (
+                        <div className="text-[10px]">🥗 Veg</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {Object.keys(settingsDayPrefs).filter(d => settingsDayPrefs[d]).length > 0 && (
+                  <p className="text-xs text-green-600 mt-2">
+                    Vegetarian days: {Object.keys(settingsDayPrefs).filter(d => settingsDayPrefs[d]).join(', ')}
+                  </p>
+                )}
+              </div>
+            )}
+            
             <Button
               onClick={savePreferences}
               disabled={savingSettings}
