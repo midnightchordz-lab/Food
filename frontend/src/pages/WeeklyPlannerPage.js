@@ -788,8 +788,7 @@ const WeeklyPlannerPage = () => {
               </div>
             </div>
             
-            {/* Fixed Footer with Buttons */}
-            <div className="border-t px-6 py-4 bg-background flex gap-3">
+            <DialogFooter className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => setShowSubscribeModal(false)}
@@ -810,10 +809,10 @@ const WeeklyPlannerPage = () => {
                 )}
                 Subscribe (Free)
               </Button>
-            </div>
+            </DialogFooter>
             </>
           ) : (
-            <div className="text-center py-8 px-6">
+            <div className="text-center py-8">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Check className="text-green-600" size={40} />
               </div>
