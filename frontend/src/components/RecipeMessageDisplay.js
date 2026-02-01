@@ -196,22 +196,76 @@ const GENERIC_FOOD_IMAGES = [
   'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800',
 ];
 
-// Get appropriate image for a recipe
+// HIGH PRIORITY PROTEINS - These should match BEFORE cooking styles
+const HIGH_PRIORITY_PROTEINS = new Set([
+  'salmon', 'tuna', 'shrimp', 'prawns', 'lobster', 'crab', 'fish', 'duck'
+]);
+
+// SPECIFIC DISHES - These should match before generic proteins
+const SPECIFIC_DISHES = new Set([
+  'yakitori', 'tempura', 'tonkatsu', 'ramen', 'udon', 'soba', 'sushi', 'sashimi',
+  'bibimbap', 'bulgogi', 'kimchi', 'japchae', 'biryani', 'pulao', 'tikka', 'tandoori',
+  'pad thai', 'tom yum', 'pho', 'banh mi', 'tacos', 'burrito', 'enchiladas',
+  'carbonara', 'lasagna', 'risotto', 'falafel', 'shawarma', 'kebab', 'paella'
+]);
+
+// COOKING STYLES - Lowest priority
+const COOKING_STYLES = new Set([
+  'teriyaki', 'grilled', 'baked', 'fried', 'roasted', 'steamed', 'glazed'
+]);
+
+// Get appropriate image for a recipe - with proper prioritization
 const getRecipeImage = (title, cuisineHint = '') => {
   const searchTerms = (title + ' ' + cuisineHint).toLowerCase();
+  const words = searchTerms.split(/\s+/);
   
-  // Try exact matches first
+  // STEP 1: Check for SPECIFIC DISHES first (yakitori, biryani, etc.)
+  for (const word of words) {
+    if (SPECIFIC_DISHES.has(word)) {
+      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
+        if (key.split(' ').includes(word) || key === word) {
+          return url;
+        }
+      }
+    }
+  }
+  
+  // STEP 2: Check for HIGH PRIORITY PROTEINS (salmon, tuna, shrimp, etc.)
+  for (const word of words) {
+    if (HIGH_PRIORITY_PROTEINS.has(word)) {
+      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
+        if (key.split(' ').includes(word)) {
+          return url;
+        }
+      }
+    }
+  }
+  
+  // STEP 3: Try exact multi-word matches (skip cooking styles)
   for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-    if (searchTerms.includes(key)) {
+    if (COOKING_STYLES.has(key)) continue; // Skip cooking style keys
+    if (searchTerms.includes(key) && key.length >= 4) {
       return url;
     }
   }
   
-  // Try partial word matches
-  const words = searchTerms.split(/\s+/);
+  // STEP 4: Try other proteins (chicken, beef, etc.)
+  const otherProteins = ['chicken', 'beef', 'pork', 'lamb', 'tofu', 'paneer'];
   for (const word of words) {
-    if (word.length > 3) {
+    if (otherProteins.includes(word)) {
       for (const [key, url] of Object.entries(FOOD_IMAGES)) {
+        if (key.split(' ').includes(word)) {
+          return url;
+        }
+      }
+    }
+  }
+  
+  // STEP 5: Try partial word matches (skip cooking styles)
+  for (const word of words) {
+    if (word.length > 4 && !COOKING_STYLES.has(word)) {
+      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
+        if (COOKING_STYLES.has(key)) continue;
         if (key.includes(word) || word.includes(key)) {
           return url;
         }
@@ -219,14 +273,14 @@ const getRecipeImage = (title, cuisineHint = '') => {
     }
   }
   
-  // Try cuisine fallbacks
+  // STEP 6: Try cuisine fallbacks
   for (const [cuisine, url] of Object.entries(CUISINE_FALLBACKS)) {
     if (searchTerms.includes(cuisine)) {
       return url;
     }
   }
   
-  // Return a consistent generic image based on title hash
+  // STEP 7: Return a consistent generic image based on title hash
   const hash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return GENERIC_FOOD_IMAGES[hash % GENERIC_FOOD_IMAGES.length];
 };
