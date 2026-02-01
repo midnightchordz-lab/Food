@@ -126,13 +126,14 @@ const WeeklyPlannerPage = () => {
   const [generatingNextWeek, setGeneratingNextWeek] = useState(false);
   
   // Subscription form state
-  const [subDietary, setSubDietary] = useState('Vegetarian');
+  const [subDietary, setSubDietary] = useState(['Vegetarian']);
   const [subCuisines, setSubCuisines] = useState(['Italian', 'Mexican']);
   const [subRecipeCount, setSubRecipeCount] = useState(5);
   const [subDeliveryDay, setSubDeliveryDay] = useState('Sunday');
   const [subEmail, setSubEmail] = useState('');
   const [subLoading, setSubLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subDayPrefs, setSubDayPrefs] = useState({});  // Day-specific opt-outs
   
   // Shopping cart
   const shoppingCart = useShoppingCart();
