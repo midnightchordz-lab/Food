@@ -1208,7 +1208,8 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
           className="w-full rounded-full text-xs border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground group-hover:border-primary"
           onClick={(e) => {
             e.stopPropagation();
-            onViewDetails(recipe);
+            // Pass the current imageUrl (which may be AI-generated) to the detail view
+            onViewDetails({ ...recipe, imageUrl: imageUrl });
           }}
         >
           Read More <ChevronRight size={14} className="ml-1" />
