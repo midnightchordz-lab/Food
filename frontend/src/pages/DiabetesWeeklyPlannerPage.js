@@ -490,28 +490,20 @@ const DiabetesWeeklyPlannerPage = () => {
                   {DAYS.map((day, dayIdx) => {
                     const meal = getMealForDayAndType(dayIdx, mealType.id);
                     const carbs = extractCarbs(meal);
-                    const cleanName = meal?.replace(/\s*\([^)]*carbs?\)/gi, '').trim();
                     
                     return (
                       <div
                         key={`${day}-${mealType.id}`}
-                        className="p-2 border-l border-border hover:bg-muted/30 transition-colors cursor-pointer min-h-[80px]"
-                        onClick={() => meal && handleMealClick(meal, mealType.id, day)}
+                        className="p-1 border-l border-border min-h-[100px]"
                       >
-                        {meal ? (
-                          <div className="h-full flex flex-col">
-                            <p className="text-xs font-medium line-clamp-2 flex-grow">{cleanName}</p>
-                            {carbs && (
-                              <span className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-teal-500/10 text-teal-600 w-fit">
-                                {carbs}g carbs
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="h-full flex items-center justify-center text-muted-foreground/50">
-                            <span className="text-xs">-</span>
-                          </div>
-                        )}
+                        <PlannerMealCard
+                          mealName={meal}
+                          mealType={mealType.id}
+                          carbs={carbs}
+                          onClick={() => meal && handleMealClick(meal, mealType.id, day)}
+                          compact={false}
+                          enableAI={true}
+                        />
                       </div>
                     );
                   })}
