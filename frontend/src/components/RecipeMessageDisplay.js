@@ -1121,7 +1121,7 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   return (
     <div 
       className="recipe-visual-card group flex flex-col bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer h-full"
-      onClick={() => onViewDetails(recipe)}
+      onClick={() => onViewDetails({ ...recipe, imageUrl: imageUrl })}
       data-testid="recipe-visual-card"
     >
       {/* Recipe Image - Top */}
