@@ -231,9 +231,6 @@ const COOKING_STYLES = new Set([
 const getRecipeImage = (title, cuisineHint = '') => {
   const searchText = (title + ' ' + cuisineHint).toLowerCase();
   
-  // DEBUG: Log every call to this function
-  console.log(`[IMAGE-MATCH] Input: "${title}", Cuisine: "${cuisineHint}", SearchText: "${searchText}"`);
-  
   // PRIORITY 1: Check for HIGH PRIORITY PROTEINS (salmon, shrimp, tuna, fish)
   // These MUST match first to avoid salmon showing chicken
   if (searchText.includes('salmon')) {
