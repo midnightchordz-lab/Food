@@ -640,11 +640,16 @@ GENERIC_INGREDIENTS = {
     'soup', 'stew', 'salad', 'curry',
 }
 
+# HIGH PRIORITY PROTEINS - These should match BEFORE cooking styles like teriyaki
+# When a dish has both a protein AND a cooking style, prioritize the protein
+HIGH_PRIORITY_PROTEINS = {'salmon', 'tuna', 'shrimp', 'lobster', 'crab', 'duck'}
+
 # Cooking styles - lowest priority
 COOKING_STYLES = {
     'grilled', 'baked', 'fried', 'roasted', 'steamed', 'braised',
     'glazed', 'sauteed', 'pan-fried', 'stir-fried', 'smoked', 'bbq', 'barbecue',
     'crispy', 'crunchy', 'creamy', 'spicy', 'tangy', 'sweet', 'sour',
+    'teriyaki',  # teriyaki is a cooking style, not a dish
 }
 
 def get_food_image(recipe_name: str, cuisine: str = None) -> str:
@@ -655,10 +660,11 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
     MATCHING PRIORITY:
     1. Exact recipe name match
     2. Specific dish names (yakitori, ramen, biryani, etc.)
-    3. Multi-word matches in database
-    4. Generic ingredients (chicken, salmon, etc.) - ONLY if no specific dish found
-    5. Cuisine fallback
-    6. Generic food image
+    3. High-priority proteins (salmon, tuna, shrimp) - before cooking styles
+    4. Multi-word matches in database
+    5. Generic ingredients (chicken, beef, etc.)
+    6. Cuisine fallback
+    7. Generic food image
     """
     # Normalize recipe name for lookup
     name_lower = recipe_name.lower().strip()
@@ -671,10 +677,8 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
     words = name_lower.replace('-', ' ').split()
     
     # STEP 2: Look for SPECIFIC DISH NAMES first (yakitori, biryani, ramen, etc.)
-    # These MUST be checked before generic ingredients like "chicken"
     for word in words:
         if word in SPECIFIC_DISHES:
-            # Find this specific dish in our database
             for key, url in FOOD_IMAGES.items():
                 if word in key.split() or word == key:
                     return url
@@ -689,11 +693,23 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
                 if two_word in key:
                     return url
     
-    # STEP 3: Try matching multi-word dish names from database
+    # STEP 3: Check for HIGH PRIORITY PROTEINS (salmon, tuna, etc.)
+    # These should match BEFORE cooking styles like teriyaki
+    for word in words:
+        if word in HIGH_PRIORITY_PROTEINS:
+            for key, url in FOOD_IMAGES.items():
+                if word in key.split():
+                    return url
+    
+    # STEP 4: Try matching multi-word dish names from database
+    # But SKIP if it's just a cooking style
     best_match = None
     best_match_len = 0
     
     for key, url in FOOD_IMAGES.items():
+        # Skip if the key is just a cooking style
+        if key in COOKING_STYLES:
+            continue
         # Check if key is contained in recipe name
         if key in name_lower and len(key) > best_match_len:
             best_match = url
@@ -703,17 +719,17 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
             best_match = url
             best_match_len = len(name_lower)
     
-    if best_match and best_match_len >= 5:  # Require at least 5 char match
+    if best_match and best_match_len >= 5:
         return best_match
     
-    # STEP 4: Now try GENERIC INGREDIENTS (only if no specific dish was found)
+    # STEP 5: Now try GENERIC INGREDIENTS
     for word in words:
         if word in GENERIC_INGREDIENTS:
             for key, url in FOOD_IMAGES.items():
                 if word in key.split():
                     return url
     
-    # STEP 5: Try matching any significant word
+    # STEP 6: Try matching any significant word
     skip_words = {'a', 'an', 'the', 'with', 'and', 'or', 'in', 'on', 'of', 'for', 
                   'style', 'spicy', 'mild', 'hot', 'cold', 'fresh', 'homemade',
                   'traditional', 'classic', 'authentic', 'delicious', 'easy',
@@ -727,7 +743,7 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
             if word in key.split():
                 return url
     
-    # STEP 6: Try cuisine fallback
+    # STEP 7: Try cuisine fallback
     if cuisine:
         cuisine_lower = cuisine.lower()
         if cuisine_lower in CUISINE_FALLBACKS:
