@@ -784,33 +784,33 @@ const WeeklyPlannerPage = () => {
                   data-testid="subscription-email"
                 />
               </div>
-              
-              {/* Subscribe Button */}
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSubscribeModal(false)}
-                  className="flex-1 rounded-xl"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubscribe}
-                  disabled={subLoading || !subEmail}
-                  className="flex-1 rounded-xl"
-                  data-testid="confirm-subscribe-btn"
-                >
-                  {subLoading ? (
-                    <span className="animate-spin mr-2">⏳</span>
-                  ) : (
-                    <Mail className="mr-2" size={16} />
-                  )}
-                  Subscribe (Free)
-                </Button>
-              </div>
+            </div>
+            
+            {/* Fixed Footer with Buttons */}
+            <div className="border-t px-6 py-4 bg-background flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowSubscribeModal(false)}
+                className="flex-1 rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubscribe}
+                disabled={subLoading || !subEmail}
+                className="flex-1 rounded-xl"
+                data-testid="confirm-subscribe-btn"
+              >
+                {subLoading ? (
+                  <span className="animate-spin mr-2">⏳</span>
+                ) : (
+                  <Mail className="mr-2" size={16} />
+                )}
+                Subscribe (Free)
+              </Button>
             </div>
           ) : (
-            <div className="text-center py-8">
+            <div className="text-center py-8 px-6">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Check className="text-green-600" size={40} />
               </div>
