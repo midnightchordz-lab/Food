@@ -1,0 +1,8 @@
+{
+  "appId": "com.moodfood.app",
+  "appName": "MOOD FOOD",
+  "webDir": "build",
+  "server": {
+    "androidScheme": "https"
+  }
+}
