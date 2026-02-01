@@ -695,7 +695,10 @@ const DiabetesWeeklyPlannerPage = () => {
                 )}
               </div>
             )}
-            
+          </div>
+          
+          {/* Fixed Footer with Save Button */}
+          <div className="border-t px-6 py-4 bg-background">
             <Button
               onClick={savePreferences}
               disabled={savingSettings}
