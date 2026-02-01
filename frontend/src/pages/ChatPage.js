@@ -1015,14 +1015,14 @@ Format each recipe clearly with the name as a header.
             </div>
           </div>
           
-          {/* Input Form - show for recipes, mood changes, or follow-up questions */}
-          {(flowStep === 'recipes' || flowStep === 'mood_changed' || messages.some(m => hasRecipes(m.content))) && (
+          {/* Input Form - show for recipes, mood changes, cuisine changes, or follow-up questions */}
+          {(flowStep === 'recipes' || flowStep === 'mood_changed' || flowStep === 'cuisine_changed' || flowStep === 'preferences_changed' || messages.some(m => hasRecipes(m.content))) && (
             <form onSubmit={handleSubmit} className="flex gap-3 items-end" data-testid="message-form">
               <Textarea
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask follow-up questions or request more recipes..."
+                placeholder="Ask follow-up questions, request different cuisines, or change your mood..."
                 className="flex-1 rounded-2xl resize-none min-h-[60px] max-h-[120px] bg-card border-border/60 focus:border-primary"
                 disabled={isLoading}
                 data-testid="message-input"
