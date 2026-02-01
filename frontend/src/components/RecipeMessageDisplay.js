@@ -1,7 +1,33 @@
-import { useState } from 'react';
-import { Heart, Clock, ChefHat, Utensils, ChevronRight } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Heart, Clock, ChefHat, Utensils, ChevronRight, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RecipeDetailModal from './RecipeDetailModal';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Function to generate AI image for a recipe
+const generateAIImage = async (recipeName, cuisine = '') => {
+  try {
+    const response = await fetch(`${API_URL}/api/recipe-image/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipe_name: recipeName,
+        cuisine: cuisine,
+        ingredients: []
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.image_url;
+    }
+    return null;
+  } catch (error) {
+    console.error('AI image generation error:', error);
+    return null;
+  }
+};
 
 // Curated high-quality food images from Unsplash
 const FOOD_IMAGES = {
