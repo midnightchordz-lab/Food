@@ -17,10 +17,16 @@ import ImportRecipePage from "@/pages/ImportRecipePage";
 import Navigation from "@/components/Navigation";
 import ShoppingCartModal from "@/components/ShoppingCartModal";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { initializeCapacitor, isNative } from "@/capacitor";
 import "@/App.css";
 import { useEffect } from "react";
 
 function App() {
+  // Initialize Capacitor for native mobile app
+  useEffect(() => {
+    initializeCapacitor();
+  }, []);
+
   // Auto-detect user's preferred language
   useEffect(() => {
     const detectLanguage = () => {
@@ -77,7 +83,8 @@ function App() {
               <Route path="/discover-recipes/:cuisine" element={<DiscoverRecipesPage />} />
             </Routes>
             <ShoppingCartModal />
-            <PWAInstallPrompt />
+            {/* Only show PWA prompt on web, not in native app */}
+            {!isNative && <PWAInstallPrompt />}
           </BrowserRouter>
           <Toaster />
         </div>
