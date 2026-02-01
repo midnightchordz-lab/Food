@@ -1140,29 +1140,33 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
         {isAIGenerated && !isGenerating && (
           <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
             <Sparkles className="w-3 h-3" />
-            <span>AI</span>
+            <span>AI Generated</span>
           </div>
         )}
         
-        {/* Loading Overlay */}
+        {/* Loading Overlay - Shows while generating AI image */}
         {isGenerating && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 to-blue-900/80 flex items-center justify-center z-20">
             <div className="text-center text-white">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-1" />
-              <p className="text-xs">Generating...</p>
+              <div className="relative">
+                <Sparkles className="w-8 h-8 animate-pulse mx-auto mb-2" />
+                <RefreshCw className="w-4 h-4 animate-spin absolute -bottom-1 -right-1 text-purple-300" />
+              </div>
+              <p className="text-sm font-medium">Creating image...</p>
+              <p className="text-xs text-purple-200 mt-1">AI-powered accuracy</p>
             </div>
           </div>
         )}
         
-        {/* Generate AI Image Button */}
-        {!isAIGenerated && !isGenerating && (
+        {/* Regenerate AI Image Button - only show if AI already generated */}
+        {isAIGenerated && !isGenerating && (
           <button
             onClick={handleGenerateAI}
             className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg transition-all hover:scale-105 z-10 opacity-0 group-hover:opacity-100"
-            title="Generate accurate AI image"
+            title="Regenerate AI image"
           >
-            <Sparkles className="w-3 h-3 text-purple-600" />
-            <span>AI</span>
+            <RefreshCw className="w-3 h-3 text-purple-600" />
+            <span>New</span>
           </button>
         )}
         
