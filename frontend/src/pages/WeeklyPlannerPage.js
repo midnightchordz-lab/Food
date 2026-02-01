@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import AIMealPlanGenerator from '@/components/AIMealPlanGenerator';
 import RecipeDetailModal from '@/components/RecipeDetailModal';
