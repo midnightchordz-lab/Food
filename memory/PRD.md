@@ -206,6 +206,7 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ### P0 - Critical (Completed)
 - [x] **Progressive Web App (PWA) Conversion** - COMPLETED Jan 31, 2026. App is now installable on mobile/desktop with offline support. manifest.json, service-worker.js, icons, PWAInstallPrompt component all verified working.
+- [x] **Recipe Image Mismatch Bug** - FIXED Feb 1, 2026. Images now correctly match recipe titles. Priority-based matching ensures salmon/tuna/shrimp recipes show correct images (not chicken). Testing agent verified fix with 100% pass rate.
 
 ### P1 - High Priority
 - [x] **Refactor server.py** - COMPLETED Jan 29, 2026. Split 3691-line monolith into 9 modular router files. All 45 API tests passed.
