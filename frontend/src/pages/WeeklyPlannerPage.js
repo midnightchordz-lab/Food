@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import AIMealPlanGenerator from '@/components/AIMealPlanGenerator';
 import RecipeDetailModal from '@/components/RecipeDetailModal';
+import PlannerMealCard from '@/components/PlannerMealCard';
 import { useShoppingCart } from '@/context/ShoppingCartContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
