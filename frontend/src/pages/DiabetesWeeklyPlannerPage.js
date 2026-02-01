@@ -255,7 +255,8 @@ const DiabetesWeeklyPlannerPage = () => {
         diabetes_type: preferences.diabetes_type || 'type2',
         dietary_preference: preferences.dietary_preference || 'non-vegetarian',
         cuisine_preferences: preferences.cuisine_preferences || [],
-        calorie_target: preferences.calorie_target
+        calorie_target: preferences.calorie_target,
+        day_specific_preferences: preferences.day_specific_preferences || null
       });
       
       toast.success('Diabetes meal plan generated!');
