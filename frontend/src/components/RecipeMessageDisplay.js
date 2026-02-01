@@ -234,15 +234,12 @@ const getRecipeImage = (title, cuisineHint = '') => {
   // PRIORITY 1: Check for HIGH PRIORITY PROTEINS (salmon, shrimp, tuna, fish)
   // These MUST match first to avoid salmon showing chicken
   if (searchText.includes('salmon')) {
-    console.log(`[IMAGE-MATCH] MATCHED: salmon -> returning salmon image`);
     return 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800';
   }
   if (searchText.includes('tuna')) {
-    console.log(`[IMAGE-MATCH] MATCHED: tuna -> returning tuna image`);
     return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800';
   }
   if (searchText.includes('shrimp') || searchText.includes('prawn') || searchText.includes('ebi')) {
-    console.log(`[IMAGE-MATCH] MATCHED: shrimp/prawn -> returning shrimp image`);
     return 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800';
   }
   if (searchText.includes('lobster')) {
