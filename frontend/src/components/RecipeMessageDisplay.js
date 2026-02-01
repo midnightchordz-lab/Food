@@ -149,13 +149,24 @@ const FOOD_IMAGES = {
   'oatmeal': 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=800',
   'pancakes': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800',
   'avocado toast': 'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=800',
+  
+  // PROTEINS - HIGH PRIORITY (salmon, fish, shrimp MUST come before chicken)
+  'salmon': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800',
+  'salmon bowl': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800',
+  'teriyaki salmon': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800',
+  'salmon teriyaki': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800',
+  'grilled salmon': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800',
+  'baked salmon': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800',
+  'tuna': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
+  'shrimp': 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=800',
+  'fish': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800',
+  
+  // OTHER PROTEINS
   'chicken': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800',
-  'salmon': 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800',
+  'grilled chicken': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800',
   'steak': 'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=800',
   'burger': 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800',
-  'grilled chicken': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=800',
   'roasted vegetables': 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800',
-  'baked salmon': 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800',
   'bowl': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
   'grain bowl': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
   'buddha bowl': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
