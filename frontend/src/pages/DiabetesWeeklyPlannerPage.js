@@ -116,7 +116,7 @@ const DiabetesWeeklyPlannerPage = () => {
   // Preferences state
   const [preferences, setPreferences] = useState(null);
   const [settingsDiabetesType, setSettingsDiabetesType] = useState('type2');
-  const [settingsDietary, setSettingsDietary] = useState('Non-Vegetarian');
+  const [settingsDietary, setSettingsDietary] = useState(['Non-Vegetarian']);
   const [settingsCuisines, setSettingsCuisines] = useState(['Indian', 'Mediterranean']);
   const [settingsCalories, setSettingsCalories] = useState(1800);
   const [savingSettings, setSavingSettings] = useState(false);
