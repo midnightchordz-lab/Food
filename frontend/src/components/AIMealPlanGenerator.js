@@ -115,8 +115,8 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
       return;
     }
     
-    if (!dietaryPreference) {
-      toast.error('Please select your dietary preference');
+    if (dietaryPreferences.length === 0) {
+      toast.error('Please select at least one dietary preference');
       return;
     }
 
@@ -129,26 +129,33 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
         fat_g: fatTarget
       } : null;
       
+      // Filter day preferences
+      const filteredDayPrefs = Object.fromEntries(
+        Object.entries(daySpecificPrefs).filter(([_, v]) => v)
+      );
+      
       // Save preferences with the chosen generation mode
       await axios.post(`${API}/meal-preferences`, {
-        dietary_preference: dietaryPreference,
+        dietary_preference: dietaryPreferences,
         calorie_target: enableCalorieTarget ? calorieTarget : null,
         macro_targets: macroTargets,
         focus_areas: focusAreas,
         cuisine_preferences: cuisinePreferences,
         mood: mood.trim(),
         is_active: true,
-        generation_mode: generationMode  // 'manual' or 'auto'
+        generation_mode: generationMode,
+        day_specific_preferences: Object.keys(filteredDayPrefs).length > 0 ? filteredDayPrefs : null
       });
       
       // Generate the meal plan
       const response = await axios.post(`${API}/weekly-plan/generate`, {
         mood: mood.trim(),
-        dietary_preference: dietaryPreference,
+        dietary_preference: dietaryPreferences,
         calorie_target: enableCalorieTarget ? calorieTarget : null,
         macro_targets: macroTargets,
         focus_areas: focusAreas,
-        cuisine_preferences: cuisinePreferences
+        cuisine_preferences: cuisinePreferences,
+        day_specific_preferences: Object.keys(filteredDayPrefs).length > 0 ? filteredDayPrefs : null
       });
       
       const modeMsg = generationMode === 'auto' 
