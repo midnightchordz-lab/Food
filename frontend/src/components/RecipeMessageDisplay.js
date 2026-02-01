@@ -833,10 +833,6 @@ const parseRecipesFromSection = (section, category) => {
     // Detect cuisine
     const cuisineHint = detectCuisine(title + ' ' + content);
     
-    // DEBUG: Log recipe being parsed
-    const imageUrl = getRecipeImage(title, cuisineHint);
-    console.log(`[RECIPE-PARSE] Title: "${title}", CuisineHint: "${cuisineHint}", ImageUrl: "${imageUrl}"`);
-    
     recipes.push({
       title,
       description,
@@ -844,7 +840,7 @@ const parseRecipesFromSection = (section, category) => {
       difficulty,
       cuisineHint,
       category,
-      imageUrl: imageUrl,
+      imageUrl: getRecipeImage(title, cuisineHint),
       fullContent: content
     });
   }
