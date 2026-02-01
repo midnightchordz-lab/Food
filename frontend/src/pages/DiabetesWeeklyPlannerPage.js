@@ -586,16 +586,22 @@ const DiabetesWeeklyPlannerPage = () => {
               </div>
             </div>
             
-            {/* Dietary Preference */}
+            {/* Dietary Preference - Multi-select */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Dietary Preference</label>
+              <label className="text-sm font-medium mb-2 block">Dietary Preference (Select Multiple)</label>
               <div className="flex flex-wrap gap-2">
                 {DIETARY_OPTIONS.map(diet => (
                   <button
                     key={diet}
-                    onClick={() => setSettingsDietary(diet)}
+                    onClick={() => {
+                      setSettingsDietary(prev => 
+                        prev.includes(diet) 
+                          ? prev.filter(d => d !== diet)
+                          : [...prev, diet]
+                      );
+                    }}
                     className={`px-4 py-2 rounded-full text-sm transition-all ${
-                      settingsDietary === diet
+                      settingsDietary.includes(diet)
                         ? 'bg-teal-500 text-white'
                         : 'bg-muted hover:bg-muted/80'
                     }`}
@@ -604,6 +610,11 @@ const DiabetesWeeklyPlannerPage = () => {
                   </button>
                 ))}
               </div>
+              {settingsDietary.length > 1 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Meals will include a mix of: {settingsDietary.join(' + ')}
+                </p>
+              )}
             </div>
             
             {/* Cuisines */}
