@@ -208,7 +208,7 @@ const GENERIC_FOOD_IMAGES = [
   'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800',
 ];
 
-// HIGH PRIORITY PROTEINS - These should match BEFORE cooking styles
+// HIGH PRIORITY PROTEINS - These MUST match BEFORE cooking styles or generic words
 const HIGH_PRIORITY_PROTEINS = new Set([
   'salmon', 'tuna', 'shrimp', 'prawns', 'lobster', 'crab', 'fish', 'duck'
 ]);
@@ -221,41 +221,51 @@ const SPECIFIC_DISHES = new Set([
   'carbonara', 'lasagna', 'risotto', 'falafel', 'shawarma', 'kebab', 'paella'
 ]);
 
-// COOKING STYLES - Lowest priority
+// COOKING STYLES - Lowest priority, should NOT override proteins
 const COOKING_STYLES = new Set([
-  'teriyaki', 'grilled', 'baked', 'fried', 'roasted', 'steamed', 'glazed'
+  'teriyaki', 'grilled', 'baked', 'fried', 'roasted', 'steamed', 'glazed', 'crispy'
 ]);
 
-// Get appropriate image for a recipe - with proper prioritization
+// Get appropriate image for a recipe - FIXED prioritization
 const getRecipeImage = (title, cuisineHint = '') => {
   const searchTerms = (title + ' ' + cuisineHint).toLowerCase();
   const words = searchTerms.split(/\s+/);
   
-  // STEP 1: Check for SPECIFIC DISHES first (yakitori, biryani, etc.)
-  for (const word of words) {
-    if (SPECIFIC_DISHES.has(word)) {
-      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-        if (key.split(' ').includes(word) || key === word) {
-          return url;
-        }
-      }
-    }
-  }
-  
-  // STEP 2: Check for HIGH PRIORITY PROTEINS (salmon, tuna, shrimp, etc.)
+  // STEP 1: Check for HIGH PRIORITY PROTEINS FIRST (salmon, tuna, shrimp)
+  // This MUST happen before anything else
   for (const word of words) {
     if (HIGH_PRIORITY_PROTEINS.has(word)) {
+      // Look for exact salmon/tuna/shrimp entries
+      if (FOOD_IMAGES[word]) {
+        return FOOD_IMAGES[word];
+      }
+      // Try compound matches like "teriyaki salmon"
       for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-        if (key.split(' ').includes(word)) {
+        if (key.includes(word)) {
           return url;
         }
       }
     }
   }
   
-  // STEP 3: Try exact multi-word matches (skip cooking styles)
+  // STEP 2: Check for SPECIFIC DISHES (yakitori, biryani, etc.)
+  for (const word of words) {
+    if (SPECIFIC_DISHES.has(word)) {
+      if (FOOD_IMAGES[word]) {
+        return FOOD_IMAGES[word];
+      }
+      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
+        if (key.includes(word)) {
+          return url;
+        }
+      }
+    }
+  }
+  
+  // STEP 3: Try exact multi-word matches from database (skip pure cooking styles)
   for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-    if (COOKING_STYLES.has(key)) continue; // Skip cooking style keys
+    // Skip if key is ONLY a cooking style
+    if (COOKING_STYLES.has(key)) continue;
     if (searchTerms.includes(key) && key.length >= 4) {
       return url;
     }
@@ -265,34 +275,20 @@ const getRecipeImage = (title, cuisineHint = '') => {
   const otherProteins = ['chicken', 'beef', 'pork', 'lamb', 'tofu', 'paneer'];
   for (const word of words) {
     if (otherProteins.includes(word)) {
-      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-        if (key.split(' ').includes(word)) {
-          return url;
-        }
+      if (FOOD_IMAGES[word]) {
+        return FOOD_IMAGES[word];
       }
     }
   }
   
-  // STEP 5: Try partial word matches (skip cooking styles)
-  for (const word of words) {
-    if (word.length > 4 && !COOKING_STYLES.has(word)) {
-      for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-        if (COOKING_STYLES.has(key)) continue;
-        if (key.includes(word) || word.includes(key)) {
-          return url;
-        }
-      }
-    }
-  }
-  
-  // STEP 6: Try cuisine fallbacks
+  // STEP 5: Try cuisine fallbacks
   for (const [cuisine, url] of Object.entries(CUISINE_FALLBACKS)) {
     if (searchTerms.includes(cuisine)) {
       return url;
     }
   }
   
-  // STEP 7: Return a consistent generic image based on title hash
+  // STEP 6: Return a consistent generic image based on title hash
   const hash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return GENERIC_FOOD_IMAGES[hash % GENERIC_FOOD_IMAGES.length];
 };
