@@ -583,6 +583,32 @@ Format each recipe clearly with the name as a header.
                               detectedCuisinesFromUser && 
                               detectedCuisinesFromUser.length > 0;
       
+      // If cuisine change detected, skip AI call and show clean transition
+      if (isCuisineChange && !shouldUpdateMood) {
+        // Update cuisines immediately
+        setSelectedCuisines(detectedCuisinesFromUser);
+        
+        // Get cuisine labels for display
+        const cuisineLabels = detectedCuisinesFromUser.map(c => {
+          const cuisine = CUISINES.find(cu => cu.id === c);
+          return cuisine?.label || c;
+        }).join(', ');
+        
+        // Create a clean acknowledgment message (no recipe text)
+        const aiMsg = {
+          role: 'assistant',
+          content: `Great choice! I'll find you some delicious ${cuisineLabels} recipes. 🍽️`,
+          timestamp: new Date().toISOString(),
+          isCuisineChange: true,
+          showCuisineChangeRecipeOption: selectedMealType && selectedDietaryPref,
+          newCuisines: detectedCuisinesFromUser
+        };
+        setMessages(prev => [...prev, aiMsg]);
+        setFlowStep('cuisine_changed');
+        setIsLoading(false);
+        return;
+      }
+      
       // Include context in the message
       let contextMessage = messageText;
       if (selectedMood || selectedMealType || selectedDietaryPref) {
