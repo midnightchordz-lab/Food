@@ -231,6 +231,15 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 1, 2026**: ENHANCEMENT - AI-Generated Images as Default
+  - Recipe cards now AUTO-GENERATE AI images on mount for 100% accurate dish-specific visuals
+  - Loading state shows "Creating image..." with purple/blue gradient and sparkle animation
+  - "AI Generated" badge appears after generation completes
+  - "New" regenerate button appears on hover to create fresh image
+  - Images cached in-memory (frontend) and MongoDB (backend) for instant loading
+  - Falls back to static stock photos if AI generation fails
+  - Files Modified: `/app/frontend/src/components/RecipeMessageDisplay.js`
+
 - **Feb 1, 2026**: BUG FIX - Recipe Image Mismatch (P0 CRITICAL)
   - **Fixed**: Images now correctly match recipe titles in chat interface
   - **Issue**: Salmon/Tuna/Shrimp recipes were showing chicken images
