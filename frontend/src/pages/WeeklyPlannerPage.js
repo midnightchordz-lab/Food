@@ -630,34 +630,35 @@ const WeeklyPlannerPage = () => {
           </DialogHeader>
           
           {!isSubscribed ? (
-            <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
-              {/* Benefits */}
-              <div className="bg-primary/5 rounded-xl p-4 space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Check size={16} className="text-green-500" />
-                  <span>Personalized to your dietary preferences</span>
+            <>
+              <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
+                {/* Benefits */}
+                <div className="bg-primary/5 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check size={16} className="text-green-500" />
+                    <span>Personalized to your dietary preferences</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check size={16} className="text-green-500" />
+                    <span>Matches your favorite cuisines</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check size={16} className="text-green-500" />
+                    <span>New recipes every week</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check size={16} className="text-green-500" />
+                    <span>Direct to your email inbox</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Check size={16} className="text-green-500" />
-                  <span>Matches your favorite cuisines</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Check size={16} className="text-green-500" />
-                  <span>New recipes every week</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Check size={16} className="text-green-500" />
-                  <span>Direct to your email inbox</span>
-                </div>
-              </div>
-              
-              {/* Dietary Preference - Multi-select */}
-              <div className="space-y-2">
-                <Label>Dietary Preference (Select Multiple)</Label>
-                <div className="flex flex-wrap gap-2">
-                  {DIETARY_OPTIONS.map((option) => (
-                    <button
-                      key={option}
+                
+                {/* Dietary Preference - Multi-select */}
+                <div className="space-y-2">
+                  <Label>Dietary Preference (Select Multiple)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {DIETARY_OPTIONS.map((option) => (
+                      <button
+                        key={option}
                       type="button"
                       onClick={() => {
                         setSubDietary(prev => 
