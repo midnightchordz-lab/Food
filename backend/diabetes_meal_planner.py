@@ -144,15 +144,36 @@ def filter_diabetes_meal_plan(meals: dict, excluded_names: List[str]) -> dict:
 async def generate_diabetes_weekly_meal_plan(
     user,
     diabetes_type: str = "type2",
-    dietary_preference: str = "non-vegetarian",
+    dietary_preference = "non-vegetarian",  # Can be string or list
     cuisine_preferences: Optional[List[str]] = None,
     user_exclusions: Optional[List[str]] = None,
-    calorie_target: Optional[int] = None
+    calorie_target: Optional[int] = None,
+    day_specific_preferences: Optional[dict] = None  # e.g., {"Tuesday": "Vegetarian"}
 ):
     """
     Generate a diabetes-optimized weekly meal plan with strict exclusion adherence
+    Supports multiple dietary preferences and day-specific opt-outs
     """
     guidelines = DIABETES_MEAL_GUIDELINES.get(diabetes_type, DIABETES_MEAL_GUIDELINES["type2"])
+    
+    # Handle multiple dietary preferences
+    if isinstance(dietary_preference, list):
+        dietary_pref_str = ' + '.join(dietary_preference)
+        dietary_instruction = f"""
+DIETARY PREFERENCES (MIXED): {dietary_pref_str}
+- Create a variety of meals mixing these preferences throughout the week
+- Some days can have {dietary_preference[0]} meals, others {dietary_preference[1] if len(dietary_preference) > 1 else dietary_preference[0]} meals
+"""
+    else:
+        dietary_pref_str = dietary_preference
+        dietary_instruction = f"DIETARY PREFERENCE: {dietary_preference}"
+    
+    # Handle day-specific opt-outs (e.g., no non-veg on Tuesday)
+    day_specific_instruction = ""
+    if day_specific_preferences:
+        day_specific_instruction = "\n🗓️ DAY-SPECIFIC PREFERENCES:\n"
+        for day, pref in day_specific_preferences.items():
+            day_specific_instruction += f"- {day}: {pref} meals ONLY\n"
     
     # Build exclusion instruction
     exclusion_instruction = ""
@@ -188,9 +209,10 @@ DIETARY FOCUS: {guidelines['focus']}
 FOODS TO AVOID: {guidelines['avoid']}
 PREFERRED FOODS: {guidelines['prefer']}
 
-DIETARY PREFERENCE: {dietary_preference}
+{dietary_instruction}
 CUISINE PREFERENCES: {', '.join(cuisine_preferences) if cuisine_preferences else 'Varied global cuisines'}
 {calorie_info}
+{day_specific_instruction}
 {exclusion_instruction}
 
 RULES FOR DIABETES-SAFE MEALS:
