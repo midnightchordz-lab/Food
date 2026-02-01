@@ -57,9 +57,12 @@ const CUISINES = [
   'Greek'
 ];
 
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
   const [mood, setMood] = useState('');
-  const [dietaryPreference, setDietaryPreference] = useState('');
+  const [dietaryPreferences, setDietaryPreferences] = useState([]);  // Changed to array for multi-select
+  const [daySpecificPrefs, setDaySpecificPrefs] = useState({});  // Day opt-out
   const [calorieTarget, setCalorieTarget] = useState(2000);
   const [enableCalorieTarget, setEnableCalorieTarget] = useState(false);
   const [focusAreas, setFocusAreas] = useState([]);
@@ -72,6 +75,14 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
   const [proteinTarget, setProteinTarget] = useState(150);
   const [carbsTarget, setCarbsTarget] = useState(200);
   const [fatTarget, setFatTarget] = useState(65);
+
+  const toggleDietaryPreference = (prefId) => {
+    setDietaryPreferences(prev =>
+      prev.includes(prefId)
+        ? prev.filter(p => p !== prefId)
+        : [...prev, prefId]
+    );
+  };
 
   const toggleFocus = (area) => {
     setFocusAreas(prev =>
