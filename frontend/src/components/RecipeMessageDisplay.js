@@ -461,10 +461,9 @@ const getRecipeImage = (title, cuisineHint = '') => {
     if (cuisine.includes('middle east') || cuisine.includes('mediterranean')) return 'https://images.unsplash.com/photo-1544025162-d76694265947?w=800';
   }
   
-  // FINAL FALLBACK - generic delicious food
-  const fallbackUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800';
-  console.log(`[IMAGE-MATCH] NO MATCH for "${title}" -> using fallback: ${fallbackUrl}`);
-  return fallbackUrl;
+  // FALLBACK: Use generic food image based on title hash
+  const hash = title.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
+  return GENERIC_FOOD_IMAGES[Math.abs(hash) % GENERIC_FOOD_IMAGES.length];
 };
 
 // Difficulty badge colors
