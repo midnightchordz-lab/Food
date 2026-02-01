@@ -1129,6 +1129,8 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
         <img
           src={imageUrl}
           alt={recipe.title}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {
             e.target.src = GENERIC_FOOD_IMAGES[0];
