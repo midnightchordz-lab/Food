@@ -231,6 +231,13 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 1, 2026**: FEATURE - Mid-Chat Cuisine & Mood Change Support
+  - Users can now change cuisine mid-chat by typing phrases like "switch to Thai", "craving Mexican", "I want Japanese food"
+  - System detects cuisine keywords (italian, indian, mexican, chinese, japanese, thai, etc.)
+  - Orange "New cuisine selected!" card appears with "Show [Cuisine] Recipes" button
+  - Combined mood + cuisine changes supported (e.g., "I'm feeling cozy and want Japanese")
+  - Files Modified: `/app/frontend/src/pages/ChatPage.js` (detectCuisineFromText, handleCuisineChange, getRecipesForNewCuisine)
+
 - **Feb 1, 2026**: ENHANCEMENT - AI-Generated Images as Default
   - Recipe cards now AUTO-GENERATE AI images on mount for 100% accurate dish-specific visuals
   - Loading state shows "Creating image..." with purple/blue gradient and sparkle animation
