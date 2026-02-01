@@ -642,8 +642,6 @@ const getCategoryDefaultTime = (category) => {
 // General recipe parsing (fallback)
 const parseRecipesGeneral = (message) => {
   const recipes = [];
-  const recipePattern = /\*\*([^*]+)\*\*([^*]*?)(?=\*\*|$)/gs;
-  let match;
   
   const skipPatterns = [
     /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name)/i,
@@ -651,7 +649,59 @@ const parseRecipesGeneral = (message) => {
     /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
     /^(about|regarding|for your|please|remember|keep in mind)/i,
     /^(drink|pairing|beverage|hydration|safe)/i,
+    /^(mood boost|why this)/i,
   ];
+  
+  // PATTERN 1: Numbered list format "1. **Recipe Name**" - most common for follow-up requests
+  const numberedPattern = /(\d+)\.\s*\*\*([^*]+)\*\*\s*([\s\S]*?)(?=\d+\.\s*\*\*|$)/g;
+  let numberedMatch;
+  
+  while ((numberedMatch = numberedPattern.exec(message)) !== null) {
+    const title = numberedMatch[2].trim();
+    const content = numberedMatch[3].trim();
+    
+    if (!title || title.length < 3 || title.length > 120) continue;
+    if (skipPatterns.some(pattern => pattern.test(title))) continue;
+    if (title.endsWith(':')) continue;
+    
+    // Extract cooking time
+    const timeMatch = content.match(/\*Cooking\s*[Tt]ime:?\*\s*(\d+[-–]?\d*\s*(?:min|minutes?))/i) ||
+                      content.match(/(\d+)\s*(?:min|minutes)/i);
+    const cookingTime = timeMatch ? timeMatch[1] : '30 min';
+    
+    // Extract difficulty
+    const diffMatch = content.match(/\*Difficulty:?\*\s*(Easy|Medium|Hard)/i);
+    let difficulty = diffMatch ? diffMatch[1] : 'Medium';
+    
+    // Get description - first meaningful line after title
+    const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('*') && !l.startsWith('-'));
+    let description = lines.length > 0 ? lines[0].trim() : '';
+    // Extract first 2 sentences
+    const sentences = description.match(/[^.!?]+[.!?]+/g);
+    if (sentences) description = sentences.slice(0, 2).join(' ').trim();
+    if (!description || description.length < 10) description = `A delicious ${title} recipe.`;
+    
+    const cuisineHint = detectCuisine(title + ' ' + content);
+    
+    recipes.push({
+      title,
+      description,
+      cookingTime: typeof cookingTime === 'string' && !cookingTime.includes('min') ? cookingTime + ' min' : cookingTime,
+      difficulty,
+      cuisineHint,
+      imageUrl: getRecipeImage(title, cuisineHint),
+      fullContent: content
+    });
+  }
+  
+  // If we found numbered recipes, return them
+  if (recipes.length > 0) {
+    return recipes;
+  }
+  
+  // PATTERN 2: Standard bold format "**Recipe Name**"
+  const recipePattern = /\*\*([^*]+)\*\*([^*]*?)(?=\*\*|$)/gs;
+  let match;
   
   while ((match = recipePattern.exec(message)) !== null) {
     let title = match[1].trim();
