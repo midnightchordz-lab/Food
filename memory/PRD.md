@@ -230,6 +230,21 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Jan 31, 2026**: FIX & ENHANCEMENT - Image Service & Global Recipe Database
+  - **BUG FIX**: Fixed image mismatch where "Veggie Pulao" showed fried egg image
+  - **Improved matching logic**: Prioritizes longer matches, skips common words, requires 4+ char matches
+  - **Expanded image database**: From ~80 dishes to 400+ dishes covering:
+    - India & Subcontinent: North/South Indian, Pakistani, Sri Lankan
+    - China: Regional Chinese, Dim Sum, Sichuan
+    - Japan: Ramen, Sushi, Udon, Tempura
+    - Korea: BBQ, Jjigae, Kimchi dishes
+    - ASEAN: Thai, Vietnamese, Malaysian, Indonesian, Filipino
+    - Middle East: Persian, Turkish, Lebanese, Moroccan
+    - Europe: Italian, French, Spanish, Greek, German, British, Russian
+    - Americas: Mexican, American, LATAM, Caribbean
+    - Oceania & Africa: Australian, Ethiopian, West African
+  - Added 30+ cuisine fallbacks for better coverage
+
 - **Jan 31, 2026**: FEATURE - Capacitor Native Mobile App Wrapper (COMPLETE)
   - Added Capacitor v5 for wrapping the web app as native iOS/Android apps
   - Installed plugins: splash-screen, status-bar, keyboard, haptics, share, browser, app
