@@ -928,7 +928,7 @@ Format each recipe clearly with the name as a header.
                   )}
                   
                   {/* Mood change recipe suggestion button */}
-                  {msg.showMoodChangeRecipeOption && msg.isMoodChange && (
+                  {msg.showMoodChangeRecipeOption && msg.isMoodChange && !msg.isCuisineChange && (
                     <div className="mt-4 ml-2 p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-2xl border border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
@@ -946,6 +946,56 @@ Format each recipe clearly with the name as a header.
                       >
                         <Sparkles size={16} className="mr-2" />
                         Show {MOOD_IMAGES.find(m => m.id === selectedMood)?.label} Recipes
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Cuisine change recipe suggestion button */}
+                  {msg.showCuisineChangeRecipeOption && msg.isCuisineChange && !msg.isMoodChange && (
+                    <div className="mt-4 ml-2 p-4 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-2xl border border-orange-500/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-xl">
+                          🌍
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">New cuisine selected!</p>
+                          <p className="text-xs text-muted-foreground">
+                            Get recipes from {selectedCuisines.map(id => CUISINES.find(c => c.id === id)?.label).join(', ')} cuisine{selectedCuisines.length > 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={getRecipesForNewCuisine}
+                        className="rounded-full w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-500/90 hover:to-amber-500/90 text-white"
+                        data-testid="get-new-cuisine-recipes-button"
+                      >
+                        <Sparkles size={16} className="mr-2" />
+                        Show {selectedCuisines.map(id => CUISINES.find(c => c.id === id)?.label).join(', ')} Recipes
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Combined mood and cuisine change recipe suggestion button */}
+                  {msg.showPreferenceChangeRecipeOption && msg.isMoodChange && msg.isCuisineChange && (
+                    <div className="mt-4 ml-2 p-4 bg-gradient-to-r from-primary/10 via-purple-500/10 to-orange-500/10 rounded-2xl border border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-orange-500/20 flex items-center justify-center overflow-hidden">
+                          <img src={MOOD_IMAGES.find(m => m.id === selectedMood)?.image} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">New preferences set!</p>
+                          <p className="text-xs text-muted-foreground">
+                            {MOOD_IMAGES.find(m => m.id === selectedMood)?.label} mood + {selectedCuisines.map(id => CUISINES.find(c => c.id === id)?.label).join(', ')}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={getRecipesForNewCuisine}
+                        className="rounded-full w-full bg-gradient-to-r from-primary via-purple-600 to-orange-500 hover:opacity-90 text-white"
+                        data-testid="get-new-preference-recipes-button"
+                      >
+                        <Sparkles size={16} className="mr-2" />
+                        Show Matching Recipes
                       </Button>
                     </div>
                   )}
