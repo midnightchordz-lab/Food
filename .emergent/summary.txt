@@ -1,70 +1,89 @@
 <analysis>**original_problem_statement:**
 The user's vision is a comprehensive, mood-based recipe discovery application named MoodFood.
 
-The key requirements are:
+Key requirements are:
 1.  **Core App Name & Tagline:** MOOD FOOD with the tagline When Feelings Need Feeding.
-2.  **Mobile App:** The web application needs to be converted into an installable mobile app. A Progressive Web App (PWA) was completed, and a native wrapper using Capacitor was also added.
+2.  **Mobile App:** The web application needs to be converted into an installable mobile app (PWA and Capacitor wrapper are complete).
 3.  **Food Allergy System:** A safety-first food allergy and ingredient exclusion system.
-4.  **Feature Set:** AI-powered recipe chat, a diabetes-focused meal planner, a general weekly meal planner with macro-tracking, and a recipe import tool.
-5.  **Performance:** The application must be performant and responsive.
-6.  **Critical: Accurate Recipe Images:** The user has repeatedly emphasized that recipe images MUST accurately match the recipe title. This has become the most critical issue.
+4.  **Feature Set:** AI-powered recipe chat, a diabetes-focused meal planner (D-Planner), and a general weekly meal planner (Planner). All recipe displays should use AI-generated images.
+5.  **Planner Customization:** Both planners must support:
+    *   Multiple dietary preference selections (e.g., Vegetarian + Non-Vegetarian).
+    *   A day-specific opt-out for non-vegetarian meals (e.g., prefer vegetarian on Tuesdays).
+6.  **Performance:** The application must be performant and responsive.
+7.  **Critical: Accurate Recipe Images:** The user has repeatedly emphasized that recipe images MUST accurately match the recipe title. This was resolved by making AI-generated images the default, but it introduced a severe performance issue.
+8.  **Mid-Chat Flexibility:** Users should be able to change their mood or cuisine choice mid-chat and receive new, relevant recipes.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack React (frontend) and FastAPI (backend) app. The backend was refactored into a modular, router-based architecture. The app was converted into a PWA and subsequently wrapped with Capacitor for native mobile builds.
+The application is a full-stack React (frontend) and FastAPI (backend) app. It has been converted into a PWA and wrapped with Capacitor for native mobile builds.
 
-A significant portion of the last session was dedicated to fixing a critical and recurring bug where recipe images do not match the recipe description in the chat interface. An AI image generation feature using OpenAI was added as a potential solution, but the core issue persists. The agent made numerous attempts to fix the static image matching logic in the frontend (), but the user continues to report the same problem, indicating the fixes have been ineffective.
+Several key features were implemented and fixed in this session:
+- The long-standing bug of mismatched recipe images in chat was resolved by implementing default AI-powered image generation for all recipes.
+- The chat feature was enhanced to allow users to change their mood and cuisine preferences mid-conversation.
+- Both the D-Planner and Planner tabs were updated to support multiple dietary preferences and day-specific dietary opt-outs.
+- A critical UI bug where the Save Preferences button was not visible in planner settings modals was fixed.
+- General performance optimizations like code-splitting (React.lazy), lazy-loading images, and backend API caching were implemented.
+
+However, the change to auto-generate AI images for every recipe card has introduced a severe performance bottleneck, making the entire site, including login, extremely slow.
 
 **Last working item**:
--   **Last item agent was working**: Fixing a critical, recurring bug where recipe images in the chat interface do not match the recipe description (e.g., Salmon dish shows a chicken image). The user is extremely frustrated with the lack of a fix and the repeated credit usage. The agent's last attempt involved rewriting the frontend image matching function  in  to be a more direct lookup, but the user's final message confirms the issue is still present.
--   **Status**: BLOCKED
--   **Agent Testing Done**: Y (Agent performed extensive self-testing, including browser console tests, which indicated the logic was correct. However, these tests did not align with the user's experience, suggesting a deeper issue like caching or a flaw in the testing methodology.)
--   **Which testing method agent to use?**: Frontend testing agent. The agent must be instructed to perform a visual, end-to-end test that replicates the user's workflow:
-    1.  Start a new chat.
-    2.  Ask for a Teriyaki Salmon Bowl and then a Spicy Tuna Roll.
-    3.  Visually verify that the image for the salmon dish is salmon and the image for the tuna roll is tuna, and that they are not the same incorrect image.
--   **User Testing Done**: Y (User has repeatedly tested and confirmed the issue persists).
+-   **Last item agent was working**: Investigating and fixing a severe performance issue causing the entire site to be slow. The agent hypothesized that the automatic AI image generation implemented on every recipe card ( and ) was the root cause. The agent was about to disable this automatic generation to restore site performance.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: Frontend testing agent. After the fix, the agent needs to verify that the site's responsiveness is restored across the chat and planner pages. The test should also confirm that AI images are no longer generated automatically but can be triggered on-demand.
+-   **User Testing Done**: Y (User reported the slowness).
 
 **All Pending/In progress Issue list**:
--   **Issue 1**: CRITICAL - Recipe images do not match the recipe title in the chat UI. (Priority: P0)
--   **Issue 2**: Voice agent response is slow. (Priority: P1)
--   **Issue 3**: Verify image display for previously saved recipes. (Priority: P2)
+-   **Issue 1**: CRITICAL - Site is very slow, including login, making the app unusable. (Priority: P0)
+-   **Issue 2**: Inconsistent feature implementation in the Planner tab. (Priority: P1)
+-   **Issue 3**: Voice agent response is slow. (Priority: P1)
+-   **Issue 4**: Verify image display for previously saved recipes. (Priority: P2)
 
 **Issues Detail:**
--   **Issue 1: CRITICAL - Recipe images do not match the recipe title in the chat UI**
-    -   **Attempted fixes**: This is a highly recurring issue. The agent has tried:
-        1.  Expanding and correcting the backend image keyword database ().
-        2.  Implementing a priority matching logic in the backend.
-        3.  Implementing an AI-powered image generation service ( and frontend components), which is not being used by default in the chat.
-        4.  Multiple rewrites of the frontend image matching function ( in ).
-        5.  Forcibly restarting frontend and backend services and clearing caches.
-        These fixes have all failed to resolve the issue from the user's perspective.
+-   **Issue 1: CRITICAL - Site is very slow, making the app unusable**
+    -   **Attempted fixes**: The agent previously added backend caching and frontend code-splitting, but this was not enough to counter the performance hit from generating numerous AI images simultaneously on page load.
     -   **Next debug checklist**:
-        1.  **Confirm the Root Cause**: The problem is almost certainly in the frontend, as backend tests showed correct image URLS were being generated/retrieved. The frontend has its own static image matching logic in  that is overriding any backend logic for the chat UI.
-        2.  **Examine **: Add aggressive  statements inside the  function and the  function to trace exactly which  is passed and which  is returned for every single recipe card rendered.
-        3.  **Reproduce the User's EXACT Scenario**: The last user screenshot showed Teriyaki Salmon Rice Bowl and Spicy Tuna Roll both displaying the same incorrect chicken image. Reproduce this by asking for those specific recipes in a new chat.
-        4.  **Investigate Caching**: The agent suspected dev server or browser caching. The next agent must assume this is a real possibility and investigate why the supposedly fixed code is not being served or executed correctly in the user's browser.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical user experience failure. The user is very frustrated and has threatened to stop using the service. Fixing it will restore core functionality and user trust.
+        1.  Edit : Remove or comment out the  hook that automatically triggers AI image generation on mount.
+        2.  Edit : Do the same; disable the automatic image generation.
+        3.  Re-implement a manual trigger (e.g., a Generate Image button) on both components so the feature remains accessible on-demand.
+        4.  Restart services and test the chat and planner pages to confirm a significant improvement in load times and responsiveness.
+    -   **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker. Fixing it will make the application usable again and restore the user's trust.
     -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: Y
+    -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: frontend
     -   **Blocked on other issue**: None. This is the main blocker.
 
--   **Issue 2: Voice agent response is slow**
+-   **Issue 2: Inconsistent feature implementation in the Planner tab**
+    -   **Attempted fixes**: None. The agent implemented the Day-Specific Opt-Out feature in the  and  modals but missed applying it to the  component, which is triggered by the Generate AI Plan button on the Planner tab.
+    -   **Next debug checklist**:
+        1.  View .
+        2.  Add state management for .
+        3.  Implement the conditional UI to show the Day-Specific Opt-Out buttons when multiple dietary preferences including Non-Vegetarian are selected.
+        4.  Update the API call payload to include the .
+    -   **Why fix this issue and what will be achieved with the fix?**: This will create a consistent user experience across all meal planning flows as requested by the user.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: frontend
+
+-   **Issue 3: Voice agent response is slow**
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: Y
 
--   **Issue 3: Verify image display for previously saved recipes**
+-   **Issue 4: Verify image display for previously saved recipes**
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: Y
 
 **In progress Task List**:
--   None. The entire focus must be on fixing the P0 image mismatch bug.
+-   **Task 1: Disable automatic AI image generation**
+    -   **Where to resume**: Modify  and  to remove the  that triggers on-mount image generation.
+    -   **What will be achieved with this?**: Resolve the P0 site-wide slowness issue.
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?**: frontend
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **P1: Persist Newsletter Subscriptions to DB:** The UI exists, but the backend logic is missing.
+    -   **P1: Persist Newsletter Subscriptions to DB:** The UI for the newsletter subscription on the  exists, but the backend logic to save the email to the database is missing.
 -   **Future Tasks:**
     -   **P2:** Implement Shopping Partner Integration (e.g., Instacart, Amazon Fresh).
     -   **P2:** Add a recipe rating and review system.
@@ -72,74 +91,86 @@ A significant portion of the last session was dedicated to fixing a critical and
     -   **P2:** Add a Glucose Logging feature for the Diabetes tab.
 
 **Completed work in this session**
--   **Capacitor Mobile App Wrapper (DONE)**: Integrated Capacitor to wrap the React app for native iOS/Android builds. Provided a detailed guide for app store submission.
--   **AI-Powered Image Generation (DONE but NOT default)**: Implemented a backend service () and frontend components () to generate recipe images on demand using OpenAI. However, the chat UI still defaults to the broken static image matching.
--   **PWA Conversion (DONE)**: Completed and tested the Progressive Web App conversion, making the app installable with offline capabilities.
--   **Deployment Readiness (DONE)**: Fixed issues in  and  to pass deployment checks.
+-   **P0 Recipe Image Mismatch Bug (FIXED)**: Resolved the critical, recurring bug where static recipe images did not match recipe titles in the chat UI.
+-   **AI-Generated Images by Default (Implemented)**: Made AI image generation the default for all recipe cards in chat and planners. (This is now being reverted due to performance issues).
+-   **Mid-Chat Mood & Cuisine Change (DONE)**: Implemented the feature for users to change mood or cuisine preferences during a chat conversation and receive new recipes accordingly.
+-   **Planner Feature Parity (Mostly DONE)**:
+    -   Fixed a date-mismatch bug preventing meal plans from displaying correctly.
+    -   Implemented multi-select for dietary preferences in ,  subscribe modal, and .
+    -   Implemented day-specific dietary opt-out in  and  subscribe modal.
+    -   Added AI-generated images to meal cards in both planners.
+-   **Planner Settings Modal UI (FIXED)**: Resolved a critical UI bug where the Save Preferences button was not visible in the settings modals by implementing a scrollable content area and a fixed footer.
+-   **Performance Optimizations (DONE)**: Implemented code splitting via , a lazy-loading  component, and backend caching for recipe-generation API routes.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1**: Voice agent response is slow.
 -   **Issue 2**: Verify image display for previously saved recipes.
 
 **Known issue recurrence from previous fork**
--   The image mismatch bug is a severe recurring issue that has dominated this entire session, despite multiple fixes.
+-   The critical image mismatch bug was the main recurring issue from the previous fork, which has now been resolved.
+-   The Voice agent response is slow issue remains unaddressed.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Capacitor**: Hybrid mobile app development framework used to wrap the React application.
--   **AI Image Generation**: Using  to call OpenAI's  model for creating dish-specific images.
--   **Frontend Debugging**: The core of the recent work has been debugging a persistent issue within a complex React component (), involving state, props, and utility functions. The failure to resolve it points to issues with either caching, the development environment, or a misunderstanding of the component's data flow.
+-   **Performance Optimization**: Implemented frontend code splitting (), lazy-loading images, and in-memory caching on both frontend () and backend ().
+-   **React State Management**: Extensive use of  and  to manage complex UI states, including multi-select toggles, conditional rendering, and API data fetching.
+-   **Frontend Debugging**: Faced and debugged complex UI issues related to component state, event handling, and CSS layout (e.g., the non-visible Save button).
 
 **key DB schema**
--   No new changes to the database schema.
+-   No changes to the database schema in this session.
 
 **changes in tech stack**
--   **Capacitor**: Added to the frontend for native mobile app compilation.
--   **emergentintegrations**: Used on the backend for AI image generation.
+-   No changes to the core tech stack.
 
 **All files of reference**
--    (CRITICAL - Most likely source of the bug)
--    (Uses the above component)
--    (New service for AI image generation)
--    (New API endpoint)
--   
--   
+-    (Source of performance issue)
+-    (Source of performance issue)
+-    (Missing Day-Specific Opt-Out feature)
+-    (Heavily modified)
+-    (Heavily modified)
+-    (Modified for mid-chat changes)
+-    (Modified for code splitting)
+-    (Modified for caching)
+-    (Modified for multi-dietary plans)
 
 **Areas that need refactoring**:
--    has become a monolith responsible for parsing AI text, rendering multiple UI states, and handling image logic. It is over 800 lines long and should be broken down into smaller, more manageable components (e.g., a dedicated  component, a  utility). This complexity is likely contributing to the persistent bugs.
+-    remains a very large component (>1000 lines). The logic for AI image generation, which is also used in , should be extracted into a reusable custom hook (e.g., ) to reduce code duplication and complexity.
+-   The planner pages (, ) and the  component share a lot of similar logic for handling preferences (dietary, cuisines, day opt-out). This could be abstracted into a shared settings component or hook to ensure consistency and easier maintenance.
 
 **key api endpoints**
--   : New endpoint to generate a recipe image using AI.
+-   : Modified to add in-memory caching.
+-   : Modified to accept an array for  and a dictionary for .
+-   : Used heavily, leading to performance issues.
 
 **Critical Info for New Agent**
--   **Your P0 priority is the recurring image mismatch bug.** The user is extremely frustrated. Do not trust that previous fixes have worked. You must start by reproducing the error from scratch.
--   The root cause is very likely in the frontend's static image matching logic within . The backend services appear to be working correctly.
--   The user's last screenshot showed two different recipes with the same incorrect image. This points to a systemic failure in the matching logic, not a simple one-off keyword error.
--   Consider that the development server (yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.) or the browser is aggressively caching outdated code. Your debugging should account for this possibility.
--   The user has provided detailed instructions on how a robust image system should work. While you don't need to implement it exactly, it shows their high expectation for accuracy. A potential path to a permanent fix could be to make the AI image generation the default for all recipes in the chat, bypassing the faulty static matching logic entirely.
+-   **Your P0 priority is fixing the site-wide slowness.** The application is currently unusable. The root cause is the automatic AI image generation on every recipe card. You must disable this automatic behavior in  and  and revert it to a manual, on-demand action.
+-   **Your P1 priority is to fix the feature inconsistency.** The user-facing Generate AI Plan button on the Planner tab opens a modal () that is missing the Day-Specific Opt-Out feature. You must add it to align with the other planner modals.
+-   The user is extremely frustrated with recurring issues and wasted credits. Do not use UI-based testing (screenshots) to verify simple logic changes. Verify code directly, and only use UI testing for final end-to-end verification. Ensure fixes are precise and comprehensive.
 
 **documents and test reports created in this job**
+-   
+-   
 -   
 -   
 -    (Continuously updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Request:** how do i upload this to playstore or IOS - **RESOLVED** (Agent provided a detailed guide).
-2.  **Bug Report:** veg pulao is showing a picture of fried egg - **ATTEMPTED FIX** (Agent expanded backend image DB).
-3.  **Bug Report:** salmon dish shows the image of chicken - **ATTEMPTED FIX** (Agent fixed backend priority matching).
-4.  **Bug Report:** more option command the logic breaks and the recipe is displayed in the attached format - **ATTEMPTED FIX** (Agent fixed frontend recipe parser).
-5.  **Bug Report:** Yakitori Chicken Skewers shows generic chicken - **ATTEMPTED FIX** (Agent updated backend matching and image URL).
-6.  **Request:** User provided a detailed, multi-part plan for a robust AI-powered image generation and validation system. - **PARTIALLY IMPLEMENTED** (Agent implemented OpenAI generation but not the user's full validation pipeline).
-7.  **Bug Report:** chicken picture and Salmon dish stop wasting my credit and fix it - **ATTEMPTED FIX** (Agent found frontend had its own logic and rewrote it).
-8.  **Bug Report:** still the same issue 2 recipe showing the same image - **ATTEMPTED FIX** (Agent found duplicate/wrong image URLs in frontend code and rewrote matching logic again).
-9.  **Bug Report:** Same issue stop using my credits to fix the same issue 20 times fix it once - **ATTEMPTED FIX** (Agent confirmed code was correct, suspected caching, and restarted services).
-10. **Bug Report:** look at the snapshot all the images for the recipe are incorrect - **UNRESOLVED**. This is the current pending issue.
+1.  **Bug Report:** Planner modal's Save button is not visible. - **ATTEMPTED FIX**
+2.  **Bug Report:** Nope still the same issue... 4th Try... dont use credits now. - **ATTEMPTED FIX** (Agent refactored modal layout).
+3.  **Bug Report:** still does not work... 3rd Try. - **ATTEMPTED FIX** (Agent again tried to fix the modal layout).
+4.  **Confirmation:** Acknowledged the fix for the planner modal scroll issue.
+5.  **Bug Report:** D-Planner meal plan not visible; Planner tab is using old UI without multi-select/day-opt-out. - **FIXED** (Agent fixed date issue in D-planner and updated the correct component  for the Planner tab).
+6.  **Confirmation:** Acknowledged fixes for both planner issues.
+7.  **Bug Report:** the site has gone very slow even login is taking a lot of time. - **UNRESOLVED**. This is the current P0 issue.
+8.  **Request:** do the Enhancement (referring to AI image generation). - **DONE** (But caused performance issues).
+9.  **Bug Report:** read recipe click doesn't show AI-generated image in modal. - **FIXED**.
+10. **Request:** how do i make the site fast. - **PARTIALLY DONE** (Agent implemented caching/lazy-loading, but the root cause of slowness persists).
 
 **Project Health Check:**
--   **Broken**: The recipe display in the core chat feature is critically broken due to the image mismatch bug.
+-   **Broken**: Core user experience is critically degraded due to site-wide slowness. Login and navigation are severely impacted.
+-   **Broken**: The Generate AI Plan feature in the Planner tab has an incomplete and inconsistent UI compared to other planners.
 -   **Mocked**: None.
 
 **3rd Party Integrations**
@@ -150,14 +181,14 @@ info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this comm
 -   **Capacitor** (Native Mobile App Wrapper)
 
 **Testing status**
--   **Testing agent used after significant changes**: YES (For PWA feature).
+-   **Testing agent used after significant changes**: YES (Used multiple times to verify bug fixes and new features).
 -   **Troubleshoot agent used after agent stuck in loop**: NO
 -   **Test files created**: None.
--   **Known regressions**: The image matching functionality has regressed and is currently broken.
+-   **Known regressions**: A severe performance regression was introduced after making AI image generation automatic.
 
 **Credentials to test flow:**
 -   Use the registration form on the website to create a new user for testing.
 
 **What agent forgot to execute**
--   The agent has not fixed the pending P1 and P2 issues from the initial handoff (slow voice agent, saved recipe image verification).
--   The agent did not fully implement the user's detailed specification for an AI image validation system, opting for a simpler implementation and then getting stuck on fixing the old static logic. The core failure is the inability to fix the P0 image bug despite over 200 messages dedicated to it.</analysis>
+-   The agent did not implement the Day-Specific Opt-Out feature in the  component, creating a feature inconsistency across the different planner UIs.
+-   The long-standing P1 issue of the Voice agent response is slow remains unaddressed.</analysis>
