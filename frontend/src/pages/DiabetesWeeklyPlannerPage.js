@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router-dom';
 import RecipeDetailModal from '@/components/RecipeDetailModal';
+import PlannerMealCard from '@/components/PlannerMealCard';
 import {
   Dialog,
   DialogContent,
