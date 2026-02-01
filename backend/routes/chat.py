@@ -553,6 +553,10 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
             
             ai_response = filtered_response
         
+        # Cache the recipe response for future requests (only if no exclusions)
+        if recipe_params and not user_exclusions:
+            cache_recipes(cache_key, ai_response)
+        
         assistant_msg = ChatMessage(
             session_id=request.session_id,
             role="assistant",
