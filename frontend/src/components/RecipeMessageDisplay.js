@@ -967,6 +967,9 @@ const parseRecipesGeneral = (message) => {
     // Skip action-based tips
     /^(load up|stock up|fill up|flavored with|seasoned with|paired with|served with|topped with)/i,
     /^(enjoy|savor|indulge|explore|discover|experiment)/i,
+    // Skip warning/advice titles
+    /^(beware|monitoring|watch out|be careful|take care|keep track|pay attention)/i,
+    /^(added sugars?|hidden sugars?|sugar content|calorie|sodium level)/i,
   ];
   
   // PATTERN 1: Numbered list format "1. **Recipe Name**" - most common for follow-up requests
