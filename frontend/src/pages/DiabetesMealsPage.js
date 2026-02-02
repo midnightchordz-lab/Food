@@ -833,15 +833,21 @@ const DiabetesMealsPage = () => {
                       <Button
                         onClick={() => {
                           // Use the cuisines that were stored with the message, or fall back to selected
-                          const cuisinesToUse = msg.previousCuisines || selectedCuisines;
-                          console.log('Generating recipes with cuisines:', cuisinesToUse);
-                          fetchDiabetesRecipes(cuisinesToUse.length > 0 ? cuisinesToUse : ['any']);
+                          const cuisinesToUse = msg.previousCuisines && msg.previousCuisines.length > 0 
+                            ? msg.previousCuisines 
+                            : (selectedCuisines.length > 0 ? selectedCuisines : ['any']);
+                          console.log('Button clicked - previousCuisines:', msg.previousCuisines);
+                          console.log('Button clicked - selectedCuisines:', selectedCuisines);
+                          console.log('Button clicked - using cuisines:', cuisinesToUse);
+                          fetchDiabetesRecipes(cuisinesToUse);
                         }}
                         className="rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
                         data-testid="show-recipes-mood-change"
                       >
                         <Sparkles className="mr-2" size={18} />
-                        Show Recipes for New Mood
+                        Show {msg.previousCuisines && msg.previousCuisines.length > 0 && !msg.previousCuisines.includes('any') 
+                          ? `${msg.previousCuisines.map(id => CUISINES.find(c => c.id === id)?.label || id).join(', ')} ` 
+                          : ''}Recipes for New Mood
                       </Button>
                     </div>
                   )}
