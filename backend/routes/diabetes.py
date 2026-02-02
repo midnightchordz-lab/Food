@@ -298,23 +298,44 @@ async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: Use
         
         user_exclusions = await get_user_excluded_ingredients(current_user.id)
         
-        system_msg = get_diabetes_recipe_prompt(
-            mood=request.mood,
-            diabetes_type=request.diabetes_type,
-            diabetes_label=request.diabetes_label,
-            dietary_pref=request.dietary_pref,
-            meal_type=request.meal_type,
-            cuisines=request.cuisines,
-            guidelines=request.guidelines
-        )
+        # Use strict recipe-only prompt to avoid tips
+        system_msg = f"""You are a recipe generator. Generate EXACTLY 3 {request.cuisines} {request.dietary_pref} {request.meal_type} recipes.
+
+CRITICAL - YOU MUST FOLLOW THESE RULES:
+1. Each recipe MUST have a REAL DISH NAME like "Pad Thai", "Green Curry Chicken", "Tom Yum Soup"
+2. NEVER use tip titles like "Beware of Added Sugars", "Monitoring Portion Sizes", "Load Up on Vegetables"
+3. NEVER generate cooking tips, warnings, or dietary advice as recipe names
+4. Recipe names should be what you'd see on a restaurant menu
+
+The user has {request.diabetes_label} - keep carbs under 45g per serving.
+User is feeling: {request.mood}
+
+FORMAT - Follow exactly for each recipe:
+## Recipe 1: [REAL DISH NAME - like Grilled Salmon Teriyaki]
+
+**Prep Time:** X minutes
+**Cook Time:** X minutes
+**Difficulty:** Easy/Medium/Hard
+
+**Ingredients:**
+- [list ingredients]
+
+**Instructions:**
+1. [steps]
+
+---
+
+## Recipe 2: [REAL DISH NAME]
+[same format]
+
+---
+
+## Recipe 3: [REAL DISH NAME]
+[same format]"""
         
         if user_exclusions:
             exclusion_list = ", ".join(user_exclusions)
-            system_msg += f"""
-
-FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
-- Avoid all variations (e.g., if "shrimp" excluded, also avoid prawns)
-- Choose alternative proteins/ingredients instead"""
+            system_msg += f"\n\nFOOD RESTRICTIONS - NEVER include: {exclusion_list}"
         
         chat = LlmChat(
             api_key=llm_api_key,
@@ -323,9 +344,8 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
         )
         chat.with_model("openai", "gpt-4o")
         
-        exclusion_reminder = f" Avoid: {', '.join(user_exclusions)}." if user_exclusions else ""
         ai_response = await chat.send_message(
-            UserMessage(text=f"Please generate 3 {request.dietary_pref} {request.meal_type} recipes for {request.cuisines} cuisine that are safe for {request.diabetes_label} and match a {request.mood.lower()} mood.{exclusion_reminder}")
+            UserMessage(text=f"Generate 3 {request.cuisines} recipes with REAL dish names only. No tips or warnings as titles.")
         )
         
         # CRITICAL SAFETY FILTER
