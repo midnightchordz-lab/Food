@@ -327,6 +327,7 @@ async def get_or_generate_recipe_image(recipe_name: str, cuisine: str = '', ingr
     """
     Get a cached image or generate a new one for the recipe.
     Returns dict with image_url (data URL) and metadata.
+    Images are served in WebP format for optimal performance.
     """
     
     # Create a unique key for this recipe
@@ -336,19 +337,22 @@ async def get_or_generate_recipe_image(recipe_name: str, cuisine: str = '', ingr
     cached = await recipe_images_collection.find_one({"cache_key": cache_key})
     
     if cached and cached.get('image_base64'):
+        # Use cached mime_type or default to webp for new cache entries
+        mime_type = cached.get('mime_type', 'image/webp')
         return {
-            "image_url": f"data:image/png;base64,{cached['image_base64']}",
+            "image_url": f"data:{mime_type};base64,{cached['image_base64']}",
             "source": "cached",
             "recipe_name": recipe_name,
-            "generated_at": cached.get('created_at')
+            "generated_at": cached.get('created_at'),
+            "format": mime_type.split('/')[-1]
         }
     
     # Generate new image
     print(f"Generating new image for: {recipe_name}")
-    image_base64 = await generate_recipe_image(recipe_name, cuisine, ingredients)
+    image_base64, mime_type = await generate_recipe_image(recipe_name, cuisine, ingredients)
     
     if image_base64:
-        # Cache the result
+        # Cache the result with mime_type
         await recipe_images_collection.update_one(
             {"cache_key": cache_key},
             {
@@ -357,6 +361,7 @@ async def get_or_generate_recipe_image(recipe_name: str, cuisine: str = '', ingr
                     "recipe_name": recipe_name,
                     "cuisine": cuisine,
                     "image_base64": image_base64,
+                    "mime_type": mime_type,
                     "created_at": datetime.now(timezone.utc),
                     "source": "ai_generated"
                 }
@@ -365,10 +370,11 @@ async def get_or_generate_recipe_image(recipe_name: str, cuisine: str = '', ingr
         )
         
         return {
-            "image_url": f"data:image/png;base64,{image_base64}",
+            "image_url": f"data:{mime_type};base64,{image_base64}",
             "source": "generated",
             "recipe_name": recipe_name,
-            "generated_at": datetime.now(timezone.utc).isoformat()
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "format": mime_type.split('/')[-1]
         }
     
     # Fallback to static image service if generation fails
