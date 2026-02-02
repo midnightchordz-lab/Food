@@ -105,9 +105,11 @@ const parseDetailedRecipe = (markdown) => {
   
   // Extract Instructions
   const instructionsSection = markdown.match(/## 📋 Step-by-Step Instructions([\s\S]*?)(?=##|$)/i) ||
+                              markdown.match(/## Step-by-Step Instructions([\s\S]*?)(?=##|$)/i) ||
                               markdown.match(/## Instructions([\s\S]*?)(?=##|$)/i);
   if (instructionsSection) {
     const instructionText = instructionsSection[1];
+    
     // Parse step format: **Step X** (Y minutes)
     const stepMatches = instructionText.matchAll(/\*\*(?:Step\s*)?(\d+)\*\*\s*\(([^)]+)\)\s*([\s\S]*?)(?=\*\*(?:Step|Final)|$)/gi);
     for (const match of stepMatches) {
@@ -138,6 +140,53 @@ const parseDetailedRecipe = (markdown) => {
         technique,
         servingSuggestion
       });
+    }
+    
+    // FALLBACK: Try numbered list format "1. Step text" if no instructions found
+    if (sections.instructions.length === 0) {
+      const numberedMatches = instructionText.matchAll(/(\d+)\.\s*\*?\*?([^*\n][^\n]*)/g);
+      for (const match of numberedMatches) {
+        const stepNum = parseInt(match[1]);
+        let text = match[2].trim();
+        
+        // Extract time if in parentheses
+        const timeMatch = text.match(/\((\d+[-–]?\d*\s*(?:min|minutes?|sec|seconds?))\)/i);
+        const time = timeMatch ? timeMatch[1] : '';
+        text = text.replace(/\(\d+[-–]?\d*\s*(?:min|minutes?|sec|seconds?)\)/gi, '').trim();
+        
+        if (text.length > 5) {
+          sections.instructions.push({
+            step: stepNum,
+            time: time || '2-3 min',
+            text,
+            visualCue: '',
+            important: '',
+            technique: '',
+            servingSuggestion: ''
+          });
+        }
+      }
+    }
+    
+    // FALLBACK 2: Try "**Step X:**" format
+    if (sections.instructions.length === 0) {
+      const stepColonMatches = instructionText.matchAll(/\*\*Step\s*(\d+):?\*\*\s*([\s\S]*?)(?=\*\*Step|\*\*Final|$)/gi);
+      for (const match of stepColonMatches) {
+        const stepNum = parseInt(match[1]);
+        let text = match[2].trim();
+        const timeMatch = text.match(/\((\d+[-–]?\d*\s*(?:min|minutes?))\)/i);
+        const time = timeMatch ? timeMatch[1] : '2-3 min';
+        
+        sections.instructions.push({
+          step: stepNum,
+          time,
+          text: text.replace(/\(\d+[-–]?\d*\s*(?:min|minutes?)\)/gi, '').trim(),
+          visualCue: '',
+          important: '',
+          technique: '',
+          servingSuggestion: ''
+        });
+      }
     }
     
     // Parse Final Step if exists
