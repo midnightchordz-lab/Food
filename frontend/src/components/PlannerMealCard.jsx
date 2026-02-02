@@ -120,17 +120,8 @@ const PlannerMealCard = ({
               <span className="text-[10px] text-teal-600">{carbs}g carbs</span>
             )}
           </div>
-          {isAIGenerated ? (
+          {isAIGenerated && (
             <Sparkles className="w-3 h-3 text-purple-500 flex-shrink-0" />
-          ) : enableAI && (
-            <button
-              onClick={handleGenerateAI}
-              disabled={isGenerating}
-              className="flex-shrink-0 p-1 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 transition-all"
-              title="Generate AI image"
-            >
-              <Sparkles className="w-3 h-3" />
-            </button>
           )}
         </div>
       </div>
