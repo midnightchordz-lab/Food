@@ -773,6 +773,10 @@ const parseRecipesFromSection = (section, category) => {
     /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
     /^(about|regarding|for your|please|remember|keep in mind)/i,
     /^(drink|pairing|beverage|hydration|safe)/i,
+    // Skip generic advice/tips that are NOT recipe names
+    /^(choose|select|opt for|look for|watch|avoid|limit|consider|try|focus on|prioritize|incorporate)/i,
+    /^(lean proteins?|non-starchy|starchy|vegetables?|sauces?|carbohydrates?|fiber|sugar|sodium|fats?)/i,
+    /^(portion|serving size|balance|moderation|healthy|low|high|good|best|worst)/i,
     /^\d+\.\s*$/,
     /^[:\s]*\(\d+/,
   ];
