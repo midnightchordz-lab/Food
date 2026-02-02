@@ -816,6 +816,20 @@ const DiabetesMealsPage = () => {
                       </Button>
                     </div>
                   )}
+                  
+                  {/* Show Recipes button when mood changes */}
+                  {msg.showMoodChange && (
+                    <div className="mt-4 ml-2">
+                      <Button
+                        onClick={() => fetchDiabetesRecipes(selectedCuisines.length > 0 ? selectedCuisines : ['any'])}
+                        className="rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+                        data-testid="show-recipes-mood-change"
+                      >
+                        <Sparkles className="mr-2" size={18} />
+                        Show Recipes for New Mood
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
               
