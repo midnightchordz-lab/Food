@@ -278,7 +278,8 @@ Make this image immediately recognizable as {recipe_name} to anyone familiar wit
 async def generate_recipe_image(recipe_name: str, cuisine: str = '', ingredients: List[str] = None) -> Optional[str]:
     """
     Generate an AI image for a recipe using OpenAI's gpt-image-1.
-    Returns base64 encoded image string.
+    Converts to WebP format for smaller file sizes (25-34% reduction).
+    Returns tuple of (base64_string, mime_type).
     """
     try:
         from emergentintegrations.llm.openai.image_generation import OpenAIImageGeneration
@@ -286,7 +287,7 @@ async def generate_recipe_image(recipe_name: str, cuisine: str = '', ingredients
         api_key = os.environ.get('EMERGENT_LLM_KEY')
         if not api_key:
             print("No EMERGENT_LLM_KEY found")
-            return None
+            return None, None
         
         # Generate the prompt
         prompt = generate_image_prompt(recipe_name, cuisine, ingredients)
@@ -302,15 +303,24 @@ async def generate_recipe_image(recipe_name: str, cuisine: str = '', ingredients
         )
         
         if images and len(images) > 0:
+            # Convert to WebP for smaller file size
+            webp_bytes, mime_type = convert_to_webp(images[0])
+            
+            # Log size reduction
+            original_size = len(images[0])
+            webp_size = len(webp_bytes)
+            reduction = ((original_size - webp_size) / original_size) * 100
+            print(f"Image optimized: {original_size/1024:.1f}KB -> {webp_size/1024:.1f}KB ({reduction:.1f}% smaller)")
+            
             # Convert to base64
-            image_base64 = base64.b64encode(images[0]).decode('utf-8')
-            return image_base64
+            image_base64 = base64.b64encode(webp_bytes).decode('utf-8')
+            return image_base64, mime_type
         
-        return None
+        return None, None
         
     except Exception as e:
         print(f"Error generating image for {recipe_name}: {str(e)}")
-        return None
+        return None, None
 
 
 async def get_or_generate_recipe_image(recipe_name: str, cuisine: str = '', ingredients: List[str] = None) -> Dict:
