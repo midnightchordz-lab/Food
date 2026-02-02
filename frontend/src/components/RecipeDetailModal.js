@@ -358,8 +358,32 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   const [detailedContent, setDetailedContent] = useState(null);
   const [parsedRecipe, setParsedRecipe] = useState(null);
   const [activeSection, setActiveSection] = useState('instructions');
+  const [aiImageUrl, setAiImageUrl] = useState(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   
   const shoppingCart = useShoppingCart();
+  
+  // Generate AI image for recipe
+  const generateAIImage = async (title, cuisine) => {
+    try {
+      setIsGeneratingImage(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/recipe-image/generate`, {
+        recipe_name: title,
+        cuisine: cuisine || 'International'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data?.image_url) {
+        setAiImageUrl(response.data.image_url);
+      }
+    } catch (error) {
+      console.error('Error generating AI image:', error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
   
   const fetchDetailedRecipe = async () => {
     if (!recipe?.title) return;
@@ -379,6 +403,9 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
       setDetailedContent(response.data.recipe);
       const parsed = parseDetailedRecipe(response.data.recipe);
       setParsedRecipe(parsed);
+      
+      // Generate AI image for accurate representation
+      generateAIImage(recipe.title, recipe.cuisineHint || recipe.cuisine);
       
       if (response.data.cached) {
         console.log('Using cached detailed recipe');
