@@ -821,7 +821,12 @@ const DiabetesMealsPage = () => {
                   {msg.showMoodChange && (
                     <div className="mt-4 ml-2">
                       <Button
-                        onClick={() => fetchDiabetesRecipes(selectedCuisines.length > 0 ? selectedCuisines : ['any'])}
+                        onClick={() => {
+                          // Use the cuisines that were stored with the message, or fall back to selected
+                          const cuisinesToUse = msg.previousCuisines || selectedCuisines;
+                          console.log('Generating recipes with cuisines:', cuisinesToUse);
+                          fetchDiabetesRecipes(cuisinesToUse.length > 0 ? cuisinesToUse : ['any']);
+                        }}
                         className="rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
                         data-testid="show-recipes-mood-change"
                       >
