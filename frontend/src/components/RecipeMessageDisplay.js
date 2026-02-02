@@ -1056,14 +1056,42 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAIGenerated, setIsAIGenerated] = useState(false);
+  const hasTriedAI = useRef(false);
 
-  // Check cache on mount (no auto-generation to keep app fast)
+  // Auto-generate AI image on mount
   useEffect(() => {
-    const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
-    if (aiImageCache.has(cacheKey)) {
-      setImageUrl(aiImageCache.get(cacheKey));
-      setIsAIGenerated(true);
-    }
+    if (!recipe.title || hasTriedAI.current) return;
+    
+    const generateImage = async () => {
+      hasTriedAI.current = true;
+      
+      // Check cache first
+      const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
+      if (aiImageCache.has(cacheKey)) {
+        setImageUrl(aiImageCache.get(cacheKey));
+        setIsAIGenerated(true);
+        return;
+      }
+      
+      setIsGenerating(true);
+      try {
+        const aiUrl = await generateAIImage(recipe.title, recipe.cuisineHint);
+        if (aiUrl) {
+          aiImageCache.set(cacheKey, aiUrl);
+          setImageUrl(aiUrl);
+          setIsAIGenerated(true);
+        }
+      } catch (err) {
+        console.error('AI image generation failed:', err);
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+    
+    // Stagger requests to avoid overwhelming the API
+    const delay = Math.random() * 1500;
+    const timer = setTimeout(generateImage, delay);
+    return () => clearTimeout(timer);
   }, [recipe.title, recipe.cuisineHint]);
 
   const handleGenerateAI = useCallback(async (e) => {
