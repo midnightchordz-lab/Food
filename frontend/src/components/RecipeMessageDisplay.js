@@ -955,6 +955,9 @@ const parseRecipesGeneral = (message) => {
     /^(whole grains?|spices?|herbs?|fresh produce|ingredients?|cooking methods?|meal ideas?)/i,
     /^(protein sources?|healthy fats?|complex carbs?|simple swaps?|smart choices?)/i,
     /\b(in moderation|with caution|sparingly|carefully)\b/i,
+    // Skip action-based tips
+    /^(load up|stock up|fill up|flavored with|seasoned with|paired with|served with|topped with)/i,
+    /^(enjoy|savor|indulge|explore|discover|experiment)/i,
   ];
   
   // PATTERN 1: Numbered list format "1. **Recipe Name**" - most common for follow-up requests
