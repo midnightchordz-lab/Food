@@ -417,13 +417,21 @@ const DiabetesMealsPage = () => {
   const fetchDiabetesRecipes = async (cuisineIds) => {
     setIsLoading(true);
     
+    console.log('fetchDiabetesRecipes called with cuisineIds:', cuisineIds);
+    console.log('Current selectedCuisines state:', selectedCuisines);
+    
     const mood = MOOD_IMAGES.find(m => m.id === selectedMood);
     const diabetesType = DIABETES_TYPES.find(t => t.id === selectedDiabetesType);
     const mealType = MEAL_TYPES.find(m => m.id === selectedMealType);
     const dietaryPref = FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref);
-    const cuisineLabels = cuisineIds.includes('any') 
+    
+    // Ensure cuisineIds is an array
+    const cuisineArray = Array.isArray(cuisineIds) ? cuisineIds : [cuisineIds];
+    const cuisineLabels = cuisineArray.includes('any') || cuisineArray.length === 0
       ? 'any cuisine' 
-      : cuisineIds.map(id => CUISINES.find(c => c.id === id)?.label).join(', ');
+      : cuisineArray.map(id => CUISINES.find(c => c.id === id)?.label).filter(Boolean).join(', ');
+    
+    console.log('Sending cuisine labels to backend:', cuisineLabels);
     
     try {
       const response = await axios.post(`${API}/diabetes/recipes`, {
