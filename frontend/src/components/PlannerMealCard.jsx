@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 
@@ -30,9 +30,8 @@ const DEFAULT_IMAGES = {
 };
 
 /**
- * Meal Card Component with ON-DEMAND AI Image Generation
+ * Meal Card Component with AI Image Generation
  * Used in Weekly Planners (regular and diabetes)
- * AI images are generated only when user clicks the button (not on mount)
  */
 const PlannerMealCard = ({ 
   mealName, 
@@ -45,43 +44,46 @@ const PlannerMealCard = ({
   const [imageUrl, setImageUrl] = useState(DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAIGenerated, setIsAIGenerated] = useState(false);
+  const hasTriedAI = useRef(false);
 
   // Clean up meal name (remove carbs info if present)
   const cleanName = mealName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
 
-  // Check cache on mount only - NO auto-generation for performance
+  // Auto-generate AI image on mount
   useEffect(() => {
-    if (!cleanName) return;
+    if (!enableAI || !cleanName || hasTriedAI.current) return;
     
-    const cacheKey = cleanName.toLowerCase();
-    if (aiImageCache.has(cacheKey)) {
-      setImageUrl(aiImageCache.get(cacheKey));
-      setIsAIGenerated(true);
-    }
-  }, [cleanName]);
-
-  // Manual AI image generation - triggered by user click
-  const handleGenerateAI = useCallback(async (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    if (isGenerating || !cleanName) return;
-    
-    setIsGenerating(true);
-    try {
-      const aiUrl = await generateAIImage(cleanName);
-      if (aiUrl) {
-        const cacheKey = cleanName.toLowerCase();
-        aiImageCache.set(cacheKey, aiUrl);
-        setImageUrl(aiUrl);
+    const generateImage = async () => {
+      hasTriedAI.current = true;
+      
+      // Check cache first
+      const cacheKey = cleanName.toLowerCase();
+      if (aiImageCache.has(cacheKey)) {
+        setImageUrl(aiImageCache.get(cacheKey));
         setIsAIGenerated(true);
+        return;
       }
-    } catch (err) {
-      console.error('AI image generation failed:', err);
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [cleanName, isGenerating]);
+      
+      setIsGenerating(true);
+      try {
+        const aiUrl = await generateAIImage(cleanName);
+        if (aiUrl) {
+          aiImageCache.set(cacheKey, aiUrl);
+          setImageUrl(aiUrl);
+          setIsAIGenerated(true);
+        }
+      } catch (err) {
+        console.error('AI image generation failed:', err);
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+    
+    // Stagger requests to avoid overwhelming the API
+    const delay = Math.random() * 1000;
+    const timer = setTimeout(generateImage, delay);
+    return () => clearTimeout(timer);
+  }, [cleanName, enableAI]);
 
   if (!mealName) {
     return (
