@@ -1,17 +1,23 @@
 """
 AI-Powered Recipe Image Generation Service
 Generates accurate, dish-specific images using OpenAI's gpt-image-1
+Converts to WebP format for 25-34% smaller file sizes
 """
 
 import os
 import base64
 import hashlib
 import asyncio
+import io
 from typing import Optional, Dict, List
 from datetime import datetime, timezone
 from dotenv import load_dotenv
+from PIL import Image
 
 load_dotenv()
+
+# WebP quality setting (80 provides good balance of quality and size)
+WEBP_QUALITY = 80
 
 # MongoDB connection (import from server)
 from motor.motor_asyncio import AsyncIOMotorClient
