@@ -74,11 +74,12 @@ class MealPreferencesCreate(BaseModel):
 
 class AIWeeklyPlanRequest(BaseModel):
     mood: str
-    dietary_preference: Optional[str] = "non-vegetarian"
+    dietary_preference: Optional[Union[str, List[str]]] = "non-vegetarian"
     calorie_target: Optional[int] = None
     macro_targets: Optional[MacroTargets] = None
     focus_areas: Optional[List[str]] = []
     cuisine_preferences: Optional[List[str]] = []
+    day_specific_preferences: Optional[Dict[str, str]] = None
 
 class WeekOffsetRequest(BaseModel):
     week_offset: int = 0
