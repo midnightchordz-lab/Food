@@ -4,7 +4,7 @@ Meal Planning Routes - Weekly plans, preferences, shopping lists, reminders, sub
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone, timedelta
 import os
 import logging
