@@ -421,6 +421,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   // Fetch detailed recipe when modal opens
   useEffect(() => {
     if (isOpen && recipe?.title) {
+      // Reset AI image when recipe changes
+      setAiImageUrl(null);
       fetchDetailedRecipe();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
