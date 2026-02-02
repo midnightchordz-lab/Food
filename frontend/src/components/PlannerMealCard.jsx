@@ -151,29 +151,6 @@ const PlannerMealCard = ({
           </div>
         )}
         
-        {/* Generate AI Button - Show when not AI generated */}
-        {!isAIGenerated && !isGenerating && enableAI && (
-          <button
-            onClick={handleGenerateAI}
-            className="absolute top-1 right-1 bg-white/90 hover:bg-white text-purple-600 text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm transition-all opacity-0 group-hover:opacity-100"
-            title="Generate AI image"
-          >
-            <Sparkles className="w-2 h-2" />
-            <span>AI</span>
-          </button>
-        )}
-        
-        {/* Regenerate Button - Show when AI already generated */}
-        {isAIGenerated && !isGenerating && enableAI && (
-          <button
-            onClick={handleGenerateAI}
-            className="absolute top-1 right-1 bg-white/90 hover:bg-white text-purple-600 text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm transition-all opacity-0 group-hover:opacity-100"
-            title="Regenerate AI image"
-          >
-            <RefreshCw className="w-2 h-2" />
-          </button>
-        )}
-        
         {/* Loading Overlay */}
         {isGenerating && (
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/70 to-blue-900/70 flex items-center justify-center">
