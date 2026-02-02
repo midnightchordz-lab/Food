@@ -517,11 +517,27 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
           <>
             {/* Hero Section */}
             <div className="relative h-64 overflow-hidden">
+              {/* AI Image with loading state */}
+              {isGeneratingImage && !aiImageUrl && (
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-900/70 to-blue-900/70 flex items-center justify-center z-10">
+                  <div className="text-center text-white">
+                    <Sparkles className="w-8 h-8 animate-pulse mx-auto mb-2" />
+                    <p className="text-sm">Generating AI image...</p>
+                  </div>
+                </div>
+              )}
               <img
-                src={recipe.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'}
+                src={aiImageUrl || recipe.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'}
                 alt={displayTitle}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-opacity duration-500"
               />
+              {/* AI Badge */}
+              {aiImageUrl && (
+                <div className="absolute top-4 left-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-20">
+                  <Sparkles className="w-3 h-3" />
+                  <span>AI Generated</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               
               {/* Back Button */}
@@ -530,7 +546,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   variant="ghost"
                   size="sm"
                   onClick={onClose}
-                  className="absolute top-4 left-4 bg-white/90 hover:bg-white text-foreground"
+                  className="absolute top-4 left-4 bg-white/90 hover:bg-white text-foreground z-20"
+                  style={{ left: aiImageUrl ? '120px' : '16px' }}
                   data-testid="back-to-planner-btn"
                 >
                   <ChevronLeft size={16} className="mr-1" /> Back to Planner
@@ -542,7 +559,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="absolute top-4 right-4 bg-white/90 hover:bg-white rounded-full"
+                className="absolute top-4 right-4 bg-white/90 hover:bg-white rounded-full z-20"
               >
                 <X size={20} />
               </Button>
