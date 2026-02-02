@@ -468,7 +468,11 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
             
             exclusion_reminder = f" Avoid: {', '.join(user_exclusions)}." if user_exclusions else ""
             ai_response = await chat.send_message(
-                UserMessage(text=f"Please generate 3 delicious {detected_cuisine} recipes that are diabetes-friendly and match a {mood} mood.{exclusion_reminder}")
+                UserMessage(text=f"""Generate EXACTLY 3 specific {detected_cuisine} dish recipes with ACTUAL RECIPE NAMES (like "Chicken Enchiladas" or "Beef Tacos", NOT tips like "Whole Grains" or "Spices").
+
+Each recipe MUST have a real dish name that someone would order at a restaurant.
+
+The recipes should be diabetes-friendly for someone feeling {mood}.{exclusion_reminder}""")
             )
             
             if user_exclusions:
