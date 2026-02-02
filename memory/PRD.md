@@ -232,6 +232,15 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 2, 2026**: PERFORMANCE - WebP Image Optimization
+  - **Added**: Automatic WebP conversion for all AI-generated recipe images
+  - **Benefit**: 25-34% smaller file sizes compared to PNG/JPEG
+  - **Implementation**: Uses Pillow to convert images before caching
+  - **Quality**: WebP quality set to 80 (good balance of quality and size)
+  - **Logging**: Backend logs size reduction for each generated image
+  - **Backward Compatible**: Cached images with old format still work
+  - **Files Modified**: `/app/backend/ai_image_service.py`, `/app/backend/routes/image_generation.py`
+
 - **Feb 1, 2026**: PERFORMANCE FIX - Disabled Auto AI Image Generation (P0 CRITICAL)
   - **Fixed**: Site-wide slowness affecting login and all pages
   - **Issue**: Automatic AI image generation in `PlannerMealCard.jsx` was triggering API calls on every component mount
