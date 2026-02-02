@@ -440,39 +440,48 @@ Click the button below to get new diabetes-friendly recipes that match your {new
         
         # If cuisine change detected, generate actual recipes
         if detected_cuisine and any(word in message_lower for word in ['recipe', 'dish', 'food', 'meal', 'show', 'give', 'want', 'like', 'try', 'suggest', 'make', 'cook', 'eat']):
-            # Generate proper recipes for the new cuisine
-            system_msg = get_diabetes_recipe_prompt(
-                mood=mood,
-                diabetes_type=diabetes_type,
-                diabetes_label=guidelines['name'],
-                dietary_pref=dietary_pref,
-                meal_type=meal_type,
-                cuisines=detected_cuisine,
-                guidelines={"maxCarbsPerMeal": guidelines['max_carbs_per_meal'], "minFiberPerMeal": guidelines['min_fiber_per_meal'], "maxGlycemicIndex": guidelines['max_glycemic_index']}
-            )
-            
+            # Generate proper recipes for the new cuisine with STRICT instructions
+            recipe_system_msg = f"""You are a recipe generator. Generate EXACTLY 3 {detected_cuisine} recipes.
+
+CRITICAL RULES - MUST FOLLOW:
+1. Each recipe MUST be a REAL DISH NAME like "Chicken Fajitas", "Beef Tacos", "Shrimp Quesadillas"
+2. NEVER use tip titles like "Load Up on Vegetables", "Flavored with Herbs", "Whole Grains in Moderation"
+3. NEVER generate cooking tips or dietary advice as recipe names
+4. Recipe names should be what you'd see on a restaurant menu
+
+FORMAT - Follow exactly:
+## Recipe 1: [ACTUAL DISH NAME - e.g., Grilled Chicken Tacos]
+**Prep Time:** X minutes
+**Cook Time:** X minutes  
+**Difficulty:** Easy/Medium/Hard
+
+**Ingredients:**
+- [ingredient list]
+
+**Instructions:**
+1. [step by step]
+
+## Recipe 2: [ACTUAL DISH NAME]
+[same format]
+
+## Recipe 3: [ACTUAL DISH NAME]
+[same format]
+
+User has diabetes - keep carbs under 45g per serving. But focus on REAL DISH NAMES."""
+
             if user_exclusions:
                 exclusion_list = ", ".join(user_exclusions)
-                system_msg += f"""
-
-FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
-- Avoid all variations (e.g., if "shrimp" excluded, also avoid prawns)
-- Choose alternative proteins/ingredients instead"""
+                recipe_system_msg += f"\n\nFOOD RESTRICTIONS - NEVER include: {exclusion_list}"
             
             chat = LlmChat(
                 api_key=llm_api_key,
                 session_id=f"diabetes-cuisine-{request.session_id}-{uuid.uuid4().hex[:8]}",
-                system_message=system_msg
+                system_message=recipe_system_msg
             )
             chat.with_model("openai", "gpt-4o")
             
-            exclusion_reminder = f" Avoid: {', '.join(user_exclusions)}." if user_exclusions else ""
             ai_response = await chat.send_message(
-                UserMessage(text=f"""Generate EXACTLY 3 specific {detected_cuisine} dish recipes with ACTUAL RECIPE NAMES (like "Chicken Enchiladas" or "Beef Tacos", NOT tips like "Whole Grains" or "Spices").
-
-Each recipe MUST have a real dish name that someone would order at a restaurant.
-
-The recipes should be diabetes-friendly for someone feeling {mood}.{exclusion_reminder}""")
+                UserMessage(text=f"Generate 3 {detected_cuisine} recipes. Use REAL dish names only.")
             )
             
             if user_exclusions:
