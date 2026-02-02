@@ -720,6 +720,9 @@ const parseRecipeFromMatch = (match, category) => {
     /^(whole grains?|spices?|herbs?|fresh produce|ingredients?|cooking methods?|meal ideas?)/i,
     /^(protein sources?|healthy fats?|complex carbs?|simple swaps?|smart choices?)/i,
     /\b(in moderation|with caution|sparingly|carefully)\b/i,
+    // Skip action-based tips
+    /^(load up|stock up|fill up|flavored with|seasoned with|paired with|served with|topped with)/i,
+    /^(enjoy|savor|indulge|explore|discover|experiment)/i,
     /:$/,  // Ends with colon
   ];
   
