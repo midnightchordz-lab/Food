@@ -375,6 +375,9 @@ async def diabetes_chat(request: DiabetesChatRequest, current_user: User = Depen
         context = request.context or {}
         diabetes_type = context.get("diabetesType", "type2")
         guidelines = DIABETES_GUIDELINES.get(diabetes_type, DIABETES_GUIDELINES["type2"])
+        dietary_pref = context.get("dietaryPref", "non-vegetarian")
+        meal_type = context.get("mealType", "dinner")
+        mood = context.get("mood", "happy")
         
         user_exclusions = await get_user_excluded_ingredients(current_user.id)
         
@@ -411,6 +414,92 @@ Would you like me to suggest some new diabetes-friendly recipes that match your 
                     "mood_change_detected": True,
                     "new_mood": new_mood
                 }
+        
+        # Check if this is a cuisine change request - user wants recipes from a different cuisine
+        cuisine_keywords = {
+            'indian': ['indian', 'india', 'curry', 'masala', 'tandoori', 'biryani', 'dal', 'naan', 'paneer'],
+            'thai': ['thai', 'thailand', 'pad thai', 'tom yum', 'green curry', 'basil', 'coconut curry'],
+            'mexican': ['mexican', 'mexico', 'tacos', 'burrito', 'enchilada', 'salsa', 'guacamole', 'quesadilla'],
+            'italian': ['italian', 'italy', 'pasta', 'pizza', 'risotto', 'lasagna', 'pesto', 'carbonara'],
+            'chinese': ['chinese', 'china', 'stir fry', 'wok', 'dim sum', 'fried rice', 'kung pao', 'szechuan'],
+            'japanese': ['japanese', 'japan', 'sushi', 'ramen', 'teriyaki', 'miso', 'tempura', 'udon'],
+            'mediterranean': ['mediterranean', 'greek', 'hummus', 'falafel', 'tzatziki', 'olive oil', 'feta'],
+            'american': ['american', 'burger', 'bbq', 'barbecue', 'grilled', 'southern', 'comfort food'],
+            'korean': ['korean', 'korea', 'kimchi', 'bibimbap', 'bulgogi', 'gochujang'],
+            'vietnamese': ['vietnamese', 'vietnam', 'pho', 'banh mi', 'spring roll', 'fish sauce'],
+        }
+        
+        message_lower = request.message.lower()
+        detected_cuisine = None
+        
+        # Check if user is requesting a specific cuisine
+        for cuisine, keywords in cuisine_keywords.items():
+            if any(kw in message_lower for kw in keywords):
+                detected_cuisine = cuisine.capitalize()
+                break
+        
+        # If cuisine change detected, generate actual recipes
+        if detected_cuisine and any(word in message_lower for word in ['recipe', 'dish', 'food', 'meal', 'show', 'give', 'want', 'like', 'try', 'suggest', 'make', 'cook', 'eat']):
+            # Generate proper recipes for the new cuisine
+            system_msg = get_diabetes_recipe_prompt(
+                mood=mood,
+                diabetes_type=diabetes_type,
+                diabetes_label=guidelines['name'],
+                dietary_pref=dietary_pref,
+                meal_type=meal_type,
+                cuisines=detected_cuisine,
+                guidelines={"maxCarbsPerMeal": guidelines['max_carbs_per_meal'], "minFiberPerMeal": guidelines['min_fiber_per_meal'], "maxGlycemicIndex": guidelines['max_glycemic_index']}
+            )
+            
+            if user_exclusions:
+                exclusion_list = ", ".join(user_exclusions)
+                system_msg += f"""
+
+FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
+- Avoid all variations (e.g., if "shrimp" excluded, also avoid prawns)
+- Choose alternative proteins/ingredients instead"""
+            
+            chat = LlmChat(
+                api_key=llm_api_key,
+                session_id=f"diabetes-cuisine-{request.session_id}-{uuid.uuid4().hex[:8]}",
+                system_message=system_msg
+            )
+            chat.with_model("openai", "gpt-4o")
+            
+            exclusion_reminder = f" Avoid: {', '.join(user_exclusions)}." if user_exclusions else ""
+            ai_response = await chat.send_message(
+                UserMessage(text=f"Please generate 3 delicious {detected_cuisine} recipes that are diabetes-friendly and match a {mood} mood.{exclusion_reminder}")
+            )
+            
+            if user_exclusions:
+                filtered_response, removed_recipes, violations = filter_unsafe_recipes_from_response(
+                    ai_response, user_exclusions
+                )
+                if removed_recipes:
+                    logging.warning(f"SAFETY (Diabetes Cuisine Change): Removed {len(removed_recipes)} unsafe recipes")
+                ai_response = filtered_response
+            
+            await db.diabetes_chat_messages.insert_one({
+                "session_id": request.session_id,
+                "user_id": current_user.id,
+                "role": "user",
+                "content": request.message,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            await db.diabetes_chat_messages.insert_one({
+                "session_id": request.session_id,
+                "user_id": current_user.id,
+                "role": "assistant",
+                "content": ai_response,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            
+            return {
+                "response": ai_response,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "cuisine_change_detected": True,
+                "new_cuisine": detected_cuisine
+            }
         
         system_msg = f"""You are a helpful diabetes nutrition assistant. The user has {guidelines['name']}.
 
