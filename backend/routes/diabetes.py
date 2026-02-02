@@ -391,7 +391,7 @@ async def diabetes_chat(request: DiabetesChatRequest, current_user: User = Depen
 
 {MOOD_RESPONSES.get(new_mood, MOOD_RESPONSES['happy'])['message']}
 
-Would you like me to suggest some new diabetes-friendly recipes that match your {new_mood} mood? Just click "Show Recipes" above to get personalized suggestions!"""
+Click the button below to get new diabetes-friendly recipes that match your {new_mood} mood! ✨"""
                 
                 await db.diabetes_chat_messages.insert_one({
                     "session_id": request.session_id,
