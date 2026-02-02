@@ -120,8 +120,11 @@ async def image_service_status():
         "service": "ai_image_generation",
         "status": "operational" if has_key else "no_api_key",
         "model": "gpt-image-1",
+        "output_format": "webp",
+        "optimization": "25-34% smaller than PNG/JPEG",
         "features": [
             "ai_generation",
+            "webp_conversion",
             "caching",
             "batch_processing"
         ]
