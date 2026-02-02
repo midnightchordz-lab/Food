@@ -449,7 +449,7 @@ Click the button below to get new diabetes-friendly recipes that match your {new
             'vietnamese': ['vietnamese', 'vietnam', 'pho', 'banh mi', 'spring roll', 'fish sauce'],
         }
         
-        message_lower = request.message.lower()
+        message_lower = request.message.lower().strip()
         detected_cuisine = None
         
         # Check if user is requesting a specific cuisine
@@ -458,8 +458,9 @@ Click the button below to get new diabetes-friendly recipes that match your {new
                 detected_cuisine = cuisine.capitalize()
                 break
         
-        # If cuisine change detected, generate actual recipes
-        if detected_cuisine and any(word in message_lower for word in ['recipe', 'dish', 'food', 'meal', 'show', 'give', 'want', 'like', 'try', 'suggest', 'make', 'cook', 'eat']):
+        # If cuisine detected, ALWAYS generate recipes (don't require action words)
+        # User typing just "American" or "Thai" clearly wants recipes for that cuisine
+        if detected_cuisine:
             # Generate proper recipes for the new cuisine with STRICT instructions
             recipe_system_msg = f"""You are a recipe generator. Generate EXACTLY 3 {detected_cuisine} recipes.
 
