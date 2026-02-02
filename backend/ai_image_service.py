@@ -30,6 +30,34 @@ db = client[os.environ.get('DB_NAME', 'test_database')]
 recipe_images_collection = db['recipe_images']
 
 
+def convert_to_webp(image_bytes: bytes, quality: int = WEBP_QUALITY) -> tuple[bytes, str]:
+    """
+    Convert image bytes (PNG/JPEG) to WebP format.
+    Returns tuple of (webp_bytes, mime_type).
+    WebP is 25-34% smaller than JPEG at equivalent quality.
+    """
+    try:
+        # Open the image from bytes
+        img = Image.open(io.BytesIO(image_bytes))
+        
+        # Convert to RGB if necessary (WebP doesn't support all modes)
+        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+            # Keep alpha channel for transparent images
+            img = img.convert('RGBA')
+        else:
+            img = img.convert('RGB')
+        
+        # Save as WebP
+        output = io.BytesIO()
+        img.save(output, format='WEBP', quality=quality, method=6)  # method=6 is slowest but best compression
+        output.seek(0)
+        
+        return output.getvalue(), 'image/webp'
+    except Exception as e:
+        print(f"WebP conversion failed, using original: {e}")
+        return image_bytes, 'image/png'
+
+
 def get_visual_guidance(recipe_name: str, cuisine: str = '') -> str:
     """Get specific visual guidance for common dishes to ensure accuracy"""
     
