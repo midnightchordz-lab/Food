@@ -62,7 +62,7 @@ class MealPreferences(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MealPreferencesCreate(BaseModel):
-    dietary_preference: str = "non-vegetarian"
+    dietary_preference: Union[str, List[str]] = "non-vegetarian"
     calorie_target: Optional[int] = None
     macro_targets: Optional[MacroTargets] = None
     focus_areas: List[str] = []
@@ -70,6 +70,7 @@ class MealPreferencesCreate(BaseModel):
     mood: str = "balanced"
     is_active: bool = True
     generation_mode: str = "manual"
+    day_specific_preferences: Optional[Dict[str, str]] = None
 
 class AIWeeklyPlanRequest(BaseModel):
     mood: str
