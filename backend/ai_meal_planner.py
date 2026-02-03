@@ -207,16 +207,13 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     {exclusion_section}
     DIETARY RULES:
     - VEGETARIAN: NO meat, chicken, fish, seafood, or any animal flesh
-    - VEGAN: NO meat, fish, eggs, dairy, butter, cheese, honey, or ANY animal products
     - NON-VEGETARIAN: Can include meat, poultry, fish, and all foods
-    - PESCATARIAN: Fish and seafood OK, but NO chicken, beef, pork, or land animal meat
-    - EGGETARIAN: Vegetarian meals + eggs are allowed, but NO meat, fish, or seafood
     
-    GENERAL DIETARY PREFERENCE: {dietary_pref_str}
+    {"*** CRITICAL: DAY-SPECIFIC MEAL RULES ***" + chr(10) + chr(10).join([f"    {day} = {pref.upper()} ONLY (no meat/fish/chicken)" for day, pref in (day_specific_preferences or {}).items()]) + chr(10) + chr(10) + "    ALL OTHER DAYS = NON-VEGETARIAN (include chicken, fish, beef, etc.)" + chr(10) + chr(10) + "EXAMPLE: If Tuesday is Vegetarian, Monday can have Grilled Chicken Salad but Tuesday must have Paneer Tikka or Vegetable Stir Fry." if day_specific_preferences else "GENERAL PREFERENCE: " + dietary_pref_str}
     
-    {"*** IMPORTANT - DAY-SPECIFIC OVERRIDES ***" + chr(10) + "On these specific days, OVERRIDE the general preference:" + chr(10) + chr(10).join([f"    >>> {day}: Make ALL meals {pref.upper()} (breakfast, lunch, dinner)" for day, pref in (day_specific_preferences or {}).items()]) + chr(10) + chr(10) + "On all OTHER days not listed above, use the GENERAL preference (" + dietary_pref_str + ") which allows non-vegetarian meals." if day_specific_preferences else ""}
-    
-    Your task is to create a complete 7-day meal plan (Monday through Sunday) with breakfast, lunch, and dinner for each day.
+    Your task is to create a 7-day meal plan where:
+    {"- " + ", ".join([f"{day} has VEGETARIAN meals" for day, pref in (day_specific_preferences or {}).items()]) if day_specific_preferences else ""}
+    {"- All other days (not listed above) MUST have NON-VEGETARIAN options like chicken, fish, lamb, beef" if day_specific_preferences else ""}
     
     Requirements:
     1. {"For days with SPECIFIC OVERRIDES (listed above), follow that day's dietary rule strictly" if day_specific_preferences else "Follow the dietary preference strictly"}
