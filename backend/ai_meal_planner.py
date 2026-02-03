@@ -216,13 +216,11 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     {"- All other days (not listed above) MUST have NON-VEGETARIAN options like chicken, fish, lamb, beef" if day_specific_preferences else ""}
     
     Requirements:
-    1. {"For days with SPECIFIC OVERRIDES (listed above), follow that day's dietary rule strictly" if day_specific_preferences else "Follow the dietary preference strictly"}
-    2. {"For days WITHOUT overrides, you CAN include non-vegetarian meals (chicken, fish, meat)" if day_specific_preferences else ""}
-    3. {"ALL meals MUST fit within the specified calorie ranges" if calorie_target else "Consider balanced nutrition"}
-    4. Incorporate global cuisines for variety (Italian, Mexican, Asian, Indian, Mediterranean, etc.)
-    5. Match the user's current mood and energy level
-    6. Include simple meals for busy days and more elaborate ones for relaxed days
-    7. Ensure nutritional balance across the week
+    1. {"VEGETARIAN DAYS (" + ", ".join(day_specific_preferences.keys()) + "): Only vegetarian meals - NO meat, chicken, fish" if day_specific_preferences else "Follow dietary preference"}
+    2. {"NON-VEG DAYS (all others): MUST include meat/chicken/fish options" if day_specific_preferences else ""}
+    3. {"ALL meals MUST fit within " + str(calorie_target) + " calories/day" if calorie_target else "Consider balanced nutrition"}
+    4. Incorporate global cuisines for variety
+    5. Match the user's mood: {mood}
     
     Respond ONLY with a JSON object in this exact format:
     {{
