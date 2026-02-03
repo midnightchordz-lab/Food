@@ -213,13 +213,13 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     Your task is to create a complete 7-day meal plan (Monday through Sunday) with breakfast, lunch, and dinner for each day.
     
     Requirements:
-    1. ALL meals MUST strictly follow the dietary preference - this is non-negotiable
-    2. {"ALL meals MUST fit within the specified calorie ranges" if calorie_target else "Consider balanced nutrition"}
-    3. Incorporate global cuisines for variety (Italian, Mexican, Asian, Indian, Mediterranean, etc.)
-    4. Match the user's current mood and energy level
-    5. Include simple meals for busy days and more elaborate ones for relaxed days
-    6. Ensure nutritional balance across the week
-    7. Consider meal prep efficiency (some ingredients used multiple times)
+    1. {"For days with SPECIFIC OVERRIDES (listed above), follow that day's dietary rule strictly" if day_specific_preferences else "Follow the dietary preference strictly"}
+    2. {"For days WITHOUT overrides, you CAN include non-vegetarian meals (chicken, fish, meat)" if day_specific_preferences else ""}
+    3. {"ALL meals MUST fit within the specified calorie ranges" if calorie_target else "Consider balanced nutrition"}
+    4. Incorporate global cuisines for variety (Italian, Mexican, Asian, Indian, Mediterranean, etc.)
+    5. Match the user's current mood and energy level
+    6. Include simple meals for busy days and more elaborate ones for relaxed days
+    7. Ensure nutritional balance across the week
     
     Respond ONLY with a JSON object in this exact format:
     {{
