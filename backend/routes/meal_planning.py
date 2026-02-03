@@ -50,7 +50,7 @@ class MealPreferences(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(str(__import__('uuid').uuid4())))
     user_id: str
-    dietary_preference: str = "non-vegetarian"
+    dietary_preference: Union[str, List[str]] = "non-vegetarian"
     calorie_target: Optional[int] = None
     macro_targets: Optional[MacroTargets] = None
     focus_areas: List[str] = []
@@ -58,6 +58,7 @@ class MealPreferences(BaseModel):
     mood: str = "balanced"
     is_active: bool = True
     generation_mode: str = "manual"
+    day_specific_preferences: Optional[Dict[str, str]] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
