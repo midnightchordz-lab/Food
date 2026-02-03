@@ -423,7 +423,7 @@ const DiabetesWeeklyPlannerPage = () => {
                   </span>
                 </div>
                 <span className="text-muted-foreground">•</span>
-                <span>{preferences.dietary_preference}</span>
+                <span>{Array.isArray(preferences.dietary_preference) ? preferences.dietary_preference.join(', ') : preferences.dietary_preference}</span>
                 <span className="text-muted-foreground">•</span>
                 <span>{preferences.calorie_target || 1800} cal/day</span>
                 {preferences.cuisine_preferences?.length > 0 && (
