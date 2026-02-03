@@ -87,21 +87,22 @@ const PlannerMealCard = ({
 
   if (!mealName) {
     return (
-      <div className={`bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground/50 ${compact ? 'h-16' : 'h-24'}`}>
+      <div className={`bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground/50 ${compact ? 'h-20' : 'h-24'}`}>
         <span className="text-xs">No meal</span>
       </div>
     );
   }
 
   if (compact) {
-    // Compact view - just text with small image indicator
+    // Compact view - shows image and full recipe name
     return (
       <div 
         onClick={onClick}
-        className="bg-card rounded-xl p-2 border border-border/50 hover:border-primary/30 transition-all cursor-pointer group"
+        className="bg-card rounded-xl p-2 border border-border/50 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group"
       >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 relative">
+        <div className="flex gap-2">
+          {/* Image thumbnail */}
+          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 relative">
             <img 
               src={imageUrl} 
               alt={cleanName}
@@ -113,16 +114,21 @@ const PlannerMealCard = ({
                 <RefreshCw className="w-3 h-3 text-white animate-spin" />
               </div>
             )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium line-clamp-1">{cleanName}</p>
-            {carbs && (
-              <span className="text-[10px] text-teal-600">{carbs}g carbs</span>
+            {isAIGenerated && !isGenerating && (
+              <div className="absolute bottom-0 right-0 bg-purple-600 rounded-tl-md p-0.5">
+                <Sparkles className="w-2 h-2 text-white" />
+              </div>
             )}
           </div>
-          {isAIGenerated && (
-            <Sparkles className="w-3 h-3 text-purple-500 flex-shrink-0" />
-          )}
+          {/* Recipe name - full text */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <p className="text-xs font-medium leading-tight line-clamp-2" title={cleanName}>
+              {cleanName}
+            </p>
+            {carbs && (
+              <span className="text-[10px] text-teal-600 mt-0.5">{carbs}g carbs</span>
+            )}
+          </div>
         </div>
       </div>
     );
