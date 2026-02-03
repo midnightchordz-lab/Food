@@ -493,7 +493,8 @@ async def save_meal_preferences(request: MealPreferencesCreate, current_user: Us
                     request.cuisine_preferences,
                     exclude_recipes=used_recipes,
                     user_exclusions=user_exclusions,
-                    macro_targets=macro_dict
+                    macro_targets=macro_dict,
+                    day_specific_preferences=request.day_specific_preferences
                 )
                 
                 plan = WeeklyPlan(
