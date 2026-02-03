@@ -89,14 +89,21 @@ def filter_meal_plan_for_exclusions(meals: dict, excluded_names: List[str]) -> d
     return filtered_meals
 
 
-async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None, exclude_recipes: Optional[List[str]] = None, user_exclusions: Optional[List[str]] = None, macro_targets: Optional[dict] = None):
+async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_target=None, focus_areas=None, cuisine_preferences=None, exclude_recipes: Optional[List[str]] = None, user_exclusions: Optional[List[str]] = None, macro_targets: Optional[dict] = None, day_specific_preferences: Optional[dict] = None):
     """
     Generate a personalized weekly meal plan using AI based on user preferences, dietary choice, calorie target, macro targets, and mood.
     Excludes previously used recipes to ensure variety.
     Also filters for user food allergies/exclusions.
     """
-    # Get dietary restriction description
-    dietary_desc = DIETARY_DESCRIPTIONS.get(dietary_preference, DIETARY_DESCRIPTIONS["non-vegetarian"])
+    # Handle dietary_preference as string or list
+    if isinstance(dietary_preference, list):
+        # Join multiple preferences for description
+        dietary_desc_parts = [DIETARY_DESCRIPTIONS.get(dp, "") for dp in dietary_preference]
+        dietary_desc = " Also includes: ".join([d for d in dietary_desc_parts if d]) or DIETARY_DESCRIPTIONS["non-vegetarian"]
+        dietary_pref_str = ", ".join(dietary_preference)
+    else:
+        dietary_desc = DIETARY_DESCRIPTIONS.get(dietary_preference, DIETARY_DESCRIPTIONS["non-vegetarian"])
+        dietary_pref_str = dietary_preference or "non-vegetarian"
     
     # Additional user dietary restrictions
     user_restrictions = user.dietary_restrictions if user.dietary_restrictions else []
