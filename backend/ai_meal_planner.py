@@ -199,14 +199,16 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     {calorie_section}
     {macro_section}
     {exclusion_section}
-    CRITICAL RULES FOR DIETARY PREFERENCE:
-    - If VEGETARIAN: NO meat, chicken, fish, seafood, or any animal flesh
-    - If VEGAN: NO meat, fish, eggs, dairy, butter, cheese, honey, or ANY animal products
-    - If NON-VEGETARIAN: Can include meat, poultry, fish, and all foods
-    - If PESCATARIAN: Fish and seafood OK, but NO chicken, beef, pork, or land animal meat
-    - If EGGETARIAN: Vegetarian meals + eggs are allowed, but NO meat, fish, or seafood
+    DIETARY RULES:
+    - VEGETARIAN: NO meat, chicken, fish, seafood, or any animal flesh
+    - VEGAN: NO meat, fish, eggs, dairy, butter, cheese, honey, or ANY animal products
+    - NON-VEGETARIAN: Can include meat, poultry, fish, and all foods
+    - PESCATARIAN: Fish and seafood OK, but NO chicken, beef, pork, or land animal meat
+    - EGGETARIAN: Vegetarian meals + eggs are allowed, but NO meat, fish, or seafood
     
-    {"DAY-SPECIFIC DIETARY PREFERENCES (Override general preference for specific days):" + chr(10) + chr(10).join([f"    - {day}: {pref} meals ONLY" for day, pref in (day_specific_preferences or {}).items()]) if day_specific_preferences else ""}
+    GENERAL DIETARY PREFERENCE: {dietary_pref_str}
+    
+    {"*** IMPORTANT - DAY-SPECIFIC OVERRIDES ***" + chr(10) + "On these specific days, OVERRIDE the general preference:" + chr(10) + chr(10).join([f"    >>> {day}: Make ALL meals {pref.upper()} (breakfast, lunch, dinner)" for day, pref in (day_specific_preferences or {}).items()]) + chr(10) + chr(10) + "On all OTHER days not listed above, use the GENERAL preference (" + dietary_pref_str + ") which allows non-vegetarian meals." if day_specific_preferences else ""}
     
     Your task is to create a complete 7-day meal plan (Monday through Sunday) with breakfast, lunch, and dinner for each day.
     
