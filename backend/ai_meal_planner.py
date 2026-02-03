@@ -318,9 +318,11 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
         return meals
     except json.JSONDecodeError as e:
         # Fallback to dietary-appropriate basic plans
-        if dietary_preference in ['vegetarian', 'vegan', 'eggetarian']:
-            return get_vegetarian_fallback_plan(dietary_preference)
-        elif dietary_preference == 'pescatarian':
+        # Handle both string and list dietary preferences
+        dietary_list = dietary_preference if isinstance(dietary_preference, list) else [dietary_preference]
+        if any(dp in ['vegetarian', 'vegan', 'eggetarian'] for dp in dietary_list):
+            return get_vegetarian_fallback_plan(dietary_list[0] if dietary_list else 'vegetarian')
+        elif 'pescatarian' in dietary_list:
             return get_pescatarian_fallback_plan()
         else:
             return get_nonveg_fallback_plan()
