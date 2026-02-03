@@ -415,7 +415,9 @@ const WeeklyPlannerPage = () => {
                         : '👆 Manual Mode Active'}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {mealPreferences.dietary_preference?.charAt(0).toUpperCase() + mealPreferences.dietary_preference?.slice(1)} • 
+                      {Array.isArray(mealPreferences.dietary_preference) 
+                        ? mealPreferences.dietary_preference.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ')
+                        : mealPreferences.dietary_preference?.charAt(0).toUpperCase() + mealPreferences.dietary_preference?.slice(1)} • 
                       {mealPreferences.calorie_target ? ` ${mealPreferences.calorie_target} cal/day` : ''}
                       {mealPreferences.macro_targets?.protein_g ? ` • ${mealPreferences.macro_targets.protein_g}g P / ${mealPreferences.macro_targets.carbs_g}g C / ${mealPreferences.macro_targets.fat_g}g F` : ''}
                       {mealPreferences.cuisine_preferences?.length > 0 ? ` • ${mealPreferences.cuisine_preferences.join(', ')}` : ''}
