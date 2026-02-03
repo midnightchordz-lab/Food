@@ -259,7 +259,8 @@ async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User 
             request.focus_areas,
             request.cuisine_preferences,
             user_exclusions=user_exclusions,
-            macro_targets=macro_dict
+            macro_targets=macro_dict,
+            day_specific_preferences=request.day_specific_preferences
         )
         
         today = datetime.now(timezone.utc)
