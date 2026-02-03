@@ -96,11 +96,17 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     Also filters for user food allergies/exclusions.
     """
     # Handle dietary_preference as string or list
+    # When user selects both veg and non-veg, the general preference should be non-vegetarian
+    # with specific days being vegetarian
     if isinstance(dietary_preference, list):
-        # Join multiple preferences for description
-        dietary_desc_parts = [DIETARY_DESCRIPTIONS.get(dp, "") for dp in dietary_preference]
-        dietary_desc = " Also includes: ".join([d for d in dietary_desc_parts if d]) or DIETARY_DESCRIPTIONS["non-vegetarian"]
-        dietary_pref_str = ", ".join(dietary_preference)
+        # If both veg and non-veg selected, default to non-veg for non-specified days
+        if 'non-vegetarian' in dietary_preference and ('vegetarian' in dietary_preference or 'vegan' in dietary_preference):
+            dietary_desc = "Mixed diet - can include meat, poultry, fish on most days"
+            dietary_pref_str = "non-vegetarian (with some vegetarian days as specified)"
+        else:
+            dietary_desc_parts = [DIETARY_DESCRIPTIONS.get(dp, "") for dp in dietary_preference]
+            dietary_desc = " Also includes: ".join([d for d in dietary_desc_parts if d]) or DIETARY_DESCRIPTIONS["non-vegetarian"]
+            dietary_pref_str = ", ".join(dietary_preference)
     else:
         dietary_desc = DIETARY_DESCRIPTIONS.get(dietary_preference, DIETARY_DESCRIPTIONS["non-vegetarian"])
         dietary_pref_str = dietary_preference or "non-vegetarian"
