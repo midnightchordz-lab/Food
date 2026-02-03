@@ -206,6 +206,8 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     - If PESCATARIAN: Fish and seafood OK, but NO chicken, beef, pork, or land animal meat
     - If EGGETARIAN: Vegetarian meals + eggs are allowed, but NO meat, fish, or seafood
     
+    {"DAY-SPECIFIC DIETARY PREFERENCES (Override general preference for specific days):" + chr(10) + chr(10).join([f"    - {day}: {pref} meals ONLY" for day, pref in (day_specific_preferences or {}).items()]) if day_specific_preferences else ""}
+    
     Your task is to create a complete 7-day meal plan (Monday through Sunday) with breakfast, lunch, and dinner for each day.
     
     Requirements:
