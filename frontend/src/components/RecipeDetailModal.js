@@ -3,7 +3,8 @@ import {
   Heart, Clock, ChefHat, Utensils, Users, Flame, Printer, 
   Share2, Star, ShoppingCart, BookOpen, X, ChevronRight, ChevronLeft,
   Timer, Leaf, AlertCircle, Check, Plus, Loader2, RefreshCw,
-  Thermometer, Package, Info, AlertTriangle, Wine, GlassWater, Sparkles
+  Thermometer, Package, Info, AlertTriangle, Wine, GlassWater, Sparkles,
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useShoppingCart } from '@/context/ShoppingCartContext';
+import { BuyIngredientsButton } from './ShoppingWidget';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
