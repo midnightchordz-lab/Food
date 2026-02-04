@@ -350,20 +350,39 @@ const SearchHub = ({ isOpen, onClose, initialIngredient = '', initialRecipe = ''
               </Button>
             </div>
 
+            {/* Location & Currency Info */}
+            {priceResults?.detected_location && (
+              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-lg flex items-center gap-2">
+                <MapPin className="w-3 h-3" />
+                <span>Showing prices for <strong>{priceResults.detected_location}</strong></span>
+                {priceResults.currency && (
+                  <span className="ml-auto bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    {priceResults.currency}
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Price Stats */}
             {priceResults?.price_stats && Object.keys(priceResults.price_stats).length > 0 && (
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-center">
                   <p className="text-xs text-muted-foreground">Lowest</p>
-                  <p className="text-lg font-bold text-green-600">${priceResults.price_stats.min_price}</p>
+                  <p className="text-lg font-bold text-green-600">
+                    {getCurrencySymbol(priceResults.price_stats.currency)}{priceResults.price_stats.min_price}
+                  </p>
                 </div>
                 <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-center">
                   <p className="text-xs text-muted-foreground">Average</p>
-                  <p className="text-lg font-bold text-blue-600">${priceResults.price_stats.avg_price}</p>
+                  <p className="text-lg font-bold text-blue-600">
+                    {getCurrencySymbol(priceResults.price_stats.currency)}{priceResults.price_stats.avg_price}
+                  </p>
                 </div>
                 <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 text-center">
                   <p className="text-xs text-muted-foreground">Highest</p>
-                  <p className="text-lg font-bold text-orange-600">${priceResults.price_stats.max_price}</p>
+                  <p className="text-lg font-bold text-orange-600">
+                    {getCurrencySymbol(priceResults.price_stats.currency)}{priceResults.price_stats.max_price}
+                  </p>
                 </div>
               </div>
             )}
