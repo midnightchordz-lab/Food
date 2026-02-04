@@ -118,10 +118,11 @@ export function useAIRecipeImage(recipeName, cuisine = '', fallbackUrl = '', aut
 }
 
 /**
- * Hook for batch loading AI images for multiple recipes
+ * Hook for batch loading images for multiple recipes (uses fast Google Images)
  * @param {Array<{name: string, cuisine?: string, imageUrl?: string}>} recipes
+ * @param {boolean} autoLoad - Auto load images on mount
  */
-export function useAIRecipeImages(recipes) {
+export function useAIRecipeImages(recipes, autoLoad = true) {
   const [images, setImages] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   
@@ -132,34 +133,56 @@ export function useAIRecipeImages(recipes) {
     
     const newImages = {};
     
-    for (const recipe of recipes) {
+    // Load images in parallel for speed
+    const promises = recipes.map(async (recipe) => {
       const name = recipe.name || recipe.title;
-      if (!name) continue;
+      if (!name) return;
       
       try {
-        // Try to get cached/generated image
-        const url = await getRecipeImage(name, recipe.cuisine || recipe.cuisineHint || '');
+        const result = await getFastRecipeImage(name, recipe.cuisine || recipe.cuisineHint || '', true);
         
-        if (url) {
-          newImages[name] = url;
+        if (result.url) {
+          newImages[name] = {
+            url: result.url,
+            thumbnail: result.thumbnailUrl,
+            source: result.source
+          };
         } else {
-          // Keep fallback
-          newImages[name] = recipe.imageUrl || '';
+          newImages[name] = {
+            url: recipe.imageUrl || '',
+            thumbnail: recipe.imageUrl || '',
+            source: 'fallback'
+          };
         }
       } catch {
-        newImages[name] = recipe.imageUrl || '';
+        newImages[name] = {
+          url: recipe.imageUrl || '',
+          thumbnail: recipe.imageUrl || '',
+          source: 'error'
+        };
       }
-    }
+    });
+    
+    await Promise.all(promises);
     
     setImages(newImages);
     setIsLoading(false);
   }, [recipes]);
   
+  // Auto-load on mount
+  useEffect(() => {
+    if (autoLoad && recipes?.length > 0) {
+      loadImages();
+    }
+  }, [autoLoad, recipes, loadImages]);
+  
   return {
     images,
     isLoading,
     loadImages,
-    getImage: (name) => images[name] || ''
+    getImage: (name) => images[name]?.url || '',
+    getThumbnail: (name) => images[name]?.thumbnail || images[name]?.url || '',
+    getSource: (name) => images[name]?.source || 'none'
   };
 }
 
