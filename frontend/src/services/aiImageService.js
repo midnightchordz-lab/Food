@@ -1,15 +1,68 @@
 /**
  * AI Recipe Image Service
- * Handles fetching AI-generated images for recipes
+ * Handles fetching recipe images - Google Images (fast) with AI fallback
  */
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Cache for storing generated images in memory
+// Cache for storing images in memory
 const imageCache = new Map();
 
 /**
- * Generate an AI image for a recipe
+ * Get a recipe image quickly using Google Images (with AI fallback)
+ * This is the preferred method - much faster than pure AI generation
+ * @param {string} recipeName - Name of the recipe
+ * @param {string} cuisine - Cuisine type (optional)
+ * @param {boolean} useAIFallback - Fall back to AI if no images found (default: true)
+ * @returns {Promise<{url: string, source: string, alternatives: Array}>}
+ */
+export async function getFastRecipeImage(recipeName, cuisine = '', useAIFallback = true) {
+  const cacheKey = `fast-${recipeName.toLowerCase()}-${cuisine.toLowerCase()}`;
+  
+  if (imageCache.has(cacheKey)) {
+    return imageCache.get(cacheKey);
+  }
+  
+  try {
+    const response = await fetch(`${API_URL}/api/recipe-image/fast`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        recipe_name: recipeName,
+        cuisine: cuisine,
+        use_ai_fallback: useAIFallback
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Image fetch failed');
+    }
+    
+    const data = await response.json();
+    
+    const result = {
+      url: data.image_url,
+      thumbnailUrl: data.thumbnail_url || data.image_url,
+      source: data.source,
+      sourceWebsite: data.source_website || '',
+      alternatives: data.alternatives || []
+    };
+    
+    if (result.url) {
+      imageCache.set(cacheKey, result);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error fetching fast recipe image:', error);
+    return { url: null, source: 'error', alternatives: [] };
+  }
+}
+
+/**
+ * Generate an AI image for a recipe (slower but higher quality)
  * @param {string} recipeName - Name of the recipe
  * @param {string} cuisine - Cuisine type (optional)
  * @param {string[]} ingredients - List of ingredients (optional)
