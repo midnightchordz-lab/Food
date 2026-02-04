@@ -9,6 +9,19 @@ import axios from 'axios';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
+// Currency symbol mapping
+const getCurrencySymbol = (currency) => {
+  const symbols = {
+    'USD': '$',
+    'INR': '₹',
+    'GBP': '£',
+    'EUR': '€',
+    'CAD': 'C$',
+    'AUD': 'A$',
+  };
+  return symbols[currency] || currency + ' ';
+};
+
 /**
  * SearchHub Component
  * Provides recipe search, grocery store finder, and ingredient price check features
