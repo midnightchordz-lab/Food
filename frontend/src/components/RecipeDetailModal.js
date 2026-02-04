@@ -1003,21 +1003,33 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               )}
             </div>
             
-            {/* Rating Section */}
+            {/* Rating & Actions Section */}
             <div className="px-6 py-4 border-t bg-muted/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Rate this recipe</p>
-                  <StarRating rating={userRating} onRate={setUserRating} />
+              <div className="flex flex-col gap-4">
+                {/* Rating */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Rate this recipe</p>
+                    <StarRating rating={userRating} onRate={setUserRating} />
+                  </div>
+                  <Button 
+                    onClick={handleAddAllIngredients}
+                    variant="outline"
+                    data-testid="add-all-ingredients-btn"
+                  >
+                    <ShoppingCart size={16} className="mr-2" />
+                    Add to List
+                  </Button>
                 </div>
-                <Button 
-                  onClick={handleAddAllIngredients}
-                  className="bg-primary hover:bg-primary/90"
-                  data-testid="add-all-ingredients-btn"
-                >
-                  <ShoppingCart size={16} className="mr-2" />
-                  Add All Ingredients
-                </Button>
+                
+                {/* Buy Ingredients Button */}
+                {parsedRecipe?.ingredients && parsedRecipe.ingredients.length > 0 && (
+                  <BuyIngredientsButton 
+                    ingredients={parsedRecipe.ingredients}
+                    recipeName={displayTitle}
+                    location="USA"
+                  />
+                )}
               </div>
             </div>
           </>
