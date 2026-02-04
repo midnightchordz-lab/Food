@@ -629,8 +629,7 @@ Format each recipe clearly with the name as a header.
                                       responseText.includes('mood has changed') ||
                                       (responseText.includes("you're feeling") && responseText.includes('looking for'));
       
-      // Update mood ONLY from user's message, never from AI response
-      const shouldUpdateMood = (isMoodChange || isDirectMoodStatement) && detectedMoodFromUser;
+      // Update mood if detected from user's message
       if (shouldUpdateMood) {
         const newMoodObj = MOOD_IMAGES.find(m => m.id === detectedMoodFromUser);
         if (newMoodObj) {
