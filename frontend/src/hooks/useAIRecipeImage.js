@@ -1,26 +1,59 @@
 /**
  * useAIRecipeImage Hook
- * React hook for loading AI-generated recipe images with fallback
+ * React hook for loading recipe images with Google Images (fast) + AI fallback
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { generateRecipeImage, getRecipeImage } from '../services/aiImageService';
+import { getFastRecipeImage, generateRecipeImage, getRecipeImage } from '../services/aiImageService';
 
 /**
- * Hook to get an AI-generated image for a recipe
+ * Hook to get a recipe image - uses Google Images for speed, with AI fallback
  * @param {string} recipeName - Name of the recipe
  * @param {string} cuisine - Cuisine type
- * @param {string} fallbackUrl - Fallback image URL if AI generation fails
- * @param {boolean} autoGenerate - Whether to auto-generate on mount (default: false)
+ * @param {string} fallbackUrl - Fallback image URL if all methods fail
+ * @param {boolean} autoLoad - Whether to auto-load on mount (default: true for fast loading)
+ * @param {boolean} preferAI - Whether to prefer AI generation over Google Images (default: false)
  */
-export function useAIRecipeImage(recipeName, cuisine = '', fallbackUrl = '', autoGenerate = false) {
+export function useAIRecipeImage(recipeName, cuisine = '', fallbackUrl = '', autoLoad = true, preferAI = false) {
   const [imageUrl, setImageUrl] = useState(fallbackUrl);
+  const [thumbnailUrl, setThumbnailUrl] = useState(fallbackUrl);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAIGenerated, setIsAIGenerated] = useState(false);
+  const [source, setSource] = useState('fallback');
   const [error, setError] = useState(null);
+  const [alternatives, setAlternatives] = useState([]);
   
-  // Function to generate the image
-  const generate = useCallback(async () => {
+  // Function to load image (fast method - Google Images with AI fallback)
+  const loadFast = useCallback(async () => {
+    if (!recipeName) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const result = await getFastRecipeImage(recipeName, cuisine, true);
+      
+      if (result.url) {
+        setImageUrl(result.url);
+        setThumbnailUrl(result.thumbnailUrl || result.url);
+        setSource(result.source);
+        setAlternatives(result.alternatives || []);
+      } else {
+        setImageUrl(fallbackUrl);
+        setThumbnailUrl(fallbackUrl);
+        setSource('fallback');
+      }
+    } catch (err) {
+      console.error('Error in useAIRecipeImage:', err);
+      setError(err.message);
+      setImageUrl(fallbackUrl);
+      setSource('error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [recipeName, cuisine, fallbackUrl]);
+  
+  // Function to force AI generation (slower but more accurate)
+  const generateAI = useCallback(async () => {
     if (!recipeName) return;
     
     setIsLoading(true);
@@ -31,42 +64,56 @@ export function useAIRecipeImage(recipeName, cuisine = '', fallbackUrl = '', aut
       let url = await getRecipeImage(recipeName, cuisine);
       
       if (!url) {
-        // Generate new image
+        // Generate new AI image
         url = await generateRecipeImage(recipeName, cuisine);
       }
       
       if (url) {
         setImageUrl(url);
-        setIsAIGenerated(true);
+        setThumbnailUrl(url);
+        setSource('ai_generated');
+        setAlternatives([]);
       } else {
-        // Fall back to static image
         setImageUrl(fallbackUrl);
-        setIsAIGenerated(false);
+        setSource('fallback');
       }
     } catch (err) {
-      console.error('Error in useAIRecipeImage:', err);
+      console.error('Error generating AI image:', err);
       setError(err.message);
       setImageUrl(fallbackUrl);
-      setIsAIGenerated(false);
+      setSource('error');
     } finally {
       setIsLoading(false);
     }
   }, [recipeName, cuisine, fallbackUrl]);
   
-  // Auto-generate on mount if enabled
+  // Auto-load on mount if enabled
   useEffect(() => {
-    if (autoGenerate && recipeName) {
-      generate();
+    if (autoLoad && recipeName) {
+      if (preferAI) {
+        generateAI();
+      } else {
+        loadFast();
+      }
     }
-  }, [autoGenerate, recipeName, generate]);
+  }, [autoLoad, recipeName, preferAI, loadFast, generateAI]);
   
   return {
     imageUrl,
+    thumbnailUrl,
     isLoading,
-    isAIGenerated,
+    source,  // 'google_images', 'ai_generated', 'cached', 'fallback', 'error'
     error,
-    generate, // Manual trigger function
-    refresh: generate // Alias for regenerating
+    alternatives, // Alternative images from Google (can switch if user doesn't like current)
+    loadFast, // Quick load using Google Images
+    generateAI, // Force AI generation (slower)
+    refresh: loadFast, // Alias for refreshing
+    switchToAlternative: (index) => {
+      if (alternatives[index]) {
+        setImageUrl(alternatives[index].url);
+        setThumbnailUrl(alternatives[index].thumbnail || alternatives[index].url);
+      }
+    }
   };
 }
 
