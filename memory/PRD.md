@@ -232,15 +232,22 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
-- **Feb 4, 2026**: FEATURE - SerpAPI Integration (Recipe Search, Grocery Stores, Price Check)
+- **Feb 4, 2026**: FEATURE - SerpAPI Integration (Recipe Search, Grocery Stores, Price Check) - ENHANCED
   - **Added**: SearchHub component with 3 tabs
   - **Recipe Search**: Search for recipes from external websites (Google Search)
   - **Grocery Store Finder**: Find nearby grocery stores using Google Maps
+    - **NEW**: Google Maps "View on Map" button - Direct link to Google Maps with store location
+    - Uses GPS coordinates when available for precise directions
+    - Fallback to name+address search for stores without coordinates
   - **Ingredient Price Check**: Check ingredient prices from Google Shopping
-  - **Files Created**: 
-    - `/app/backend/services/serpapi_service.py` - SerpAPI service layer
+    - **NEW**: Local currency support - Automatically detects location and shows prices in local currency
+    - Supported currencies: USD ($), INR (₹), GBP (£), EUR (€), CAD (C$), AUD (A$)
+    - Shows detected location badge (e.g., "Mumbai, Maharashtra, India")
+    - Price stats (min/avg/max) display with correct currency symbol
+  - **Files Created/Modified**: 
+    - `/app/backend/services/serpapi_service.py` - SerpAPI service layer with location mapping
     - `/app/backend/routes/search.py` - API routes for search features
-    - `/app/frontend/src/components/SearchHub.jsx` - Search Hub UI component
+    - `/app/frontend/src/components/SearchHub.jsx` - Search Hub UI with maps links and currency display
   - **Navigation**: Added Search button to navigation bar
   - **API Endpoints**: `/api/search/recipes`, `/api/search/grocery-stores`, `/api/search/ingredient-prices`
 
