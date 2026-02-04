@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="10" skipped="0" tests="11" time="1.201" timestamp="2026-02-04T14:36:37.510901+00:00" hostname="agent-env-7d8d57c0-8c30-4ee0-b4eb-841a1b2923ce"><testcase classname="backend.tests.test_search_features.TestGroceryStoresAPI" name="test_grocery_stores_returns_google_maps_url" time="0.346"><failure message="AssertionError: API failed: {&quot;detail&quot;:&quot;Invalid token&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:54: in test_grocery_stores_returns_google_maps_url
+    assert response.status_code == 200, f"API failed: {response.text}"
+E   AssertionError: API failed: {"detail":"Invalid token"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestGroceryStoresAPI" name="test_google_maps_url_format" time="0.038"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:77: in test_google_maps_url_format
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestGroceryStoresAPI" name="test_grocery_stores_with_ingredient_filter" time="0.040"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:96: in test_grocery_stores_with_ingredient_filter
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestIngredientPricesAPI" name="test_price_check_india_returns_inr" time="0.337"><failure message="AssertionError: API failed: {&quot;detail&quot;:&quot;Invalid token&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:124: in test_price_check_india_returns_inr
+    assert response.status_code == 200, f"API failed: {response.text}"
+E   AssertionError: API failed: {"detail":"Invalid token"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestIngredientPricesAPI" name="test_price_check_uk_returns_gbp" time="0.044"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:149: in test_price_check_uk_returns_gbp
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestIngredientPricesAPI" name="test_price_check_usa_returns_usd" time="0.036"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:167: in test_price_check_usa_returns_usd
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestIngredientPricesAPI" name="test_price_check_default_currency_for_unknown_location" time="0.033"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:183: in test_price_check_default_currency_for_unknown_location
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestIngredientPricesAPI" name="test_price_check_returns_country_code" time="0.039"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:199: in test_price_check_returns_country_code
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestIngredientPricesAPI" name="test_price_check_europe_returns_eur" time="0.038"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:215: in test_price_check_europe_returns_eur
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestIngredientPricesAPI" name="test_price_stats_include_currency_symbol_data" time="0.033"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_search_features.py:231: in test_price_stats_include_currency_symbol_data
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_search_features.TestSearchStatusEndpoint" name="test_search_status_returns_features" time="0.046" /></testsuite></testsuites>
