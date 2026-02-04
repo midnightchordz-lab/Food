@@ -221,6 +221,7 @@ export async function checkImageServiceStatus() {
 }
 
 export default {
+  getFastRecipeImage,
   generateRecipeImage,
   getRecipeImage,
   batchGenerateImages,
