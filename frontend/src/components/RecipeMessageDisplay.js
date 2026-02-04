@@ -1135,70 +1135,89 @@ export const hasRecipes = (message) => {
 };
 
 // Clickable Recipe Card Component - Compact for 3-per-row grid
-// Now with AUTO AI image generation for accurate dish-specific images
+// Now with FAST Google Images loading (AI fallback available)
 const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isAIGenerated, setIsAIGenerated] = useState(false);
-  const hasTriedAI = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [imageSource, setImageSource] = useState('static'); // 'google_images', 'ai_generated', 'static'
+  const [alternatives, setAlternatives] = useState([]);
+  const hasTriedFetch = useRef(false);
 
-  // Auto-generate AI image on mount
+  // Auto-fetch fast image on mount (Google Images - typically <1 sec)
   useEffect(() => {
-    if (!recipe.title || hasTriedAI.current) return;
+    if (!recipe.title || hasTriedFetch.current) return;
     
-    const generateImage = async () => {
-      hasTriedAI.current = true;
+    const fetchImage = async () => {
+      hasTriedFetch.current = true;
       
       // Check cache first
       const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
       if (aiImageCache.has(cacheKey)) {
-        setImageUrl(aiImageCache.get(cacheKey));
-        setIsAIGenerated(true);
+        const cached = aiImageCache.get(cacheKey);
+        setImageUrl(cached.url);
+        setImageSource(cached.source);
+        setAlternatives(cached.alternatives || []);
         return;
       }
       
-      setIsGenerating(true);
+      setIsLoading(true);
       try {
-        const aiUrl = await generateAIImage(recipe.title, recipe.cuisineHint);
-        if (aiUrl) {
-          aiImageCache.set(cacheKey, aiUrl);
-          setImageUrl(aiUrl);
-          setIsAIGenerated(true);
+        const result = await getFastImage(recipe.title, recipe.cuisineHint);
+        if (result && result.url) {
+          aiImageCache.set(cacheKey, result);
+          setImageUrl(result.url);
+          setImageSource(result.source);
+          setAlternatives(result.alternatives || []);
         }
       } catch (err) {
-        console.error('AI image generation failed:', err);
+        console.error('Fast image fetch failed:', err);
       } finally {
-        setIsGenerating(false);
+        setIsLoading(false);
       }
     };
     
-    // Stagger requests to avoid overwhelming the API
-    const delay = Math.random() * 1500;
-    const timer = setTimeout(generateImage, delay);
+    // Small stagger to avoid overwhelming API
+    const delay = Math.random() * 300;
+    const timer = setTimeout(fetchImage, delay);
     return () => clearTimeout(timer);
   }, [recipe.title, recipe.cuisineHint]);
 
+  // Manual trigger for AI generation (higher quality but slower)
   const handleGenerateAI = useCallback(async (e) => {
     e.stopPropagation();
     e.preventDefault();
     
-    if (isGenerating) return;
+    if (isLoading) return;
     
-    setIsGenerating(true);
+    setIsLoading(true);
     try {
       const aiUrl = await generateAIImage(recipe.title, recipe.cuisineHint);
       if (aiUrl) {
         const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
-        aiImageCache.set(cacheKey, aiUrl);
+        aiImageCache.set(cacheKey, { url: aiUrl, source: 'ai_generated', alternatives: [] });
         setImageUrl(aiUrl);
-        setIsAIGenerated(true);
+        setImageSource('ai_generated');
+        setAlternatives([]);
       }
     } catch (err) {
       console.error('AI generation failed:', err);
     } finally {
-      setIsGenerating(false);
+      setIsLoading(false);
     }
-  }, [recipe.title, recipe.cuisineHint, isGenerating]);
+  }, [recipe.title, recipe.cuisineHint, isLoading]);
+
+  // Switch to alternative image
+  const handleSwitchImage = useCallback((e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (alternatives.length > 0) {
+      const nextAlt = alternatives[0];
+      const remainingAlts = [...alternatives.slice(1), { url: imageUrl }];
+      setImageUrl(nextAlt.url);
+      setAlternatives(remainingAlts);
+    }
+  }, [alternatives, imageUrl]);
 
   return (
     <div 
