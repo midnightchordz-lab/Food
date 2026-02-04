@@ -26,7 +26,7 @@ class TestAuthSetup:
         })
         if response.status_code != 200:
             pytest.skip(f"Authentication failed: {response.status_code} - {response.text}")
-        return response.json().get("token")
+        return response.json().get("access_token")
 
 
 class TestGroceryStoresAPI:
@@ -41,7 +41,7 @@ class TestGroceryStoresAPI:
         })
         if response.status_code != 200:
             pytest.skip(f"Auth failed: {response.text}")
-        return response.json().get("token")
+        return response.json().get("access_token")
     
     def test_grocery_stores_returns_google_maps_url(self, auth_token):
         """Test that grocery stores API returns google_maps_url field"""
@@ -111,7 +111,7 @@ class TestIngredientPricesAPI:
         })
         if response.status_code != 200:
             pytest.skip(f"Auth failed: {response.text}")
-        return response.json().get("token")
+        return response.json().get("access_token")
     
     def test_price_check_india_returns_inr(self, auth_token):
         """Test that India location returns INR currency"""
