@@ -60,18 +60,16 @@ const Navigation = () => {
                 );
               })}
               
-              {/* Search Hub Button */}
+              {/* Search Hub Button - Same style as nav items */}
               {isAuthenticated && (
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={() => setShowSearchHub(true)}
-                  className="rounded-full px-3 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/30 hover:border-blue-500/50"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 bg-secondary/50 hover:bg-secondary text-foreground"
                   data-testid="search-hub-button"
                 >
-                  <Search size={18} className="text-blue-500" />
-                  <span className="hidden lg:inline ml-2">Search</span>
-                </Button>
+                  <Search size={18} />
+                  <span className="hidden sm:inline">Search</span>
+                </button>
               )}
               
               {isAuthenticated ? (
