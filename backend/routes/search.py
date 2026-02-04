@@ -41,6 +41,12 @@ class VideoSearchRequest(BaseModel):
     limit: Optional[int] = 5
 
 
+class FoodImageRequest(BaseModel):
+    dish_name: str
+    cuisine: Optional[str] = ""
+    limit: Optional[int] = 3
+
+
 @router.post("/recipes")
 async def api_search_recipes(request: RecipeSearchRequest, current_user: User = Depends(get_current_user)):
     """
