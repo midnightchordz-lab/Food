@@ -121,9 +121,26 @@ async def find_grocery_stores(location: str, ingredient: str = None) -> Dict:
         local_results = data.get("local_results", [])
         
         for store in local_results[:10]:
+            store_name = store.get("title", "")
+            store_address = store.get("address", "")
+            gps_coords = store.get("gps_coordinates", {})
+            
+            # Generate Google Maps URL for directions
+            google_maps_url = None
+            if gps_coords and gps_coords.get("latitude") and gps_coords.get("longitude"):
+                # Use coordinates for precise location
+                lat = gps_coords.get("latitude")
+                lng = gps_coords.get("longitude")
+                google_maps_url = f"https://www.google.com/maps/dir/?api=1&destination={lat},{lng}&destination_place_id={store.get('place_id', '')}"
+            elif store_name and store_address:
+                # Fallback to name + address search
+                from urllib.parse import quote
+                search_query = f"{store_name}, {store_address}"
+                google_maps_url = f"https://www.google.com/maps/search/?api=1&query={quote(search_query)}"
+            
             stores.append({
-                "name": store.get("title", ""),
-                "address": store.get("address", ""),
+                "name": store_name,
+                "address": store_address,
                 "rating": store.get("rating", "N/A"),
                 "reviews": store.get("reviews", 0),
                 "type": store.get("type", "Grocery Store"),
@@ -131,8 +148,9 @@ async def find_grocery_stores(location: str, ingredient: str = None) -> Dict:
                 "phone": store.get("phone", ""),
                 "website": store.get("website", ""),
                 "directions_link": store.get("directions", ""),
+                "google_maps_url": google_maps_url,
                 "thumbnail": store.get("thumbnail", ""),
-                "gps_coordinates": store.get("gps_coordinates", {}),
+                "gps_coordinates": gps_coords,
                 "price_level": store.get("price", ""),
                 "open_now": "Open" in store.get("hours", "") if store.get("hours") else None
             })

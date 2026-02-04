@@ -283,8 +283,19 @@ const SearchHub = ({ isOpen, onClose, initialIngredient = '', initialRecipe = ''
                         )}
                         {store.phone && <span>{store.phone}</span>}
                       </div>
-                      <div className="flex gap-2 mt-2">
-                        {store.directions_link && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {store.google_maps_url && (
+                          <a 
+                            href={store.google_maps_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full hover:bg-blue-600 flex items-center gap-1 transition-colors"
+                            data-testid={`store-map-link-${idx}`}
+                          >
+                            <MapPin className="w-3 h-3" /> View on Map
+                          </a>
+                        )}
+                        {store.directions_link && !store.google_maps_url && (
                           <a 
                             href={store.directions_link} 
                             target="_blank" 
