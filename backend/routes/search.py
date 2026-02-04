@@ -12,7 +12,8 @@ from services.serpapi_service import (
     search_recipes, 
     find_grocery_stores, 
     check_ingredient_prices,
-    search_recipe_videos
+    search_recipe_videos,
+    search_food_images
 )
 
 router = APIRouter(prefix="/search", tags=["search"])
