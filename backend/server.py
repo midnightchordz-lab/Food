@@ -47,6 +47,7 @@ from routes import (
     voice_router,
     image_router
 )
+from routes.search import router as search_router
 
 # Include all routers with /api prefix
 app.include_router(auth_router, prefix="/api")
@@ -58,6 +59,7 @@ app.include_router(diabetes_router, prefix="/api")
 app.include_router(import_router, prefix="/api")
 app.include_router(voice_router, prefix="/api")
 app.include_router(image_router, prefix="/api/recipe-image")
+app.include_router(search_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(
