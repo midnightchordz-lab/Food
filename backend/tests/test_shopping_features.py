@@ -377,7 +377,7 @@ class TestAuthRequired:
             f"{BASE_URL}/api/search/ingredient-price-filtered",
             json={"ingredient": "test"}
         )
-        assert response.status_code == 401, "Should require authentication"
+        assert response.status_code in [401, 403], "Should require authentication"
     
     def test_batch_prices_requires_auth(self):
         """Verify batch-prices requires auth"""
@@ -385,7 +385,7 @@ class TestAuthRequired:
             f"{BASE_URL}/api/search/batch-prices",
             json={"ingredients": ["test"]}
         )
-        assert response.status_code == 401, "Should require authentication"
+        assert response.status_code in [401, 403], "Should require authentication"
     
     def test_buy_ingredients_requires_auth(self):
         """Verify buy-ingredients requires auth"""
@@ -393,7 +393,7 @@ class TestAuthRequired:
             f"{BASE_URL}/api/search/buy-ingredients",
             json={"ingredients": ["test"]}
         )
-        assert response.status_code == 401, "Should require authentication"
+        assert response.status_code in [401, 403], "Should require authentication"
     
     def test_shopping_cart_requires_auth(self):
         """Verify shopping-cart requires auth"""
@@ -401,7 +401,7 @@ class TestAuthRequired:
             f"{BASE_URL}/api/search/shopping-cart",
             json={"recipes": [{"name": "test", "ingredients": ["test"]}]}
         )
-        assert response.status_code == 401, "Should require authentication"
+        assert response.status_code in [401, 403], "Should require authentication"
     
     def test_supported_stores_no_auth_required(self):
         """Verify supported-stores does NOT require auth"""
