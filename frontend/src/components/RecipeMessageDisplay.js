@@ -1207,9 +1207,6 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipe.title, recipe.cuisineHint]);
-    const timer = setTimeout(fetchImage, delay);
-    return () => clearTimeout(timer);
-  }, [recipe.title, recipe.cuisineHint]);
 
   // Manual trigger for AI generation (higher quality but slower)
   const handleGenerateAI = useCallback(async (e) => {
