@@ -51,6 +51,22 @@ class FoodImageRequest(BaseModel):
     limit: Optional[int] = 3
 
 
+class StoreFilteredPriceRequest(BaseModel):
+    ingredient: str
+    location: Optional[str] = "USA"
+    store: Optional[str] = None  # amazon, walmart, target, etc.
+
+
+class BatchPriceRequest(BaseModel):
+    ingredients: List[str]
+    location: Optional[str] = "USA"
+
+
+class ShoppingCartRequest(BaseModel):
+    recipes: List[dict]  # [{"name": "Recipe Name", "ingredients": ["ing1", "ing2"]}]
+    location: Optional[str] = "USA"
+
+
 @router.post("/recipes")
 async def api_search_recipes(request: RecipeSearchRequest, current_user: User = Depends(get_current_user)):
     """
