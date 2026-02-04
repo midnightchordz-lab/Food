@@ -1289,6 +1289,20 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
           </div>
         )}
         
+        {/* Error/Retry Overlay */}
+        {imageSource === 'error' && !isLoading && (
+          <button
+            onClick={handleRetry}
+            className="absolute inset-0 bg-gradient-to-br from-gray-900/70 to-gray-800/70 flex items-center justify-center z-20"
+            title="Retry loading image"
+          >
+            <div className="text-center text-white">
+              <RefreshCw className="w-6 h-6 mx-auto mb-1" />
+              <p className="text-xs font-medium">Retry</p>
+            </div>
+          </button>
+        )}
+        
         {/* Action buttons - show on hover */}
         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           {/* Switch to alternative image */}
