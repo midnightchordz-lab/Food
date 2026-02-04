@@ -514,7 +514,8 @@ const DiabetesMealsPage = () => {
       setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message. Please try again.');
+      console.error('Error details:', error.response?.data || error.message);
+      toast.error(error.response?.data?.detail || 'Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
     }
