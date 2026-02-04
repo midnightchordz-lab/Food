@@ -4,10 +4,29 @@ import axios from 'axios';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
-// In-memory cache for AI-generated images
-const aiImageCache = new Map();
+// In-memory cache for images
+const imageCache = new Map();
 
-// Generate AI image for a recipe
+// Get fast image using Google Images (with AI fallback)
+const getFastImage = async (recipeName, cuisine = '') => {
+  try {
+    const response = await axios.post(`${API}/recipe-image/fast`, {
+      recipe_name: recipeName,
+      cuisine: cuisine,
+      use_ai_fallback: true
+    });
+    return {
+      url: response.data.image_url,
+      source: response.data.source,
+      alternatives: response.data.alternatives || []
+    };
+  } catch (error) {
+    console.error('Error fetching fast image:', error);
+    return null;
+  }
+};
+
+// Generate AI image for a recipe (slower but higher quality)
 const generateAIImage = async (recipeName, cuisine = '') => {
   try {
     const response = await axios.post(`${API}/recipe-image/generate`, {
@@ -30,7 +49,7 @@ const DEFAULT_IMAGES = {
 };
 
 /**
- * Meal Card Component with AI Image Generation
+ * Meal Card Component with Fast Image Loading (Google Images + AI Fallback)
  * Used in Weekly Planners (regular and diabetes)
  */
 const PlannerMealCard = ({ 
@@ -42,46 +61,47 @@ const PlannerMealCard = ({
   enableAI = true 
 }) => {
   const [imageUrl, setImageUrl] = useState(DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isAIGenerated, setIsAIGenerated] = useState(false);
-  const hasTriedAI = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [imageSource, setImageSource] = useState('static'); // 'google_images', 'ai_generated', 'static'
+  const hasTriedFetch = useRef(false);
 
   // Clean up meal name (remove carbs info if present)
   const cleanName = mealName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
 
-  // Auto-generate AI image on mount
+  // Auto-fetch fast image on mount (Google Images - typically <1 sec)
   useEffect(() => {
-    if (!enableAI || !cleanName || hasTriedAI.current) return;
+    if (!enableAI || !cleanName || hasTriedFetch.current) return;
     
-    const generateImage = async () => {
-      hasTriedAI.current = true;
+    const fetchImage = async () => {
+      hasTriedFetch.current = true;
       
       // Check cache first
       const cacheKey = cleanName.toLowerCase();
-      if (aiImageCache.has(cacheKey)) {
-        setImageUrl(aiImageCache.get(cacheKey));
-        setIsAIGenerated(true);
+      if (imageCache.has(cacheKey)) {
+        const cached = imageCache.get(cacheKey);
+        setImageUrl(cached.url);
+        setImageSource(cached.source);
         return;
       }
       
-      setIsGenerating(true);
+      setIsLoading(true);
       try {
-        const aiUrl = await generateAIImage(cleanName);
-        if (aiUrl) {
-          aiImageCache.set(cacheKey, aiUrl);
-          setImageUrl(aiUrl);
-          setIsAIGenerated(true);
+        const result = await getFastImage(cleanName);
+        if (result && result.url) {
+          imageCache.set(cacheKey, result);
+          setImageUrl(result.url);
+          setImageSource(result.source);
         }
       } catch (err) {
-        console.error('AI image generation failed:', err);
+        console.error('Fast image fetch failed:', err);
       } finally {
-        setIsGenerating(false);
+        setIsLoading(false);
       }
     };
     
-    // Stagger requests to avoid overwhelming the API
-    const delay = Math.random() * 1000;
-    const timer = setTimeout(generateImage, delay);
+    // Small stagger to avoid overwhelming API
+    const delay = Math.random() * 200;
+    const timer = setTimeout(fetchImage, delay);
     return () => clearTimeout(timer);
   }, [cleanName, enableAI]);
 
@@ -109,12 +129,17 @@ const PlannerMealCard = ({
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            {isGenerating && (
+            {isLoading && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                 <RefreshCw className="w-3 h-3 text-white animate-spin" />
               </div>
             )}
-            {isAIGenerated && !isGenerating && (
+            {imageSource === 'google_images' && !isLoading && (
+              <div className="absolute bottom-0 right-0 bg-blue-600 rounded-tl-md p-0.5">
+                <span className="text-white text-[8px]">⚡</span>
+              </div>
+            )}
+            {imageSource === 'ai_generated' && !isLoading && (
               <div className="absolute bottom-0 right-0 bg-purple-600 rounded-tl-md p-0.5">
                 <Sparkles className="w-2 h-2 text-white" />
               </div>
@@ -149,8 +174,14 @@ const PlannerMealCard = ({
           loading="lazy"
         />
         
-        {/* AI Badge */}
-        {isAIGenerated && !isGenerating && (
+        {/* Source Badge */}
+        {imageSource === 'google_images' && !isLoading && (
+          <div className="absolute top-1 left-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+            <span>⚡</span>
+            <span>Fast</span>
+          </div>
+        )}
+        {imageSource === 'ai_generated' && !isLoading && (
           <div className="absolute top-1 left-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
             <Sparkles className="w-2 h-2" />
             <span>AI</span>
@@ -158,11 +189,11 @@ const PlannerMealCard = ({
         )}
         
         {/* Loading Overlay */}
-        {isGenerating && (
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/70 to-blue-900/70 flex items-center justify-center">
+        {isLoading && (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 to-cyan-900/60 flex items-center justify-center">
             <div className="text-center text-white">
-              <Sparkles className="w-4 h-4 animate-pulse mx-auto" />
-              <p className="text-[10px] mt-1">Creating...</p>
+              <RefreshCw className="w-4 h-4 animate-spin mx-auto" />
+              <p className="text-[10px] mt-1">Loading...</p>
             </div>
           </div>
         )}
