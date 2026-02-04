@@ -232,6 +232,23 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 4, 2026**: FEATURE - Google Images Integration for Faster Recipe Loading
+  - **Added**: Fast image loading via SerpAPI Google Images search
+  - **Benefit**: Images load in <1-2 seconds vs 5-10 seconds for AI generation
+  - **Scope**: Chat, Diabetes, D-Planner, and Planner pages all use fast loading
+  - **Fallback**: AI image generation when no Google Images found
+  - **User Option**: Manual "AI" button to generate higher quality AI images
+  - **Visual Badges**: Blue "⚡ Fast" for Google Images, Purple "AI" for AI-generated
+  - **API Endpoint**: POST/GET /api/recipe-image/fast
+  - **Quality Filters**: Stock photo sites filtered out, food sources prioritized
+  - **Files Modified**:
+    - `/app/backend/services/serpapi_service.py` - Added search_food_images()
+    - `/app/backend/routes/image_generation.py` - Added /fast endpoint
+    - `/app/frontend/src/components/RecipeMessageDisplay.js` - Fast loading
+    - `/app/frontend/src/components/PlannerMealCard.jsx` - Fast loading
+    - `/app/frontend/src/services/aiImageService.js` - getFastRecipeImage()
+    - `/app/frontend/src/hooks/useAIRecipeImage.js` - loadFast() and generateAI()
+
 - **Feb 4, 2026**: FEATURE - SerpAPI Integration (Recipe Search, Grocery Stores, Price Check) - ENHANCED
   - **Added**: SearchHub component with 3 tabs
   - **Recipe Search**: Search for recipes from external websites (Google Search)
