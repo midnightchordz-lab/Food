@@ -314,6 +314,93 @@ async def check_ingredient_prices(ingredient: str, location: str = "USA") -> Dic
         }
 
 
+async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) -> Dict:
+    """
+    Search for food/dish images using Google Images via SerpAPI.
+    Returns high-quality, relevant food photography.
+    """
+    try:
+        # Build search query optimized for food images
+        search_query = f"{dish_name} food dish"
+        if cuisine:
+            search_query = f"{dish_name} {cuisine} cuisine food"
+        
+        # Add quality modifiers
+        search_query += " recipe photo"
+        
+        params = {
+            "api_key": SERPAPI_KEY,
+            "engine": "google_images",
+            "q": search_query,
+            "num": limit * 2,  # Get extra for filtering
+            "safe": "active",
+            "ijn": 0,  # First page
+            "tbs": "isz:m,itp:photo",  # Medium size, photo type only
+        }
+        
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(SERPAPI_BASE_URL, params=params)
+            response.raise_for_status()
+            data = response.json()
+        
+        images = []
+        images_results = data.get("images_results", [])
+        
+        for img in images_results[:limit * 2]:
+            # Filter out low quality or irrelevant images
+            width = img.get("original_width", 0)
+            height = img.get("original_height", 0)
+            
+            # Skip small images (less than 300x300)
+            if width < 300 or height < 300:
+                continue
+            
+            # Skip images from certain domains that may have watermarks
+            source = img.get("source", "").lower()
+            skip_sources = ["shutterstock", "istockphoto", "gettyimages", "dreamstime", "123rf"]
+            if any(skip in source for skip in skip_sources):
+                continue
+            
+            image_data = {
+                "url": img.get("original", img.get("thumbnail", "")),
+                "thumbnail": img.get("thumbnail", ""),
+                "title": img.get("title", ""),
+                "source": img.get("source", ""),
+                "source_url": img.get("link", ""),
+                "width": width,
+                "height": height,
+            }
+            
+            # Prefer food-related sources
+            food_sources = ["allrecipes", "foodnetwork", "epicurious", "seriouseats", "bonappetit", 
+                          "delish", "tasty", "simplyrecipes", "cookinglight", "yummly", "food52"]
+            is_food_source = any(fs in source for fs in food_sources)
+            
+            if is_food_source:
+                images.insert(0, image_data)  # Priority placement
+            else:
+                images.append(image_data)
+            
+            if len(images) >= limit:
+                break
+        
+        return {
+            "success": True,
+            "dish_name": dish_name,
+            "cuisine": cuisine,
+            "images": images[:limit],
+            "total_found": len(images)
+        }
+        
+    except Exception as e:
+        logging.error(f"SerpAPI image search error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "images": []
+        }
+
+
 async def search_recipe_videos(recipe_name: str, limit: int = 5) -> Dict:
     """
     Search for cooking tutorial videos on YouTube
