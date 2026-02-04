@@ -1,12 +1,13 @@
 """
 Recipe Image Generation API Routes
-Provides endpoints for AI-powered recipe image generation
+Provides endpoints for AI-powered recipe image generation with Google Images fallback
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from pydantic import BaseModel
 from typing import List, Optional
 import asyncio
+import os
 
 router = APIRouter()
 
@@ -19,6 +20,87 @@ class ImageGenerationRequest(BaseModel):
 
 class BatchImageRequest(BaseModel):
     recipes: List[ImageGenerationRequest]
+
+
+class FastImageRequest(BaseModel):
+    recipe_name: str
+    cuisine: Optional[str] = ""
+    use_ai_fallback: Optional[bool] = True
+
+
+@router.post("/fast")
+async def get_fast_recipe_image(request: FastImageRequest):
+    """
+    Get a recipe image quickly using Google Images search.
+    Falls back to AI generation if enabled and no good images found.
+    Typical response time: <1 second (vs 5-10s for AI generation)
+    """
+    try:
+        # First try Google Images (fast)
+        from services.serpapi_service import search_food_images
+        
+        google_result = await search_food_images(
+            dish_name=request.recipe_name,
+            cuisine=request.cuisine,
+            limit=3
+        )
+        
+        if google_result.get("success") and google_result.get("images"):
+            # Return the best image
+            best_image = google_result["images"][0]
+            return {
+                "image_url": best_image["url"],
+                "thumbnail_url": best_image.get("thumbnail", best_image["url"]),
+                "source": "google_images",
+                "source_website": best_image.get("source", ""),
+                "recipe_name": request.recipe_name,
+                "alternatives": google_result["images"][1:] if len(google_result["images"]) > 1 else []
+            }
+        
+        # Fall back to AI generation if enabled
+        if request.use_ai_fallback:
+            from ai_image_service import get_or_generate_recipe_image
+            
+            ai_result = await get_or_generate_recipe_image(
+                recipe_name=request.recipe_name,
+                cuisine=request.cuisine
+            )
+            
+            return {
+                "image_url": ai_result.get("image_url"),
+                "thumbnail_url": ai_result.get("image_url"),
+                "source": ai_result.get("source", "ai_generated"),
+                "recipe_name": request.recipe_name,
+                "alternatives": []
+            }
+        
+        # No image found and AI fallback disabled
+        return {
+            "image_url": None,
+            "source": "none",
+            "recipe_name": request.recipe_name,
+            "error": "No images found"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image fetch failed: {str(e)}")
+
+
+@router.get("/fast/{recipe_name}")
+async def get_fast_recipe_image_get(
+    recipe_name: str,
+    cuisine: str = Query("", description="Cuisine type"),
+    use_ai_fallback: bool = Query(True, description="Fall back to AI if no Google Images found")
+):
+    """
+    GET endpoint for fast recipe image (Google Images with AI fallback)
+    """
+    request = FastImageRequest(
+        recipe_name=recipe_name,
+        cuisine=cuisine,
+        use_ai_fallback=use_ai_fallback
+    )
+    return await get_fast_recipe_image(request)
 
 
 @router.post("/generate")
