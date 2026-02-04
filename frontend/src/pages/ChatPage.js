@@ -583,6 +583,9 @@ Format each recipe clearly with the name as a header.
                               detectedCuisinesFromUser && 
                               detectedCuisinesFromUser.length > 0;
       
+      // Update mood ONLY from user's message, never from AI response
+      const shouldUpdateMood = (isMoodChange || isDirectMoodStatement) && detectedMoodFromUser;
+      
       // If cuisine change detected, skip AI call and show clean transition
       if (isCuisineChange && !shouldUpdateMood) {
         // Update cuisines immediately
