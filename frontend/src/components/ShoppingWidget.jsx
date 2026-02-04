@@ -171,6 +171,7 @@ export const PriceComparisonWidget = ({ ingredients, location = "USA" }) => {
     if (expanded && !priceData && !isLoading) {
       fetchPrices();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded]);
 
   const currency = priceData?.currency || 'USD';
