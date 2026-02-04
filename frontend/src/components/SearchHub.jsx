@@ -123,7 +123,7 @@ const SearchHub = ({ isOpen, onClose, initialIngredient = '', initialRecipe = ''
     }
   };
 
-  // Check Ingredient Prices
+  // Check Ingredient Prices (with optional store filter)
   const checkPrices = async () => {
     if (!priceIngredient.trim()) {
       toast.error('Please enter an ingredient');
@@ -132,10 +132,18 @@ const SearchHub = ({ isOpen, onClose, initialIngredient = '', initialRecipe = ''
     
     setIsCheckingPrices(true);
     try {
-      const response = await axios.post(`${API}/search/ingredient-prices`, {
+      // Use filtered endpoint if store is selected, otherwise use regular endpoint
+      const endpoint = storeFilter 
+        ? `${API}/search/ingredient-price-filtered`
+        : `${API}/search/ingredient-prices`;
+      
+      const payload = {
         ingredient: priceIngredient,
-        location: priceLocation
-      });
+        location: priceLocation,
+        ...(storeFilter && { store: storeFilter })
+      };
+      
+      const response = await axios.post(endpoint, payload);
       
       setPriceResults(response.data);
       if (response.data.prices?.length === 0) {
