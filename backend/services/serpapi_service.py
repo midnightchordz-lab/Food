@@ -259,7 +259,8 @@ async def check_ingredient_prices(ingredient: str, location: str = "USA") -> Dic
                 "min_price": min(valid_prices),
                 "max_price": max(valid_prices),
                 "avg_price": round(sum(valid_prices) / len(valid_prices), 2),
-                "price_count": len(valid_prices)
+                "price_count": len(valid_prices),
+                "currency": location_config['currency']
             }
         
         # Also search for deals/coupons
@@ -277,6 +278,9 @@ async def check_ingredient_prices(ingredient: str, location: str = "USA") -> Dic
             "success": True,
             "ingredient": ingredient,
             "location": location,
+            "detected_location": location_config['location'],
+            "currency": location_config['currency'],
+            "country_code": location_config['gl'].upper(),
             "prices": prices,
             "price_stats": price_stats,
             "deals": deals,
