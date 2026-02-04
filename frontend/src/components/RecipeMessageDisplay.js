@@ -8,7 +8,35 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 // Cache for AI-generated images to avoid re-generation
 const aiImageCache = new Map();
 
-// Function to generate AI image for a recipe
+// Function to get fast image (Google Images with AI fallback)
+const getFastImage = async (recipeName, cuisine = '') => {
+  try {
+    const response = await fetch(`${API_URL}/api/recipe-image/fast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipe_name: recipeName,
+        cuisine: cuisine,
+        use_ai_fallback: true
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        url: data.image_url,
+        source: data.source,
+        alternatives: data.alternatives || []
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Fast image fetch error:', error);
+    return null;
+  }
+};
+
+// Function to generate AI image for a recipe (slower but higher quality)
 const generateAIImage = async (recipeName, cuisine = '') => {
   try {
     const response = await fetch(`${API_URL}/api/recipe-image/generate`, {
