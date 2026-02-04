@@ -374,13 +374,13 @@ const SearchHub = ({ isOpen, onClose, initialIngredient = '', initialRecipe = ''
 
           {/* Price Check Tab */}
           <TabsContent value="prices" className="flex-1 overflow-auto mt-4 space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Input
                 placeholder="Enter ingredient (e.g., 'olive oil')"
                 value={priceIngredient}
                 onChange={(e) => setPriceIngredient(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && checkPrices()}
-                className="flex-1"
+                className="flex-1 min-w-[200px]"
               />
               <Input
                 placeholder="Location"
@@ -388,10 +388,40 @@ const SearchHub = ({ isOpen, onClose, initialIngredient = '', initialRecipe = ''
                 onChange={(e) => setPriceLocation(e.target.value)}
                 className="w-24"
               />
+              <Select value={storeFilter || "all"} onValueChange={(v) => setStoreFilter(v === "all" ? "" : v)}>
+                <SelectTrigger className="w-36" data-testid="store-filter-select">
+                  <Filter className="w-4 h-4 mr-1" />
+                  <SelectValue placeholder="All Stores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stores</SelectItem>
+                  {supportedStores.map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button onClick={checkPrices} disabled={isCheckingPrices}>
                 {isCheckingPrices ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
               </Button>
             </div>
+
+            {/* Store Filter Badge */}
+            {storeFilter && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="bg-blue-500/10 text-blue-600 px-2 py-1 rounded-full flex items-center gap-1">
+                  <Store className="w-3 h-3" />
+                  Filtering: {supportedStores.find(s => s.id === storeFilter)?.name || storeFilter}
+                  <button 
+                    onClick={() => setStoreFilter('')}
+                    className="ml-1 hover:text-blue-800"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              </div>
+            )}
 
             {/* Location & Currency Info */}
             {priceResults?.detected_location && (
