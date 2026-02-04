@@ -314,6 +314,234 @@ async def check_ingredient_prices(ingredient: str, location: str = "USA") -> Dic
         }
 
 
+# Supported store filters for Google Shopping
+SUPPORTED_STORES = {
+    'amazon': {'name': 'Amazon', 'domain': 'amazon.com'},
+    'walmart': {'name': 'Walmart', 'domain': 'walmart.com'},
+    'target': {'name': 'Target', 'domain': 'target.com'},
+    'instacart': {'name': 'Instacart', 'domain': 'instacart.com'},
+    'kroger': {'name': 'Kroger', 'domain': 'kroger.com'},
+    'wholefoods': {'name': 'Whole Foods', 'domain': 'wholefoodsmarket.com'},
+    'costco': {'name': 'Costco', 'domain': 'costco.com'},
+    'safeway': {'name': 'Safeway', 'domain': 'safeway.com'},
+    'trader_joes': {'name': "Trader Joe's", 'domain': 'traderjoes.com'},
+}
+
+
+async def check_ingredient_price_with_store(ingredient: str, location: str = "USA", store_filter: str = None) -> Dict:
+    """
+    Search for ingredient prices with optional store filtering.
+    Use store_filter to limit results to specific stores (amazon, walmart, target, etc.)
+    """
+    try:
+        # Build search query
+        search_query = f"{ingredient} grocery"
+        
+        # Add store filter if specified
+        if store_filter and store_filter.lower() in SUPPORTED_STORES:
+            store_info = SUPPORTED_STORES[store_filter.lower()]
+            search_query = f"{ingredient} site:{store_info['domain']}"
+        
+        # Get location config
+        location_mapping = {
+            'usa': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'United States'},
+            'us': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'United States'},
+            'india': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'India'},
+            'uk': {'gl': 'uk', 'hl': 'en', 'currency': 'GBP', 'location': 'United Kingdom'},
+            'canada': {'gl': 'ca', 'hl': 'en', 'currency': 'CAD', 'location': 'Canada'},
+            'australia': {'gl': 'au', 'hl': 'en', 'currency': 'AUD', 'location': 'Australia'},
+        }
+        
+        location_lower = location.lower().strip()
+        location_config = location_mapping.get(location_lower, {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': location})
+        
+        params = {
+            "api_key": SERPAPI_KEY,
+            "engine": "google_shopping",
+            "q": search_query,
+            "location": location_config['location'],
+            "gl": location_config['gl'],
+            "hl": location_config['hl'],
+            "num": 10
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(SERPAPI_BASE_URL, params=params)
+            response.raise_for_status()
+            data = response.json()
+        
+        prices = []
+        shopping_results = data.get("shopping_results", [])
+        
+        for item in shopping_results[:10]:
+            source = item.get("source", "").lower()
+            
+            # If store filter is active, only include matching stores
+            if store_filter:
+                store_info = SUPPORTED_STORES.get(store_filter.lower())
+                if store_info and store_info['domain'].split('.')[0] not in source:
+                    continue
+            
+            prices.append({
+                "title": item.get("title", ""),
+                "price": item.get("price", "N/A"),
+                "extracted_price": item.get("extracted_price", 0),
+                "source": item.get("source", ""),
+                "link": item.get("link", ""),
+                "thumbnail": item.get("thumbnail", ""),
+                "rating": item.get("rating", None),
+                "reviews": item.get("reviews", 0),
+                "delivery": item.get("delivery", ""),
+            })
+        
+        # Find cheapest option
+        valid_prices = [p for p in prices if p["extracted_price"] and p["extracted_price"] > 0]
+        cheapest = min(valid_prices, key=lambda x: x["extracted_price"]) if valid_prices else None
+        
+        return {
+            "success": True,
+            "ingredient": ingredient,
+            "store_filter": store_filter,
+            "currency": location_config['currency'],
+            "prices": prices,
+            "cheapest": cheapest,
+            "total_found": len(prices)
+        }
+        
+    except Exception as e:
+        logging.error(f"Store-specific price check error: {e}")
+        return {"success": False, "error": str(e), "prices": []}
+
+
+async def batch_ingredient_prices(ingredients: List[str], location: str = "USA") -> Dict:
+    """
+    Check prices for multiple ingredients in batch.
+    Returns price comparison for each ingredient.
+    """
+    import asyncio
+    
+    results = {}
+    total_min = 0
+    total_max = 0
+    currency = "USD"
+    
+    # Process in batches to avoid rate limiting
+    batch_size = 3
+    for i in range(0, len(ingredients), batch_size):
+        batch = ingredients[i:i + batch_size]
+        
+        tasks = [check_ingredient_prices(ing, location) for ing in batch]
+        batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for j, result in enumerate(batch_results):
+            ingredient = batch[j]
+            if isinstance(result, Exception):
+                results[ingredient] = {"success": False, "error": str(result)}
+            elif result.get("success"):
+                results[ingredient] = {
+                    "success": True,
+                    "cheapest": result.get("prices", [{}])[0] if result.get("prices") else None,
+                    "price_stats": result.get("price_stats", {}),
+                    "prices": result.get("prices", [])[:3]  # Top 3 options
+                }
+                if result.get("price_stats", {}).get("min_price"):
+                    total_min += result["price_stats"]["min_price"]
+                    total_max += result["price_stats"].get("max_price", 0)
+                    currency = result.get("currency", "USD")
+            else:
+                results[ingredient] = {"success": False, "error": result.get("error")}
+        
+        # Small delay between batches
+        if i + batch_size < len(ingredients):
+            await asyncio.sleep(0.5)
+    
+    return {
+        "success": True,
+        "location": location,
+        "currency": currency,
+        "ingredients": results,
+        "estimated_total": {
+            "min": round(total_min, 2),
+            "max": round(total_max, 2),
+            "currency": currency
+        },
+        "total_ingredients": len(ingredients)
+    }
+
+
+async def build_shopping_cart(recipes: List[Dict], location: str = "USA") -> Dict:
+    """
+    Build an aggregated shopping cart from multiple recipes.
+    Combines duplicate ingredients and provides price estimates.
+    """
+    # Aggregate all ingredients
+    all_ingredients = {}
+    
+    for recipe in recipes:
+        recipe_name = recipe.get("name", "Unknown Recipe")
+        ingredients = recipe.get("ingredients", [])
+        
+        for ing in ingredients:
+            # Normalize ingredient name
+            ing_name = ing.lower().strip() if isinstance(ing, str) else ing.get("item", "").lower().strip()
+            
+            if not ing_name:
+                continue
+            
+            # Remove common quantity words for grouping
+            base_name = ing_name
+            for word in ["cup", "cups", "tbsp", "tsp", "oz", "lb", "lbs", "g", "kg", "ml", "large", "medium", "small", "clove", "cloves", "piece", "pieces"]:
+                base_name = base_name.replace(word, "").strip()
+            
+            # Clean up numbers
+            import re
+            base_name = re.sub(r'^\d+[\d\/\s]*', '', base_name).strip()
+            
+            if base_name:
+                if base_name not in all_ingredients:
+                    all_ingredients[base_name] = {
+                        "name": ing_name,
+                        "recipes": [],
+                        "count": 0
+                    }
+                all_ingredients[base_name]["recipes"].append(recipe_name)
+                all_ingredients[base_name]["count"] += 1
+    
+    # Get prices for unique ingredients
+    unique_ingredients = list(all_ingredients.keys())[:15]  # Limit to avoid too many API calls
+    
+    price_results = await batch_ingredient_prices(unique_ingredients, location)
+    
+    # Combine data
+    cart_items = []
+    for base_name, info in all_ingredients.items():
+        item_data = {
+            "ingredient": info["name"],
+            "used_in": info["recipes"],
+            "usage_count": info["count"],
+        }
+        
+        # Add price info if available
+        if base_name in price_results.get("ingredients", {}):
+            price_info = price_results["ingredients"][base_name]
+            if price_info.get("success") and price_info.get("cheapest"):
+                item_data["cheapest_price"] = price_info["cheapest"].get("price", "N/A")
+                item_data["cheapest_source"] = price_info["cheapest"].get("source", "")
+                item_data["buy_link"] = price_info["cheapest"].get("link", "")
+        
+        cart_items.append(item_data)
+    
+    return {
+        "success": True,
+        "location": location,
+        "currency": price_results.get("currency", "USD"),
+        "cart_items": cart_items,
+        "estimated_total": price_results.get("estimated_total", {}),
+        "total_items": len(cart_items),
+        "recipes_included": len(recipes)
+    }
+
+
 async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) -> Dict:
     """
     Search for food/dish images using Google Images via SerpAPI.
