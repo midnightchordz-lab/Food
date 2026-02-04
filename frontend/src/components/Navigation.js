@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activity, Import, CalendarDays } from 'lucide-react';
+import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activity, Import, CalendarDays, Search } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
+import SearchHub from './SearchHub';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,6 +17,7 @@ const Navigation = () => {
   const isHome = location.pathname === '/';
   const { user, isAuthenticated, logout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSearchHub, setShowSearchHub] = useState(false);
   
   if (isHome) return null;
   
