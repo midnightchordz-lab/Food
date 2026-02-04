@@ -157,15 +157,73 @@ async def find_grocery_stores(location: str, ingredient: str = None) -> Dict:
 async def check_ingredient_prices(ingredient: str, location: str = "USA") -> Dict:
     """
     Search for ingredient prices and deals using Google Shopping
+    Automatically detects country and displays prices in local currency
     """
     try:
         search_query = f"{ingredient} grocery price"
+        
+        # Map common locations to their Google location codes and currencies
+        location_mapping = {
+            # India
+            'mumbai': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Mumbai, Maharashtra, India'},
+            'bandra': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Mumbai, Maharashtra, India'},
+            'delhi': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Delhi, India'},
+            'bangalore': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Bangalore, Karnataka, India'},
+            'bengaluru': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Bangalore, Karnataka, India'},
+            'chennai': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Chennai, Tamil Nadu, India'},
+            'kolkata': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Kolkata, West Bengal, India'},
+            'hyderabad': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Hyderabad, Telangana, India'},
+            'pune': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'Pune, Maharashtra, India'},
+            'india': {'gl': 'in', 'hl': 'en', 'currency': 'INR', 'location': 'India'},
+            # UK
+            'london': {'gl': 'uk', 'hl': 'en', 'currency': 'GBP', 'location': 'London, United Kingdom'},
+            'manchester': {'gl': 'uk', 'hl': 'en', 'currency': 'GBP', 'location': 'Manchester, United Kingdom'},
+            'uk': {'gl': 'uk', 'hl': 'en', 'currency': 'GBP', 'location': 'United Kingdom'},
+            'united kingdom': {'gl': 'uk', 'hl': 'en', 'currency': 'GBP', 'location': 'United Kingdom'},
+            # Europe
+            'paris': {'gl': 'fr', 'hl': 'fr', 'currency': 'EUR', 'location': 'Paris, France'},
+            'berlin': {'gl': 'de', 'hl': 'de', 'currency': 'EUR', 'location': 'Berlin, Germany'},
+            'france': {'gl': 'fr', 'hl': 'fr', 'currency': 'EUR', 'location': 'France'},
+            'germany': {'gl': 'de', 'hl': 'de', 'currency': 'EUR', 'location': 'Germany'},
+            # Canada
+            'toronto': {'gl': 'ca', 'hl': 'en', 'currency': 'CAD', 'location': 'Toronto, Ontario, Canada'},
+            'vancouver': {'gl': 'ca', 'hl': 'en', 'currency': 'CAD', 'location': 'Vancouver, BC, Canada'},
+            'canada': {'gl': 'ca', 'hl': 'en', 'currency': 'CAD', 'location': 'Canada'},
+            # Australia
+            'sydney': {'gl': 'au', 'hl': 'en', 'currency': 'AUD', 'location': 'Sydney, NSW, Australia'},
+            'melbourne': {'gl': 'au', 'hl': 'en', 'currency': 'AUD', 'location': 'Melbourne, VIC, Australia'},
+            'australia': {'gl': 'au', 'hl': 'en', 'currency': 'AUD', 'location': 'Australia'},
+            # USA (default)
+            'usa': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'United States'},
+            'us': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'United States'},
+            'united states': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'United States'},
+            'new york': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'New York, NY, United States'},
+            'los angeles': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'Los Angeles, CA, United States'},
+            'austin': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'Austin, TX, United States'},
+            'chicago': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'Chicago, IL, United States'},
+            'san francisco': {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': 'San Francisco, CA, United States'},
+        }
+        
+        # Find matching location (case-insensitive)
+        location_lower = location.lower().strip()
+        location_config = None
+        
+        for key, config in location_mapping.items():
+            if key in location_lower or location_lower in key:
+                location_config = config
+                break
+        
+        # Default to US if no match
+        if not location_config:
+            location_config = {'gl': 'us', 'hl': 'en', 'currency': 'USD', 'location': location}
         
         params = {
             "api_key": SERPAPI_KEY,
             "engine": "google_shopping",
             "q": search_query,
-            "location": location,
+            "location": location_config['location'],
+            "gl": location_config['gl'],
+            "hl": location_config['hl'],
             "num": 15
         }
         
