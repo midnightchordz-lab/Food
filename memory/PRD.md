@@ -232,6 +232,15 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 4, 2026**: BUGFIX - Image Fallback in D-Planner and Planner
+  - **Issue**: When Google Images didn't find results, AI generation wasn't automatically triggered
+  - **Fix**: 
+    - Added direct AI generation fallback in frontend when getFastImage returns null
+    - Added 30s timeout to API calls to allow AI generation time
+    - Added retry button on error state
+    - Added error handling in both PlannerMealCard and RecipeCard components
+  - **Files Modified**: PlannerMealCard.jsx, RecipeMessageDisplay.js
+
 - **Feb 4, 2026**: FEATURE - Google Shopping Light API Integration (Full Suite)
   - **4 Shopping Features Implemented:**
     1. **Buy Ingredients Button** - One-click to search all recipe ingredients with best prices and buy links
