@@ -232,6 +232,18 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 4, 2026**: FEATURE - SerpAPI Integration (Recipe Search, Grocery Stores, Price Check)
+  - **Added**: SearchHub component with 3 tabs
+  - **Recipe Search**: Search for recipes from external websites (Google Search)
+  - **Grocery Store Finder**: Find nearby grocery stores using Google Maps
+  - **Ingredient Price Check**: Check ingredient prices from Google Shopping
+  - **Files Created**: 
+    - `/app/backend/services/serpapi_service.py` - SerpAPI service layer
+    - `/app/backend/routes/search.py` - API routes for search features
+    - `/app/frontend/src/components/SearchHub.jsx` - Search Hub UI component
+  - **Navigation**: Added Search button to navigation bar
+  - **API Endpoints**: `/api/search/recipes`, `/api/search/grocery-stores`, `/api/search/ingredient-prices`
+
 - **Feb 2, 2026**: PERFORMANCE - WebP Image Optimization
   - **Added**: Automatic WebP conversion for all AI-generated recipe images
   - **Benefit**: 25-34% smaller file sizes compared to PNG/JPEG
