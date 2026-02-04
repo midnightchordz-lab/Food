@@ -232,6 +232,25 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 4, 2026**: FEATURE - Google Shopping Light API Integration (Full Suite)
+  - **4 Shopping Features Implemented:**
+    1. **Buy Ingredients Button** - One-click to search all recipe ingredients with best prices and buy links
+    2. **Price Comparison Widget** - Shows cheapest options for each ingredient in shopping list
+    3. **Shopping Cart Builder** - Aggregates and deduplicates ingredients from multiple recipes
+    4. **Store-Specific Searches** - Filter results by store (Amazon, Walmart, Target, Instacart, Kroger, Whole Foods, Costco, Safeway, Trader Joe's)
+  - **New API Endpoints:**
+    - GET `/api/search/supported-stores` - List of supported stores for filtering
+    - POST `/api/search/ingredient-price-filtered` - Price check with optional store filter
+    - POST `/api/search/batch-prices` - Batch price check for multiple ingredients (max 15)
+    - POST `/api/search/buy-ingredients` - Returns purchase links for ingredients
+    - POST `/api/search/shopping-cart` - Builds aggregated cart from multiple recipes (max 10)
+  - **Files Created/Modified:**
+    - `/app/backend/services/serpapi_service.py` - Added SUPPORTED_STORES, check_ingredient_price_with_store(), batch_ingredient_prices(), build_shopping_cart()
+    - `/app/backend/routes/search.py` - Added 5 new shopping endpoints
+    - `/app/frontend/src/components/ShoppingWidget.jsx` - NEW: BuyIngredientsButton, PriceComparisonWidget, ShoppingCartBuilder, StoreFilterDropdown
+    - `/app/frontend/src/components/SearchHub.jsx` - Added store filter to Price Check tab
+    - `/app/frontend/src/components/RecipeDetailModal.js` - Added Buy Ingredients button
+
 - **Feb 4, 2026**: FEATURE - Google Images Integration for Faster Recipe Loading
   - **Added**: Fast image loading via SerpAPI Google Images search
   - **Benefit**: Images load in <1-2 seconds vs 5-10 seconds for AI generation
