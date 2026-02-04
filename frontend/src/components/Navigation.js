@@ -60,6 +60,20 @@ const Navigation = () => {
                 );
               })}
               
+              {/* Search Hub Button */}
+              {isAuthenticated && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSearchHub(true)}
+                  className="rounded-full px-3 py-2 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/30 hover:border-blue-500/50"
+                  data-testid="search-hub-button"
+                >
+                  <Search size={18} className="text-blue-500" />
+                  <span className="hidden lg:inline ml-2">Search</span>
+                </Button>
+              )}
+              
               {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
