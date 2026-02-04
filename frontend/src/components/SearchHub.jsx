@@ -54,6 +54,21 @@ const SearchHub = ({ isOpen, onClose, initialIngredient = '', initialRecipe = ''
   const [priceLocation, setPriceLocation] = useState('USA');
   const [priceResults, setPriceResults] = useState(null);
   const [isCheckingPrices, setIsCheckingPrices] = useState(false);
+  const [storeFilter, setStoreFilter] = useState('');
+  const [supportedStores, setSupportedStores] = useState([]);
+
+  // Fetch supported stores on mount
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const response = await axios.get(`${API}/search/supported-stores`);
+        setSupportedStores(response.data.stores || []);
+      } catch (error) {
+        console.error('Failed to fetch stores:', error);
+      }
+    };
+    fetchStores();
+  }, []);
 
   // Search Recipes
   const searchRecipes = async () => {
