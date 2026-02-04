@@ -581,6 +581,7 @@ Format each recipe clearly with the name as a header.
       // Check if user is requesting a different cuisine
       const isCuisineChange = (isCuisineChangeRequest || detectedCuisinesFromUser) && 
                               detectedCuisinesFromUser && 
+                              Array.isArray(detectedCuisinesFromUser) &&
                               detectedCuisinesFromUser.length > 0;
       
       // Update mood ONLY from user's message, never from AI response
@@ -592,10 +593,10 @@ Format each recipe clearly with the name as a header.
         setSelectedCuisines(detectedCuisinesFromUser);
         
         // Get cuisine labels for display
-        const cuisineLabels = detectedCuisinesFromUser.map(c => {
+        const cuisineLabels = (detectedCuisinesFromUser || []).map(c => {
           const cuisine = CUISINES.find(cu => cu.id === c);
           return cuisine?.label || c;
-        }).join(', ');
+        }).join(', ') || 'new';
         
         // Create a clean acknowledgment message (no recipe text)
         const aiMsg = {
