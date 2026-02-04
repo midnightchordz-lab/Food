@@ -121,6 +121,7 @@ const Navigation = () => {
       </nav>
       
       <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <SearchHub isOpen={showSearchHub} onClose={() => setShowSearchHub(false)} />
     </>
   );
 };
