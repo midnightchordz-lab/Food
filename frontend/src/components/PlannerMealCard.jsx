@@ -14,6 +14,8 @@ const getFastImage = async (recipeName, cuisine = '') => {
       recipe_name: recipeName,
       cuisine: cuisine,
       use_ai_fallback: true
+    }, {
+      timeout: 30000 // 30 second timeout to allow AI fallback time
     });
     return {
       url: response.data.image_url,
