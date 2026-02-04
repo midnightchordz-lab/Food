@@ -228,6 +228,20 @@ const PlannerMealCard = ({
           </div>
         )}
         
+        {/* Error/Retry Overlay */}
+        {imageSource === 'error' && !isLoading && (
+          <button
+            onClick={handleRetry}
+            className="absolute inset-0 bg-gradient-to-br from-gray-900/70 to-gray-800/70 flex items-center justify-center z-10"
+            title="Retry loading image"
+          >
+            <div className="text-center text-white">
+              <RefreshCw className="w-4 h-4 mx-auto" />
+              <p className="text-[10px] mt-1">Retry</p>
+            </div>
+          </button>
+        )}
+        
         {/* Loading Overlay */}
         {isLoading && (
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 to-cyan-900/60 flex items-center justify-center">
