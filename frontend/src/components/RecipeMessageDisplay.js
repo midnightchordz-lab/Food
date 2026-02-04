@@ -1139,45 +1139,74 @@ export const hasRecipes = (message) => {
 const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
   const [isLoading, setIsLoading] = useState(false);
-  const [imageSource, setImageSource] = useState('static'); // 'google_images', 'ai_generated', 'static'
+  const [imageSource, setImageSource] = useState('static'); // 'google_images', 'ai_generated', 'static', 'error'
   const [alternatives, setAlternatives] = useState([]);
   const hasTriedFetch = useRef(false);
 
+  // Function to fetch image with AI fallback
+  const fetchImage = async (forceRetry = false) => {
+    if (!recipe.title) return;
+    if (!forceRetry && hasTriedFetch.current) return;
+    
+    hasTriedFetch.current = true;
+    
+    // Check cache first
+    const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
+    if (!forceRetry && aiImageCache.has(cacheKey)) {
+      const cached = aiImageCache.get(cacheKey);
+      setImageUrl(cached.url);
+      setImageSource(cached.source);
+      setAlternatives(cached.alternatives || []);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const result = await getFastImage(recipe.title, recipe.cuisineHint);
+      if (result && result.url) {
+        aiImageCache.set(cacheKey, result);
+        setImageUrl(result.url);
+        setImageSource(result.source || 'google_images');
+        setAlternatives(result.alternatives || []);
+      } else {
+        // Try AI generation directly as fallback
+        console.log(`No fast image for "${recipe.title}", trying AI...`);
+        const aiUrl = await generateAIImage(recipe.title, recipe.cuisineHint);
+        if (aiUrl) {
+          aiImageCache.set(cacheKey, { url: aiUrl, source: 'ai_generated', alternatives: [] });
+          setImageUrl(aiUrl);
+          setImageSource('ai_generated');
+          setAlternatives([]);
+        } else {
+          setImageSource('error');
+        }
+      }
+    } catch (err) {
+      console.error('Image fetch failed:', err);
+      setImageSource('error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle retry
+  const handleRetry = async (e) => {
+    e?.stopPropagation();
+    e?.preventDefault();
+    hasTriedFetch.current = false;
+    await fetchImage(true);
+  };
+
   // Auto-fetch fast image on mount (Google Images - typically <1 sec)
   useEffect(() => {
-    if (!recipe.title || hasTriedFetch.current) return;
-    
-    const fetchImage = async () => {
-      hasTriedFetch.current = true;
-      
-      // Check cache first
-      const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
-      if (aiImageCache.has(cacheKey)) {
-        const cached = aiImageCache.get(cacheKey);
-        setImageUrl(cached.url);
-        setImageSource(cached.source);
-        setAlternatives(cached.alternatives || []);
-        return;
-      }
-      
-      setIsLoading(true);
-      try {
-        const result = await getFastImage(recipe.title, recipe.cuisineHint);
-        if (result && result.url) {
-          aiImageCache.set(cacheKey, result);
-          setImageUrl(result.url);
-          setImageSource(result.source);
-          setAlternatives(result.alternatives || []);
-        }
-      } catch (err) {
-        console.error('Fast image fetch failed:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (!recipe.title) return;
     
     // Small stagger to avoid overwhelming API
     const delay = Math.random() * 300;
+    const timer = setTimeout(() => fetchImage(), delay);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipe.title, recipe.cuisineHint]);
     const timer = setTimeout(fetchImage, delay);
     return () => clearTimeout(timer);
   }, [recipe.title, recipe.cuisineHint]);
