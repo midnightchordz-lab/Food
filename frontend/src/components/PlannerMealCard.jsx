@@ -64,47 +64,76 @@ const PlannerMealCard = ({
 }) => {
   const [imageUrl, setImageUrl] = useState(DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
   const [isLoading, setIsLoading] = useState(false);
-  const [imageSource, setImageSource] = useState('static'); // 'google_images', 'ai_generated', 'static'
+  const [imageSource, setImageSource] = useState('static'); // 'google_images', 'ai_generated', 'static', 'error'
+  const [retryCount, setRetryCount] = useState(0);
   const hasTriedFetch = useRef(false);
 
   // Clean up meal name (remove carbs info if present)
   const cleanName = mealName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
 
-  // Auto-fetch fast image on mount (Google Images - typically <1 sec)
-  useEffect(() => {
-    if (!enableAI || !cleanName || hasTriedFetch.current) return;
+  // Function to fetch image
+  const fetchImage = async (forceRetry = false) => {
+    if (!cleanName) return;
+    if (!forceRetry && hasTriedFetch.current) return;
     
-    const fetchImage = async () => {
-      hasTriedFetch.current = true;
-      
-      // Check cache first
-      const cacheKey = cleanName.toLowerCase();
-      if (imageCache.has(cacheKey)) {
-        const cached = imageCache.get(cacheKey);
-        setImageUrl(cached.url);
-        setImageSource(cached.source);
-        return;
-      }
-      
-      setIsLoading(true);
-      try {
-        const result = await getFastImage(cleanName);
-        if (result && result.url) {
-          imageCache.set(cacheKey, result);
-          setImageUrl(result.url);
-          setImageSource(result.source);
+    hasTriedFetch.current = true;
+    
+    // Check cache first
+    const cacheKey = cleanName.toLowerCase();
+    if (!forceRetry && imageCache.has(cacheKey)) {
+      const cached = imageCache.get(cacheKey);
+      setImageUrl(cached.url);
+      setImageSource(cached.source);
+      return;
+    }
+    
+    setIsLoading(true);
+    setImageSource('loading');
+    
+    try {
+      const result = await getFastImage(cleanName);
+      if (result && result.url) {
+        imageCache.set(cacheKey, result);
+        setImageUrl(result.url);
+        setImageSource(result.source || 'google_images');
+      } else {
+        // No image found - try AI generation directly
+        console.log(`No fast image found for "${cleanName}", trying AI directly...`);
+        const aiUrl = await generateAIImage(cleanName);
+        if (aiUrl) {
+          imageCache.set(cacheKey, { url: aiUrl, source: 'ai_generated' });
+          setImageUrl(aiUrl);
+          setImageSource('ai_generated');
+        } else {
+          setImageSource('error');
         }
-      } catch (err) {
-        console.error('Fast image fetch failed:', err);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Image fetch failed:', err);
+      setImageSource('error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle manual retry
+  const handleRetry = async (e) => {
+    e?.stopPropagation();
+    e?.preventDefault();
+    setRetryCount(prev => prev + 1);
+    hasTriedFetch.current = false;
+    await fetchImage(true);
+  };
+
+  // Auto-fetch fast image on mount
+  useEffect(() => {
+    if (!enableAI || !cleanName) return;
     
     // Small stagger to avoid overwhelming API
     const delay = Math.random() * 200;
-    const timer = setTimeout(fetchImage, delay);
+    const timer = setTimeout(() => fetchImage(), delay);
     return () => clearTimeout(timer);
+  }, [cleanName, enableAI]);
   }, [cleanName, enableAI]);
 
   if (!mealName) {
