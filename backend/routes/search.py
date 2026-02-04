@@ -255,3 +255,114 @@ async def api_search_food_images_get(
         raise HTTPException(status_code=500, detail=result.get("error", "Image search failed"))
     
     return result
+
+
+# ============== ENHANCED SHOPPING FEATURES ==============
+
+@router.get("/supported-stores")
+async def get_supported_stores():
+    """
+    Get list of supported stores for filtering
+    """
+    return {
+        "stores": [
+            {"id": k, "name": v["name"], "domain": v["domain"]} 
+            for k, v in SUPPORTED_STORES.items()
+        ]
+    }
+
+
+@router.post("/ingredient-price-filtered")
+async def api_ingredient_price_with_store(
+    request: StoreFilteredPriceRequest, 
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check ingredient price with optional store filter.
+    Supports: amazon, walmart, target, instacart, kroger, wholefoods, costco, safeway
+    """
+    result = await check_ingredient_price_with_store(
+        ingredient=request.ingredient,
+        location=request.location,
+        store_filter=request.store
+    )
+    
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Price check failed"))
+    
+    return result
+
+
+@router.post("/batch-prices")
+async def api_batch_ingredient_prices(
+    request: BatchPriceRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check prices for multiple ingredients at once.
+    Returns cheapest option and price stats for each ingredient.
+    Max 15 ingredients per request.
+    """
+    if len(request.ingredients) > 15:
+        raise HTTPException(status_code=400, detail="Maximum 15 ingredients per request")
+    
+    result = await batch_ingredient_prices(
+        ingredients=request.ingredients,
+        location=request.location
+    )
+    
+    return result
+
+
+@router.post("/shopping-cart")
+async def api_build_shopping_cart(
+    request: ShoppingCartRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Build aggregated shopping cart from multiple recipes.
+    Combines duplicate ingredients and provides price estimates.
+    """
+    if len(request.recipes) > 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 recipes per cart")
+    
+    result = await build_shopping_cart(
+        recipes=request.recipes,
+        location=request.location
+    )
+    
+    return result
+
+
+@router.post("/buy-ingredients")
+async def api_buy_ingredients(
+    request: BatchPriceRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Quick buy endpoint - searches all ingredients and returns buy links.
+    Returns the cheapest option for each ingredient with direct purchase links.
+    """
+    result = await batch_ingredient_prices(
+        ingredients=request.ingredients,
+        location=request.location
+    )
+    
+    # Format for quick buy
+    buy_links = []
+    for ing, data in result.get("ingredients", {}).items():
+        if data.get("success") and data.get("cheapest"):
+            buy_links.append({
+                "ingredient": ing,
+                "price": data["cheapest"].get("price", "N/A"),
+                "source": data["cheapest"].get("source", ""),
+                "link": data["cheapest"].get("link", ""),
+                "thumbnail": data["cheapest"].get("thumbnail", "")
+            })
+    
+    return {
+        "success": True,
+        "buy_links": buy_links,
+        "estimated_total": result.get("estimated_total", {}),
+        "currency": result.get("currency", "USD")
+    }
