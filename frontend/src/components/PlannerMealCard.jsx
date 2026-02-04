@@ -133,7 +133,7 @@ const PlannerMealCard = ({
     const delay = Math.random() * 200;
     const timer = setTimeout(() => fetchImage(), delay);
     return () => clearTimeout(timer);
-  }, [cleanName, enableAI]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cleanName, enableAI]);
 
   if (!mealName) {
@@ -164,6 +164,15 @@ const PlannerMealCard = ({
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                 <RefreshCw className="w-3 h-3 text-white animate-spin" />
               </div>
+            )}
+            {imageSource === 'error' && !isLoading && (
+              <button
+                onClick={handleRetry}
+                className="absolute inset-0 bg-black/50 flex items-center justify-center"
+                title="Retry loading image"
+              >
+                <RefreshCw className="w-3 h-3 text-white" />
+              </button>
             )}
             {imageSource === 'google_images' && !isLoading && (
               <div className="absolute bottom-0 right-0 bg-blue-600 rounded-tl-md p-0.5">
