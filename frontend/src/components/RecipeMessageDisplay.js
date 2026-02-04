@@ -1239,39 +1239,54 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         
-        {/* AI Generated Badge */}
-        {isAIGenerated && !isGenerating && (
+        {/* Source Badge - Google Images or AI */}
+        {imageSource === 'google_images' && !isLoading && (
+          <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
+            <span>⚡</span>
+            <span>Fast</span>
+          </div>
+        )}
+        {imageSource === 'ai_generated' && !isLoading && (
           <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
             <Sparkles className="w-3 h-3" />
-            <span>AI Generated</span>
+            <span>AI</span>
           </div>
         )}
         
-        {/* Loading Overlay - Shows while generating AI image */}
-        {isGenerating && (
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/80 to-blue-900/80 flex items-center justify-center z-20">
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 to-cyan-900/60 flex items-center justify-center z-20">
             <div className="text-center text-white">
-              <div className="relative">
-                <Sparkles className="w-8 h-8 animate-pulse mx-auto mb-2" />
-                <RefreshCw className="w-4 h-4 animate-spin absolute -bottom-1 -right-1 text-purple-300" />
-              </div>
-              <p className="text-sm font-medium">Creating image...</p>
-              <p className="text-xs text-purple-200 mt-1">AI-powered accuracy</p>
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-1" />
+              <p className="text-xs font-medium">Loading...</p>
             </div>
           </div>
         )}
         
-        {/* Regenerate AI Image Button - only show if AI already generated */}
-        {isAIGenerated && !isGenerating && (
-          <button
-            onClick={handleGenerateAI}
-            className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg transition-all hover:scale-105 z-10 opacity-0 group-hover:opacity-100"
-            title="Regenerate AI image"
-          >
-            <RefreshCw className="w-3 h-3 text-purple-600" />
-            <span>New</span>
-          </button>
-        )}
+        {/* Action buttons - show on hover */}
+        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          {/* Switch to alternative image */}
+          {alternatives.length > 0 && (
+            <button
+              onClick={handleSwitchImage}
+              className="bg-white/90 hover:bg-white text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg transition-all hover:scale-105"
+              title="Try different image"
+            >
+              <RefreshCw className="w-3 h-3 text-blue-600" />
+            </button>
+          )}
+          {/* Generate AI image button */}
+          {imageSource !== 'ai_generated' && (
+            <button
+              onClick={handleGenerateAI}
+              className="bg-white/90 hover:bg-white text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg transition-all hover:scale-105"
+              title="Generate AI image (higher quality)"
+            >
+              <Sparkles className="w-3 h-3 text-purple-600" />
+              <span>AI</span>
+            </button>
+          )}
+        </div>
         
         {/* View Recipe overlay on hover */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all duration-300">
