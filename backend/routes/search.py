@@ -192,6 +192,46 @@ async def search_api_status():
             "recipe_search",
             "grocery_store_finder", 
             "ingredient_price_check",
-            "recipe_videos"
+            "recipe_videos",
+            "food_images"
         ]
     }
+
+
+@router.post("/food-images")
+async def api_search_food_images(request: FoodImageRequest, current_user: User = Depends(get_current_user)):
+    """
+    Search for food/dish images using Google Images (fast alternative to AI generation)
+    """
+    result = await search_food_images(
+        dish_name=request.dish_name,
+        cuisine=request.cuisine,
+        limit=request.limit
+    )
+    
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Image search failed"))
+    
+    return result
+
+
+@router.get("/food-images")
+async def api_search_food_images_get(
+    dish_name: str = Query(..., description="Name of the dish"),
+    cuisine: Optional[str] = Query("", description="Cuisine type"),
+    limit: Optional[int] = Query(3, description="Number of images"),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Search for food/dish images (GET endpoint)
+    """
+    result = await search_food_images(
+        dish_name=dish_name,
+        cuisine=cuisine,
+        limit=limit
+    )
+    
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Image search failed"))
+    
+    return result
