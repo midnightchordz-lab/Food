@@ -161,6 +161,37 @@ const PlannerMealCard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cleanName, enableAI]);
 
+  // Handle image load error - fallback to AI generation
+  const handleImageError = async (e) => {
+    // Prevent infinite loop
+    if (imageSource === 'ai_generated' || imageSource === 'ai_fallback') {
+      e.target.src = DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default;
+      return;
+    }
+    
+    console.log(`[PlannerMealCard] Image failed to load for "${cleanName}", generating AI image...`);
+    setIsLoading(true);
+    
+    try {
+      const aiUrl = await generateAIImage(cleanName);
+      if (aiUrl) {
+        setImageUrl(aiUrl);
+        setImageSource('ai_fallback');
+        // Update cache
+        const cacheKey = cleanName.toLowerCase();
+        imageCache.set(cacheKey, { url: aiUrl, source: 'ai_fallback' });
+      } else {
+        e.target.src = DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default;
+        setImageSource('fallback');
+      }
+    } catch {
+      e.target.src = DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default;
+      setImageSource('fallback');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!mealName) {
     return (
       <div className={`bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground/50 ${compact ? 'h-20' : 'h-24'}`}>
