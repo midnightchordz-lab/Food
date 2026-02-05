@@ -1161,26 +1161,6 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   };
 
   return (
-      console.error('AI generation failed:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [recipe.title, recipe.cuisineHint, isLoading]);
-
-  // Switch to alternative image
-  const handleSwitchImage = useCallback((e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    if (alternatives.length > 0) {
-      const nextAlt = alternatives[0];
-      const remainingAlts = [...alternatives.slice(1), { url: imageUrl }];
-      setImageUrl(nextAlt.url);
-      setAlternatives(remainingAlts);
-    }
-  }, [alternatives, imageUrl]);
-
-  return (
     <div 
       className="recipe-visual-card group flex flex-col bg-card rounded-2xl border border-border/40 overflow-hidden hover:shadow-xl hover:border-primary/30 transition-all duration-300 cursor-pointer h-full"
       onClick={() => onViewDetails({ ...recipe, imageUrl: imageUrl })}
@@ -1194,30 +1174,16 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
           loading="lazy"
           decoding="async"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={(e) => {
-            e.target.src = GENERIC_FOOD_IMAGES[0];
-          }}
+          onError={handleImgError}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         
-        {/* Source Badge - Google Images or AI */}
-        {imageSource === 'google_images' && !isLoading && (
-          <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
-            <span>⚡</span>
-            <span>Fast</span>
-          </div>
-        )}
-        {imageSource === 'ai_generated' && !isLoading && (
-          <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
-            <Sparkles className="w-3 h-3" />
-            <span>AI</span>
-          </div>
-        )}
-        
         {/* Loading Overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 to-cyan-900/60 flex items-center justify-center z-20">
-            <div className="text-center text-white">
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+            <RefreshCw className="w-6 h-6 animate-spin text-white" />
+          </div>
+        )}
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-1" />
               <p className="text-xs font-medium">Loading...</p>
             </div>
