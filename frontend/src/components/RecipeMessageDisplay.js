@@ -1184,50 +1184,6 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
             <RefreshCw className="w-6 h-6 animate-spin text-white" />
           </div>
         )}
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-1" />
-              <p className="text-xs font-medium">Loading...</p>
-            </div>
-          </div>
-        )}
-        
-        {/* Error/Retry Overlay */}
-        {imageSource === 'error' && !isLoading && (
-          <button
-            onClick={handleRetry}
-            className="absolute inset-0 bg-gradient-to-br from-gray-900/70 to-gray-800/70 flex items-center justify-center z-20"
-            title="Retry loading image"
-          >
-            <div className="text-center text-white">
-              <RefreshCw className="w-6 h-6 mx-auto mb-1" />
-              <p className="text-xs font-medium">Retry</p>
-            </div>
-          </button>
-        )}
-        
-        {/* Action buttons - show on hover */}
-        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-          {/* Switch to alternative image */}
-          {alternatives.length > 0 && (
-            <button
-              onClick={handleSwitchImage}
-              className="bg-white/90 hover:bg-white text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg transition-all hover:scale-105"
-              title="Try different image"
-            >
-              <RefreshCw className="w-3 h-3 text-blue-600" />
-            </button>
-          )}
-          {/* Generate AI image button */}
-          {imageSource !== 'ai_generated' && (
-            <button
-              onClick={handleGenerateAI}
-              className="bg-white/90 hover:bg-white text-gray-800 text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg transition-all hover:scale-105"
-              title="Generate AI image (higher quality)"
-            >
-              <Sparkles className="w-3 h-3 text-purple-600" />
-              <span>AI</span>
-            </button>
-          )}
-        </div>
         
         {/* View Recipe overlay on hover */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all duration-300">
