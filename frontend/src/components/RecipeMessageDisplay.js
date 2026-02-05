@@ -50,17 +50,6 @@ const generateAIImage = async (recipeName, cuisine = '') => {
     return null;
   }
 };
-    
-    if (response.ok) {
-      const data = await response.json();
-      return data.image_url;
-    }
-    return null;
-  } catch (error) {
-    console.error('AI image generation error:', error);
-    return null;
-  }
-};
 
 // Curated high-quality food images from Unsplash
 const FOOD_IMAGES = {
