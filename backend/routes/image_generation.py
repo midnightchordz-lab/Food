@@ -4,12 +4,19 @@ Provides endpoints for AI-powered recipe image generation with Google Images fal
 """
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List, Optional
 import asyncio
 import os
+import httpx
+import base64
+import hashlib
 
 router = APIRouter()
+
+# Simple in-memory cache for proxied images
+_image_proxy_cache = {}
 
 
 class ImageGenerationRequest(BaseModel):
@@ -26,6 +33,66 @@ class FastImageRequest(BaseModel):
     recipe_name: str
     cuisine: Optional[str] = ""
     use_ai_fallback: Optional[bool] = True
+
+
+@router.get("/proxy")
+async def proxy_image(url: str = Query(..., description="External image URL to proxy")):
+    """
+    Proxy external images to avoid CORS and referrer policy issues.
+    Caches images in memory for performance.
+    """
+    try:
+        # Create cache key from URL
+        cache_key = hashlib.md5(url.encode()).hexdigest()
+        
+        # Check cache
+        if cache_key in _image_proxy_cache:
+            cached = _image_proxy_cache[cache_key]
+            return Response(
+                content=cached['content'],
+                media_type=cached['content_type'],
+                headers={"Cache-Control": "public, max-age=86400"}
+            )
+        
+        # Fetch the image
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            response = await client.get(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                    "Referer": ""  # Empty referrer to bypass some blocks
+                }
+            )
+            response.raise_for_status()
+            
+            # Determine content type
+            content_type = response.headers.get("content-type", "image/jpeg")
+            if ";" in content_type:
+                content_type = content_type.split(";")[0].strip()
+            
+            # Cache the image (limit cache size)
+            if len(_image_proxy_cache) > 100:
+                # Remove oldest entries
+                keys_to_remove = list(_image_proxy_cache.keys())[:20]
+                for k in keys_to_remove:
+                    del _image_proxy_cache[k]
+            
+            _image_proxy_cache[cache_key] = {
+                'content': response.content,
+                'content_type': content_type
+            }
+            
+            return Response(
+                content=response.content,
+                media_type=content_type,
+                headers={"Cache-Control": "public, max-age=86400"}
+            )
+            
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail="Failed to fetch image")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image proxy error: {str(e)}")
 
 
 @router.post("/fast")
