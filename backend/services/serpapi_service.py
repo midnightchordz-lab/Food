@@ -571,6 +571,7 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
     """
     Search for food/dish images using Google Images via SerpAPI.
     Returns high-quality, relevant food photography.
+    Uses rate limiting to avoid 429 errors.
     """
     try:
         # Build search query optimized for food images
@@ -592,7 +593,8 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
         }
         
         async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.get(SERPAPI_BASE_URL, params=params)
+            # Use rate-limited request to avoid 429 errors
+            response = await _rate_limited_request(client, SERPAPI_BASE_URL, params)
             response.raise_for_status()
             data = response.json()
         
