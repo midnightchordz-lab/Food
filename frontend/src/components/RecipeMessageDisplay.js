@@ -8,6 +8,18 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 // Cache for AI-generated images to avoid re-generation
 const aiImageCache = new Map();
 
+// Helper to get full URL for proxied images
+const getFullImageUrl = (url) => {
+  if (!url) return null;
+  // If it's already a full URL or data URL, return as-is
+  if (url.startsWith('http') || url.startsWith('data:')) return url;
+  // If it's a relative proxy URL, prepend the API base
+  if (url.startsWith('/api/')) {
+    return `${API_URL}${url}`;
+  }
+  return url;
+};
+
 // Function to get fast image (Google Images with AI fallback)
 const getFastImage = async (recipeName, cuisine = '') => {
   try {
@@ -23,10 +35,15 @@ const getFastImage = async (recipeName, cuisine = '') => {
     
     if (response.ok) {
       const data = await response.json();
+      // Convert relative proxy URLs to full URLs
       return {
-        url: data.image_url,
+        url: getFullImageUrl(data.image_url),
         source: data.source,
-        alternatives: data.alternatives || []
+        alternatives: (data.alternatives || []).map(alt => ({
+          ...alt,
+          url: getFullImageUrl(alt.url),
+          thumbnail: getFullImageUrl(alt.thumbnail)
+        }))
       };
     }
     return null;
