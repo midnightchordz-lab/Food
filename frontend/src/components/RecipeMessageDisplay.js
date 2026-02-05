@@ -20,32 +20,30 @@ const getFullImageUrl = (url) => {
   return url;
 };
 
-// Function to get image - Now defaults to AI generation for reliability
+// Function to get image - Google Images with AI fallback
 const getFastImage = async (recipeName, cuisine = '') => {
   try {
-    // Use AI generation directly - more reliable
-    const response = await fetch(`${API_URL}/api/recipe-image/generate`, {
+    const response = await fetch(`${API_URL}/api/recipe-image/fast`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recipe_name: recipeName,
-        cuisine: cuisine
+        cuisine: cuisine,
+        use_ai_fallback: true
       })
     });
     
     if (response.ok) {
       const data = await response.json();
-      if (data.image_url) {
-        return {
-          url: data.image_url,
-          source: 'ai_generated',
-          alternatives: []
-        };
-      }
+      return {
+        url: data.image_url,
+        source: data.source,
+        alternatives: data.alternatives || []
+      };
     }
     return null;
   } catch (error) {
-    console.error('Image generation error:', error);
+    console.error('Fast image fetch error:', error);
     return null;
   }
 };
