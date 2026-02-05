@@ -6,11 +6,36 @@ Provides recipe search, grocery store finder, and ingredient price check feature
 import os
 import httpx
 import logging
+import asyncio
 from typing import List, Dict, Optional
 from urllib.parse import urlencode
+from datetime import datetime, timedelta
 
 SERPAPI_KEY = os.environ.get('SERPAPI_KEY', '61b164ba24fae31ca5fda08e0280c76c873edfc80cf9d34169587d52a7fb42ac')
 SERPAPI_BASE_URL = "https://serpapi.com/search.json"
+
+# Rate limiting: Track API calls to avoid 429 errors
+_last_api_call = datetime.min
+_api_call_lock = asyncio.Lock()
+_min_delay_seconds = 0.5  # Minimum 500ms between API calls
+
+
+async def _rate_limited_request(client: httpx.AsyncClient, url: str, params: dict) -> httpx.Response:
+    """
+    Make a rate-limited request to SerpAPI to avoid 429 errors.
+    """
+    global _last_api_call
+    
+    async with _api_call_lock:
+        # Wait if we're calling too fast
+        now = datetime.now()
+        time_since_last = (now - _last_api_call).total_seconds()
+        if time_since_last < _min_delay_seconds:
+            await asyncio.sleep(_min_delay_seconds - time_since_last)
+        
+        _last_api_call = datetime.now()
+    
+    return await client.get(url, params=params)
 
 
 async def search_recipes(query: str, cuisine: str = None, dietary: str = None, limit: int = 10) -> Dict:
