@@ -100,20 +100,8 @@ async def get_fast_recipe_image(request: FastImageRequest):
     """
     Get a recipe image quickly using Google Images search.
     Falls back to AI generation if enabled and no good images found.
-    Typical response time: <1 second (vs 5-10s for AI generation)
     """
-    from urllib.parse import quote
     google_result = None
-    
-    # Helper to convert external URL to proxied URL
-    def get_proxied_url(external_url):
-        if not external_url:
-            return None
-        # If it's already a data URL (AI generated), return as-is
-        if external_url.startswith('data:'):
-            return external_url
-        # Proxy through our backend to avoid CORS/referrer issues
-        return f"/api/recipe-image/proxy?url={quote(external_url, safe='')}"
     
     try:
         # First try Google Images (fast)
@@ -126,33 +114,21 @@ async def get_fast_recipe_image(request: FastImageRequest):
         )
         
         if google_result.get("success") and google_result.get("images"):
-            # Return the best image with proxied URLs
+            # Return direct URLs - frontend will handle errors via onError
             best_image = google_result["images"][0]
-            proxied_url = get_proxied_url(best_image["url"])
-            
-            # Proxy alternatives too
-            proxied_alternatives = []
-            for alt in google_result["images"][1:]:
-                proxied_alternatives.append({
-                    "url": get_proxied_url(alt.get("url")),
-                    "thumbnail": get_proxied_url(alt.get("thumbnail", alt.get("url"))),
-                    "source": alt.get("source", "")
-                })
-            
             return {
-                "image_url": proxied_url,
-                "thumbnail_url": get_proxied_url(best_image.get("thumbnail", best_image["url"])),
+                "image_url": best_image["url"],
+                "thumbnail_url": best_image.get("thumbnail", best_image["url"]),
                 "source": "google_images",
                 "source_website": best_image.get("source", ""),
                 "recipe_name": request.recipe_name,
-                "alternatives": proxied_alternatives
+                "alternatives": google_result["images"][1:] if len(google_result["images"]) > 1 else []
             }
     except Exception as e:
-        # Log but don't fail - we'll try AI fallback
         import logging
         logging.warning(f"Google Images search failed for '{request.recipe_name}': {e}")
     
-    # Fall back to AI generation if enabled (either Google failed or returned no images)
+    # Fall back to AI generation if enabled
     if request.use_ai_fallback:
         try:
             from ai_image_service import get_or_generate_recipe_image
@@ -164,7 +140,7 @@ async def get_fast_recipe_image(request: FastImageRequest):
             
             if ai_result and ai_result.get("image_url"):
                 return {
-                    "image_url": ai_result.get("image_url"),  # Already a data URL, no proxy needed
+                    "image_url": ai_result.get("image_url"),
                     "thumbnail_url": ai_result.get("image_url"),
                     "source": ai_result.get("source", "ai_generated"),
                     "recipe_name": request.recipe_name,
@@ -173,6 +149,14 @@ async def get_fast_recipe_image(request: FastImageRequest):
         except Exception as ai_error:
             import logging
             logging.error(f"AI image generation also failed for '{request.recipe_name}': {ai_error}")
+    
+    # No image found
+    return {
+        "image_url": None,
+        "source": "none",
+        "recipe_name": request.recipe_name,
+        "error": "No images found"
+    }
     
     # No image found from either source
     return {
