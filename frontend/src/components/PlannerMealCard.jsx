@@ -9,6 +9,7 @@ const imageCache = new Map();
 
 // Get fast image using Google Images (with AI fallback)
 const getFastImage = async (recipeName, cuisine = '') => {
+  console.log(`[PlannerMealCard] Fetching image for: "${recipeName}"`);
   try {
     const response = await axios.post(`${API}/recipe-image/fast`, {
       recipe_name: recipeName,
@@ -17,13 +18,14 @@ const getFastImage = async (recipeName, cuisine = '') => {
     }, {
       timeout: 30000 // 30 second timeout to allow AI fallback time
     });
+    console.log(`[PlannerMealCard] Image response for "${recipeName}":`, response.data?.source);
     return {
       url: response.data.image_url,
       source: response.data.source,
       alternatives: response.data.alternatives || []
     };
   } catch (error) {
-    console.error('Error fetching fast image:', error);
+    console.error(`[PlannerMealCard] Error fetching image for "${recipeName}":`, error.message);
     return null;
   }
 };
