@@ -35,6 +35,8 @@ async def get_fast_recipe_image(request: FastImageRequest):
     Falls back to AI generation if enabled and no good images found.
     Typical response time: <1 second (vs 5-10s for AI generation)
     """
+    google_result = None
+    
     try:
         # First try Google Images (fast)
         from services.serpapi_service import search_food_images
@@ -56,9 +58,14 @@ async def get_fast_recipe_image(request: FastImageRequest):
                 "recipe_name": request.recipe_name,
                 "alternatives": google_result["images"][1:] if len(google_result["images"]) > 1 else []
             }
-        
-        # Fall back to AI generation if enabled
-        if request.use_ai_fallback:
+    except Exception as e:
+        # Log but don't fail - we'll try AI fallback
+        import logging
+        logging.warning(f"Google Images search failed for '{request.recipe_name}': {e}")
+    
+    # Fall back to AI generation if enabled (either Google failed or returned no images)
+    if request.use_ai_fallback:
+        try:
             from ai_image_service import get_or_generate_recipe_image
             
             ai_result = await get_or_generate_recipe_image(
@@ -66,24 +73,25 @@ async def get_fast_recipe_image(request: FastImageRequest):
                 cuisine=request.cuisine
             )
             
-            return {
-                "image_url": ai_result.get("image_url"),
-                "thumbnail_url": ai_result.get("image_url"),
-                "source": ai_result.get("source", "ai_generated"),
-                "recipe_name": request.recipe_name,
-                "alternatives": []
-            }
-        
-        # No image found and AI fallback disabled
-        return {
-            "image_url": None,
-            "source": "none",
-            "recipe_name": request.recipe_name,
-            "error": "No images found"
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Image fetch failed: {str(e)}")
+            if ai_result and ai_result.get("image_url"):
+                return {
+                    "image_url": ai_result.get("image_url"),
+                    "thumbnail_url": ai_result.get("image_url"),
+                    "source": ai_result.get("source", "ai_generated"),
+                    "recipe_name": request.recipe_name,
+                    "alternatives": []
+                }
+        except Exception as ai_error:
+            import logging
+            logging.error(f"AI image generation also failed for '{request.recipe_name}': {ai_error}")
+    
+    # No image found from either source
+    return {
+        "image_url": None,
+        "source": "none",
+        "recipe_name": request.recipe_name,
+        "error": "No images found"
+    }
 
 
 @router.get("/fast/{recipe_name}")
