@@ -75,15 +75,23 @@ const PlannerMealCard = ({
 
   // Function to fetch image
   const fetchImage = async (forceRetry = false) => {
-    if (!cleanName) return;
-    if (!forceRetry && hasTriedFetch.current) return;
+    if (!cleanName) {
+      console.log(`[PlannerMealCard] No cleanName, skipping fetch`);
+      return;
+    }
+    if (!forceRetry && hasTriedFetch.current) {
+      console.log(`[PlannerMealCard] Already tried fetch for "${cleanName}", skipping`);
+      return;
+    }
     
     hasTriedFetch.current = true;
+    console.log(`[PlannerMealCard] Starting fetch for "${cleanName}"`);
     
     // Check cache first
     const cacheKey = cleanName.toLowerCase();
     if (!forceRetry && imageCache.has(cacheKey)) {
       const cached = imageCache.get(cacheKey);
+      console.log(`[PlannerMealCard] Cache hit for "${cleanName}": ${cached.source}`);
       setImageUrl(cached.url);
       setImageSource(cached.source);
       return;
@@ -95,23 +103,26 @@ const PlannerMealCard = ({
     try {
       const result = await getFastImage(cleanName);
       if (result && result.url) {
+        console.log(`[PlannerMealCard] Got image for "${cleanName}": ${result.source}`);
         imageCache.set(cacheKey, result);
         setImageUrl(result.url);
         setImageSource(result.source || 'google_images');
       } else {
         // No image found - try AI generation directly
-        console.log(`No fast image found for "${cleanName}", trying AI directly...`);
+        console.log(`[PlannerMealCard] No fast image for "${cleanName}", trying AI...`);
         const aiUrl = await generateAIImage(cleanName);
         if (aiUrl) {
+          console.log(`[PlannerMealCard] AI generated image for "${cleanName}"`);
           imageCache.set(cacheKey, { url: aiUrl, source: 'ai_generated' });
           setImageUrl(aiUrl);
           setImageSource('ai_generated');
         } else {
+          console.log(`[PlannerMealCard] No image found for "${cleanName}"`);
           setImageSource('error');
         }
       }
     } catch (err) {
-      console.error('Image fetch failed:', err);
+      console.error(`[PlannerMealCard] Fetch error for "${cleanName}":`, err);
       setImageSource('error');
     } finally {
       setIsLoading(false);
