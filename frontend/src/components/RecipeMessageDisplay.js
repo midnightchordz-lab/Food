@@ -1159,75 +1159,8 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   const handleImgError = () => {
     setImageUrl(recipe.imageUrl || GENERIC_FOOD_IMAGES[0]);
   };
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      const result = await getFastImage(recipe.title, recipe.cuisineHint);
-      if (result && result.url) {
-        aiImageCache.set(cacheKey, result);
-        setImageUrl(result.url);
-        setImageSource(result.source || 'google_images');
-        setAlternatives(result.alternatives || []);
-      } else {
-        // Try AI generation directly as fallback
-        console.log(`No fast image for "${recipe.title}", trying AI...`);
-        const aiUrl = await generateAIImage(recipe.title, recipe.cuisineHint);
-        if (aiUrl) {
-          aiImageCache.set(cacheKey, { url: aiUrl, source: 'ai_generated', alternatives: [] });
-          setImageUrl(aiUrl);
-          setImageSource('ai_generated');
-          setAlternatives([]);
-        } else {
-          setImageSource('error');
-        }
-      }
-    } catch (err) {
-      console.error('Image fetch failed:', err);
-      setImageSource('error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  // Handle retry
-  const handleRetry = async (e) => {
-    e?.stopPropagation();
-    e?.preventDefault();
-    hasTriedFetch.current = false;
-    await fetchImage(true);
-  };
-
-  // Auto-fetch fast image on mount (Google Images - typically <1 sec)
-  useEffect(() => {
-    if (!recipe.title) return;
-    
-    // Longer stagger to avoid rate limiting (500ms - 2500ms random delay)
-    const delay = 500 + Math.random() * 2000;
-    const timer = setTimeout(() => fetchImage(), delay);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipe.title, recipe.cuisineHint]);
-
-  // Manual trigger for AI generation (higher quality but slower)
-  const handleGenerateAI = useCallback(async (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    try {
-      const aiUrl = await generateAIImage(recipe.title, recipe.cuisineHint);
-      if (aiUrl) {
-        const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
-        aiImageCache.set(cacheKey, { url: aiUrl, source: 'ai_generated', alternatives: [] });
-        setImageUrl(aiUrl);
-        setImageSource('ai_generated');
-        setAlternatives([]);
-      }
-    } catch (err) {
+  return (
       console.error('AI generation failed:', err);
     } finally {
       setIsLoading(false);
