@@ -5,10 +5,10 @@ import RecipeDetailModal from './RecipeDetailModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Cache for AI-generated images to avoid re-generation
-const aiImageCache = new Map();
+// Simple cache
+const imageCache = new Map();
 
-// Function to get image - Google Images with AI fallback
+// Get image quickly - no slow AI fallback
 const getFastImage = async (recipeName, cuisine = '') => {
   try {
     const response = await fetch(`${API_URL}/api/recipe-image/fast`, {
@@ -17,37 +17,39 @@ const getFastImage = async (recipeName, cuisine = '') => {
       body: JSON.stringify({
         recipe_name: recipeName,
         cuisine: cuisine,
-        use_ai_fallback: true
+        use_ai_fallback: false
       })
     });
     
     if (response.ok) {
       const data = await response.json();
-      return {
-        url: data.image_url,
-        source: data.source,
-        alternatives: data.alternatives || []
-      };
+      if (data.image_url) {
+        return { url: data.image_url, source: data.source };
+      }
     }
     return null;
-  } catch (error) {
-    console.error('Fast image fetch error:', error);
+  } catch {
     return null;
   }
 };
 
-// Function to generate AI image for a recipe (slower but higher quality)
+// AI image generation (only on explicit request)
 const generateAIImage = async (recipeName, cuisine = '') => {
   try {
     const response = await fetch(`${API_URL}/api/recipe-image/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        recipe_name: recipeName,
-        cuisine: cuisine,
-        ingredients: []
-      })
+      body: JSON.stringify({ recipe_name: recipeName, cuisine: cuisine })
     });
+    if (response.ok) {
+      const data = await response.json();
+      return data.image_url;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
     
     if (response.ok) {
       const data = await response.json();
