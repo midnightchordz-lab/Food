@@ -1125,29 +1125,40 @@ export const hasRecipes = (message) => {
   return (hasTimeCategories || hasBoldRecipes || hasRecipeStructure || hasNumberedRecipes || hasBoldTitles) && message.length > 200;
 };
 
-// Clickable Recipe Card Component - Compact for 3-per-row grid
-// Now with FAST Google Images loading (AI fallback available)
+// Clickable Recipe Card Component - Simple and Fast
 const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
   const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
   const [isLoading, setIsLoading] = useState(false);
-  const [imageSource, setImageSource] = useState('static'); // 'google_images', 'ai_generated', 'static', 'error'
-  const [alternatives, setAlternatives] = useState([]);
-  const hasTriedFetch = useRef(false);
+  const hasFetched = useRef(false);
 
-  // Function to fetch image with AI fallback
-  const fetchImage = async (forceRetry = false) => {
-    if (!recipe.title) return;
-    if (!forceRetry && hasTriedFetch.current) return;
-    
-    hasTriedFetch.current = true;
-    
-    // Check cache first
-    const cacheKey = `${recipe.title}-${recipe.cuisineHint || ''}`.toLowerCase();
-    if (!forceRetry && aiImageCache.has(cacheKey)) {
-      const cached = aiImageCache.get(cacheKey);
-      setImageUrl(cached.url);
-      setImageSource(cached.source);
-      setAlternatives(cached.alternatives || []);
+  useEffect(() => {
+    if (!recipe.title || hasFetched.current) return;
+    hasFetched.current = true;
+
+    const cacheKey = recipe.title.toLowerCase();
+    if (imageCache.has(cacheKey)) {
+      setImageUrl(imageCache.get(cacheKey));
+      return;
+    }
+
+    const fetchImage = async () => {
+      setIsLoading(true);
+      try {
+        const result = await getFastImage(recipe.title, recipe.cuisineHint);
+        if (result?.url) {
+          imageCache.set(cacheKey, result.url);
+          setImageUrl(result.url);
+        }
+      } catch {} 
+      finally { setIsLoading(false); }
+    };
+
+    setTimeout(fetchImage, Math.random() * 500);
+  }, [recipe.title, recipe.cuisineHint]);
+
+  const handleImgError = () => {
+    setImageUrl(recipe.imageUrl || GENERIC_FOOD_IMAGES[0]);
+  };
       return;
     }
     
