@@ -20,33 +20,29 @@ const getFullImageUrl = (url) => {
   return url;
 };
 
-// Get fast image using Google Images (with AI fallback)
+// Get fast image - Now defaults to AI generation for reliability
 const getFastImage = async (recipeName, cuisine = '') => {
-  console.log(`[PlannerMealCard] Fetching image for: "${recipeName}"`);
+  console.log(`[PlannerMealCard] Generating AI image for: "${recipeName}"`);
   try {
-    const response = await axios.post(`${API}/recipe-image/fast`, {
+    // Use AI generation directly - more reliable than Google Images
+    const response = await axios.post(`${API}/recipe-image/generate`, {
       recipe_name: recipeName,
-      cuisine: cuisine,
-      use_ai_fallback: true
+      cuisine: cuisine
     }, {
-      timeout: 30000 // 30 second timeout to allow AI fallback time
+      timeout: 30000
     });
-    console.log(`[PlannerMealCard] Image response for "${recipeName}":`, response.data?.source);
     
-    // Convert relative proxy URLs to full URLs
-    const imageUrl = getFullImageUrl(response.data.image_url);
-    
-    return {
-      url: imageUrl,
-      source: response.data.source,
-      alternatives: (response.data.alternatives || []).map(alt => ({
-        ...alt,
-        url: getFullImageUrl(alt.url),
-        thumbnail: getFullImageUrl(alt.thumbnail)
-      }))
-    };
+    if (response.data && response.data.image_url) {
+      console.log(`[PlannerMealCard] AI image generated for "${recipeName}"`);
+      return {
+        url: response.data.image_url,
+        source: 'ai_generated',
+        alternatives: []
+      };
+    }
+    return null;
   } catch (error) {
-    console.error(`[PlannerMealCard] Error fetching image for "${recipeName}":`, error.message);
+    console.error(`[PlannerMealCard] Error generating image for "${recipeName}":`, error.message);
     return null;
   }
 };
