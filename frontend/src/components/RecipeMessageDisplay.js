@@ -1149,7 +1149,7 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
           imageCache.set(cacheKey, result.url);
           setImageUrl(result.url);
         }
-      } catch {} 
+      } catch { /* ignore */ } 
       finally { setIsLoading(false); }
     };
 
