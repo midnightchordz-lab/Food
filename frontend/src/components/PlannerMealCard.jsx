@@ -269,13 +269,14 @@ const PlannerMealCard = ({
           alt={cleanName}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
+          onError={handleImageError}
         />
         
         {/* Source Badge */}
-        {imageSource === 'google_images' && !isLoading && (
-          <div className="absolute top-1 left-1 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-            <span>⚡</span>
-            <span>Fast</span>
+        {(imageSource === 'google_images' || imageSource === 'ai_fallback') && !isLoading && (
+          <div className={`absolute top-1 left-1 text-white text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${imageSource === 'ai_fallback' ? 'bg-gradient-to-r from-purple-600 to-blue-600' : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}>
+            {imageSource === 'ai_fallback' ? <Sparkles className="w-2 h-2" /> : <span>⚡</span>}
+            <span>{imageSource === 'ai_fallback' ? 'AI' : 'Fast'}</span>
           </div>
         )}
         {imageSource === 'ai_generated' && !isLoading && (
