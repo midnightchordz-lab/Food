@@ -129,8 +129,8 @@ const PlannerMealCard = ({
   useEffect(() => {
     if (!enableAI || !cleanName) return;
     
-    // Small stagger to avoid overwhelming API
-    const delay = Math.random() * 200;
+    // Longer stagger to avoid rate limiting (500ms - 2500ms random delay)
+    const delay = 500 + Math.random() * 2000;
     const timer = setTimeout(() => fetchImage(), delay);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
