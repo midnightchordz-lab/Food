@@ -102,7 +102,18 @@ async def get_fast_recipe_image(request: FastImageRequest):
     Falls back to AI generation if enabled and no good images found.
     Typical response time: <1 second (vs 5-10s for AI generation)
     """
+    from urllib.parse import quote
     google_result = None
+    
+    # Helper to convert external URL to proxied URL
+    def get_proxied_url(external_url):
+        if not external_url:
+            return None
+        # If it's already a data URL (AI generated), return as-is
+        if external_url.startswith('data:'):
+            return external_url
+        # Proxy through our backend to avoid CORS/referrer issues
+        return f"/api/recipe-image/proxy?url={quote(external_url, safe='')}"
     
     try:
         # First try Google Images (fast)
@@ -115,15 +126,26 @@ async def get_fast_recipe_image(request: FastImageRequest):
         )
         
         if google_result.get("success") and google_result.get("images"):
-            # Return the best image
+            # Return the best image with proxied URLs
             best_image = google_result["images"][0]
+            proxied_url = get_proxied_url(best_image["url"])
+            
+            # Proxy alternatives too
+            proxied_alternatives = []
+            for alt in google_result["images"][1:]:
+                proxied_alternatives.append({
+                    "url": get_proxied_url(alt.get("url")),
+                    "thumbnail": get_proxied_url(alt.get("thumbnail", alt.get("url"))),
+                    "source": alt.get("source", "")
+                })
+            
             return {
-                "image_url": best_image["url"],
-                "thumbnail_url": best_image.get("thumbnail", best_image["url"]),
+                "image_url": proxied_url,
+                "thumbnail_url": get_proxied_url(best_image.get("thumbnail", best_image["url"])),
                 "source": "google_images",
                 "source_website": best_image.get("source", ""),
                 "recipe_name": request.recipe_name,
-                "alternatives": google_result["images"][1:] if len(google_result["images"]) > 1 else []
+                "alternatives": proxied_alternatives
             }
     except Exception as e:
         # Log but don't fail - we'll try AI fallback
@@ -142,7 +164,7 @@ async def get_fast_recipe_image(request: FastImageRequest):
             
             if ai_result and ai_result.get("image_url"):
                 return {
-                    "image_url": ai_result.get("image_url"),
+                    "image_url": ai_result.get("image_url"),  # Already a data URL, no proxy needed
                     "thumbnail_url": ai_result.get("image_url"),
                     "source": ai_result.get("source", "ai_generated"),
                     "recipe_name": request.recipe_name,
