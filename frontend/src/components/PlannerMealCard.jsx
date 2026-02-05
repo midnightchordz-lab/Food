@@ -215,6 +215,7 @@ const PlannerMealCard = ({
               alt={cleanName}
               className="w-full h-full object-cover"
               loading="lazy"
+              onError={handleImageError}
             />
             {isLoading && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
