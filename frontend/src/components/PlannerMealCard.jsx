@@ -7,6 +7,19 @@ const API = process.env.REACT_APP_BACKEND_URL + '/api';
 // In-memory cache for images
 const imageCache = new Map();
 
+// Helper to get full URL for proxied images
+const getFullImageUrl = (url) => {
+  if (!url) return null;
+  // If it's already a full URL or data URL, return as-is
+  if (url.startsWith('http') || url.startsWith('data:')) return url;
+  // If it's a relative proxy URL, prepend the API base
+  if (url.startsWith('/api/')) {
+    const baseUrl = process.env.REACT_APP_BACKEND_URL || '';
+    return `${baseUrl}${url}`;
+  }
+  return url;
+};
+
 // Get fast image using Google Images (with AI fallback)
 const getFastImage = async (recipeName, cuisine = '') => {
   console.log(`[PlannerMealCard] Fetching image for: "${recipeName}"`);
@@ -19,10 +32,18 @@ const getFastImage = async (recipeName, cuisine = '') => {
       timeout: 30000 // 30 second timeout to allow AI fallback time
     });
     console.log(`[PlannerMealCard] Image response for "${recipeName}":`, response.data?.source);
+    
+    // Convert relative proxy URLs to full URLs
+    const imageUrl = getFullImageUrl(response.data.image_url);
+    
     return {
-      url: response.data.image_url,
+      url: imageUrl,
       source: response.data.source,
-      alternatives: response.data.alternatives || []
+      alternatives: (response.data.alternatives || []).map(alt => ({
+        ...alt,
+        url: getFullImageUrl(alt.url),
+        thumbnail: getFullImageUrl(alt.thumbnail)
+      }))
     };
   } catch (error) {
     console.error(`[PlannerMealCard] Error fetching image for "${recipeName}":`, error.message);
