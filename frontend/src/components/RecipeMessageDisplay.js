@@ -572,13 +572,25 @@ const parseRecipesWithCategories = (message) => {
     
     // If still nothing, try completely general parsing
     if (!categories.quick.recipes.length && !categories.moderate.recipes.length && !categories.elaborate.recipes.length) {
-      const allRecipes = parseRecipesGeneral(message);
-      allRecipes.forEach(recipe => {
-        const time = extractTimeMinutes(recipe.cookingTime);
-        if (time <= 20) categories.quick.recipes.push(recipe);
-        else if (time <= 40) categories.moderate.recipes.push(recipe);
-        else categories.elaborate.recipes.push(recipe);
-      });
+      // Try single dish format first (e.g., "**Dish:** Recipe Name")
+      const singleDish = parseSingleDishFormat(message);
+      if (singleDish.length > 0) {
+        singleDish.forEach(recipe => {
+          const time = extractTimeMinutes(recipe.cookingTime);
+          if (time <= 20) categories.quick.recipes.push(recipe);
+          else if (time <= 40) categories.moderate.recipes.push(recipe);
+          else categories.elaborate.recipes.push(recipe);
+        });
+      } else {
+        // Fall back to general parsing
+        const allRecipes = parseRecipesGeneral(message);
+        allRecipes.forEach(recipe => {
+          const time = extractTimeMinutes(recipe.cookingTime);
+          if (time <= 20) categories.quick.recipes.push(recipe);
+          else if (time <= 40) categories.moderate.recipes.push(recipe);
+          else categories.elaborate.recipes.push(recipe);
+        });
+      }
     }
   }
   
