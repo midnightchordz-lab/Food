@@ -527,7 +527,8 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                 mood=recipe_params["mood"],
                 meal_type=recipe_params["meal_type"],
                 dietary_pref=recipe_params["dietary_pref"],
-                cuisines=recipe_params["cuisines"]
+                cuisines=recipe_params["cuisines"],
+                want_different=skip_cache
             )
             if current_user.dietary_restrictions:
                 system_msg += f"\n\nDIETARY RESTRICTIONS: {', '.join(current_user.dietary_restrictions)}. All recipes MUST comply."
