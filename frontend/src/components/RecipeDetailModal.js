@@ -887,7 +887,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                         ))
                       ) : (
                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                          <p className="text-gray-500 italic">Click "View Full Recipe" to load specific drink pairings for this dish</p>
+                          <p className="text-gray-500 italic">Click &quot;View Full Recipe&quot; to load specific drink pairings for this dish</p>
                         </div>
                       )}
                     </div>
@@ -909,7 +909,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                         ))
                       ) : (
                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                          <p className="text-gray-500 italic">Click "View Full Recipe" to load specific drink pairings for this dish</p>
+                          <p className="text-gray-500 italic">Click &quot;View Full Recipe&quot; to load specific drink pairings for this dish</p>
                         </div>
                       )}
                     </div>
