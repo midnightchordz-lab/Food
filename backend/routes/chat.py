@@ -485,16 +485,20 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
         recipe_params = is_recipe_generation_request(request.message)
         
         if recipe_params:
-            # Check cache first for faster response
+            # Check if user is asking for more/different recipes
+            skip_cache = is_more_recipes_request(request.message)
+            
+            # Check cache first for faster response (skip if user wants more recipes)
             cache_key = get_cache_key(
                 recipe_params["mood"],
                 recipe_params["meal_type"],
                 recipe_params["dietary_pref"],
-                recipe_params["cuisines"]
+                recipe_params["cuisines"],
+                skip_cache=skip_cache
             )
             
-            # Only use cache if user has no exclusions (exclusions make recipes unique)
-            cached_response = get_cached_recipes(cache_key) if not user_exclusions else None
+            # Only use cache if user has no exclusions (exclusions make recipes unique) and not asking for more
+            cached_response = get_cached_recipes(cache_key) if (not user_exclusions and not skip_cache) else None
             
             if cached_response:
                 # Return cached response immediately
