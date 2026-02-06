@@ -25,6 +25,12 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const parseDetailedRecipe = (markdown) => {
   if (!markdown) return null;
   
+  // Clean up the markdown - remove mood-boosting sections before parsing
+  let cleanedMarkdown = markdown
+    .replace(/^#\s*Mood-?Boosting\s*Benefits?[\s\S]*?(?=^#[^#])/mi, '')
+    .replace(/^##\s*Mood-?Boosting\s*Benefits?[\s\S]*?(?=^##|$)/gmi, '')
+    .trim();
+  
   const sections = {
     title: '',
     info: {},
@@ -40,9 +46,14 @@ const parseDetailedRecipe = (markdown) => {
     mistakes: []
   };
   
-  // Extract title
-  const titleMatch = markdown.match(/^#\s+(.+?)$/m);
-  if (titleMatch) sections.title = titleMatch[1].trim();
+  // Extract title - skip mood/benefit headers
+  const titleMatch = cleanedMarkdown.match(/^#\s+(.+?)$/m);
+  if (titleMatch) {
+    const title = titleMatch[1].trim();
+    if (!/mood|benefits?|tips?|nutrition|storage|variation/i.test(title)) {
+      sections.title = title;
+    }
+  }
   
   // Extract Recipe Information
   const infoSection = markdown.match(/## Recipe Information([\s\S]*?)(?=##|$)/i);
