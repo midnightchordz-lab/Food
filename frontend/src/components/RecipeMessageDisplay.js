@@ -834,6 +834,10 @@ const parseRecipesFromSection = (section, category) => {
     // Skip warning/advice titles
     /^(beware|monitoring|watch out|be careful|take care|keep track|pay attention)/i,
     /^(added sugars?|hidden sugars?|sugar content|calorie|sodium level)/i,
+    // Skip mood/benefit sections that are NOT recipe names
+    /^(mood|mood-boosting|boosting|stress|anxiety|energy|comfort|relaxation|calming)/i,
+    /^#?\s*mood-?boosting\s*benefits?/i,
+    /benefits?$/i,
     /^\d+\.\s*$/,
     /^[:\s]*\(\d+/,
   ];
