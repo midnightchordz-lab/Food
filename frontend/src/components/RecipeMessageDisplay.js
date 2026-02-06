@@ -1085,12 +1085,16 @@ const parseRecipesGeneral = (message) => {
   const numberedPattern = /(\d+)\.\s*\*\*([^*]+)\*\*\s*([\s\S]*?)(?=\d+\.\s*\*\*|$)/g;
   let numberedMatch;
   
+  // Skip single-word ingredient names
+  const singleIngredients = /^(tomato|tomatoes|onion|onions|garlic|ginger|salt|pepper|oil|butter|rice|bread|egg|eggs|chicken|beef|pork|fish|vegetable|vegetables|fruit|fruits|lemon|lime|orange|apple|banana|carrot|potato|spinach|broccoli|mushroom|cheese|milk|cream|yogurt|honey|sugar|flour|oats|quinoa|salmon|tuna|shrimp|tofu|beans|lentils|nuts|avocado)s?$/i;
+  
   while ((numberedMatch = numberedPattern.exec(message)) !== null) {
     const title = numberedMatch[2].trim();
     const content = numberedMatch[3].trim();
     
     if (!title || title.length < 3 || title.length > 120) continue;
     if (skipPatterns.some(pattern => pattern.test(title))) continue;
+    if (singleIngredients.test(title)) continue; // Skip single ingredient names
     if (title.endsWith(':')) continue;
     
     // Extract cooking time
