@@ -585,6 +585,44 @@ const parseRecipesWithCategories = (message) => {
   return categories;
 };
 
+// Parse single dish format: "**Dish:** Recipe Name" with details
+const parseSingleDishFormat = (message) => {
+  const recipes = [];
+  
+  // Match: **Dish:** Recipe Name (Cuisine)
+  const dishMatch = message.match(/\*\*Dish:?\*\*\s*([^\n(]+)(?:\(([^)]+)\))?/i);
+  if (!dishMatch) return recipes;
+  
+  const title = dishMatch[1].trim();
+  const cuisineHint = dishMatch[2]?.trim() || '';
+  
+  // Extract cooking time
+  const timeMatch = message.match(/\*\*Cooking\s*Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i);
+  const cookingTime = timeMatch ? timeMatch[1] + ' min' : '30 min';
+  
+  // Extract difficulty  
+  const diffMatch = message.match(/\*\*Difficulty:?\*\*\s*(Easy|Medium|Hard)/i);
+  const difficulty = diffMatch ? diffMatch[1] : 'Medium';
+  
+  // Extract description
+  const descMatch = message.match(/\*\*Description:?\*\*\s*([^\n*]+)/i);
+  const description = descMatch ? descMatch[1].trim() : '';
+  
+  if (title && title.length >= 3) {
+    recipes.push({
+      title,
+      cookingTime,
+      difficulty,
+      description,
+      imageUrl: getRecipeImage(title, cuisineHint),
+      cuisineHint,
+      fullContent: message
+    });
+  }
+  
+  return recipes;
+};
+
 // Parse numbered recipes format: "### 1. Recipe Name" or "## Recipe 3: Name" or "### Recipe Name (Meal Type)"
 const parseNumberedRecipes = (message) => {
   const recipes = [];
