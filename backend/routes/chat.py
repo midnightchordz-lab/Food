@@ -29,10 +29,27 @@ _recipe_cache: Dict[str, Dict[str, Any]] = {}
 CACHE_MAX_SIZE = 100
 CACHE_TTL_SECONDS = 600  # 10 minutes
 
-def get_cache_key(mood: str, meal_type: str, dietary_pref: str, cuisines: str) -> str:
+def get_cache_key(mood: str, meal_type: str, dietary_pref: str, cuisines: str, skip_cache: bool = False) -> str:
     """Generate a unique cache key for recipe request"""
+    # If skip_cache is True, add a timestamp to make key unique
     key_str = f"{mood}:{meal_type}:{dietary_pref}:{cuisines}".lower()
+    if skip_cache:
+        key_str += f":{datetime.now(timezone.utc).timestamp()}"
     return hashlib.md5(key_str.encode()).hexdigest()
+
+
+def is_more_recipes_request(message: str) -> bool:
+    """Check if user is asking for more/different recipes"""
+    lower_msg = message.lower()
+    more_patterns = [
+        "more recipe", "another recipe", "different recipe", 
+        "show more", "more options", "other recipe", "other options",
+        "something else", "different dish", "more dish", "another dish",
+        "more suggestion", "different suggestion", "other suggestion",
+        "more choices", "different choices", "alternatives",
+        "give me more", "show me more", "more please"
+    ]
+    return any(pattern in lower_msg for pattern in more_patterns)
 
 def get_cached_recipes(key: str) -> Optional[str]:
     """Get cached recipe response if not expired"""
