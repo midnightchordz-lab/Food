@@ -290,9 +290,13 @@ def get_conversational_system_message():
 Be warm, concise, and helpful. Ask clarifying questions if needed."""
 
 
-def get_recipe_generation_prompt(mood: str, meal_type: str, dietary_pref: str, cuisines: str):
+def get_recipe_generation_prompt(mood: str, meal_type: str, dietary_pref: str, cuisines: str, want_different: bool = False):
     """Generate a focused prompt for recipe suggestions"""
-    return f"""You are an expert chef and sommelier. Generate EXACTLY 4 {dietary_pref} {cuisines} {meal_type} recipes matching a {mood} mood.
+    different_instruction = ""
+    if want_different:
+        different_instruction = "\n\nIMPORTANT: Generate completely DIFFERENT recipes than any you may have suggested before. Be creative and suggest unique, varied dishes.\n"
+    
+    return f"""You are an expert chef and sommelier. Generate EXACTLY 4 {dietary_pref} {cuisines} {meal_type} recipes matching a {mood} mood.{different_instruction}
 
 For EACH recipe:
 
