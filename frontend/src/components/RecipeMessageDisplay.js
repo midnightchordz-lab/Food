@@ -597,39 +597,67 @@ const parseRecipesWithCategories = (message) => {
   return categories;
 };
 
-// Parse single dish format: "**Dish:** Recipe Name" with details
+// Parse single dish format: "**Dish:** Recipe Name" or "**Recipe Name:** Recipe" with details
 const parseSingleDishFormat = (message) => {
   const recipes = [];
   
-  // Match: **Dish:** Recipe Name (Cuisine)
-  const dishMatch = message.match(/\*\*Dish:?\*\*\s*([^\n(]+)(?:\(([^)]+)\))?/i);
-  if (!dishMatch) return recipes;
+  // Skip patterns for non-recipe items
+  const nonRecipeItems = [
+    /^(tomato|tomatoes|onion|onions|garlic|ginger|salt|pepper|oil|butter|rice|bread|egg|eggs|chicken|beef|pork|fish|vegetable|vegetables|fruit|fruits)$/i,
+    /^(lemon|lime|orange|apple|banana|carrot|potato|spinach|broccoli|mushroom|cheese|milk|cream|yogurt|honey|sugar|flour)$/i,
+  ];
   
-  const title = dishMatch[1].trim();
-  const cuisineHint = dishMatch[2]?.trim() || '';
+  // Match multiple formats:
+  // 1. **Dish:** Recipe Name (Cuisine)
+  // 2. **Recipe Name:** Recipe (Cuisine)  
+  // 3. **Name:** Recipe Name
+  const patterns = [
+    /\*\*Dish:?\*\*\s*([^\n(]+)(?:\(([^)]+)\))?/i,
+    /\*\*Recipe\s*Name:?\*\*\s*([^\n(]+)(?:\(([^)]+)\))?/i,
+    /\*\*Name:?\*\*\s*([^\n(]+)(?:\(([^)]+)\))?/i,
+  ];
   
-  // Extract cooking time
-  const timeMatch = message.match(/\*\*Cooking\s*Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i);
-  const cookingTime = timeMatch ? timeMatch[1] + ' min' : '30 min';
-  
-  // Extract difficulty  
-  const diffMatch = message.match(/\*\*Difficulty:?\*\*\s*(Easy|Medium|Hard)/i);
-  const difficulty = diffMatch ? diffMatch[1] : 'Medium';
-  
-  // Extract description
-  const descMatch = message.match(/\*\*Description:?\*\*\s*([^\n*]+)/i);
-  const description = descMatch ? descMatch[1].trim() : '';
-  
-  if (title && title.length >= 3) {
-    recipes.push({
-      title,
-      cookingTime,
-      difficulty,
-      description,
-      imageUrl: getRecipeImage(title, cuisineHint),
-      cuisineHint,
-      fullContent: message
-    });
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match) {
+      const title = match[1].trim().replace(/\*+/g, '');
+      const cuisineHint = match[2]?.trim() || '';
+      
+      // Skip if it's just an ingredient
+      if (nonRecipeItems.some(p => p.test(title))) continue;
+      // Skip if title is too short or too long
+      if (title.length < 4 || title.length > 100) continue;
+      
+      // Extract cooking time
+      const timeMatch = message.match(/\*\*Cooking\s*Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i);
+      const cookingTime = timeMatch ? timeMatch[1] + ' min' : '30 min';
+      
+      // Extract difficulty  
+      const diffMatch = message.match(/\*\*Difficulty:?\*\*\s*(Easy|Medium|Hard)/i);
+      const difficulty = diffMatch ? diffMatch[1] : 'Medium';
+      
+      // Extract description
+      const descMatch = message.match(/\*\*Description:?\*\*\s*([^\n*]+)/i);
+      let description = descMatch ? descMatch[1].trim() : '';
+      if (!description) {
+        // Try to get first paragraph after the title
+        const descLines = message.split('\n').filter(l => l.trim() && !l.includes('**') && !l.startsWith('-'));
+        description = descLines.slice(0, 1).join(' ').trim();
+      }
+      
+      if (title && title.length >= 4) {
+        recipes.push({
+          title,
+          cookingTime,
+          difficulty,
+          description: description || `A delicious ${title} dish.`,
+          imageUrl: getRecipeImage(title, cuisineHint),
+          cuisineHint,
+          fullContent: message
+        });
+        break; // Only take the first match
+      }
+    }
   }
   
   return recipes;
