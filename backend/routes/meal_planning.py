@@ -402,10 +402,14 @@ async def generate_next_week_plan(current_user: User = Depends(get_current_user)
         if not prefs.get('is_active', False):
             raise HTTPException(status_code=400, detail="Continuous planning is not active. Enable it in preferences.")
         
-        today = datetime.now(timezone.utc)
+        # Use local date calculation to match frontend
+        today = datetime.now()  # Local time, not UTC
         current_week_start = today - timedelta(days=today.weekday())
+        current_week_start = current_week_start.replace(hour=0, minute=0, second=0, microsecond=0)
         next_week_start = current_week_start + timedelta(days=7)
         next_week_str = next_week_start.strftime('%Y-%m-%d')
+        
+        logging.info(f"Generating next week plan: {next_week_str}")
         
         existing = await db.weekly_plans.find_one(
             {"user_id": current_user.id, "week_start": next_week_str},
