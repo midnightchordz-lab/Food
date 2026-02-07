@@ -4,6 +4,7 @@ Provides recipe search, grocery store finder, and ingredient price check feature
 """
 
 import os
+import re
 import httpx
 import logging
 import asyncio
