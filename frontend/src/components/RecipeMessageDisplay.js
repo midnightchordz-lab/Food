@@ -5,8 +5,11 @@ import RecipeDetailModal from './RecipeDetailModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Simple cache
+// Simple cache for individual images
 const imageCache = new Map();
+
+// Track used image URLs to prevent duplicates within a session
+const usedImageUrls = new Set();
 
 // Get image quickly - no slow AI fallback
 const getFastImage = async (recipeName, cuisine = '') => {
@@ -24,7 +27,52 @@ const getFastImage = async (recipeName, cuisine = '') => {
     if (response.ok) {
       const data = await response.json();
       if (data.image_url) {
+        // Check if this URL is already used
+        if (usedImageUrls.has(data.image_url) && data.alternatives?.length > 0) {
+          // Try to find an alternative that hasn't been used
+          for (const alt of data.alternatives) {
+            if (!usedImageUrls.has(alt.url)) {
+              usedImageUrls.add(alt.url);
+              return { url: alt.url, source: data.source };
+            }
+          }
+        }
+        usedImageUrls.add(data.image_url);
         return { url: data.image_url, source: data.source };
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Batch fetch images for multiple recipes - ensures unique images
+const getBatchImages = async (recipes) => {
+  try {
+    const response = await fetch(`${API_URL}/api/recipe-image/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipes: recipes.map(r => ({
+          recipe_name: r.title,
+          cuisine: r.cuisine || r.cuisineHint || ''
+        }))
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.images) {
+        // Cache all images
+        data.images.forEach(img => {
+          if (img.image_url) {
+            const cacheKey = img.recipe_name.toLowerCase();
+            imageCache.set(cacheKey, img.image_url);
+            usedImageUrls.add(img.image_url);
+          }
+        });
+        return data.images;
       }
     }
     return null;
