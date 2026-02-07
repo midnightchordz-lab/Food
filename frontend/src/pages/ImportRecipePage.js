@@ -68,6 +68,14 @@ const ImportRecipePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [recentImports, setRecentImports] = useState([]);
   
+  // Feature lock modal state
+  const [featureLockedModal, setFeatureLockedModal] = useState({
+    isOpen: false,
+    feature: '',
+    upgradeTo: '',
+    currentPlan: ''
+  });
+  
   // Form states
   const [urlInput, setUrlInput] = useState('');
   const [imageFile, setImageFile] = useState(null);
