@@ -331,6 +331,20 @@ Output ONLY valid JSON, no other text or markdown code blocks."""
 async def import_from_video(request: ImportVideoRequest, current_user: User = Depends(get_current_user)):
     """Import a recipe from a video URL (YouTube, etc.)"""
     try:
+        # Check feature access - Video Import requires Chef Pro
+        access = await check_video_import_access(current_user.id)
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "video_import",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         import httpx
         import re
         
