@@ -89,14 +89,14 @@ const PlannerMealCard = ({
   compact = false,
   enableAI = true 
 }) => {
-  const defaultImg = DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default;
+  const cleanName = mealName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
+  // Use keyword-based image as initial default for better visual match
+  const defaultImg = cleanName ? getKeywordImage(cleanName, mealType) : (DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
   const [imageUrl, setImageUrl] = useState(defaultImg);
   const [isLoading, setIsLoading] = useState(false);
   const [imageSource, setImageSource] = useState('default');
   const [errorCount, setErrorCount] = useState(0);
   const hasFetched = useRef(false);
-
-  const cleanName = mealName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
 
   useEffect(() => {
     if (!enableAI || !cleanName || hasFetched.current) return;
