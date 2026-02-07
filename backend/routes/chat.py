@@ -270,7 +270,7 @@ def parse_recipes_to_json(ai_response: str, user_cuisine: str = '') -> List[Dict
             "description": extract_description(content, title),
             "cooking_time": extract_time(content),
             "difficulty": extract_difficulty(content),
-            "cuisine": detect_cuisine(title + ' ' + content),
+            "cuisine": user_cuisine if user_cuisine else detect_cuisine(title + ' ' + content, user_cuisine),
             "ingredients": extract_ingredients(content),
             "full_content": content
         })
