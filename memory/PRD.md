@@ -744,6 +744,18 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
   - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
 
+- **Feb 07, 2026**: BUG FIX - Duplicate Recipe Images
+  - **Issue**: Two or more recipes in the same batch could have identical images when they matched the same keywords (e.g., two Indian dishes both showing the same curry image)
+  - **Root Cause**: Multiple parsing functions (parseRecipeFromMatch, parseRecipeContent, etc.) were using getRecipeImage() which doesn't track used images
+  - **Solution**:
+    - Added `currentBatchUsedImages` Set to track URLs used in current batch
+    - Added `resetBatchImageTracker()` function called at start of each new recipe batch
+    - Added `getUniqueRecipeImage()` function that checks if image is already used and selects alternatives from `CUISINE_FALLBACK_ALTERNATIVES`
+    - Added 4-6 alternative images per cuisine type in `CUISINE_FALLBACK_ALTERNATIVES`
+    - Updated all 9 imageUrl assignments to use getUniqueRecipeImage instead of getRecipeImage
+  - **Files Modified**: `/app/frontend/src/components/RecipeMessageDisplay.js`
+  - **Testing**: Code review completed, all image assignments now use unique image function
+
 - **Feb 07, 2026**: P2 - Recipe Library Database Implementation (COMPLETE)
   - **Feature**: Built a database to store successfully generated AI recipes
   - **Benefits**:
