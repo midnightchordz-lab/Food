@@ -326,10 +326,16 @@ async def generate_plan_for_week(request: WeekOffsetRequest, current_user: User 
         if not prefs:
             raise HTTPException(status_code=400, detail="No meal preferences found. Please set your preferences first.")
         
-        today = datetime.now(timezone.utc)
+        # Use local date calculation to match frontend
+        today = datetime.now()  # Local time, not UTC
+        # Get Monday of current week
         current_week_start = today - timedelta(days=today.weekday())
+        current_week_start = current_week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Calculate target week
         target_week_start = current_week_start + timedelta(days=request.week_offset * 7)
         target_week_str = target_week_start.strftime('%Y-%m-%d')
+        
+        logging.info(f"Generating plan for week: {target_week_str} (offset: {request.week_offset})")
         
         existing = await db.weekly_plans.find_one(
             {"user_id": current_user.id, "week_start": target_week_str},
@@ -337,11 +343,13 @@ async def generate_plan_for_week(request: WeekOffsetRequest, current_user: User 
         )
         
         if existing:
+            logging.info(f"Plan already exists for week: {target_week_str}")
             return {"message": "Plan for this week already exists", "plan": existing, "already_exists": True}
         
         used_recipes = await get_used_recipes(current_user.id, weeks=8)
         user_exclusions = await get_user_excluded_ingredients(current_user.id)
         
+        logging.info(f"Generating AI meal plan for week: {target_week_str}")
         meals = await generate_ai_meal_plan(
             current_user,
             prefs.get('mood', 'balanced'),
@@ -368,6 +376,7 @@ async def generate_plan_for_week(request: WeekOffsetRequest, current_user: User 
         
         await track_used_recipes(current_user.id, meals, target_week_str)
         
+        logging.info(f"Successfully generated plan for week: {target_week_str}")
         return {"message": f"Meal plan for week of {target_week_str} generated!", "plan": plan_dict, "already_exists": False}
     except HTTPException:
         raise
