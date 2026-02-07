@@ -667,6 +667,9 @@ const parseSingleDishFormat = (message) => {
 const parseNumberedRecipes = (message) => {
   const recipes = [];
   
+  // SINGLE INGREDIENT/FOOD SKIP - These are NOT recipes
+  const singleFoodItems = /^(greek yogurt|yogurt|honey|nuts|berries|oats|eggs?|tomato(?:es)?|spinach|cheese|rice|bread|chicken|beef|fish|salmon|tuna|tofu|beans|lentils|avocado|banana|apple|orange|milk|butter|olive oil|garlic|onion|ginger|salt|pepper|sugar|flour|quinoa|pasta|noodles|shrimp|pork|lamb|turkey|hummus|tahini|feta|mozzarella|cheddar|cream|sour cream|mayonnaise|mustard|ketchup|soy sauce|vinegar|lemon|lime|cucumber|carrot|potato|broccoli|cauliflower|mushroom|bell pepper|zucchini|eggplant|lettuce|kale|arugula|basil|cilantro|parsley|mint|oregano|thyme|rosemary|cinnamon|turmeric|cumin|paprika|chili|almonds|walnuts|cashews|peanuts|coconut|chocolate|vanilla|maple syrup|agave)s?$/i;
+
   // Comprehensive skip patterns - NOT recipe names
   const skipPatterns = [
     /^(option|tip|note|step|ingredient|instruction|direction|nutritional|sensory|description|serving|highlight|benefit|why|quick|moderate|elaborate|cooking time|difficulty|cuisine type|cuisine|name|total time|prep time)/i,
@@ -674,25 +677,32 @@ const parseNumberedRecipes = (message) => {
     /^(tips?|notes?|benefits?|guidelines?|considerations?|recommendations?)/i,
     /^(about|regarding|for your|please|remember|keep in mind)/i,
     /^(drink|pairing|beverage|hydration)/i,
-    // Skip generic advice/tips that are NOT recipe names
     /^(choose|select|opt for|look for|watch|avoid|limit|consider|try|focus on|prioritize|incorporate)/i,
     /^(lean proteins?|non-starchy|starchy|vegetables?|sauces?|carbohydrates?|fiber|sugar|sodium|fats?)/i,
     /^(portion|serving size|balance|moderation|healthy|low|high|good|best|worst)/i,
-    // Skip common tip titles that appear as recipes
     /^(whole grains?|spices?|herbs?|fresh produce|ingredients?|cooking methods?|meal ideas?)/i,
     /^(protein sources?|healthy fats?|complex carbs?|simple swaps?|smart choices?)/i,
     /\b(in moderation|with caution|sparingly|carefully)\b/i,
-    // Skip action-based tips
     /^(load up|stock up|fill up|flavored with|seasoned with|paired with|served with|topped with)/i,
     /^(enjoy|savor|indulge|explore|discover|experiment)/i,
-    // Skip warning/advice titles
     /^(beware|monitoring|watch out|be careful|take care|keep track|pay attention)/i,
     /^(added sugars?|hidden sugars?|sugar content|calorie|sodium level)/i,
-    // Skip mood/benefit sections that are NOT recipe names
     /^(mood|mood-boosting|boosting|stress|anxiety|energy|comfort|relaxation|calming)/i,
     /^#?\s*mood-?boosting\s*benefits?/i,
     /benefits?$/i,
   ];
+  
+  // Helper to check if title is a valid recipe name
+  const isValidRecipeName = (title) => {
+    if (!title || title.length < 4 || title.length > 100) return false;
+    if (skipPatterns.some(pattern => pattern.test(title))) return false;
+    if (singleFoodItems.test(title.trim())) return false;
+    if (title === ':' || title.endsWith(':')) return false;
+    // Must have at least 2 words for a proper recipe name
+    const words = title.split(/\s+/).filter(w => w.length > 1);
+    if (words.length < 2) return false;
+    return true;
+  };
   
   // Match patterns:
   // - "### 1. Recipe Name"
