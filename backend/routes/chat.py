@@ -145,12 +145,19 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
     
     def extract_time(text: str) -> str:
         """Extract cooking time from text"""
+        # Pattern 1: **Cooking Time:** 40 min
         time_match = re.search(r'\*\*(?:Cooking\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*(?:min|minutes?)?', text, re.IGNORECASE)
         if time_match:
             return f"{time_match.group(1)} min"
+        # Pattern 2: | **Time:** 40 min (table format)
         time_match = re.search(r'\|\s*\*\*Time:?\*\*\s*(\d+)\s*min', text, re.IGNORECASE)
         if time_match:
             return f"{time_match.group(1)} min"
+        # Pattern 3: Cooking Time: 40 minutes (plain text format)
+        time_match = re.search(r'Cooking\s*Time:?\s*(\d+[-–]?\d*)\s*(?:min|minutes?)?', text, re.IGNORECASE)
+        if time_match:
+            return f"{time_match.group(1)} min"
+        # Pattern 4: Just "40 minutes" anywhere
         time_match = re.search(r'(\d+[-–]?\d*)\s*(?:min|minutes?)', text, re.IGNORECASE)
         if time_match:
             return f"{time_match.group(1)} min"
@@ -158,10 +165,17 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
     
     def extract_difficulty(text: str) -> str:
         """Extract difficulty from text"""
+        # Pattern 1: **Difficulty:** Easy/Medium/Hard
         diff_match = re.search(r'\*\*Difficulty:?\*\*\s*(Easy|Medium|Moderate|Hard)', text, re.IGNORECASE)
         if diff_match:
             diff = diff_match.group(1)
             return 'Medium' if diff.lower() == 'moderate' else diff.title()
+        # Pattern 2: Difficulty: Easy/Medium/Hard (plain text format, may have trailing **)
+        diff_match = re.search(r'Difficulty:?\s*(Easy|Medium|Moderate|Hard)(?:\*\*)?', text, re.IGNORECASE)
+        if diff_match:
+            diff = diff_match.group(1)
+            return 'Medium' if diff.lower() == 'moderate' else diff.title()
+        # Fallback: keyword detection
         if re.search(r'\b(easy|simple|quick)\b', text, re.IGNORECASE):
             return 'Easy'
         if re.search(r'\b(hard|complex|advanced)\b', text, re.IGNORECASE):
