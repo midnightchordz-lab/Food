@@ -149,6 +149,8 @@ class TestSubscriptionAuth:
         
         if register_response.status_code == 200:
             data = register_response.json()
+            if "access_token" in data:
+                return data["access_token"]
             if "token" in data:
                 return data["token"]
         
@@ -160,6 +162,8 @@ class TestSubscriptionAuth:
         
         if login_response.status_code == 200:
             data = login_response.json()
+            if "access_token" in data:
+                return data["access_token"]
             if "token" in data:
                 return data["token"]
         
@@ -255,6 +259,8 @@ class TestSubscriptionCreation:
         
         if register_response.status_code == 200:
             data = register_response.json()
+            if "access_token" in data:
+                return data["access_token"]
             if "token" in data:
                 return data["token"]
         
@@ -329,7 +335,7 @@ class TestSubscriptionCancellation:
             pytest.skip("Could not create test user")
         
         data = register_response.json()
-        token = data.get("token")
+        token = data.get("access_token") or data.get("token")
         
         if not token:
             pytest.skip("No token returned")
@@ -374,7 +380,11 @@ class TestSubscriptionCancellation:
         if register_response.status_code != 200:
             pytest.skip("Could not create test user")
         
-        token = register_response.json().get("token")
+        data = register_response.json()
+        token = data.get("access_token") or data.get("token")
+        
+        if not token:
+            pytest.skip("No token returned")
         
         response = requests.post(
             f"{BASE_URL}/api/subscription/cancel",
@@ -400,7 +410,8 @@ class TestTransactions:
         })
         
         if register_response.status_code == 200:
-            return register_response.json().get("token")
+            data = register_response.json()
+            return data.get("access_token") or data.get("token")
         
         pytest.skip("Could not authenticate")
     
