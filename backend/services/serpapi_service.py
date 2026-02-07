@@ -135,113 +135,114 @@ async def search_recipes_for_mood(
     limit: int = 6
 ) -> Dict:
     """
-    Search for recipes matching mood, cuisine, and meal type.
+    Search for SPECIFIC recipes (not collection pages) matching mood, cuisine, and meal type.
     Returns structured recipe data ready for display in the chat.
-    
-    This is the main function for integrating SerpAPI recipes into the chat flow.
     """
     try:
-        # Build an optimized search query based on mood
-        mood_keywords = {
-            "happy": "vibrant colorful",
-            "sad": "comfort food hearty",
-            "stressed": "calming relaxing easy",
-            "tired": "energizing quick simple",
-            "anxious": "soothing warm",
-            "cozy": "comfort warm hearty",
-            "energetic": "fresh light healthy",
-            "romantic": "elegant fancy",
+        # Use SPECIFIC dish queries instead of generic "recipe" searches
+        # This helps get actual recipes, not "40+ best recipes" collection pages
+        cuisine_dishes = {
+            "indian": ["butter chicken", "paneer tikka", "dal makhani", "biryani", "palak paneer", "chicken curry", "samosa", "naan bread", "tandoori chicken", "chana masala", "aloo gobi", "malai kofta"],
+            "italian": ["pasta carbonara", "margherita pizza", "lasagna", "risotto", "tiramisu", "bruschetta", "gnocchi", "pesto pasta", "chicken parmesan", "minestrone soup", "caprese salad", "osso buco"],
+            "mexican": ["tacos al pastor", "chicken enchiladas", "guacamole", "quesadilla", "burrito bowl", "churros", "pozole", "tamales", "chile relleno", "carnitas", "fajitas", "elote"],
+            "thai": ["pad thai", "green curry", "tom yum soup", "massaman curry", "thai basil chicken", "spring rolls", "mango sticky rice", "larb", "papaya salad", "panang curry", "red curry", "satay"],
+            "chinese": ["kung pao chicken", "sweet and sour pork", "fried rice", "dumplings", "mapo tofu", "chow mein", "hot pot", "peking duck", "spring rolls", "dan dan noodles", "char siu", "wonton soup"],
+            "japanese": ["sushi rolls", "ramen", "teriyaki chicken", "miso soup", "tempura", "gyoza", "okonomiyaki", "katsu curry", "yakitori", "udon noodles", "onigiri", "tamagoyaki"],
+            "mediterranean": ["falafel", "hummus bowl", "greek salad", "shawarma", "moussaka", "tzatziki", "baba ganoush", "tabbouleh", "souvlaki", "spanakopita", "dolmas", "fattoush"],
+            "american": ["mac and cheese", "bbq ribs", "burger", "fried chicken", "meatloaf", "clam chowder", "cornbread", "coleslaw", "pulled pork", "buffalo wings", "pot roast", "biscuits and gravy"],
+            "french": ["croissants", "beef bourguignon", "coq au vin", "ratatouille", "quiche", "crepes", "french onion soup", "duck confit", "souffle", "bouillabaisse", "cassoulet", "tarte tatin"],
+            "korean": ["bibimbap", "korean fried chicken", "kimchi jjigae", "bulgogi", "japchae", "tteokbokki", "samgyeopsal", "sundubu jjigae", "kimbap", "galbi", "jjajangmyeon", "hobakjuk"],
         }
         
-        mood_modifier = mood_keywords.get(mood.lower(), "delicious")
-        search_query = f"{mood_modifier} {cuisine} {meal_type} recipe"
-        if dietary:
-            search_query += f" {dietary}"
+        # Get dishes for this cuisine
+        cuisine_lower = cuisine.lower()
+        dishes = cuisine_dishes.get(cuisine_lower, [f"{cuisine} dinner", f"{cuisine} lunch", f"{cuisine} dish"])
         
-        params = {
-            "api_key": SERPAPI_KEY,
-            "engine": "google",
-            "q": search_query,
-            "num": limit * 2,
-            "gl": "us",
-            "hl": "en",
-        }
+        # Select dishes based on meal type
+        import random
+        random.shuffle(dishes)
+        selected_dishes = dishes[:limit + 4]  # Get extra for filtering
         
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await _rate_limited_request(client, SERPAPI_BASE_URL, params)
-            response.raise_for_status()
-            data = response.json()
+        all_recipes = []
         
-        recipes = []
-        
-        # Extract rich recipe results
-        if "recipes_results" in data:
-            for r in data["recipes_results"][:limit]:
-                # Parse cooking time to minutes
-                total_time = r.get("total_time", "30 min")
-                time_minutes = 30
-                if total_time:
-                    time_match = re.search(r'(\d+)', total_time)
-                    if time_match:
-                        time_minutes = int(time_match.group(1))
-                        if "hr" in total_time.lower() or "hour" in total_time.lower():
-                            time_minutes *= 60
+        # Search for each specific dish
+        for dish in selected_dishes[:min(4, limit + 2)]:  # Limit API calls
+            search_query = f"{dish} recipe"
+            if dietary and dietary.lower() != "non-vegetarian":
+                search_query = f"{dietary} {dish} recipe"
+            
+            params = {
+                "api_key": SERPAPI_KEY,
+                "engine": "google",
+                "q": search_query,
+                "num": 5,
+                "gl": "us",
+                "hl": "en",
+            }
+            
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    response = await _rate_limited_request(client, SERPAPI_BASE_URL, params)
+                    response.raise_for_status()
+                    data = response.json()
                 
-                # Determine difficulty based on time and ingredients
-                ingredient_count = len(r.get("ingredients", []))
-                if time_minutes <= 20 and ingredient_count <= 6:
-                    difficulty = "Easy"
-                elif time_minutes >= 60 or ingredient_count >= 12:
-                    difficulty = "Hard"
-                else:
-                    difficulty = "Medium"
+                # Extract rich recipe results from recipe carousel
+                if "recipes_results" in data:
+                    for r in data["recipes_results"][:2]:  # Take top 2 from each search
+                        title = r.get("title", "")
+                        
+                        # FILTER OUT collection pages
+                        if is_collection_page(title):
+                            continue
+                        
+                        # Parse cooking time
+                        total_time = r.get("total_time", "30 min")
+                        time_minutes = parse_time_to_minutes(total_time)
+                        
+                        # Determine difficulty
+                        ingredient_count = len(r.get("ingredients", []))
+                        difficulty = determine_difficulty(time_minutes, ingredient_count)
+                        
+                        # Clean source name
+                        source_name = clean_source_name(r.get("source", ""))
+                        
+                        recipe = {
+                            "title": title,
+                            "link": r.get("link", ""),
+                            "source": source_name,
+                            "rating": r.get("rating"),
+                            "reviews": r.get("reviews", 0),
+                            "cooking_time": total_time,
+                            "difficulty": difficulty,
+                            "ingredients": r.get("ingredients", []),
+                            "thumbnail": r.get("thumbnail", ""),
+                            "cuisine": cuisine,
+                            "description": f"From {source_name}. Rating: {r.get('rating', 'N/A')}⭐ ({r.get('reviews', 0)} reviews)",
+                        }
+                        
+                        # Avoid duplicates
+                        if not any(existing["title"].lower() == recipe["title"].lower() for existing in all_recipes):
+                            all_recipes.append(recipe)
+                        
+                        if len(all_recipes) >= limit:
+                            break
                 
-                recipe = {
-                    "title": r.get("title", ""),
-                    "link": r.get("link", ""),
-                    "source": r.get("source", ""),
-                    "rating": r.get("rating"),
-                    "reviews": r.get("reviews", 0),
-                    "cooking_time": total_time,
-                    "difficulty": difficulty,
-                    "ingredients": r.get("ingredients", []),
-                    "thumbnail": r.get("thumbnail", ""),
-                    "cuisine": cuisine,
-                    "description": f"A {mood_modifier} {cuisine} recipe. Rating: {r.get('rating', 'N/A')}⭐ from {r.get('source', 'Web')}",
-                }
-                recipes.append(recipe)
+            except Exception as search_error:
+                logging.warning(f"Search error for '{dish}': {search_error}")
+                continue
+            
+            if len(all_recipes) >= limit:
+                break
         
-        # Fallback to organic results if needed
-        if len(recipes) < limit:
-            organic_results = data.get("organic_results", [])
-            for result in organic_results:
-                if len(recipes) >= limit:
-                    break
-                title = result.get("title", "")
-                if any(word in title.lower() for word in ["recipe", cuisine.lower()]):
-                    recipe = {
-                        "title": title.replace(" Recipe", "").strip(),
-                        "link": result.get("link", ""),
-                        "source": result.get("displayed_link", ""),
-                        "thumbnail": result.get("thumbnail", ""),
-                        "cooking_time": "30 min",
-                        "difficulty": "Medium",
-                        "ingredients": [],
-                        "cuisine": cuisine,
-                        "description": result.get("snippet", "")[:150],
-                    }
-                    if not any(r["title"].lower() == recipe["title"].lower() for r in recipes):
-                        recipes.append(recipe)
-        
-        logging.info(f"Mood recipe search for '{mood}' {cuisine} {meal_type}: Found {len(recipes)} recipes")
+        logging.info(f"Mood recipe search for '{mood}' {cuisine} {meal_type}: Found {len(all_recipes)} specific recipes")
         
         return {
             "success": True,
             "mood": mood,
             "cuisine": cuisine,
             "meal_type": meal_type,
-            "recipes": recipes[:limit],
-            "total_found": len(recipes)
+            "recipes": all_recipes[:limit],
+            "total_found": len(all_recipes)
         }
         
     except Exception as e:
@@ -251,6 +252,123 @@ async def search_recipes_for_mood(
             "error": str(e),
             "recipes": []
         }
+
+
+def is_collection_page(title: str) -> bool:
+    """Check if a title indicates a collection/roundup page rather than a specific recipe"""
+    title_lower = title.lower()
+    collection_patterns = [
+        r'\d+\+?\s*(best|top|easy|quick|healthy)',  # "40+ best", "10 easy"
+        r'\d+\s+(recipes|ideas|dishes)',  # "40 recipes", "25 ideas"
+        r'(best|top)\s+\d+',  # "best 10", "top 25"
+        r'(roundup|collection|list)',
+        r'recipes?\s*$',  # Ends with "recipes"
+        r'^(best|top|easy)\s+\w+\s+recipes',  # "best indian recipes"
+    ]
+    
+    for pattern in collection_patterns:
+        if re.search(pattern, title_lower):
+            return True
+    
+    # Also check for very short generic titles
+    if len(title) < 10:
+        return True
+    
+    return False
+
+
+def parse_time_to_minutes(time_str: str) -> int:
+    """Parse cooking time string to minutes"""
+    if not time_str:
+        return 30
+    
+    time_str = time_str.lower()
+    total_minutes = 0
+    
+    # Extract hours
+    hour_match = re.search(r'(\d+)\s*(?:hr|hour)', time_str)
+    if hour_match:
+        total_minutes += int(hour_match.group(1)) * 60
+    
+    # Extract minutes
+    min_match = re.search(r'(\d+)\s*(?:min|m\b)', time_str)
+    if min_match:
+        total_minutes += int(min_match.group(1))
+    
+    # If no pattern matched, try just extracting number
+    if total_minutes == 0:
+        num_match = re.search(r'(\d+)', time_str)
+        if num_match:
+            total_minutes = int(num_match.group(1))
+    
+    return total_minutes if total_minutes > 0 else 30
+
+
+def determine_difficulty(time_minutes: int, ingredient_count: int) -> str:
+    """Determine recipe difficulty based on time and ingredients"""
+    if time_minutes <= 20 and ingredient_count <= 6:
+        return "Easy"
+    elif time_minutes >= 60 or ingredient_count >= 12:
+        return "Hard"
+    else:
+        return "Medium"
+
+
+def clean_source_name(source: str) -> str:
+    """Clean up source name to be human-readable"""
+    if not source:
+        return "Web Recipe"
+    
+    # Remove common URL patterns
+    source = re.sub(r'^https?://', '', source)
+    source = re.sub(r'^www\.', '', source)
+    source = re.sub(r'\.com.*$', '', source)
+    source = re.sub(r'\.org.*$', '', source)
+    source = re.sub(r'\.net.*$', '', source)
+    
+    # Handle specific known sources
+    source_mappings = {
+        'allrecipes': 'AllRecipes',
+        'foodnetwork': 'Food Network',
+        'epicurious': 'Epicurious',
+        'bonappetit': 'Bon Appetit',
+        'seriouseats': 'Serious Eats',
+        'simplyrecipes': 'Simply Recipes',
+        'delish': 'Delish',
+        'tasty': 'Tasty',
+        'food52': 'Food52',
+        'thekitchn': 'The Kitchn',
+        'cookinglight': 'Cooking Light',
+        'eatingwell': 'Eating Well',
+        'myrecipes': 'My Recipes',
+        'bettycrocker': 'Betty Crocker',
+        'pillsbury': 'Pillsbury',
+        'marthastewart': 'Martha Stewart',
+        'rachaelray': 'Rachael Ray',
+        'budgetbytes': 'Budget Bytes',
+        'skinnytaste': 'Skinny Taste',
+        'cookieandkate': 'Cookie and Kate',
+        'minimalistbaker': 'Minimalist Baker',
+        'loveandlemons': 'Love and Lemons',
+        'rainbowplantlife': 'Rainbow Plant Life',
+        'feastingathome': 'Feasting at Home',
+        'indianhealthyrecipes': 'Indian Healthy Recipes',
+        'vegrecipesofindia': 'Veg Recipes of India',
+        'hebbarskitchen': 'Hebbars Kitchen',
+    }
+    
+    source_lower = source.lower().replace('-', '').replace('_', '')
+    for key, value in source_mappings.items():
+        if key in source_lower:
+            return value
+    
+    # Capitalize and clean up
+    if source:
+        # Title case and limit length
+        cleaned = source.replace('-', ' ').replace('_', ' ').title()
+        return cleaned[:25] if len(cleaned) > 25 else cleaned
+    
+    return "Web Recipe"
 
 
 async def find_grocery_stores(location: str, ingredient: str = None) -> Dict:
