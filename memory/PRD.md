@@ -744,6 +744,22 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
   - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
 
+- **Feb 07, 2026**: BUG FIX - Weekly Planner Auto-Generation Failure (CRITICAL)
+  - **Issue**: Next week's meals were blank - auto-generation was failing silently
+  - **Root Cause**: 
+    1. `track_used_recipes()` was storing `dinner_pairing` dicts (drink suggestions) as recipe names
+    2. `get_used_recipes()` was returning these dicts in the exclusion list
+    3. When building the LLM prompt, `', '.join(exclude_recipes)` failed because list contained dicts
+  - **Fix**:
+    - Updated `track_used_recipes()` to skip `dinner_pairing` and non-string values
+    - Updated `get_used_recipes()` to filter only valid string recipe names
+    - Also normalized `cuisine_preferences`, `focus_areas`, `dietary_preference`, and `user_restrictions` to handle dict inputs
+    - Changed date calculation from UTC to local time for consistency with frontend
+  - **Files Modified**:
+    - `/app/backend/routes/meal_planning.py` - Fixed recipe tracking and retrieval
+    - `/app/backend/ai_meal_planner.py` - Added normalization for all list inputs
+  - **Testing**: Successfully generated next week's meal plan via API
+
 - **Feb 07, 2026**: BUG FIX - Weekly Planner Image Mismatch & Auto-Generation
   - **Issue 1**: All dishes showing same breakfast eggs image regardless of recipe type
     - **Root Cause**: PlannerMealCard was not resetting image state when mealName prop changed
