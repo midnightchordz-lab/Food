@@ -34,7 +34,8 @@ class TestSubscriptionManagement:
         })
         
         if response.status_code == 200:
-            self.token = response.json().get("token")
+            data = response.json()
+            self.token = data.get("access_token") or data.get("token")
             self.session.headers.update({"Authorization": f"Bearer {self.token}"})
         else:
             # Try to register if login fails
@@ -45,7 +46,8 @@ class TestSubscriptionManagement:
                 "name": "Test Subscription User"
             })
             if register_resp.status_code == 200:
-                self.token = register_resp.json().get("token")
+                reg_data = register_resp.json()
+                self.token = reg_data.get("access_token") or reg_data.get("token")
                 self.session.headers.update({"Authorization": f"Bearer {self.token}"})
             else:
                 pytest.skip("Could not authenticate for tests")
