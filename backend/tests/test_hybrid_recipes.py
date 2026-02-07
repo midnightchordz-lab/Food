@@ -33,7 +33,8 @@ def auth_token(api_client):
         "name": TEST_NAME
     })
     
-    if register_response.status_code == 201:
+    # Accept both 200 and 201 for successful registration
+    if register_response.status_code in [200, 201]:
         return register_response.json().get("access_token")
     elif register_response.status_code == 400:
         # User may already exist, try login
