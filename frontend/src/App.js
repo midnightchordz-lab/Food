@@ -88,6 +88,9 @@ function App() {
                 <Route path="/discover-recipes" element={<DiscoverRecipesPage />} />
                 <Route path="/discover-recipes/:cuisine" element={<DiscoverRecipesPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/subscription" element={<SubscriptionManagementPage />} />
+                <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+                <Route path="/checkout/failure" element={<CheckoutFailurePage />} />
               </Routes>
             </Suspense>
             <ShoppingCartModal />
