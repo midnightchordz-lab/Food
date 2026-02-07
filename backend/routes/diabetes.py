@@ -269,6 +269,19 @@ Generate recipes that are both medically appropriate AND genuinely appetizing fo
 async def research_diabetes_type(request: DiabetesResearchRequest, current_user: User = Depends(get_current_user)):
     """Research diabetes type and return dietary guidelines"""
     try:
+        # Check feature access - Diabetes module requires Chef Pro
+        access = await check_diabetes_access(current_user.id)
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "diabetes_module",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
         diabetes_type = request.diabetes_type
         guidelines = DIABETES_GUIDELINES.get(diabetes_type, DIABETES_GUIDELINES["type2"])
         
