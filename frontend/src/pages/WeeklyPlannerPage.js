@@ -152,6 +152,9 @@ const parseRecipeForModal = (recipeName, mealType, day) => {
     cookingTime = '45-60 min';
   }
   
+  // Get drink pairings for this recipe
+  const drinkPairings = getDrinkPairing(recipeName, mealType);
+  
   return {
     title: recipeName,
     description: `A delicious ${mealType} dish perfect for ${day}. This ${cuisineHint.toLowerCase()} inspired recipe brings together fresh flavors and wholesome ingredients for a satisfying meal.`,
@@ -162,6 +165,7 @@ const parseRecipeForModal = (recipeName, mealType, day) => {
     mealType,
     day,
     category: mealType,
+    drinkPairings,
   };
 };
 
