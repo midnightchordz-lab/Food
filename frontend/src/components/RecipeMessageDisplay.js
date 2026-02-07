@@ -1058,7 +1058,7 @@ const parseRecipeFromMatch = (match, category) => {
     difficulty,
     cuisineHint,
     category,
-    imageUrl: getRecipeImage(title, cuisineHint),
+    imageUrl: getUniqueRecipeImage(title, cuisineHint),
     fullContent: fullMatch
   };
 };
@@ -1222,7 +1222,7 @@ const parseRecipeContent = (title, section, category) => {
     difficulty,
     cuisineHint,
     category,
-    imageUrl: getRecipeImage(title, cuisineHint),
+    imageUrl: getUniqueRecipeImage(title, cuisineHint),
     fullContent: section
   };
 };
