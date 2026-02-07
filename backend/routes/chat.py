@@ -116,8 +116,8 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
         if title.endswith(':'):
             return False
         
-        # Skip if title is too short (likely ingredient name)
-        if len(title_lower) < 8:
+        # Skip if title is too short (likely ingredient name) - minimum 10 chars
+        if len(title_lower) < 10:
             return False
             
         return True
