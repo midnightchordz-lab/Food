@@ -74,9 +74,13 @@ async def create_indexes():
         await db.recipe_library.create_index("mood", background=True)
         await db.recipe_library.create_index("tags", background=True)
         await db.recipe_library.create_index("times_served", background=True)
+        await db.recipe_library.create_index("is_premium", background=True)  # Premium recipe filter
         await db.recipe_library.create_index([
             ("cuisine", 1), ("dietary", 1), ("meal_type", 1), ("mood", 1)
         ], background=True)
+        await db.recipe_library.create_index([
+            ("is_premium", 1), ("times_served", -1)
+        ], background=True)  # For premium filtering with popularity sort
         
         logging.info("Database indexes created successfully")
     except Exception as e:
