@@ -120,8 +120,12 @@ async def filter_recipes(
     """
     Filter recipes from the library.
     Supports excluding specific recipe IDs (for "show more" functionality).
+    Free users will not see premium recipes.
     """
     try:
+        # Check if user has premium access
+        include_premium = await user_has_premium_access(current_user.id)
+        
         recipes = await get_recipes_from_library(
             db,
             mood=request.mood or '',
@@ -129,13 +133,15 @@ async def filter_recipes(
             dietary=request.dietary or '',
             cuisine=request.cuisine or '',
             limit=request.limit,
-            exclude_ids=request.exclude_ids
+            exclude_ids=request.exclude_ids,
+            include_premium=include_premium
         )
         
         return {
             "success": True,
             "count": len(recipes),
-            "recipes": recipes
+            "recipes": recipes,
+            "has_premium_access": include_premium
         }
     except Exception as e:
         logging.error(f"Error filtering recipes: {e}")
