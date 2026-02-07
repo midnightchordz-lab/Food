@@ -19,6 +19,7 @@ from .exclusions import (
     filter_recipe_text_strictly
 )
 from .chat import is_mood_change_request, MOOD_RESPONSES, parse_recipes_to_json
+from .feature_gating import FeatureGate
 
 # Import recipe library service
 sys.path.append('/app/backend')
