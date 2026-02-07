@@ -771,33 +771,99 @@ const DiabetesMealsPage = () => {
               </p>
             </div>
             
-            {/* Current selections indicator */}
+            {/* Current selections indicator with dropdowns for meal type and cuisine */}
             {(selectedMood || selectedDiabetesType || selectedDietaryPref) && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 {selectedMood && (
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium" data-testid="mood-indicator">
                     <img src={MOOD_IMAGES.find(m => m.id === selectedMood)?.image} alt="" className="w-4 h-4 inline rounded-full mr-1" /> {MOOD_IMAGES.find(m => m.id === selectedMood)?.label}
                   </span>
                 )}
                 {selectedDiabetesType && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium" data-testid="diabetes-type-indicator">
                     {DIABETES_TYPES.find(t => t.id === selectedDiabetesType)?.icon} {DIABETES_TYPES.find(t => t.id === selectedDiabetesType)?.label}
                   </span>
                 )}
                 {selectedDietaryPref && (
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                    🍽️ {FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref)?.label}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200 transition-colors cursor-pointer flex items-center gap-1 border border-green-200"
+                        data-testid="dietary-indicator"
+                      >
+                        🍽️ {FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref)?.label}
+                        <RefreshCw size={12} className="ml-1 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Change Dietary Preference</div>
+                      {FOOD_PREFERENCES.map((pref) => {
+                        const Icon = pref.icon;
+                        return (
+                          <DropdownMenuItem 
+                            key={pref.id}
+                            onClick={() => handleDietaryPrefSelect(pref.id, pref.label)}
+                            className={`cursor-pointer ${selectedDietaryPref === pref.id ? 'bg-green-50' : ''}`}
+                          >
+                            <Icon size={16} className="mr-2" />
+                            {pref.label}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 {selectedMealType && (
-                  <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium">
-                    {MEAL_TYPES.find(m => m.id === selectedMealType)?.emoji} {MEAL_TYPES.find(m => m.id === selectedMealType)?.label}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-xs font-medium hover:bg-secondary/80 transition-colors cursor-pointer flex items-center gap-1 border border-border"
+                        data-testid="meal-type-indicator"
+                      >
+                        {MEAL_TYPES.find(m => m.id === selectedMealType)?.emoji} {MEAL_TYPES.find(m => m.id === selectedMealType)?.label}
+                        <RefreshCw size={12} className="ml-1 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-40">
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Change Meal Type</div>
+                      {MEAL_TYPES.map((meal) => (
+                        <DropdownMenuItem 
+                          key={meal.id}
+                          onClick={() => handleMealTypeChange(meal.id)}
+                          className={`cursor-pointer ${selectedMealType === meal.id ? 'bg-secondary' : ''}`}
+                        >
+                          <span className="mr-2">{meal.emoji}</span>
+                          {meal.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 {selectedCuisines.length > 0 && (
-                  <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                    🌍 {selectedCuisines.includes('any') ? 'Any Cuisine' : selectedCuisines.map(id => CUISINES.find(c => c.id === id)?.label).join(', ')}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium hover:bg-orange-200 transition-colors cursor-pointer flex items-center gap-1 border border-orange-200"
+                        data-testid="cuisine-indicator"
+                      >
+                        🌍 {selectedCuisines.includes('any') ? 'Any Cuisine' : selectedCuisines.map(id => CUISINES.find(c => c.id === id)?.label).join(', ')}
+                        <RefreshCw size={12} className="ml-1 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48 max-h-64 overflow-y-auto">
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Change Cuisine</div>
+                      {CUISINES.map((cuisine) => (
+                        <DropdownMenuItem 
+                          key={cuisine.id}
+                          onClick={() => handleCuisineChange(cuisine.id)}
+                          className={`cursor-pointer ${selectedCuisines.includes(cuisine.id) ? 'bg-orange-50' : ''}`}
+                        >
+                          <span className="mr-2">{cuisine.flag}</span>
+                          {cuisine.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             )}
