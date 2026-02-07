@@ -91,6 +91,11 @@ const PlannerMealCard = ({
 
   // Handle broken images - try AI fallback on error
   const handleImgError = async () => {
+    // If already using default, nothing more to do
+    if (imageSource === 'default') {
+      return;
+    }
+    
     // Only try AI fallback once to prevent infinite loops
     if (errorCount >= 1 || imageSource === 'ai_generated') {
       setImageUrl(defaultImg);
@@ -110,7 +115,7 @@ const PlannerMealCard = ({
           use_ai_fallback: true  // Enable AI fallback
         }, { timeout: 30000 });  // Longer timeout for AI generation
 
-        if (response.data?.image_url && response.data.source !== 'none') {
+        if (response.data?.image_url && typeof response.data.image_url === 'string' && response.data.image_url.trim() && response.data.source !== 'none') {
           const cacheKey = cleanName.toLowerCase();
           imageCache.set(cacheKey, { url: response.data.image_url, source: response.data.source });
           setImageUrl(response.data.image_url);
