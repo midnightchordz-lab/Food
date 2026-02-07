@@ -99,15 +99,94 @@ const PricingPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const endpoint = currentPlan && currentPlan !== 'free' 
-        ? `${API}/subscription/upgrade`
-        : `${API}/subscription/create`;
-
-      const response = await axios.post(
-        endpoint,
-        { plan_id: plan.plan_id, payment_provider: 'stripe' },
+      
+      // Create Razorpay order
+      const orderResponse = await axios.post(
+        `${API}/subscription/razorpay/create-order`,
+        { plan_id: plan.plan_id, currency: 'INR' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      if (!orderResponse.data.success) {
+        throw new Error('Failed to create order');
+      }
+
+      const { order, user } = orderResponse.data;
+
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        await loadRazorpayScript();
+      }
+
+      // Open Razorpay checkout
+      const options = {
+        key: order.key_id,
+        amount: order.amount_in_paise,
+        currency: order.currency,
+        name: 'MoodFood',
+        description: `${plan.display_name} Subscription`,
+        order_id: order.id,
+        prefill: {
+          name: user.name || '',
+          email: user.email || '',
+        },
+        theme: {
+          color: '#6b7c5e'
+        },
+        handler: async function (response) {
+          // Verify payment on backend
+          try {
+            const verifyResponse = await axios.post(
+              `${API}/subscription/razorpay/verify-payment`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                plan_id: plan.plan_id
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (verifyResponse.data.success) {
+              toast.success(verifyResponse.data.message);
+              setCurrentPlan(plan.plan_id);
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            }
+          } catch (verifyError) {
+            console.error('Payment verification failed:', verifyError);
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            setSubscribing(null);
+            toast.info('Payment cancelled');
+          }
+        }
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+      
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      toast.error(error.response?.data?.detail || 'Failed to initiate payment');
+      setSubscribing(null);
+    }
+  };
+
+  // Load Razorpay script dynamically
+  const loadRazorpayScript = () => {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = resolve;
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
+  };
 
       if (response.data.success) {
         toast.success(response.data.message);
