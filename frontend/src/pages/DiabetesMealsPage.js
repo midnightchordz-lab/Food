@@ -358,10 +358,32 @@ const DiabetesMealsPage = () => {
   };
   
   // Handle dietary preference selection
-  const handleDietaryPrefSelect = (prefId) => {
+  const handleDietaryPrefSelect = (prefId, prefLabel) => {
+    const previousPref = selectedDietaryPref;
     setSelectedDietaryPref(prefId);
     const pref = FOOD_PREFERENCES.find(p => p.id === prefId);
     
+    // If we're already showing recipes and preference changed, regenerate recipes
+    if (flowStep === 'recipes' && previousPref !== prefId && selectedCuisines.length > 0) {
+      const userMsg = {
+        role: 'user',
+        content: `I'd like to change to ${pref?.label} recipes please`,
+        timestamp: new Date().toISOString()
+      };
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: `Switching to ${pref?.label} recipes! 🍽️ Let me find some delicious diabetes-friendly options for you...`,
+        timestamp: new Date().toISOString(),
+        isLoading: true
+      };
+      
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      fetchRecipesWithParams(selectedCuisines, prefId, selectedMealType);
+      return;
+    }
+    
+    // Normal flow - first time selecting
     const userMsg = {
       role: 'user',
       content: `I'm ${pref?.label}`,
