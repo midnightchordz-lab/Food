@@ -762,17 +762,23 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `GET /api/subscription/check-feature/{name}` - Check feature access
     - `GET /api/subscription/transactions` - Payment history
     - `GET /api/subscription/stats` - MRR/ARR statistics
+  - **Razorpay Integration** (LIVE):
+    - `POST /api/subscription/razorpay/create-order` - Create payment order
+    - `POST /api/subscription/razorpay/verify-payment` - Verify and activate subscription
+    - `GET /api/subscription/razorpay/config` - Get Razorpay public config
+    - `POST /api/subscription/razorpay/webhook` - Handle payment webhooks
+    - Key ID: rzp_test_SDHPVwahfvecH4 (test mode)
   - **Frontend**: 
     - Pricing page at `/pricing` with Monthly/Annual toggle
+    - Razorpay checkout modal integration
     - Feature comparison table
     - FAQ section
     - Navigation includes "Pricing" tab with CreditCard icon
   - **Feature Gating**: `check_feature_access()` enforces limits (5 searches/day for free tier)
-  - **Payment**: MOCKED (no real Stripe/Razorpay) - subscriptions created directly in DB
-  - **Testing**: 100% pass rate (19/19 backend tests, all frontend elements working)
-  - **Files Created**:
-    - `/app/backend/routes/subscription.py`
-    - `/app/frontend/src/pages/PricingPage.js`
+  - **Testing**: Backend API verified, Razorpay order creation tested (order_SDHW1infksoH0o)
+  - **Files Created/Modified**:
+    - `/app/backend/routes/subscription.py` - All subscription and payment endpoints
+    - `/app/frontend/src/pages/PricingPage.js` - Pricing UI with Razorpay checkout
 
 - **Feb 07, 2026**: BUG FIX - Weekly Planner Auto-Generation Failure (CRITICAL)
   - **Issue**: Next week's meals were blank - auto-generation was failing silently
