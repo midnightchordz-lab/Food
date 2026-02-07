@@ -1446,7 +1446,7 @@ const RecipeMessageDisplay = ({ message, onSaveRecipe, structuredRecipes }) => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   
-  // PRIORITY: Use structured recipes from backend if available
+  // PRIORITY 1: Use structured recipes from backend if available
   // This ensures consistent parsing and avoids brittle frontend regex
   let categories = null;
   let usingStructuredData = false;
@@ -1456,9 +1456,25 @@ const RecipeMessageDisplay = ({ message, onSaveRecipe, structuredRecipes }) => {
     usingStructuredData = true;
     console.log('Using structured recipes from backend:', structuredRecipes.length, 'recipes');
   }
-  // NOTE: We NO LONGER fall back to frontend text parsing
-  // If backend didn't find structured recipes, display as plain text
-  // This prevents the "Oats", "Veggies", "Spinach" issue from brittle frontend parsing
+  
+  // PRIORITY 2: Fallback to frontend parsing for backward compatibility
+  // Only parse if we don't have structured data AND the message looks like it has recipes
+  if (!usingStructuredData && message && hasRecipes(message)) {
+    try {
+      const parsedCategories = parseRecipesWithCategories(message);
+      // Only use parsed categories if they have valid recipes (proper titles, not ingredients)
+      const validRecipes = Object.values(parsedCategories)
+        .flatMap(cat => cat.recipes || [])
+        .filter(r => r.title && r.title.split(' ').length >= 2 && r.title.length >= 10);
+      
+      if (validRecipes.length > 0) {
+        categories = parsedCategories;
+        console.log('Using frontend-parsed recipes (fallback):', validRecipes.length, 'valid recipes');
+      }
+    } catch (parseError) {
+      console.warn('Frontend recipe parsing failed:', parseError);
+    }
+  }
   
   const hasAnyRecipes = categories && Object.values(categories).some(cat => cat.recipes && cat.recipes.length > 0);
   
@@ -1472,7 +1488,7 @@ const RecipeMessageDisplay = ({ message, onSaveRecipe, structuredRecipes }) => {
   };
   
   if (!hasAnyRecipes) {
-    // No structured recipes from backend - display as formatted text
+    // No valid recipes found - display as formatted text
     return <p className="whitespace-pre-wrap">{message}</p>;
   }
   
