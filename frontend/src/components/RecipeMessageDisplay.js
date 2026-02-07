@@ -1609,5 +1609,5 @@ const RecipeMessageDisplay = ({ message, onSaveRecipe, structuredRecipes }) => {
   );
 };
 
-export { RecipeMessageDisplay, RecipeCard, parseRecipesWithCategories, getRecipeImage };
+export { RecipeMessageDisplay, RecipeCard, parseRecipesWithCategories, getRecipeImage, getBatchImages, usedImageUrls };
 export default RecipeMessageDisplay;
