@@ -328,7 +328,7 @@ const ChatPage = () => {
     await fetchRecipes(cuisineIds);
   };
   
-  // Fetch recipes based on all selections
+  // Fetch recipes based on all selections - Using HYBRID endpoint (SerpAPI + AI)
   const fetchRecipes = async (cuisineIds) => {
     setIsLoading(true);
     
@@ -336,56 +336,83 @@ const ChatPage = () => {
     const mealType = MEAL_TYPES.find(m => m.id === selectedMealType);
     const dietaryPref = FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref);
     const cuisineLabels = cuisineIds.includes('any') 
-      ? 'any cuisine' 
-      : cuisineIds.map(id => CUISINES.find(c => c.id === id)?.label).join(', ');
-    
-    const enhancedMessage = `
+      ? ['Italian', 'Indian', 'Mexican']  // Default cuisines for "any"
+      : cuisineIds.map(id => CUISINES.find(c => c.id === id)?.label).filter(Boolean);
+
+    try {
+      // Use the HYBRID endpoint for real recipes from Google + AI-generated variety
+      const response = await axios.post(`${API}/chat/recipes/hybrid`, {
+        mood: mood?.label || 'happy',
+        cuisines: cuisineLabels,
+        meal_type: mealType?.label?.toLowerCase() || 'dinner',
+        dietary_preference: dietaryPref?.label?.toLowerCase() || null,
+        use_serpapi: true,
+        limit: 6
+      });
+      
+      // Format response message based on source
+      const sourceText = response.data.source === 'serpapi' 
+        ? '🌐 Found real recipes from top food websites!'
+        : response.data.source === 'hybrid'
+        ? '🌐 Real recipes from food websites + 🤖 AI suggestions!'
+        : '🤖 Here are some AI-generated recipe ideas:';
+      
+      const introMessage = `${sourceText}\n\nHere are ${response.data.combined_recipes?.length || 0} ${mood?.label?.toLowerCase()} ${cuisineLabels.join(' & ')} recipes for ${mealType?.label?.toLowerCase()}:`;
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: introMessage,
+        timestamp: response.data.timestamp,
+        structuredRecipes: response.data.combined_recipes,  // Combined recipes with source_type
+        recipeSource: response.data.source,  // 'serpapi', 'ai', or 'hybrid'
+        serpApiCount: response.data.serpapi_recipes?.length || 0,
+        aiCount: response.data.ai_recipes?.length || 0
+      };
+      
+      setMessages(prev => [...prev, aiMsg]);
+      
+    } catch (error) {
+      console.error('Error fetching hybrid recipes:', error);
+      
+      // Fallback to traditional AI-only endpoint
+      try {
+        const cuisineText = cuisineLabels.join(', ');
+        const fallbackMessage = `
 [User Preferences]
 - Mood: ${mood?.label} (${mood?.description})
 - Meal Type: ${mealType?.label}
 - Dietary Preference: ${dietaryPref?.label}
-- Cuisine(s): ${cuisineLabels}
+- Cuisine(s): ${cuisineText}
 
-Please suggest 6 delicious ${mealType?.label?.toLowerCase()} recipes that:
-1. Match the ${mood?.label?.toLowerCase()} mood (${mood?.description})
-2. Are appropriate for ${mealType?.label?.toLowerCase()} time
-3. Are ${dietaryPref?.label?.toLowerCase()} friendly
-4. Feature ${cuisineLabels} style cooking
-
-For EACH recipe provide:
-- Recipe name with cooking time in parentheses
-- Difficulty level (Easy/Medium/Hard)
-- Brief appetizing description (2-3 sentences)
-- Key mood-boosting benefits
-
-Format each recipe clearly with the name as a header.
+Please suggest 6 delicious ${mealType?.label?.toLowerCase()} recipes.
 `;
-
-    try {
-      const response = await axios.post(`${API}/chat/send`, {
-        session_id: sessionId,
-        message: enhancedMessage
-      });
-      
-      const aiMsg = {
-        role: 'assistant',
-        content: response.data.response,
-        timestamp: response.data.timestamp,
-        structuredRecipes: response.data.structured_recipes  // Include structured data from backend
-      };
-      
-      setMessages(prev => [...prev, aiMsg]);
-    } catch (error) {
-      console.error('Error fetching recipes:', error);
-      toast.error('Failed to get recipes. Please try again.');
-      
-      const errorMsg = {
-        role: 'assistant',
-        content: `I'm sorry, I had trouble finding recipes. Let me try again...`,
-        timestamp: new Date().toISOString(),
-        showRetryButton: true
-      };
-      setMessages(prev => [...prev, errorMsg]);
+        const fallbackResponse = await axios.post(`${API}/chat/send`, {
+          session_id: sessionId,
+          message: fallbackMessage
+        });
+        
+        const fallbackMsg = {
+          role: 'assistant',
+          content: fallbackResponse.data.response,
+          timestamp: fallbackResponse.data.timestamp,
+          structuredRecipes: fallbackResponse.data.structured_recipes,
+          recipeSource: 'ai'
+        };
+        
+        setMessages(prev => [...prev, fallbackMsg]);
+        
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        toast.error('Failed to get recipes. Please try again.');
+        
+        const errorMsg = {
+          role: 'assistant',
+          content: `I'm sorry, I had trouble finding recipes. Let me try again...`,
+          timestamp: new Date().toISOString(),
+          showRetryButton: true
+        };
+        setMessages(prev => [...prev, errorMsg]);
+      }
     } finally {
       setIsLoading(false);
     }
