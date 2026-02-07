@@ -1064,3 +1064,231 @@ async def razorpay_webhook(request: Request):
     except Exception as e:
         logging.error(f"Error processing Razorpay webhook: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============== SUBSCRIPTION MANAGEMENT ENDPOINTS ==============
+
+class CancelSubscriptionRequest(BaseModel):
+    cancel_at_period_end: bool = True  # If true, access continues until period end
+
+
+@router.post("/cancel")
+async def cancel_subscription(
+    request: CancelSubscriptionRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Cancel the current subscription"""
+    try:
+        now = datetime.now(timezone.utc)
+        
+        # Find active subscription
+        subscription = await db.user_subscriptions.find_one({
+            "user_id": current_user.id,
+            "status": {"$in": ["active", "trialing"]}
+        })
+        
+        if not subscription:
+            raise HTTPException(status_code=404, detail="No active subscription found")
+        
+        if subscription.get("plan_id") == "free":
+            raise HTTPException(status_code=400, detail="Cannot cancel free plan")
+        
+        if request.cancel_at_period_end:
+            # Mark to cancel at end of period
+            await db.user_subscriptions.update_one(
+                {"_id": subscription["_id"]},
+                {
+                    "$set": {
+                        "cancel_at_period_end": True,
+                        "cancellation_requested_at": now.isoformat(),
+                        "updated_at": now.isoformat()
+                    }
+                }
+            )
+            
+            return {
+                "success": True,
+                "message": "Subscription will be cancelled at the end of your billing period",
+                "access_until": subscription.get("current_period_end")
+            }
+        else:
+            # Immediate cancellation
+            await db.user_subscriptions.update_one(
+                {"_id": subscription["_id"]},
+                {
+                    "$set": {
+                        "status": "canceled",
+                        "canceled_at": now.isoformat(),
+                        "updated_at": now.isoformat()
+                    }
+                }
+            )
+            
+            return {
+                "success": True,
+                "message": "Subscription cancelled immediately"
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error cancelling subscription: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/reactivate")
+async def reactivate_subscription(current_user: User = Depends(get_current_user)):
+    """Reactivate a subscription that was set to cancel at period end"""
+    try:
+        now = datetime.now(timezone.utc)
+        
+        # Find subscription marked for cancellation
+        subscription = await db.user_subscriptions.find_one({
+            "user_id": current_user.id,
+            "status": "active",
+            "cancel_at_period_end": True
+        })
+        
+        if not subscription:
+            raise HTTPException(
+                status_code=404, 
+                detail="No subscription pending cancellation found"
+            )
+        
+        # Check if still within period
+        period_end = subscription.get("current_period_end")
+        if period_end:
+            end_date = datetime.fromisoformat(period_end.replace('Z', '+00:00'))
+            if end_date < now:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Subscription period has already ended. Please subscribe again."
+                )
+        
+        # Reactivate
+        await db.user_subscriptions.update_one(
+            {"_id": subscription["_id"]},
+            {
+                "$set": {
+                    "cancel_at_period_end": False,
+                    "updated_at": now.isoformat()
+                },
+                "$unset": {
+                    "cancellation_requested_at": ""
+                }
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": "Subscription reactivated successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error reactivating subscription: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/billing-history")
+async def get_billing_history(
+    limit: int = 20,
+    current_user: User = Depends(get_current_user)
+):
+    """Get billing history / payment transactions"""
+    try:
+        # Get payment transactions for user
+        transactions = await db.payment_transactions.find(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(limit).to_list(length=limit)
+        
+        # Enhance with plan details
+        for txn in transactions:
+            if txn.get("subscription_id"):
+                sub = await db.user_subscriptions.find_one(
+                    {"id": txn["subscription_id"]},
+                    {"_id": 0, "plan_id": 1}
+                )
+                if sub:
+                    plan = get_plan_by_id(sub.get("plan_id"))
+                    if plan:
+                        txn["description"] = f"{plan['display_name']} Subscription"
+        
+        return {
+            "success": True,
+            "transactions": transactions,
+            "count": len(transactions)
+        }
+        
+    except Exception as e:
+        logging.error(f"Error getting billing history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/invoices/{transaction_id}")
+async def get_invoice(
+    transaction_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get invoice details for a specific transaction"""
+    try:
+        transaction = await db.payment_transactions.find_one(
+            {"id": transaction_id, "user_id": current_user.id},
+            {"_id": 0}
+        )
+        
+        if not transaction:
+            raise HTTPException(status_code=404, detail="Transaction not found")
+        
+        # Get user details
+        user = await db.users.find_one(
+            {"id": current_user.id},
+            {"_id": 0, "name": 1, "email": 1}
+        )
+        
+        # Get plan details
+        plan_name = "Subscription"
+        if transaction.get("subscription_id"):
+            sub = await db.user_subscriptions.find_one(
+                {"id": transaction["subscription_id"]},
+                {"_id": 0, "plan_id": 1}
+            )
+            if sub:
+                plan = get_plan_by_id(sub.get("plan_id"))
+                if plan:
+                    plan_name = plan['display_name']
+        
+        invoice = {
+            "invoice_id": f"INV-{transaction_id[:8].upper()}",
+            "transaction_id": transaction_id,
+            "date": transaction.get("paid_at") or transaction.get("created_at"),
+            "customer": {
+                "name": user.get("name", "Customer"),
+                "email": user.get("email", "")
+            },
+            "items": [
+                {
+                    "description": f"{plan_name} Subscription",
+                    "amount": transaction.get("amount", 0),
+                    "currency": transaction.get("currency", "INR")
+                }
+            ],
+            "total": transaction.get("amount", 0),
+            "currency": transaction.get("currency", "INR"),
+            "status": transaction.get("status", "completed"),
+            "payment_method": transaction.get("payment_provider", "razorpay")
+        }
+        
+        return {
+            "success": True,
+            "invoice": invoice
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error getting invoice: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
