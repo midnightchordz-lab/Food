@@ -846,14 +846,15 @@ Format each recipe clearly with the name as a header.
                       }`}
                     >
                       {/* Recipe display for AI messages */}
-                      {msg.role === 'assistant' && hasRecipes(msg.content) ? (
+                      {msg.role === 'assistant' && (hasRecipes(msg.content) || msg.structuredRecipes) ? (
                         <RecipeMessageDisplay 
-                          message={msg.content} 
+                          message={msg.content}
+                          structuredRecipes={msg.structuredRecipes}
                           onSaveRecipe={(recipe) => {
                             setRecipeToSave({
                               title: recipe.title,
                               description: recipe.description,
-                              ingredients: ['See recipe details'],
+                              ingredients: recipe.ingredients || ['See recipe details'],
                               instructions: ['See recipe details'],
                               mood_tags: [selectedMood || 'comfort'],
                               prep_time: recipe.cookingTime || '30 min',
