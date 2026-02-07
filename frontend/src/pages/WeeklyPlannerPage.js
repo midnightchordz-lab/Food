@@ -240,11 +240,11 @@ const WeeklyPlannerPage = () => {
   
   // Auto-generate plan when navigating to a new week in auto mode
   useEffect(() => {
-    if (isAuthenticated && mealPreferences?.generation_mode === 'auto') {
+    if (isAuthenticated && mealPreferences?.generation_mode === 'auto' && mealPreferences?.is_active) {
       checkAndAutoGenerateForWeek(currentWeekOffset);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentWeekOffset, mealPreferences?.generation_mode]);
+  }, [currentWeekOffset, mealPreferences?.generation_mode, mealPreferences?.is_active]);
   
   const loadMealPreferences = async () => {
     try {
@@ -260,29 +260,50 @@ const WeeklyPlannerPage = () => {
   
   const checkAndAutoGenerateForWeek = async (weekOffset) => {
     try {
-      // Calculate the week start date for the offset
+      // Calculate the week start date for the offset using local time
       const today = new Date();
       const currentWeekStart = new Date(today);
       currentWeekStart.setDate(today.getDate() - today.getDay() + 1); // Monday
+      currentWeekStart.setHours(0, 0, 0, 0);
       const targetWeekStart = new Date(currentWeekStart);
       targetWeekStart.setDate(currentWeekStart.getDate() + (weekOffset * 7));
-      const weekStartStr = targetWeekStart.toISOString().split('T')[0];
       
-      // Check if we already have a plan for this week
+      // Use local date format to match other functions
+      const year = targetWeekStart.getFullYear();
+      const month = String(targetWeekStart.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(targetWeekStart.getDate()).padStart(2, '0');
+      const weekStartStr = `${year}-${month}-${dayNum}`;
+      
+      // Check if we already have a plan for this week (from current state)
       const existingPlan = plans.find(p => p.week_start === weekStartStr);
-      if (existingPlan) return; // Already have a plan
+      if (existingPlan && existingPlan.meals) {
+        // Check if plan has actual meals
+        const hasMeals = Object.values(existingPlan.meals).some(dayMeals => 
+          dayMeals && Object.values(dayMeals).some(meal => meal)
+        );
+        if (hasMeals) return; // Already have a plan with meals
+      }
       
       // Auto-generate plan for this week
       toast.info(`Auto-generating meal plan for week of ${targetWeekStart.toLocaleDateString()}...`);
       
-      await axios.post(`${API}/weekly-plan/generate-for-week`, {
+      const response = await axios.post(`${API}/weekly-plan/generate-for-week`, {
         week_offset: weekOffset
       });
       
-      toast.success('Meal plan auto-generated!');
-      loadPlans();
+      if (response.data.already_exists) {
+        // Plan exists in DB but not in state - reload
+        await loadPlans();
+      } else {
+        toast.success('Meal plan auto-generated!');
+        await loadPlans();
+      }
     } catch (error) {
       console.error('Error auto-generating plan for week:', error);
+      // Don't show error for auth issues
+      if (error.response?.status !== 401) {
+        toast.error('Auto-generation failed. Click "Generate This Week" to try again.');
+      }
     }
   };
   
