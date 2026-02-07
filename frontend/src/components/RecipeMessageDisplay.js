@@ -1223,16 +1223,23 @@ const detectCuisine = (text) => {
 
 // Check if message contains recipes
 export const hasRecipes = (message) => {
+  if (!message || message.length < 100) return false;
+  
   // Check for various recipe formats
   const hasTimeCategories = message.match(/###?\s*(Quick|Moderate|Elaborate)\s*Option/i);
-  const hasBoldRecipes = message.includes('**') && message.match(/\b(ingredient|recipe|cook|prep|serve|meal|dish)\b/i);
-  const hasRecipeStructure = message.match(/\*\*(Cooking Time|Difficulty|Ingredients|Instructions):?\*\*/i);
-  // NEW: Check for numbered list format "1. **Recipe Name**"
+  const hasRecipeStructure = message.match(/\*\*(Cooking Time|Difficulty|Ingredients|Instructions|Description):?\*\*/i);
+  // Check for numbered list format "1. **Recipe Name**"
   const hasNumberedRecipes = message.match(/^\d+\.\s*\*\*[^*]+\*\*/m);
-  // NEW: Check for "**Recipe Name**" at start of line
+  // Check for "**Recipe Name**" at start of line
   const hasBoldTitles = message.match(/^\*\*[A-Z][^*]+\*\*/m);
+  // Check for "**Recipe: Name**" format
+  const hasRecipeLabel = message.match(/\*\*Recipe:?\s*[^*]+\*\*/i);
+  // Check for "**Dish:**" format
+  const hasDishLabel = message.match(/\*\*Dish:?\*\*/i);
+  // Check for recipe-related keywords
+  const hasRecipeKeywords = message.match(/\b(ingredient|cooking time|difficulty|instructions|prep|serve|recipe)\b/i);
   
-  return (hasTimeCategories || hasBoldRecipes || hasRecipeStructure || hasNumberedRecipes || hasBoldTitles) && message.length > 200;
+  return (hasTimeCategories || hasRecipeStructure || hasNumberedRecipes || hasBoldTitles || hasRecipeLabel || hasDishLabel || hasRecipeKeywords);
 };
 
 // Clickable Recipe Card Component - Simple and Fast
