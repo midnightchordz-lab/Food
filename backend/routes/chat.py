@@ -869,9 +869,10 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                 # Parse structured recipes even for cached responses
                 # This ensures frontend always gets structured data
                 cached_structured_recipes = None
+                user_cuisine = extract_user_cuisine(request.message)
                 try:
-                    cached_structured_recipes = parse_recipes_to_json(cached_response)
-                    logging.info(f"Parsed {len(cached_structured_recipes)} recipes from cached response")
+                    cached_structured_recipes = parse_recipes_to_json(cached_response, user_cuisine)
+                    logging.info(f"Parsed {len(cached_structured_recipes)} recipes from cached response with cuisine: {user_cuisine}")
                 except Exception as parse_error:
                     logging.error(f"Recipe parsing error (cached): {parse_error}")
                 
