@@ -127,6 +127,29 @@ const PlannerMealCard = ({
   const [imageSource, setImageSource] = useState('default');
   const [errorCount, setErrorCount] = useState(0);
   const hasFetched = useRef(false);
+  const previousMealName = useRef(cleanName);
+
+  // Reset image when mealName changes
+  useEffect(() => {
+    if (previousMealName.current !== cleanName) {
+      previousMealName.current = cleanName;
+      hasFetched.current = false;
+      setErrorCount(0);
+      
+      // Check cache first
+      const cacheKey = cleanName.toLowerCase();
+      if (imageCache.has(cacheKey)) {
+        const cached = imageCache.get(cacheKey);
+        setImageUrl(cached.url);
+        setImageSource(cached.source);
+      } else {
+        // Use keyword-based default immediately
+        const newDefaultImg = cleanName ? getKeywordImage(cleanName, mealType) : (DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
+        setImageUrl(newDefaultImg);
+        setImageSource('default');
+      }
+    }
+  }, [cleanName, mealType]);
 
   useEffect(() => {
     if (!enableAI || !cleanName || hasFetched.current) return;
