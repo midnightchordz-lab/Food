@@ -27,6 +27,15 @@ from services.recipe_library import save_recipes_to_library
 
 router = APIRouter(prefix="/diabetes", tags=["Diabetes"])
 
+
+# ============== FEATURE GATING HELPER ==============
+
+async def check_diabetes_access(user_id: str) -> dict:
+    """Check if user has access to diabetes module"""
+    access = await FeatureGate.check_access(user_id, "diabetes_module")
+    return access
+
+
 # ============== MODELS ==============
 
 class DiabetesResearchRequest(BaseModel):
