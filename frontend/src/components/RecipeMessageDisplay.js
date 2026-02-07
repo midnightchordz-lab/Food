@@ -1301,9 +1301,16 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
     hasFetched.current = true;
 
     const cacheKey = recipe.title.toLowerCase();
+    
+    // Check if image is already in cache
     if (imageCache.has(cacheKey)) {
-      setImageUrl(imageCache.get(cacheKey));
-      return;
+      const cachedUrl = imageCache.get(cacheKey);
+      // Make sure this URL isn't already used by another card in this view
+      if (!usedImageUrls.has(cachedUrl) || cachedUrl === imageUrl) {
+        setImageUrl(cachedUrl);
+        usedImageUrls.add(cachedUrl);
+        return;
+      }
     }
 
     const fetchImage = async () => {
@@ -1318,11 +1325,16 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
       finally { setIsLoading(false); }
     };
 
-    setTimeout(fetchImage, Math.random() * 500);
-  }, [recipe.title, recipe.cuisineHint]);
+    // Stagger requests to avoid rate limiting
+    setTimeout(fetchImage, Math.random() * 800 + 200);
+  }, [recipe.title, recipe.cuisineHint, imageUrl]);
 
   const handleImgError = () => {
-    setImageUrl(recipe.imageUrl || GENERIC_FOOD_IMAGES[0]);
+    // On error, try to get an alternative image
+    const cacheKey = recipe.title.toLowerCase();
+    imageCache.delete(cacheKey);
+    usedImageUrls.delete(imageUrl);
+    setImageUrl(recipe.imageUrl || GENERIC_FOOD_IMAGES[Math.floor(Math.random() * GENERIC_FOOD_IMAGES.length)]);
   };
 
   return (
