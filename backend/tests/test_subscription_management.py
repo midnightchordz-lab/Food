@@ -299,7 +299,8 @@ class TestSubscriptionWithPaidPlan:
         if register_resp.status_code != 200:
             pytest.skip("Could not register test user")
         
-        self.token = register_resp.json().get("token")
+        reg_data = register_resp.json()
+        self.token = reg_data.get("access_token") or reg_data.get("token")
         self.session.headers.update({"Authorization": f"Bearer {self.token}"})
         
         # Create a subscription (simulate)
