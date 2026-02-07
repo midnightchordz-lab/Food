@@ -122,7 +122,19 @@ const getDrinkPairing = (recipeName, mealType) => {
   }
   
   const mealPairings = DRINK_PAIRINGS[mealType] || DRINK_PAIRINGS.lunch;
-  return mealPairings[cuisine] || mealPairings.default;
+  const pairings = mealPairings[cuisine] || mealPairings.default;
+  
+  // Convert string arrays to objects with name and description
+  return {
+    nonAlcoholic: pairings.nonAlcoholic.map(drink => ({
+      name: drink,
+      description: `A refreshing ${drink.toLowerCase()} that complements the flavors of this dish perfectly.`
+    })),
+    alcoholic: pairings.alcoholic.map(drink => ({
+      name: drink,
+      description: `${drink} pairs well with the bold flavors of this recipe.`
+    }))
+  };
 };
 
 // Get image URL for a recipe based on its name
