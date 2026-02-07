@@ -1295,6 +1295,30 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         
+        {/* Source Badge - Top Left */}
+        <div className="absolute top-2 left-2 z-10">
+          {recipe.sourceType === 'serpapi' ? (
+            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500/90 text-white text-xs font-medium rounded-full shadow-lg">
+              <Globe size={12} />
+              <span>{recipe.source || 'Web Recipe'}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 px-2 py-1 bg-violet-500/90 text-white text-xs font-medium rounded-full shadow-lg">
+              <Bot size={12} />
+              <span>AI Suggested</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Rating Badge - Top Right (for SerpAPI recipes) */}
+        {recipe.sourceType === 'serpapi' && recipe.rating && (
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full shadow-lg">
+            <Star size={12} fill="currentColor" />
+            <span>{recipe.rating}</span>
+            {recipe.reviews > 0 && <span className="opacity-80">({recipe.reviews})</span>}
+          </div>
+        )}
+        
         {/* Loading Overlay */}
         {isLoading && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
@@ -1333,19 +1357,32 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
           </span>
         </div>
         
-        {/* Read More Button */}
-        <Button
-          size="sm"
-          variant="outline"
-          className="w-full rounded-full text-xs border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground group-hover:border-primary"
-          onClick={(e) => {
-            e.stopPropagation();
-            // Pass the current imageUrl (which may be AI-generated) to the detail view
-            onViewDetails({ ...recipe, imageUrl: imageUrl });
-          }}
-        >
-          Read More <ChevronRight size={14} className="ml-1" />
-        </Button>
+        {/* Action Button - Different for SerpAPI vs AI */}
+        {recipe.sourceType === 'serpapi' && recipe.link ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full rounded-full text-xs border-emerald-500/30 text-emerald-600 hover:bg-emerald-500 hover:text-white group-hover:border-emerald-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(recipe.link, '_blank', 'noopener,noreferrer');
+            }}
+          >
+            View Original Recipe <ExternalLink size={14} className="ml-1" />
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full rounded-full text-xs border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground group-hover:border-primary"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails({ ...recipe, imageUrl: imageUrl });
+            }}
+          >
+            Read More <ChevronRight size={14} className="ml-1" />
+          </Button>
+        )}
       </div>
     </div>
   );
