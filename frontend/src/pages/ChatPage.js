@@ -370,7 +370,8 @@ Format each recipe clearly with the name as a header.
       const aiMsg = {
         role: 'assistant',
         content: response.data.response,
-        timestamp: response.data.timestamp
+        timestamp: response.data.timestamp,
+        structuredRecipes: response.data.structured_recipes  // Include structured data from backend
       };
       
       setMessages(prev => [...prev, aiMsg]);
