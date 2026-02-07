@@ -827,7 +827,7 @@ const parseSingleDishFormat = (message) => {
           cookingTime,
           difficulty,
           description: description || `A delicious ${cuisineHint || ''} ${title} dish.`.trim(),
-          imageUrl: getRecipeImage(title, cuisineHint),
+          imageUrl: getUniqueRecipeImage(title, cuisineHint),
           cuisineHint,
           fullContent: message
         });
@@ -927,7 +927,7 @@ const parseNumberedRecipes = (message) => {
       difficulty,
       cuisineHint,
       category: 'moderate',
-      imageUrl: getRecipeImage(title, cuisineHint),
+      imageUrl: getUniqueRecipeImage(title, cuisineHint),
       fullContent: content
     });
   }
@@ -979,7 +979,7 @@ const parseNumberedRecipes = (message) => {
       difficulty,
       cuisineHint,
       category: 'moderate',
-      imageUrl: getRecipeImage(title, cuisineHint),
+      imageUrl: getUniqueRecipeImage(title, cuisineHint),
       fullContent: content
     });
   }
@@ -1177,7 +1177,7 @@ const parseRecipesFromSection = (section, category) => {
       difficulty,
       cuisineHint,
       category,
-      imageUrl: getRecipeImage(title, cuisineHint),
+      imageUrl: getUniqueRecipeImage(title, cuisineHint),
       fullContent: content
     });
   }
@@ -1305,7 +1305,7 @@ const parseRecipesGeneral = (message) => {
       cookingTime: typeof cookingTime === 'string' && !cookingTime.includes('min') ? cookingTime + ' min' : cookingTime,
       difficulty,
       cuisineHint,
-      imageUrl: getRecipeImage(title, cuisineHint),
+      imageUrl: getUniqueRecipeImage(title, cuisineHint),
       fullContent: content
     });
   }
@@ -1364,7 +1364,7 @@ const parseRecipesGeneral = (message) => {
       cookingTime,
       difficulty,
       cuisineHint,
-      imageUrl: getRecipeImage(title, cuisineHint),
+      imageUrl: getUniqueRecipeImage(title, cuisineHint),
       fullContent: content
     });
   }
