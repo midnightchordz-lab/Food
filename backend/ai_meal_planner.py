@@ -95,6 +95,27 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     Excludes previously used recipes to ensure variety.
     Also filters for user food allergies/exclusions.
     """
+    # Normalize cuisine_preferences to list of strings
+    if cuisine_preferences:
+        normalized_cuisines = []
+        for cp in cuisine_preferences:
+            if isinstance(cp, dict):
+                # Handle {"id": "italian", "label": "Italian"} format
+                normalized_cuisines.append(cp.get('label') or cp.get('id') or str(cp))
+            elif isinstance(cp, str):
+                normalized_cuisines.append(cp)
+        cuisine_preferences = normalized_cuisines
+    
+    # Normalize focus_areas to list of strings
+    if focus_areas:
+        normalized_focus = []
+        for fa in focus_areas:
+            if isinstance(fa, dict):
+                normalized_focus.append(fa.get('label') or fa.get('id') or str(fa))
+            elif isinstance(fa, str):
+                normalized_focus.append(fa)
+        focus_areas = normalized_focus
+    
     # Handle dietary_preference as string or list
     # When user selects both veg and non-veg, the general preference should be non-vegetarian
     # with specific days being vegetarian
