@@ -322,6 +322,8 @@ Output ONLY valid JSON, no other text or markdown code blocks."""
             logging.error(f"Failed to parse vision response: {e}")
             raise HTTPException(status_code=500, detail="Failed to parse recipe from image. Please try again.")
         
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error importing from image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
