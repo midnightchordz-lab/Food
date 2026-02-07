@@ -94,6 +94,9 @@ def parse_recipes_to_json(ai_response: str, user_cuisine: str = '') -> List[Dict
         r'^key\s*ingredients?',  # "Key Ingredients" is NOT a recipe name
         r'^serves?',  # "Serves" is NOT a recipe name
         r'^prep\s*time',  # "Prep Time" is NOT a recipe name
+        r'^cuisine\s*(type)?',  # "Cuisine Type" is NOT a recipe name
+        r'^dietary\s*(preference)?',  # "Dietary Preference" is NOT a recipe name
+        r'^meal\s*(type)?',  # "Meal Type" is NOT a recipe name
     ]
     
     def is_valid_recipe_name(title: str) -> bool:
