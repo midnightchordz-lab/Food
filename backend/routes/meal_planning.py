@@ -132,7 +132,16 @@ async def track_used_recipes(user_id: str, meals: Dict, week_start: str):
         recipes_to_track = []
         for day, day_meals in meals.items():
             for meal_type, recipe_name in day_meals.items():
+                # Skip drink pairings and non-string values
+                if meal_type == 'dinner_pairing' or not isinstance(recipe_name, str):
+                    continue
+                    
                 clean_name = recipe_name.split('(~')[0].strip() if '(~' in recipe_name else recipe_name
+                
+                # Skip empty or very short names
+                if not clean_name or len(clean_name) < 3:
+                    continue
+                    
                 recipes_to_track.append({
                     "user_id": user_id,
                     "recipe_name": clean_name,
