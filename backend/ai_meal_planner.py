@@ -328,6 +328,11 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
     """
     
     try:
+        # Debug logging before prompt construction
+        logging.info(f"After normalization - focus_areas: {focus_areas} (type: {type(focus_areas)})")
+        logging.info(f"After normalization - cuisine_preferences: {cuisine_preferences} (type: {type(cuisine_preferences)})")
+        logging.info(f"After normalization - user_restrictions: {user_restrictions} (type: {type(user_restrictions)})")
+        
         chat = LlmChat(
             api_key=os.environ['EMERGENT_LLM_KEY'],
             session_id=f"meal-plan-{user.id}",
