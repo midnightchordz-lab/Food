@@ -257,6 +257,40 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
   - **Testing**: 18/18 backend tests passed
   - **Test File**: `/app/backend/tests/test_feature_gating.py`
 
+- **Feb 7, 2026**: FEATURE - Scheduled Tasks & Usage Tracking (COMPLETE)
+  - **Implemented**: Automated cron jobs for subscription management
+  - **Daily Tasks**:
+    - Reset daily usage counters (recipe searches)
+    - Clean up old usage records (older than 90 days)
+  - **Hourly Tasks**:
+    - Check and expire subscriptions past their end date
+    - Check for subscriptions expiring within 7 days (for reminders)
+  - **Admin API Endpoints**:
+    - `GET /api/scheduled-tasks/status` - Get scheduler status
+    - `POST /api/scheduled-tasks/run-daily` - Manual trigger daily tasks
+    - `POST /api/scheduled-tasks/run-hourly` - Manual trigger hourly tasks
+    - `POST /api/scheduled-tasks/reset-daily-usage` - Manual reset usage
+    - `POST /api/scheduled-tasks/check-expirations` - Manual check expirations
+  - **Files Created**: `/app/backend/services/scheduled_tasks.py`
+  - **Files Modified**: `/app/backend/server.py` - Added scheduler startup/shutdown
+
+- **Feb 7, 2026**: FEATURE - Premium Recipe Classification (COMPLETE)
+  - **Implemented**: Automatic marking of premium recipes based on content
+  - **Premium Criteria**:
+    - Premium ingredients: truffle, saffron, wagyu, caviar, lobster, etc.
+    - Advanced cooking methods: sous vide, confit, flambé, fermented
+    - Complex recipes: 15+ ingredients or 3+ hour cooking time
+    - Premium cuisine styles: fine dining, molecular gastronomy
+  - **Recipe Library Updates**:
+    - `is_premium` field added to recipe schema
+    - `premium_reason` field explains why recipe is premium
+    - Free users excluded from premium recipes in browse/filter
+    - Premium recipes require subscription to view details
+  - **Files Modified**: 
+    - `/app/backend/services/recipe_library.py` - Premium detection logic
+    - `/app/backend/routes/recipe_library.py` - Premium access control
+    - `/app/backend/routes/deps.py` - Added is_premium index
+
 - **Feb 7, 2026**: FEATURE - Razorpay Webhook Handler (COMPLETE)
   - **Implemented**: Full webhook handling for payment events
   - **Events Handled**:
