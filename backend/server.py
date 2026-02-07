@@ -50,6 +50,7 @@ from routes import (
 from routes.search import router as search_router
 from routes.recipe_library import router as recipe_library_router
 from routes.subscription import router as subscription_router
+from services.scheduled_tasks import router as scheduled_tasks_router, start_scheduler, stop_scheduler
 
 # Include all routers with /api prefix
 app.include_router(auth_router, prefix="/api")
@@ -64,6 +65,7 @@ app.include_router(image_router, prefix="/api/recipe-image")
 app.include_router(search_router, prefix="/api")
 app.include_router(recipe_library_router, prefix="/api")
 app.include_router(subscription_router, prefix="/api")
+app.include_router(scheduled_tasks_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(
@@ -74,17 +76,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Startup event - create database indexes
+# Startup event - create database indexes and start scheduler
 @app.on_event("startup")
 async def startup_event():
     from routes.deps import create_indexes
     await create_indexes()
-    logger.info("Application started with database indexes")
+    await start_scheduler()
+    logger.info("Application started with database indexes and scheduled tasks")
 
 # Shutdown event
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    await stop_scheduler()
     client.close()
+    logger.info("Application shutdown complete")
 
 # Health check endpoint
 @app.get("/api/health")
