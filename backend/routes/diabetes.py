@@ -322,6 +322,20 @@ What's your dietary preference?"""
 async def get_diabetes_recipes(request: DiabetesRecipeRequest, current_user: User = Depends(get_current_user)):
     """Generate diabetes-safe recipes based on user preferences"""
     try:
+        # Check feature access - Diabetes module requires Chef Pro
+        access = await check_diabetes_access(current_user.id)
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "diabetes_module",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
         user_exclusions = await get_user_excluded_ingredients(current_user.id)
