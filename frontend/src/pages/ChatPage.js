@@ -403,7 +403,126 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
     }
   };
   
-  // Handle cuisine selection
+  // Handle meal type change from dropdown (after recipes are shown)
+  const handleMealTypeChange = async (mealTypeId) => {
+    const previousMealType = selectedMealType;
+    if (mealTypeId === previousMealType) return;
+    
+    const newMealType = MEAL_TYPES.find(m => m.id === mealTypeId);
+    setSelectedMealType(mealTypeId);
+    
+    if (flowStep === 'recipes' && selectedCuisines.length > 0) {
+      const userMsg = {
+        role: 'user',
+        content: `I'd like ${newMealType?.label?.toLowerCase()} recipes instead`,
+        timestamp: new Date().toISOString()
+      };
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: `Switching to ${newMealType?.label} recipes! ${newMealType?.emoji} Let me find some delicious options...`,
+        timestamp: new Date().toISOString(),
+        isLoading: true
+      };
+      
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      await fetchRecipesWithParams(selectedCuisines, selectedDietaryPref, mealTypeId);
+    }
+  };
+  
+  // Handle cuisine change from dropdown (after recipes are shown)
+  const handleCuisineChange = async (cuisineId) => {
+    if (selectedCuisines.includes(cuisineId) && selectedCuisines.length === 1) return;
+    
+    const newCuisine = CUISINES.find(c => c.id === cuisineId);
+    setSelectedCuisines([cuisineId]);
+    
+    if (flowStep === 'recipes') {
+      const userMsg = {
+        role: 'user',
+        content: `I'd like ${newCuisine?.label} recipes instead`,
+        timestamp: new Date().toISOString()
+      };
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: `Switching to ${newCuisine?.label} cuisine! ${newCuisine?.flag} Let me find some delicious options...`,
+        timestamp: new Date().toISOString(),
+        isLoading: true
+      };
+      
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      await fetchRecipesWithParams([cuisineId], selectedDietaryPref, selectedMealType);
+    }
+  };
+  
+  // Generic recipe fetch with specific params (used when any preference changes)
+  const fetchRecipesWithParams = async (cuisineIds, dietaryPrefId, mealTypeId) => {
+    setIsLoading(true);
+    
+    const mood = MOOD_IMAGES.find(m => m.id === selectedMood);
+    const mealType = MEAL_TYPES.find(m => m.id === mealTypeId);
+    const dietaryPref = FOOD_PREFERENCES.find(p => p.id === dietaryPrefId);
+    const cuisineLabels = cuisineIds.includes('any') 
+      ? 'any cuisine' 
+      : cuisineIds.map(id => CUISINES.find(c => c.id === id)?.label).join(', ');
+    
+    const enhancedMessage = `
+[User Preferences]
+- Mood: ${mood?.label} (${mood?.description})
+- Meal Type: ${mealType?.label}
+- Dietary Preference: ${dietaryPref?.label}
+- Cuisine(s): ${cuisineLabels}
+
+Create 6 ORIGINAL ${mealType?.label?.toLowerCase()} recipes that:
+1. Match the ${mood?.label?.toLowerCase()} mood perfectly
+2. Are ${dietaryPref?.label?.toLowerCase()} friendly
+3. Feature authentic ${cuisineLabels} flavors and techniques
+4. Have creative, appetizing names
+
+For EACH recipe provide:
+### [Creative Recipe Name] (XX min)
+**Difficulty:** Easy/Medium/Hard
+**Description:** 2-3 sentences describing the dish.
+**Key Ingredients:** List 4-6 main ingredients
+`;
+
+    try {
+      const response = await axios.post(`${API}/chat/send`, {
+        session_id: sessionId,
+        message: enhancedMessage
+      });
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: response.data.response,
+        timestamp: response.data.timestamp,
+        structuredRecipes: response.data.structured_recipes
+      };
+      
+      setMessages(prev => {
+        const filtered = prev.filter(m => !m.isLoading);
+        return [...filtered, aiMsg];
+      });
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+      toast.error('Failed to get recipes. Please try again.');
+      
+      setMessages(prev => {
+        const filtered = prev.filter(m => !m.isLoading);
+        return [...filtered, {
+          role: 'assistant',
+          content: `I'm sorry, I had trouble finding recipes. Let me try again...`,
+          timestamp: new Date().toISOString(),
+          showRetryButton: true
+        }];
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle cuisine selection (initial flow)
   const handleCuisineSelect = async (cuisineIds, cuisineLabels) => {
     setSelectedCuisines(cuisineIds);
     
