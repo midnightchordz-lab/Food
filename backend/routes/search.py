@@ -118,6 +118,56 @@ async def api_search_recipes_get(
     return result
 
 
+@router.post("/recipes/mood")
+async def api_search_recipes_by_mood(request: MoodRecipeSearchRequest, current_user: User = Depends(get_current_user)):
+    """
+    Search for recipes based on mood, cuisine, and meal type.
+    Returns rich recipe data from Google's recipe search results with ratings,
+    cooking time, ingredients, and source links.
+    
+    This integrates SerpAPI's Google Recipes Results for diverse, real recipes.
+    """
+    result = await search_recipes_for_mood(
+        mood=request.mood,
+        cuisine=request.cuisine,
+        meal_type=request.meal_type,
+        dietary=request.dietary,
+        limit=request.limit
+    )
+    
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Recipe search failed"))
+    
+    return result
+
+
+@router.get("/recipes/mood")
+async def api_search_recipes_by_mood_get(
+    mood: str = Query(..., description="Mood (happy, sad, stressed, tired, cozy, etc.)"),
+    cuisine: str = Query(..., description="Cuisine type (Indian, Italian, Mexican, etc.)"),
+    meal_type: Optional[str] = Query("dinner", description="Meal type (breakfast, lunch, dinner, snack)"),
+    dietary: Optional[str] = Query(None, description="Dietary preference (vegetarian, vegan, etc.)"),
+    limit: Optional[int] = Query(6, description="Number of recipes to return"),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Search for recipes based on mood, cuisine, and meal type (GET endpoint).
+    Returns rich recipe data from Google's recipe search results.
+    """
+    result = await search_recipes_for_mood(
+        mood=mood,
+        cuisine=cuisine,
+        meal_type=meal_type,
+        dietary=dietary,
+        limit=limit
+    )
+    
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Recipe search failed"))
+    
+    return result
+
+
 @router.post("/grocery-stores")
 async def api_find_grocery_stores(request: GroceryStoreRequest, current_user: User = Depends(get_current_user)):
     """
