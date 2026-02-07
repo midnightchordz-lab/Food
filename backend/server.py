@@ -49,6 +49,7 @@ from routes import (
 )
 from routes.search import router as search_router
 from routes.recipe_library import router as recipe_library_router
+from routes.subscription import router as subscription_router
 
 # Include all routers with /api prefix
 app.include_router(auth_router, prefix="/api")
@@ -62,6 +63,7 @@ app.include_router(voice_router, prefix="/api")
 app.include_router(image_router, prefix="/api/recipe-image")
 app.include_router(search_router, prefix="/api")
 app.include_router(recipe_library_router, prefix="/api")
+app.include_router(subscription_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(
