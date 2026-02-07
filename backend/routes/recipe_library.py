@@ -17,8 +17,16 @@ from services.recipe_library import (
 )
 
 from .deps import db, User, get_current_user
+from .subscription import get_user_subscription
 
 router = APIRouter(prefix="/recipe-library", tags=["Recipe Library"])
+
+
+async def user_has_premium_access(user_id: str) -> bool:
+    """Check if user has access to premium recipes"""
+    subscription = await get_user_subscription(user_id)
+    features = subscription.get("features", {})
+    return features.get("premium_recipes_access", False)
 
 
 class LibrarySearchRequest(BaseModel):
