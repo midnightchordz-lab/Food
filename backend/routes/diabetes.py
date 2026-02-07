@@ -577,6 +577,22 @@ FORMAT - Follow exactly:
             try:
                 structured_recipes = parse_recipes_to_json(ai_response, cuisine_label)
                 logging.info(f"Diabetes 'show more': Parsed {len(structured_recipes)} recipes")
+                
+                # Save to recipe library
+                if structured_recipes and len(structured_recipes) >= 1:
+                    try:
+                        saved_count = await save_recipes_to_library(
+                            db,
+                            structured_recipes,
+                            mood=mood,
+                            meal_type=meal_type,
+                            dietary=dietary_pref,
+                            cuisine=cuisine_label
+                        )
+                        if saved_count > 0:
+                            logging.info(f"Diabetes 'show more': Saved {saved_count} new recipes to library")
+                    except Exception as save_error:
+                        logging.warning(f"Failed to save 'show more' recipes: {save_error}")
             except Exception as parse_error:
                 logging.error(f"Diabetes 'show more' recipe parsing error: {parse_error}")
             
