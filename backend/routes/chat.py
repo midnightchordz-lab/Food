@@ -23,6 +23,203 @@ from .exclusions import (
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
+# ============== RECIPE PARSER - BACKEND JSON EXTRACTION ==============
+# This parses the LLM text response into structured JSON to avoid brittle frontend parsing
+
+def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
+    """
+    Parse AI-generated recipe text into structured JSON.
+    This is the SINGLE SOURCE OF TRUTH for recipe parsing - done on backend to ensure consistency.
+    """
+    recipes = []
+    
+    # Single ingredients/foods that are NOT recipes
+    single_food_items = {
+        'greek yogurt', 'yogurt', 'honey', 'nuts', 'berries', 'oats', 'eggs', 'egg',
+        'tomatoes', 'tomato', 'spinach', 'cheese', 'rice', 'bread', 'chicken', 'beef',
+        'fish', 'salmon', 'tuna', 'tofu', 'beans', 'lentils', 'avocado', 'banana',
+        'apple', 'orange', 'milk', 'butter', 'olive oil', 'garlic', 'onion', 'ginger',
+        'quinoa', 'pasta', 'noodles', 'shrimp', 'pork', 'lamb', 'turkey', 'hummus'
+    }
+    
+    # Skip patterns - NOT recipe names
+    skip_patterns = [
+        r'^(option|tip|note|step|ingredient|instruction|nutritional|description|benefit|why)',
+        r'^(blood sugar|diabetes|health|safety|warning|important|disclaimer)',
+        r'^(tips?|notes?|benefits?|guidelines?|recommendations?)',
+        r'^(mood|mood-boosting|boosting|stress|comfort|relaxation)',
+        r'^#?\s*mood-?boosting\s*benefits?',
+        r'benefits?$',
+    ]
+    
+    def is_valid_recipe_name(title: str) -> bool:
+        """Check if a title is a valid recipe name, not an ingredient or section header"""
+        if not title or len(title) < 4 or len(title) > 120:
+            return False
+        title_lower = title.lower().strip()
+        # Skip single ingredients
+        if title_lower in single_food_items:
+            return False
+        # Skip section headers/tips
+        for pattern in skip_patterns:
+            if re.match(pattern, title_lower, re.IGNORECASE):
+                return False
+        # Must have at least 2 words for a proper recipe name
+        words = title.split()
+        if len(words) < 2:
+            return False
+        # Skip if ends with colon (section header)
+        if title.endswith(':'):
+            return False
+        return True
+    
+    def detect_cuisine(text: str) -> str:
+        """Detect cuisine from text"""
+        text_lower = text.lower()
+        if any(w in text_lower for w in ['indian', 'curry', 'masala', 'paneer', 'tikka', 'biryani', 'dal']):
+            return 'Indian'
+        if any(w in text_lower for w in ['italian', 'pasta', 'risotto', 'pizza', 'carbonara', 'lasagna']):
+            return 'Italian'
+        if any(w in text_lower for w in ['mexican', 'taco', 'burrito', 'enchilada', 'quesadilla']):
+            return 'Mexican'
+        if any(w in text_lower for w in ['chinese', 'wok', 'stir-fry', 'dumpling', 'dim sum']):
+            return 'Chinese'
+        if any(w in text_lower for w in ['japanese', 'sushi', 'ramen', 'teriyaki', 'tempura', 'miso']):
+            return 'Japanese'
+        if any(w in text_lower for w in ['thai', 'pad thai', 'tom yum', 'green curry', 'massaman']):
+            return 'Thai'
+        if any(w in text_lower for w in ['korean', 'kimchi', 'bibimbap', 'bulgogi']):
+            return 'Korean'
+        if any(w in text_lower for w in ['mediterranean', 'falafel', 'hummus', 'greek']):
+            return 'Mediterranean'
+        return ''
+    
+    def extract_time(text: str) -> str:
+        """Extract cooking time from text"""
+        time_match = re.search(r'\*\*(?:Cooking\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*(?:min|minutes?)?', text, re.IGNORECASE)
+        if time_match:
+            return f"{time_match.group(1)} min"
+        time_match = re.search(r'\|\s*\*\*Time:?\*\*\s*(\d+)\s*min', text, re.IGNORECASE)
+        if time_match:
+            return f"{time_match.group(1)} min"
+        time_match = re.search(r'(\d+[-–]?\d*)\s*(?:min|minutes?)', text, re.IGNORECASE)
+        if time_match:
+            return f"{time_match.group(1)} min"
+        return "30 min"
+    
+    def extract_difficulty(text: str) -> str:
+        """Extract difficulty from text"""
+        diff_match = re.search(r'\*\*Difficulty:?\*\*\s*(Easy|Medium|Moderate|Hard)', text, re.IGNORECASE)
+        if diff_match:
+            diff = diff_match.group(1)
+            return 'Medium' if diff.lower() == 'moderate' else diff.title()
+        if re.search(r'\b(easy|simple|quick)\b', text, re.IGNORECASE):
+            return 'Easy'
+        if re.search(r'\b(hard|complex|advanced)\b', text, re.IGNORECASE):
+            return 'Hard'
+        return 'Medium'
+    
+    def extract_description(text: str, title: str) -> str:
+        """Extract description from recipe content"""
+        # Try to find explicit description
+        desc_match = re.search(r'\*\*Description:?\*\*:?\s*([^\n*]+)', text, re.IGNORECASE)
+        if desc_match:
+            return desc_match.group(1).strip()
+        
+        # Try to find "Why" explanation (diabetes format)
+        why_match = re.search(r'\*\*Why[^*]+\*\*\s*([^\n*]+)', text, re.IGNORECASE)
+        if why_match:
+            return why_match.group(1).strip()
+        
+        # Get first meaningful line
+        lines = text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith('#') and not line.startswith('*') and not line.startswith('-'):
+                if len(line) > 20:
+                    # Truncate to 2 sentences max
+                    sentences = re.split(r'(?<=[.!?])\s+', line)
+                    return ' '.join(sentences[:2])[:200]
+        
+        return f"A delicious {title} recipe."
+    
+    def extract_ingredients(text: str) -> List[str]:
+        """Extract key ingredients from recipe content"""
+        ingredients = []
+        
+        # Look for "Key Ingredients:" section
+        ing_match = re.search(r'\*\*(?:Key\s*)?Ingredients:?\*\*:?\s*([^\n]+)', text, re.IGNORECASE)
+        if ing_match:
+            ing_text = ing_match.group(1).strip()
+            # Split by comma
+            ingredients = [i.strip() for i in ing_text.split(',') if i.strip()]
+        
+        # Look for bullet point ingredients
+        if not ingredients:
+            bullet_matches = re.findall(r'^\s*[-•]\s*(.+?)$', text, re.MULTILINE)
+            for match in bullet_matches[:8]:
+                # Skip instruction-like lines
+                if not re.match(r'^(step|heat|cook|add|stir|mix|serve)', match.lower()):
+                    ingredients.append(match.strip())
+        
+        return ingredients[:6] if ingredients else []
+    
+    # PATTERN 1: "### 1. Recipe Name" or "### Recipe Name" format
+    pattern1 = r'##[#]?\s*(?:\d+\.?)?\s*\[?([^\n\[\]]+?)\]?\s*\n([\s\S]*?)(?=##[#]?\s*(?:\d+\.?)?\s*\[?[^\n\[\]]+?\]?\s*\n|---\s*$|$)'
+    matches1 = re.finditer(pattern1, ai_response)
+    
+    for match in matches1:
+        title = match.group(1).strip()
+        # Clean title - remove brackets, parentheses at end
+        title = re.sub(r'\([^)]*\)\s*$', '', title).strip()
+        title = re.sub(r'\[[^\]]*\]\s*$', '', title).strip()
+        title = re.sub(r'^[:\-–]\s*', '', title).strip()
+        content = match.group(2).strip()
+        
+        if not is_valid_recipe_name(title):
+            continue
+        
+        recipes.append({
+            "title": title,
+            "description": extract_description(content, title),
+            "cooking_time": extract_time(content),
+            "difficulty": extract_difficulty(content),
+            "cuisine": detect_cuisine(title + ' ' + content),
+            "ingredients": extract_ingredients(content),
+            "full_content": content
+        })
+    
+    # If pattern 1 found recipes, return them
+    if recipes:
+        return recipes
+    
+    # PATTERN 2: "**Recipe Name**" format (numbered or not)
+    pattern2 = r'(?:^\d+\.\s*)?\*\*([^*]+)\*\*\s*([\s\S]*?)(?=(?:^\d+\.\s*)?\*\*[^*]+\*\*|$)'
+    matches2 = re.finditer(pattern2, ai_response, re.MULTILINE)
+    
+    for match in matches2:
+        title = match.group(1).strip()
+        content = match.group(2).strip()
+        
+        # Clean title
+        title = re.sub(r'\([^)]*\)\s*$', '', title).strip()
+        title = title.rstrip(':')
+        
+        if not is_valid_recipe_name(title):
+            continue
+        
+        recipes.append({
+            "title": title,
+            "description": extract_description(content, title),
+            "cooking_time": extract_time(content),
+            "difficulty": extract_difficulty(content),
+            "cuisine": detect_cuisine(title + ' ' + content),
+            "ingredients": extract_ingredients(content),
+            "full_content": content
+        })
+    
+    return recipes
+
 # ============== RESPONSE CACHE ==============
 # In-memory cache for recipe responses (faster than DB lookups)
 _recipe_cache: Dict[str, Dict[str, Any]] = {}
