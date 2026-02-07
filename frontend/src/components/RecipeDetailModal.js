@@ -903,11 +903,14 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                       Alcoholic Options (21+)
                     </h4>
                     <div className="grid gap-3">
-                      {parsedRecipe?.drinkPairings?.alcoholic?.length > 0 ? (
-                        parsedRecipe.drinkPairings.alcoholic.map((drink, idx) => (
+                      {(parsedRecipe?.drinkPairings?.alcoholic?.length > 0 || recipe?.drinkPairings?.alcoholic?.length > 0) ? (
+                        (parsedRecipe?.drinkPairings?.alcoholic?.length > 0 
+                          ? parsedRecipe.drinkPairings.alcoholic 
+                          : recipe?.drinkPairings?.alcoholic || []
+                        ).map((drink, idx) => (
                           <div key={idx} className="p-4 bg-purple-50 rounded-xl border border-purple-100">
-                            <p className="font-semibold text-purple-800">{drink.name}</p>
-                            <p className="text-sm text-purple-600 mt-1">{drink.description}</p>
+                            <p className="font-semibold text-purple-800">{drink.name || drink}</p>
+                            <p className="text-sm text-purple-600 mt-1">{drink.description || `This beverage pairs well with the flavors of this dish.`}</p>
                           </div>
                         ))
                       ) : (
