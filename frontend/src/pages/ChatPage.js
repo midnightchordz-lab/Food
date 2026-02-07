@@ -437,7 +437,7 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
     const newCuisine = CUISINES.find(c => c.id === cuisineId);
     setSelectedCuisines([cuisineId]);
     
-    if (flowStep === 'recipes') {
+    if (flowStep === 'recipes' || flowStep === 'cuisine_changed') {
       const userMsg = {
         role: 'user',
         content: `I'd like ${newCuisine?.label} recipes instead`,
@@ -452,6 +452,7 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
       };
       
       setMessages(prev => [...prev, userMsg, aiMsg]);
+      setFlowStep('recipes');
       await fetchRecipesWithParams([cuisineId], selectedDietaryPref, selectedMealType);
     }
   };
