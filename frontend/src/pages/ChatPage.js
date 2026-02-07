@@ -1357,6 +1357,17 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Feature Locked Modal */}
+      <FeatureLockedModal
+        isOpen={featureLockedModal.isOpen}
+        onClose={() => setFeatureLockedModal(prev => ({ ...prev, isOpen: false }))}
+        feature={featureLockedModal.feature}
+        upgradeTo={featureLockedModal.upgradeTo}
+        currentPlan={featureLockedModal.currentPlan}
+        usedLimit={featureLockedModal.usedLimit}
+        maxLimit={featureLockedModal.maxLimit}
+      />
     </>
   );
 };
