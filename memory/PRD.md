@@ -744,6 +744,25 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
   - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
 
+- **Feb 07, 2026**: FEATURE - Dropdown Preference Selectors on DiabetesMealsPage
+  - **Task**: Added dropdown selectors for Dietary Preference, Meal Type, and Cuisine on DiabetesMealsPage
+  - **Implementation**: Mirrors the existing ChatPage dropdown implementation
+  - **Dropdowns Added**:
+    - Dietary Preference dropdown (Vegetarian, Vegan, Non-Vegetarian, Pescatarian, Any)
+    - Meal Type dropdown (Breakfast, Lunch, Dinner)
+    - Cuisine dropdown (All 11 cuisines)
+  - **Behavior**: 
+    - Each badge shows a RefreshCw icon indicating it's clickable
+    - Selecting a new option triggers an immediate recipe refetch
+    - Preferences are preserved in local storage
+  - **Functions Added**:
+    - `handleMealTypeChange()` - Handles meal type selection change
+    - `handleCuisineChange()` - Handles cuisine selection change
+    - `fetchRecipesWithParams()` - Generic recipe fetch with specific parameters
+    - Updated `handleDietaryPrefSelect()` to support preference changes after recipes shown
+  - **Testing**: 100% pass rate via testing agent
+  - **File Modified**: `/app/frontend/src/pages/DiabetesMealsPage.js`
+
 - **Feb 07, 2026**: P1 - Fixed Image Fallback in Planners
   - **Issue**: Images from Google sometimes appeared blank/broken due to CORS. Fallback to AI-generated images wasn't triggering.
   - **Root Cause**: `PlannerMealCard.jsx` had `use_ai_fallback: false` and `onError` handler only switched to stock images
