@@ -39,10 +39,16 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
         'tomatoes', 'tomato', 'spinach', 'cheese', 'rice', 'bread', 'chicken', 'beef',
         'fish', 'salmon', 'tuna', 'tofu', 'beans', 'lentils', 'avocado', 'banana',
         'apple', 'orange', 'milk', 'butter', 'olive oil', 'garlic', 'onion', 'ginger',
-        'quinoa', 'pasta', 'noodles', 'shrimp', 'pork', 'lamb', 'turkey', 'hummus'
+        'quinoa', 'pasta', 'noodles', 'shrimp', 'pork', 'lamb', 'turkey', 'hummus',
+        'feta', 'mozzarella', 'parmesan', 'cheddar', 'ricotta', 'cream cheese',
+        'lettuce', 'kale', 'arugula', 'cabbage', 'broccoli', 'cauliflower', 'carrots',
+        'peppers', 'mushrooms', 'zucchini', 'eggplant', 'cucumber', 'celery',
+        'almonds', 'walnuts', 'cashews', 'peanuts', 'pecans', 'pistachios',
+        'basil', 'oregano', 'thyme', 'rosemary', 'cilantro', 'parsley', 'mint',
+        'cinnamon', 'turmeric', 'cumin', 'paprika', 'chili', 'pepper', 'salt'
     }
     
-    # Skip patterns - NOT recipe names
+    # Skip patterns - NOT recipe names (these are section headers or descriptions)
     skip_patterns = [
         r'^(option|tip|note|step|ingredient|instruction|nutritional|description|benefit|why)',
         r'^(blood sugar|diabetes|health|safety|warning|important|disclaimer)',
@@ -50,6 +56,8 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
         r'^(mood|mood-boosting|boosting|stress|comfort|relaxation)',
         r'^#?\s*mood-?boosting\s*benefits?',
         r'benefits?$',
+        r'^(is\s+packed|provides|contains|rich\s+in|high\s+in|low\s+in)',  # Ingredient description starters
+        r'^(can\s+help|helps?\s+with|known\s+for|great\s+for|good\s+for)',  # Benefit phrases
     ]
     
     def is_valid_recipe_name(title: str) -> bool:
@@ -57,20 +65,39 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
         if not title or len(title) < 4 or len(title) > 120:
             return False
         title_lower = title.lower().strip()
-        # Skip single ingredients
+        
+        # Skip single ingredients (exact match)
         if title_lower in single_food_items:
             return False
+        
         # Skip section headers/tips
         for pattern in skip_patterns:
             if re.match(pattern, title_lower, re.IGNORECASE):
                 return False
+        
         # Must have at least 2 words for a proper recipe name
         words = title.split()
         if len(words) < 2:
             return False
+        
+        # If only 2 words, both should not be common food words
+        if len(words) == 2:
+            word1, word2 = words[0].lower(), words[1].lower()
+            # Check if it's just "Food Food" pattern like "Greek Yogurt"
+            common_adjectives = {'greek', 'fresh', 'organic', 'raw', 'cooked', 'fried', 'baked', 'grilled', 'roasted', 'steamed', 'creamy', 'crispy', 'spicy', 'sweet', 'sour', 'salty', 'whole', 'plain', 'vanilla', 'chocolate'}
+            if word1 in common_adjectives and word2 in single_food_items:
+                return False
+            if word1 in single_food_items and word2 in single_food_items:
+                return False
+        
         # Skip if ends with colon (section header)
         if title.endswith(':'):
             return False
+        
+        # Skip if title is too short (likely ingredient name)
+        if len(title_lower) < 8:
+            return False
+            
         return True
     
     def detect_cuisine(text: str) -> str:
