@@ -33,19 +33,36 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
     """
     recipes = []
     
-    # Single ingredients/foods that are NOT recipes
+    # Single ingredients/foods that are NOT recipes - comprehensive list
     single_food_items = {
-        'greek yogurt', 'yogurt', 'honey', 'nuts', 'berries', 'oats', 'eggs', 'egg',
-        'tomatoes', 'tomato', 'spinach', 'cheese', 'rice', 'bread', 'chicken', 'beef',
-        'fish', 'salmon', 'tuna', 'tofu', 'beans', 'lentils', 'avocado', 'banana',
-        'apple', 'orange', 'milk', 'butter', 'olive oil', 'garlic', 'onion', 'ginger',
-        'quinoa', 'pasta', 'noodles', 'shrimp', 'pork', 'lamb', 'turkey', 'hummus',
-        'feta', 'mozzarella', 'parmesan', 'cheddar', 'ricotta', 'cream cheese',
-        'lettuce', 'kale', 'arugula', 'cabbage', 'broccoli', 'cauliflower', 'carrots',
-        'peppers', 'mushrooms', 'zucchini', 'eggplant', 'cucumber', 'celery',
-        'almonds', 'walnuts', 'cashews', 'peanuts', 'pecans', 'pistachios',
-        'basil', 'oregano', 'thyme', 'rosemary', 'cilantro', 'parsley', 'mint',
-        'cinnamon', 'turmeric', 'cumin', 'paprika', 'chili', 'pepper', 'salt'
+        # Dairy
+        'greek yogurt', 'yogurt', 'milk', 'butter', 'cheese', 'cream', 'cream cheese',
+        'feta', 'mozzarella', 'parmesan', 'cheddar', 'ricotta', 'cottage cheese',
+        # Grains
+        'oats', 'oatmeal', 'rice', 'bread', 'quinoa', 'pasta', 'noodles', 'wheat', 'barley',
+        # Proteins
+        'eggs', 'egg', 'chicken', 'beef', 'fish', 'salmon', 'tuna', 'tofu', 'tempeh',
+        'shrimp', 'pork', 'lamb', 'turkey', 'bacon', 'sausage',
+        # Legumes
+        'beans', 'lentils', 'chickpeas', 'hummus', 'peas',
+        # Vegetables (singular and plural)
+        'vegetables', 'veggies', 'veggie', 'greens', 'leafy greens',
+        'spinach', 'lettuce', 'kale', 'arugula', 'cabbage', 'chard',
+        'broccoli', 'cauliflower', 'carrots', 'carrot', 'peppers', 'pepper',
+        'mushrooms', 'mushroom', 'zucchini', 'eggplant', 'cucumber', 'celery',
+        'tomatoes', 'tomato', 'onion', 'onions', 'garlic', 'ginger',
+        'potatoes', 'potato', 'sweet potato', 'corn',
+        # Fruits
+        'fruits', 'fruit', 'berries', 'avocado', 'banana', 'apple', 'orange',
+        'lemon', 'lime', 'mango', 'pineapple', 'grapes', 'strawberries',
+        # Nuts & Seeds
+        'nuts', 'almonds', 'walnuts', 'cashews', 'peanuts', 'pecans', 'pistachios',
+        'seeds', 'chia', 'flax', 'sunflower seeds', 'pumpkin seeds',
+        # Herbs & Spices
+        'herbs', 'spices', 'basil', 'oregano', 'thyme', 'rosemary', 'cilantro', 'parsley', 'mint',
+        'cinnamon', 'turmeric', 'cumin', 'paprika', 'chili', 'pepper', 'salt',
+        # Sweeteners & Others
+        'honey', 'sugar', 'maple syrup', 'olive oil', 'coconut oil'
     }
     
     # Skip patterns - NOT recipe names (these are section headers or descriptions)
