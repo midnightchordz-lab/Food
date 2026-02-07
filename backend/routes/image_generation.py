@@ -339,7 +339,6 @@ async def image_service_status():
     """
     Check the status of the image generation service.
     """
-    import os
     
     has_key = bool(os.environ.get('EMERGENT_LLM_KEY'))
     
