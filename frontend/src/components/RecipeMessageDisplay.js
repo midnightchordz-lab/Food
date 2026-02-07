@@ -597,21 +597,20 @@ const parseRecipesWithCategories = (message) => {
   return categories;
 };
 
-// Parse single dish format: "**Dish:** Recipe Name" or "**Recipe Name:** Recipe" with details
+// Parse single dish format: Multiple markdown formats
 const parseSingleDishFormat = (message) => {
   const recipes = [];
   
   // Skip patterns for non-recipe items
-  const nonRecipeItems = [
-    /^(tomato|tomatoes|onion|onions|garlic|ginger|salt|pepper|oil|butter|rice|bread|egg|eggs|chicken|beef|pork|fish|vegetable|vegetables|fruit|fruits)$/i,
-    /^(lemon|lime|orange|apple|banana|carrot|potato|spinach|broccoli|mushroom|cheese|milk|cream|yogurt|honey|sugar|flour)$/i,
-  ];
-  
+  const nonRecipeItems = /^(greek yogurt|yogurt|honey|nuts|berries|oats|eggs?|tomato(?:es)?|spinach|cheese|rice|bread|chicken|beef|fish|salmon|tuna|tofu|beans|lentils|avocado|banana|apple|orange|milk|butter|olive oil|garlic|onion|ginger|salt|pepper|sugar|flour|quinoa|pasta|noodles|shrimp|pork|lamb|turkey|hummus|tahini|feta|mozzarella|cheddar|cream|sour cream|mayonnaise|mustard|ketchup|soy sauce|vinegar|lemon|lime|cucumber|carrot|potato|broccoli|cauliflower|mushroom|bell pepper|zucchini|eggplant|lettuce|kale|arugula|basil|cilantro|parsley|mint|oregano|thyme|rosemary|cinnamon|turmeric|cumin|paprika|chili|almonds|walnuts|cashews|peanuts|coconut|chocolate|vanilla|maple syrup|agave)s?$/i;
+
   // Match multiple formats:
-  // 1. **Dish:** Recipe Name (Cuisine)
-  // 2. **Recipe Name:** Recipe (Cuisine)  
-  // 3. **Name:** Recipe Name
+  // 1. **Recipe: Recipe Name - Cuisine** or **Recipe: Recipe Name (Cuisine)**
+  // 2. **Dish:** Recipe Name (Cuisine)
+  // 3. **Recipe Name:** Recipe (Cuisine)  
+  // 4. **Name:** Recipe Name
   const patterns = [
+    /\*\*Recipe:?\s*([^*\-–]+?)(?:\s*[-–]\s*([^*]+))?\*\*/i,
     /\*\*Dish:?\*\*\s*([^\n(]+)(?:\(([^)]+)\))?/i,
     /\*\*Recipe\s*Name:?\*\*\s*([^\n(]+)(?:\(([^)]+)\))?/i,
     /\*\*Name:?\*\*\s*([^\n(]+)(?:\(([^)]+)\))?/i,
@@ -620,29 +619,39 @@ const parseSingleDishFormat = (message) => {
   for (const pattern of patterns) {
     const match = message.match(pattern);
     if (match) {
-      const title = match[1].trim().replace(/\*+/g, '');
-      const cuisineHint = match[2]?.trim() || '';
+      let title = match[1].trim().replace(/\*+/g, '').replace(/\([^)]*\)\s*$/, '').trim();
+      let cuisineHint = match[2]?.trim().replace(/cuisine/i, '').trim() || '';
       
       // Skip if it's just an ingredient
-      if (nonRecipeItems.some(p => p.test(title))) continue;
+      if (nonRecipeItems.test(title)) continue;
       // Skip if title is too short or too long
       if (title.length < 4 || title.length > 100) continue;
+      // Must have at least 2 words
+      if (title.split(/\s+/).filter(w => w.length > 1).length < 2) continue;
       
       // Extract cooking time
-      const timeMatch = message.match(/\*\*Cooking\s*Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i);
+      const timeMatch = message.match(/\*\*Cooking\s*Time[^:]*:?\*\*:?\s*(?:Approximately\s+)?(\d+[-–]?\d*)\s*min/i);
       const cookingTime = timeMatch ? timeMatch[1] + ' min' : '30 min';
       
       // Extract difficulty  
-      const diffMatch = message.match(/\*\*Difficulty:?\*\*\s*(Easy|Medium|Hard)/i);
-      const difficulty = diffMatch ? diffMatch[1] : 'Medium';
+      const diffMatch = message.match(/\*\*(?:Cooking\s*Time[^*]*)?(?:Difficulty)?:?\*\*[^,]*,?\s*(Easy|Medium|Moderate|Hard)/i) 
+                     || message.match(/(Easy|Medium|Moderate|Hard)/i);
+      let difficulty = diffMatch ? diffMatch[1] : 'Medium';
+      if (difficulty === 'Moderate') difficulty = 'Medium';
       
       // Extract description
-      const descMatch = message.match(/\*\*Description:?\*\*\s*([^\n*]+)/i);
+      const descMatch = message.match(/\*\*Description:?\*\*:?\s*([^\n*]+)/i);
       let description = descMatch ? descMatch[1].trim() : '';
       if (!description) {
-        // Try to get first paragraph after the title
-        const descLines = message.split('\n').filter(l => l.trim() && !l.includes('**') && !l.startsWith('-'));
-        description = descLines.slice(0, 1).join(' ').trim();
+        // Try to get text after the recipe title
+        const titleIndex = message.indexOf(title);
+        if (titleIndex > -1) {
+          const afterTitle = message.slice(titleIndex + title.length);
+          const sentences = afterTitle.split(/[.!?]/).filter(s => s.trim().length > 20);
+          if (sentences[0]) {
+            description = sentences[0].replace(/^\*+|\*+$/g, '').replace(/^[-–•:]\s*/, '').trim();
+          }
+        }
       }
       
       if (title && title.length >= 4) {
@@ -650,7 +659,7 @@ const parseSingleDishFormat = (message) => {
           title,
           cookingTime,
           difficulty,
-          description: description || `A delicious ${title} dish.`,
+          description: description || `A delicious ${cuisineHint || ''} ${title} dish.`.trim(),
           imageUrl: getRecipeImage(title, cuisineHint),
           cuisineHint,
           fullContent: message
