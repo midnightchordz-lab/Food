@@ -99,6 +99,13 @@ const Navigation = () => {
                         Profile
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/subscription" className="cursor-pointer" data-testid="subscription-link">
+                        <CreditCard size={16} className="mr-2" />
+                        Subscription
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout} className="cursor-pointer" data-testid="logout-button">
                       <LogOut size={16} className="mr-2" />
                       Log Out
