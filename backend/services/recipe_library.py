@@ -251,7 +251,8 @@ async def get_recipes_from_library(
     dietary: str = '',
     cuisine: str = '',
     limit: int = 6,
-    exclude_ids: List[str] = None
+    exclude_ids: List[str] = None,
+    include_premium: bool = True
 ) -> List[Dict[str, Any]]:
     """
     Retrieve recipes from the library matching the criteria.
@@ -264,6 +265,7 @@ async def get_recipes_from_library(
         cuisine: Cuisine type (optional)
         limit: Max recipes to return
         exclude_ids: Recipe IDs to exclude (for "show more")
+        include_premium: Whether to include premium recipes (for paid users)
     
     Returns: List of matching recipes
     """
@@ -286,6 +288,13 @@ async def get_recipes_from_library(
     if exclude_ids:
         query["id"] = {"$nin": exclude_ids}
     
+    # Filter out premium recipes for free users
+    if not include_premium:
+        query["$or"] = [
+            {"is_premium": False},
+            {"is_premium": {"$exists": False}}
+        ]
+    
     try:
         # Sort by times_served (most popular) and last_served (recent)
         cursor = db.recipe_library.find(
@@ -299,7 +308,8 @@ async def get_recipes_from_library(
         recipes = await cursor.to_list(length=limit)
         
         if recipes:
-            logging.info(f"Found {len(recipes)} recipes in library for: cuisine={cuisine}, dietary={dietary}, meal={meal_type}, mood={mood}")
+            premium_count = sum(1 for r in recipes if r.get('is_premium'))
+            logging.info(f"Found {len(recipes)} recipes in library ({premium_count} premium) for: cuisine={cuisine}, dietary={dietary}, meal={meal_type}, mood={mood}")
         
         return recipes
     
