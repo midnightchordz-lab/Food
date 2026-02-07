@@ -169,6 +169,7 @@ async def save_recipes_to_library(
     """
     Save AI-generated recipes to the library.
     Deduplicates by normalized title + cuisine + dietary.
+    Automatically marks premium recipes based on content.
     
     Returns: Number of new recipes saved
     """
@@ -200,6 +201,9 @@ async def save_recipes_to_library(
                 )
                 logging.debug(f"Recipe already exists, updated times_served: {title}")
             else:
+                # Determine if recipe is premium
+                is_premium, premium_reason = is_recipe_premium(recipe)
+                
                 # Create new recipe entry
                 recipe_doc = {
                     "id": recipe_id,
@@ -218,6 +222,8 @@ async def save_recipes_to_library(
                     "times_served": 1,
                     "created_at": datetime.now(timezone.utc),
                     "last_served": datetime.now(timezone.utc),
+                    "is_premium": is_premium,
+                    "premium_reason": premium_reason if is_premium else None,
                     "tags": generate_tags({
                         **recipe,
                         'dietary': recipe_dietary,
@@ -228,7 +234,8 @@ async def save_recipes_to_library(
                 
                 await db.recipe_library.insert_one(recipe_doc)
                 saved_count += 1
-                logging.info(f"Saved new recipe to library: {title} ({recipe_cuisine})")
+                premium_label = " [PREMIUM]" if is_premium else ""
+                logging.info(f"Saved new recipe to library: {title} ({recipe_cuisine}){premium_label}")
         
         except Exception as e:
             logging.error(f"Error saving recipe '{recipe.get('title', 'unknown')}': {e}")
