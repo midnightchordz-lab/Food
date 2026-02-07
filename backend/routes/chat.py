@@ -790,10 +790,25 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
         if recipe_params and not user_exclusions:
             cache_recipes(cache_key, ai_response)
         
+        # CRITICAL: Parse recipes to structured JSON on backend
+        # This ensures consistent parsing and avoids brittle frontend regex
+        structured_recipes = None
+        if recipe_params:
+            try:
+                structured_recipes = parse_recipes_to_json(ai_response)
+                logging.info(f"Parsed {len(structured_recipes)} recipes from AI response")
+                if structured_recipes:
+                    for r in structured_recipes[:3]:  # Log first 3
+                        logging.info(f"  - {r.get('title', 'No title')}")
+            except Exception as parse_error:
+                logging.error(f"Recipe parsing error: {parse_error}")
+                structured_recipes = None
+        
         assistant_msg = ChatMessage(
             session_id=request.session_id,
             role="assistant",
-            content=ai_response
+            content=ai_response,
+            structured_data={"recipes": structured_recipes} if structured_recipes else None
         )
         await db.chat_messages.insert_one({
             **assistant_msg.model_dump(),
@@ -804,7 +819,8 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
         return ChatResponse(
             session_id=request.session_id,
             response=ai_response,
-            timestamp=assistant_msg.timestamp
+            timestamp=assistant_msg.timestamp,
+            structured_recipes=structured_recipes
         )
     except Exception as e:
         logging.error(f"Error in chat: {e}")
