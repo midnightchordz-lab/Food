@@ -1448,17 +1448,17 @@ const RecipeMessageDisplay = ({ message, onSaveRecipe, structuredRecipes }) => {
   
   // PRIORITY: Use structured recipes from backend if available
   // This ensures consistent parsing and avoids brittle frontend regex
-  let categories;
+  let categories = null;
   let usingStructuredData = false;
   
   if (structuredRecipes && Array.isArray(structuredRecipes) && structuredRecipes.length > 0) {
     categories = convertStructuredRecipes(structuredRecipes);
     usingStructuredData = true;
     console.log('Using structured recipes from backend:', structuredRecipes.length, 'recipes');
-  } else {
-    // Fallback: parse from message text (backward compatibility)
-    categories = parseRecipesWithCategories(message);
   }
+  // NOTE: We NO LONGER fall back to frontend text parsing
+  // If backend didn't find structured recipes, display as plain text
+  // This prevents the "Oats", "Veggies", "Spinach" issue from brittle frontend parsing
   
   const hasAnyRecipes = categories && Object.values(categories).some(cat => cat.recipes && cat.recipes.length > 0);
   
@@ -1472,6 +1472,7 @@ const RecipeMessageDisplay = ({ message, onSaveRecipe, structuredRecipes }) => {
   };
   
   if (!hasAnyRecipes) {
+    // No structured recipes from backend - display as formatted text
     return <p className="whitespace-pre-wrap">{message}</p>;
   }
   
