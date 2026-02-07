@@ -213,6 +213,20 @@ async def get_shopping_list(current_user: User = Depends(get_current_user)):
 @router.get("/shopping-list/export")
 async def export_shopping_list_pdf(current_user: User = Depends(get_current_user)):
     try:
+        # Check feature access - PDF Export requires Premium
+        access = await FeatureGate.check_access(current_user.id, "export_pdf")
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "export_pdf",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         from pdf_generator import generate_shopping_list_pdf
         
         shopping_list = await db.shopping_lists.find_one({"user_id": current_user.id}, {"_id": 0})
