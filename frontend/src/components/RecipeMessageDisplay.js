@@ -1379,13 +1379,88 @@ const TimeCategorySection = ({ category, categoryData, onSaveRecipe, onViewRecip
   );
 };
 
-// Main component
-const RecipeMessageDisplay = ({ message, onSaveRecipe }) => {
+// Convert backend structured recipes to frontend format
+const convertStructuredRecipes = (structuredRecipes) => {
+  if (!structuredRecipes || !Array.isArray(structuredRecipes)) return null;
+  
+  // Convert backend format to frontend recipe format and distribute by time
+  const categories = {
+    quick: { ...TIME_CATEGORIES.quick, recipes: [] },
+    moderate: { ...TIME_CATEGORIES.moderate, recipes: [] },
+    elaborate: { ...TIME_CATEGORIES.elaborate, recipes: [] },
+  };
+  
+  structuredRecipes.forEach((recipe, idx) => {
+    const timeMinutes = extractTimeMinutes(recipe.cooking_time || recipe.cookingTime || '30 min');
+    const frontendRecipe = {
+      title: recipe.title,
+      description: recipe.description,
+      cookingTime: recipe.cooking_time || recipe.cookingTime || '30 min',
+      difficulty: recipe.difficulty || 'Medium',
+      cuisineHint: recipe.cuisine || '',
+      imageUrl: getRecipeImage(recipe.title, recipe.cuisine || ''),
+      fullContent: recipe.full_content || '',
+      ingredients: recipe.ingredients || []
+    };
+    
+    // Distribute by cooking time
+    if (timeMinutes <= 25) {
+      categories.quick.recipes.push(frontendRecipe);
+    } else if (timeMinutes <= 40) {
+      categories.moderate.recipes.push(frontendRecipe);
+    } else {
+      categories.elaborate.recipes.push(frontendRecipe);
+    }
+  });
+  
+  // If all ended up in one category, redistribute evenly
+  const totalRecipes = structuredRecipes.length;
+  const allInOneCategory = 
+    categories.quick.recipes.length === totalRecipes ||
+    categories.moderate.recipes.length === totalRecipes ||
+    categories.elaborate.recipes.length === totalRecipes;
+  
+  if (allInOneCategory && totalRecipes > 1) {
+    // Reset and redistribute evenly
+    const allRecipes = [...categories.quick.recipes, ...categories.moderate.recipes, ...categories.elaborate.recipes];
+    categories.quick.recipes = [];
+    categories.moderate.recipes = [];
+    categories.elaborate.recipes = [];
+    
+    allRecipes.forEach((recipe, idx) => {
+      if (idx < Math.ceil(totalRecipes / 3)) {
+        categories.quick.recipes.push(recipe);
+      } else if (idx < Math.ceil(2 * totalRecipes / 3)) {
+        categories.moderate.recipes.push(recipe);
+      } else {
+        categories.elaborate.recipes.push(recipe);
+      }
+    });
+  }
+  
+  return categories;
+};
+
+// Main component - now supports both structured data from backend and text parsing fallback
+const RecipeMessageDisplay = ({ message, onSaveRecipe, structuredRecipes }) => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   
-  const categories = parseRecipesWithCategories(message);
-  const hasAnyRecipes = Object.values(categories).some(cat => cat.recipes.length > 0);
+  // PRIORITY: Use structured recipes from backend if available
+  // This ensures consistent parsing and avoids brittle frontend regex
+  let categories;
+  let usingStructuredData = false;
+  
+  if (structuredRecipes && Array.isArray(structuredRecipes) && structuredRecipes.length > 0) {
+    categories = convertStructuredRecipes(structuredRecipes);
+    usingStructuredData = true;
+    console.log('Using structured recipes from backend:', structuredRecipes.length, 'recipes');
+  } else {
+    // Fallback: parse from message text (backward compatibility)
+    categories = parseRecipesWithCategories(message);
+  }
+  
+  const hasAnyRecipes = categories && Object.values(categories).some(cat => cat.recipes && cat.recipes.length > 0);
   
   const handleViewRecipe = (recipe) => {
     setSelectedRecipe(recipe);
