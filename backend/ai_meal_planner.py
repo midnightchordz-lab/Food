@@ -104,6 +104,8 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
                 normalized_cuisines.append(cp.get('label') or cp.get('id') or str(cp))
             elif isinstance(cp, str):
                 normalized_cuisines.append(cp)
+            else:
+                normalized_cuisines.append(str(cp))
         cuisine_preferences = normalized_cuisines
     
     # Normalize focus_areas to list of strings
@@ -114,7 +116,24 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
                 normalized_focus.append(fa.get('label') or fa.get('id') or str(fa))
             elif isinstance(fa, str):
                 normalized_focus.append(fa)
+            else:
+                normalized_focus.append(str(fa))
         focus_areas = normalized_focus
+    
+    # Normalize dietary_preference - can be string, list of strings, or list of dicts
+    if dietary_preference:
+        if isinstance(dietary_preference, list):
+            normalized_dietary = []
+            for dp in dietary_preference:
+                if isinstance(dp, dict):
+                    normalized_dietary.append(dp.get('label') or dp.get('id') or str(dp))
+                elif isinstance(dp, str):
+                    normalized_dietary.append(dp)
+                else:
+                    normalized_dietary.append(str(dp))
+            dietary_preference = normalized_dietary
+        elif isinstance(dietary_preference, dict):
+            dietary_preference = dietary_preference.get('label') or dietary_preference.get('id') or str(dietary_preference)
     
     # Handle dietary_preference as string or list
     # When user selects both veg and non-veg, the general preference should be non-vegetarian
