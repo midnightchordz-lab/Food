@@ -294,6 +294,122 @@ const COOKING_STYLES = new Set([
   'teriyaki', 'grilled', 'baked', 'fried', 'roasted', 'steamed', 'glazed', 'crispy'
 ]);
 
+// Track used images in current batch to prevent duplicates
+let currentBatchUsedImages = new Set();
+
+// Reset the batch tracker - call this when starting a new recipe batch
+const resetBatchImageTracker = () => {
+  currentBatchUsedImages = new Set();
+};
+
+// Extended cuisine fallback images with multiple options per cuisine
+const CUISINE_FALLBACK_ALTERNATIVES = {
+  'indian': [
+    'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800',
+    'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800',
+    'https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=800',
+    'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=800',
+    'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=800',
+    'https://images.unsplash.com/photo-1574484284002-952d92456975?w=800',
+  ],
+  'italian': [
+    'https://images.unsplash.com/photo-1498579150354-977475b7ea0b?w=800',
+    'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800',
+    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800',
+    'https://images.unsplash.com/photo-1595295333158-4742f28fbd85?w=800',
+    'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800',
+  ],
+  'mexican': [
+    'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800',
+    'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=800',
+    'https://images.unsplash.com/photo-1613514785940-daed07799d9b?w=800',
+    'https://images.unsplash.com/photo-1604467794349-0b74285de7e7?w=800',
+  ],
+  'chinese': [
+    'https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=800',
+    'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=800',
+    'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=800',
+    'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800',
+  ],
+  'japanese': [
+    'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800',
+    'https://images.unsplash.com/photo-1553621042-f6e147245754?w=800',
+    'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=800',
+    'https://images.unsplash.com/photo-1580822184713-fc5400e7fe10?w=800',
+  ],
+  'thai': [
+    'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800',
+    'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=800',
+    'https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=800',
+    'https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=800',
+  ],
+  'mediterranean': [
+    'https://images.unsplash.com/photo-1544025162-d76694265947?w=800',
+    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800',
+    'https://images.unsplash.com/photo-1593001872095-7d5b3868fb1d?w=800',
+    'https://images.unsplash.com/photo-1577805947697-89e18249d767?w=800',
+  ],
+  'korean': [
+    'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=800',
+    'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=800',
+    'https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=800',
+    'https://images.unsplash.com/photo-1580651315530-69c8e0026377?w=800',
+  ],
+  'default': [
+    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800',
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
+    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=800',
+    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800',
+    'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800',
+    'https://images.unsplash.com/photo-1482049016gy4a2eo1?w=800',
+  ],
+};
+
+// Get a unique image for a recipe, avoiding duplicates in the current batch
+const getUniqueRecipeImage = (title, cuisineHint = '') => {
+  // First try the standard image matching
+  const standardImage = getRecipeImage(title, cuisineHint);
+  
+  // If this image hasn't been used yet, use it
+  if (!currentBatchUsedImages.has(standardImage)) {
+    currentBatchUsedImages.add(standardImage);
+    return standardImage;
+  }
+  
+  // Image was already used - try to find an alternative from cuisine fallbacks
+  const cuisine = (cuisineHint || '').toLowerCase();
+  
+  // Find the best matching cuisine alternatives
+  let alternatives = CUISINE_FALLBACK_ALTERNATIVES['default'];
+  for (const [key, images] of Object.entries(CUISINE_FALLBACK_ALTERNATIVES)) {
+    if (cuisine.includes(key) || key.includes(cuisine.split(' ')[0])) {
+      alternatives = images;
+      break;
+    }
+  }
+  
+  // Find an unused image from alternatives
+  for (const altImage of alternatives) {
+    if (!currentBatchUsedImages.has(altImage)) {
+      currentBatchUsedImages.add(altImage);
+      return altImage;
+    }
+  }
+  
+  // All alternatives used - try default pool
+  for (const defaultImage of CUISINE_FALLBACK_ALTERNATIVES['default']) {
+    if (!currentBatchUsedImages.has(defaultImage)) {
+      currentBatchUsedImages.add(defaultImage);
+      return defaultImage;
+    }
+  }
+  
+  // As absolute fallback, use a hash-based selection from generic images
+  const hash = title.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0);
+  const allImages = Object.values(CUISINE_FALLBACK_ALTERNATIVES).flat();
+  return allImages[Math.abs(hash) % allImages.length];
+};
+
 /**
  * SIMPLE, DIRECT image matching - NO complex logic
  * Just find keywords in order of priority
