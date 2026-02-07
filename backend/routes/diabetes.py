@@ -528,11 +528,20 @@ User has diabetes - keep carbs under 45g per serving. But focus on REAL DISH NAM
                 "timestamp": datetime.now(timezone.utc).isoformat()
             })
             
+            # Parse recipes to structured JSON
+            structured_recipes = None
+            try:
+                structured_recipes = parse_recipes_to_json(ai_response)
+                logging.info(f"Diabetes chat: Parsed {len(structured_recipes)} recipes")
+            except Exception as parse_error:
+                logging.error(f"Diabetes chat recipe parsing error: {parse_error}")
+            
             return {
                 "response": ai_response,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "cuisine_change_detected": True,
-                "new_cuisine": detected_cuisine
+                "new_cuisine": detected_cuisine,
+                "structured_recipes": structured_recipes
             }
         
         system_msg = f"""You are a helpful diabetes nutrition assistant. The user has {guidelines['name']}.
