@@ -47,6 +47,16 @@ const ChatPage = () => {
   const [showRecipeDialog, setShowRecipeDialog] = useState(false);
   const [recipeToSave, setRecipeToSave] = useState(null);
   
+  // Feature lock modal state
+  const [featureLockedModal, setFeatureLockedModal] = useState({
+    isOpen: false,
+    feature: '',
+    upgradeTo: '',
+    currentPlan: '',
+    usedLimit: 0,
+    maxLimit: 0
+  });
+  
   // Flow state - tracks where user is in the conversation
   const [flowStep, setFlowStep] = useState('greeting'); // greeting, mood, mealType, dietaryPref, cuisine, recipes
   const [selectedMood, setSelectedMood] = useState(null);
