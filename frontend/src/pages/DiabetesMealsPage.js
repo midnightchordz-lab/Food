@@ -441,6 +441,117 @@ const DiabetesMealsPage = () => {
     await fetchDiabetesRecipes(cuisineIds);
   };
   
+  // Handle meal type change from dropdown (after recipes are shown)
+  const handleMealTypeChange = async (mealTypeId) => {
+    const previousMealType = selectedMealType;
+    if (mealTypeId === previousMealType) return;
+    
+    const newMealType = MEAL_TYPES.find(m => m.id === mealTypeId);
+    setSelectedMealType(mealTypeId);
+    
+    if (flowStep === 'recipes' && selectedCuisines.length > 0) {
+      const userMsg = {
+        role: 'user',
+        content: `I'd like ${newMealType?.label?.toLowerCase()} recipes instead`,
+        timestamp: new Date().toISOString()
+      };
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: `Switching to ${newMealType?.label} recipes! ${newMealType?.emoji} Let me find some delicious diabetes-friendly options...`,
+        timestamp: new Date().toISOString(),
+        isLoading: true
+      };
+      
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      await fetchRecipesWithParams(selectedCuisines, selectedDietaryPref, mealTypeId);
+    }
+  };
+  
+  // Handle cuisine change from dropdown (after recipes are shown)
+  const handleCuisineChange = async (cuisineId) => {
+    if (selectedCuisines.includes(cuisineId) && selectedCuisines.length === 1) return;
+    
+    const newCuisine = CUISINES.find(c => c.id === cuisineId);
+    setSelectedCuisines([cuisineId]);
+    
+    if (flowStep === 'recipes' || flowStep === 'cuisine_changed') {
+      const userMsg = {
+        role: 'user',
+        content: `I'd like ${newCuisine?.label} recipes instead`,
+        timestamp: new Date().toISOString()
+      };
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: `Switching to ${newCuisine?.label} cuisine! ${newCuisine?.flag} Let me find some delicious diabetes-friendly options...`,
+        timestamp: new Date().toISOString(),
+        isLoading: true
+      };
+      
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      setFlowStep('recipes');
+      await fetchRecipesWithParams([cuisineId], selectedDietaryPref, selectedMealType);
+    }
+  };
+  
+  // Generic recipe fetch with specific params (used when any preference changes)
+  const fetchRecipesWithParams = async (cuisineIds, dietaryPrefId, mealTypeId) => {
+    setIsLoading(true);
+    
+    const mood = MOOD_IMAGES.find(m => m.id === selectedMood);
+    const diabetesType = DIABETES_TYPES.find(t => t.id === selectedDiabetesType);
+    const mealType = MEAL_TYPES.find(m => m.id === mealTypeId);
+    const dietaryPref = FOOD_PREFERENCES.find(p => p.id === dietaryPrefId);
+    
+    const cuisineArray = Array.isArray(cuisineIds) ? cuisineIds : [cuisineIds];
+    const cuisineLabels = cuisineArray.includes('any') || cuisineArray.length === 0
+      ? 'any cuisine' 
+      : cuisineArray.map(id => CUISINES.find(c => c.id === id)?.label).filter(Boolean).join(', ');
+    
+    try {
+      const response = await axios.post(`${API}/diabetes/recipes`, {
+        session_id: sessionId,
+        mood: mood?.label,
+        mood_description: mood?.description,
+        diabetes_type: selectedDiabetesType,
+        diabetes_label: diabetesType?.label,
+        dietary_pref: dietaryPref?.label,
+        meal_type: mealType?.label,
+        cuisines: cuisineLabels,
+        guidelines: diabetesResearch?.guidelines
+      });
+      
+      const aiMsg = {
+        role: 'assistant',
+        content: response.data.response,
+        timestamp: response.data.timestamp || new Date().toISOString(),
+        isDiabetesRecipes: true,
+        structuredRecipes: response.data.structured_recipes
+      };
+      
+      setMessages(prev => {
+        const filtered = prev.filter(m => !m.isLoading);
+        return [...filtered, aiMsg];
+      });
+    } catch (error) {
+      console.error('Error fetching diabetes recipes:', error);
+      toast.error('Failed to get recipes. Please try again.');
+      
+      setMessages(prev => {
+        const filtered = prev.filter(m => !m.isLoading);
+        return [...filtered, {
+          role: 'assistant',
+          content: `I'm sorry, I had trouble finding recipes. Let me try again...`,
+          timestamp: new Date().toISOString(),
+          showRetryButton: true
+        }];
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Fetch diabetes-safe recipes
   const fetchDiabetesRecipes = async (cuisineIds) => {
     setIsLoading(true);
