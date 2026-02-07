@@ -196,12 +196,43 @@ Output ONLY valid JSON."""
         logging.error(f"Failed to parse AI response as JSON: {e}")
         raise HTTPException(status_code=500, detail="Failed to parse recipe. Please try again.")
 
+# ============== FEATURE GATING HELPERS ==============
+
+async def check_recipe_import_access(user_id: str) -> dict:
+    """Check if user has access to recipe import feature"""
+    return await FeatureGate.check_access(user_id, "recipe_import")
+
+
+async def check_video_import_access(user_id: str) -> dict:
+    """Check if user has access to video import feature (Chef Pro only)"""
+    return await FeatureGate.check_access(user_id, "video_import")
+
+
+async def check_ai_photo_access(user_id: str) -> dict:
+    """Check if user has access to AI photo recognition feature"""
+    return await FeatureGate.check_access(user_id, "ai_photo_recognition")
+
+
 # ============== ROUTES ==============
 
 @router.post("/url")
 async def import_from_url(request: ImportURLRequest, current_user: User = Depends(get_current_user)):
     """Import a recipe from a website URL"""
     try:
+        # Check feature access - Recipe Import requires Premium
+        access = await check_recipe_import_access(current_user.id)
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "recipe_import",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         logging.info(f"Importing recipe from URL: {request.url}")
         
         if not request.url.startswith(('http://', 'https://')):
