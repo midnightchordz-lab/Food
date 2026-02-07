@@ -353,6 +353,32 @@ _recipe_cache: Dict[str, Dict[str, Any]] = {}
 CACHE_MAX_SIZE = 100
 CACHE_TTL_SECONDS = 600  # 10 minutes
 
+
+def extract_user_cuisine(message: str) -> str:
+    """Extract the cuisine the user selected from the message"""
+    # Look for "Cuisine(s):" in the preferences section
+    cuisine_match = re.search(r'Cuisine\(s\):\s*([^\n]+)', message, re.IGNORECASE)
+    if cuisine_match:
+        cuisine_text = cuisine_match.group(1).strip()
+        # Handle "any cuisine" 
+        if cuisine_text.lower() == 'any cuisine':
+            return ''
+        # Handle multiple cuisines - take the first one
+        cuisines = [c.strip() for c in cuisine_text.split(',')]
+        if cuisines:
+            return cuisines[0]
+    
+    # Fallback: look for known cuisine names in the message
+    known_cuisines = ['Indian', 'Italian', 'Mexican', 'Chinese', 'Japanese', 'Thai', 'Korean', 
+                      'Mediterranean', 'American', 'French', 'Greek', 'Vietnamese', 'Spanish']
+    message_lower = message.lower()
+    for cuisine in known_cuisines:
+        if cuisine.lower() in message_lower:
+            return cuisine
+    
+    return ''
+
+
 def get_cache_key(mood: str, meal_type: str, dietary_pref: str, cuisines: str, skip_cache: bool = False) -> str:
     """Generate a unique cache key for recipe request"""
     # If skip_cache is True, add a timestamp to make key unique
