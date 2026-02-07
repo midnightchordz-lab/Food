@@ -744,6 +744,19 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
   - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
 
+- **Feb 07, 2026**: P1 - Fixed "Show More" Recipes Functionality (CRITICAL)
+  - **Issue**: When users typed "show more" after receiving recipes, the system didn't recognize the request as needing recipe generation because context was in [Context:] format, not [User Preferences] format
+  - **Root Cause**: Backend only checked for `[User Preferences]` marker to detect recipe requests, missing follow-up "show more" requests
+  - **Solution**:
+    - Added `extract_context_params()` function in chat.py to parse `[Context: Mood=X, MealType=Y, Dietary=Z, Cuisines=W]` format
+    - Updated `/api/chat/send` to detect "show more" requests and extract parameters from context
+    - Added "show more" handling in `/api/diabetes/chat` endpoint
+    - Both endpoints now generate NEW different recipes (skip_cache=true) and return `structured_recipes` in response
+  - **Files Modified**: 
+    - `/app/backend/routes/chat.py` - Added extract_context_params(), updated send_chat_message logic
+    - `/app/backend/routes/diabetes.py` - Added is_show_more detection and recipe generation
+  - **Testing**: 100% backend test pass rate (7/7 tests)
+
 - **Feb 07, 2026**: FEATURE - Dropdown Preference Selectors on DiabetesMealsPage
   - **Task**: Added dropdown selectors for Dietary Preference, Meal Type, and Cuisine on DiabetesMealsPage
   - **Implementation**: Mirrors the existing ChatPage dropdown implementation
