@@ -65,6 +65,19 @@ async def create_indexes():
         await db.imported_recipes.create_index("user_id", background=True)
         await db.imported_recipes.create_index("id", unique=True, background=True)
         
+        # Recipe Library (AI-generated recipes storage)
+        await db.recipe_library.create_index("id", unique=True, background=True)
+        await db.recipe_library.create_index("title_normalized", background=True)
+        await db.recipe_library.create_index("cuisine", background=True)
+        await db.recipe_library.create_index("dietary", background=True)
+        await db.recipe_library.create_index("meal_type", background=True)
+        await db.recipe_library.create_index("mood", background=True)
+        await db.recipe_library.create_index("tags", background=True)
+        await db.recipe_library.create_index("times_served", background=True)
+        await db.recipe_library.create_index([
+            ("cuisine", 1), ("dietary", 1), ("meal_type", 1), ("mood", 1)
+        ], background=True)
+        
         logging.info("Database indexes created successfully")
     except Exception as e:
         logging.warning(f"Index creation warning (may already exist): {e}")
