@@ -7,12 +7,78 @@ const API = process.env.REACT_APP_BACKEND_URL + '/api';
 // Simple in-memory cache
 const imageCache = new Map();
 
-// Default food images
+// Default food images - extended with more variety
 const DEFAULT_IMAGES = {
   breakfast: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=400',
   lunch: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
   dinner: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400',
   default: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400',
+};
+
+// Extended keyword-based image mapping for better fallbacks
+const KEYWORD_IMAGES = {
+  // Breakfast items
+  'omelette': 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400',
+  'scrambled': 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400',
+  'eggs': 'https://images.unsplash.com/photo-1582169296194-e4d644c48063?w=400',
+  'pancake': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
+  'oats': 'https://images.unsplash.com/photo-1495214783159-3503fd1b572d?w=400',
+  'porridge': 'https://images.unsplash.com/photo-1495214783159-3503fd1b572d?w=400',
+  'smoothie': 'https://images.unsplash.com/photo-1502741224143-90386d7f8c82?w=400',
+  'yogurt': 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400',
+  'toast': 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400',
+  'upma': 'https://images.unsplash.com/photo-1567337710282-00832b415979?w=400',
+  'idli': 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400',
+  'dosa': 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400',
+  'chia': 'https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=400',
+  'pudding': 'https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=400',
+  'buckwheat': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
+  // Lunch/Dinner proteins
+  'chicken': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400',
+  'salmon': 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400',
+  'fish': 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400',
+  'shrimp': 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400',
+  'tofu': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+  'lamb': 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400',
+  'beef': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400',
+  // Indian dishes
+  'curry': 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400',
+  'dal': 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400',
+  'lentil': 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400',
+  'paneer': 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400',
+  'biryani': 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400',
+  'masala': 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400',
+  'tikka': 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400',
+  'tandoori': 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400',
+  // Salads and bowls
+  'salad': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
+  'bowl': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+  'quinoa': 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=400',
+  // Other
+  'soup': 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400',
+  'stir': 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400',
+  'grilled': 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400',
+  'roasted': 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400',
+  'stuffed': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
+  'vegetable': 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
+  'mushroom': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400',
+  'pilaf': 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400',
+  'rice': 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400',
+};
+
+// Get best matching image for a recipe name
+const getKeywordImage = (recipeName, mealType) => {
+  const nameLower = recipeName.toLowerCase();
+  
+  // Check keywords first
+  for (const [keyword, url] of Object.entries(KEYWORD_IMAGES)) {
+    if (nameLower.includes(keyword)) {
+      return url;
+    }
+  }
+  
+  // Fall back to meal type default
+  return DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default;
 };
 
 const PlannerMealCard = ({ 
