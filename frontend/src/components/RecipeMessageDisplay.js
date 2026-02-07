@@ -668,6 +668,9 @@ const TIME_CATEGORIES = {
 
 // Parse recipes with better title extraction - supports multiple recipes per category
 const parseRecipesWithCategories = (message) => {
+  // Reset image tracker at the start of parsing a new batch
+  resetBatchImageTracker();
+  
   const categories = {
     quick: { ...TIME_CATEGORIES.quick, recipes: [] },
     moderate: { ...TIME_CATEGORIES.moderate, recipes: [] },
