@@ -11,6 +11,7 @@ import os
 import uuid
 import logging
 import re
+import sys
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
@@ -20,6 +21,10 @@ from .exclusions import (
     filter_unsafe_recipes_from_response,
     filter_recipe_text_strictly
 )
+
+# Import SerpAPI for external recipe search
+sys.path.append('/app/backend')
+from services.serpapi_service import search_recipes, search_recipes_for_mood
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
