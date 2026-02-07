@@ -744,6 +744,20 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
   - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
 
+- **Feb 07, 2026**: BUG FIX - Weekly Planner Generate Button & Drink Pairings
+  - **Issue 1**: No "Generate Plan" button visible when Auto-Generation is active but no meals exist for the current week
+    - **Fix**: Added `currentWeekHasMeals()` function and updated button logic to show "Generate This Week" button when mode is manual OR when no meals exist for current week
+  - **Issue 2**: Drink pairings not working in the recipe detail modal
+    - **Fix**: 
+      - Added `DRINK_PAIRINGS` object with cuisine-specific drink suggestions (Indian, Italian, Mexican, Thai, Japanese, Chinese, Mediterranean, American, default)
+      - Added `getDrinkPairing()` function that detects cuisine from recipe name keywords (curry, masala, pasta, taco, sushi, etc.)
+      - Updated `parseRecipeForModal()` to include drink pairings
+      - Updated `RecipeDetailModal` to fall back to `recipe.drinkPairings` if API doesn't return drink suggestions
+  - **Files Modified**: 
+    - `/app/frontend/src/pages/WeeklyPlannerPage.js` - Added drink pairings and generate button fix
+    - `/app/frontend/src/components/RecipeDetailModal.js` - Added drinkPairings fallback
+  - **Testing**: Code review verified both fixes are correctly implemented
+
 - **Feb 07, 2026**: BUG FIX - D-Planner Missing Recipe Images
   - **Issue**: Several recipe cells in the D-Planner were showing text alt text instead of images (e.g., "Scrambled eggs with sautéed...", "Chicken tikka...", "Lentil dal...", "Mushroom curry...")
   - **Root Cause**: PlannerMealCard was using only meal type defaults (breakfast/lunch/dinner) when API returned null/empty image URLs, causing generic or broken images
