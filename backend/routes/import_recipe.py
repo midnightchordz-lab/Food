@@ -14,6 +14,7 @@ import logging
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 
 from .deps import db, User, get_current_user
+from .feature_gating import FeatureGate
 
 router = APIRouter(prefix="/import", tags=["Import"])
 
