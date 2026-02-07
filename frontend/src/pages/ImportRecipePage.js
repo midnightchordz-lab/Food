@@ -150,6 +150,12 @@ const ImportRecipePage = () => {
     } catch (error) {
       clearInterval(progressInterval);
       console.error('Error importing from URL:', error);
+      
+      // Check if it's a feature locked error
+      if (handleFeatureLockedError(error, setFeatureLockedModal)) {
+        return;
+      }
+      
       toast.error(error.response?.data?.detail || 'Failed to import recipe from URL');
     } finally {
       setIsLoading(false);
