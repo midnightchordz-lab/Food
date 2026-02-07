@@ -253,6 +253,34 @@ const WeeklyPlannerPage = () => {
     }
   };
   
+  // Generate plan for the currently viewed week
+  const generateCurrentWeekPlan = async () => {
+    if (!mealPreferences?.is_active) {
+      toast.error('Please set your meal preferences first');
+      setShowAIGenerator(true);
+      return;
+    }
+    
+    setGeneratingCurrentWeek(true);
+    try {
+      const response = await axios.post(`${API}/weekly-plan/generate-for-week`, {
+        week_offset: currentWeekOffset
+      });
+      
+      if (response.data.already_exists) {
+        toast.info('This week\'s plan already exists!');
+      } else {
+        toast.success('Meal plan generated successfully!');
+      }
+      loadPlans();
+    } catch (error) {
+      console.error('Error generating current week plan:', error);
+      toast.error(error.response?.data?.detail || 'Failed to generate meal plan');
+    } finally {
+      setGeneratingCurrentWeek(false);
+    }
+  };
+  
   const getCurrentPlan = () => {
     // Use local date format to match backend's week_start format
     const year = weekStart.getFullYear();
