@@ -228,7 +228,7 @@ async def get_available_cuisines(current_user: User = Depends(get_current_user))
     """
     try:
         pipeline = [
-            {"$match": {"cuisine": {"$ne": None, "$ne": ""}}},
+            {"$match": {"cuisine": {"$nin": [None, ""]}}},
             {"$group": {"_id": "$cuisine", "count": {"$sum": 1}}},
             {"$sort": {"count": -1}}
         ]
