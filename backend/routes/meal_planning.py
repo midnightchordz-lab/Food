@@ -66,8 +66,8 @@ class MealPreferencesCreate(BaseModel):
     dietary_preference: Union[str, List[str]] = "non-vegetarian"
     calorie_target: Optional[int] = None
     macro_targets: Optional[MacroTargets] = None
-    focus_areas: List[str] = []
-    cuisine_preferences: List[str] = []
+    focus_areas: List[Any] = []  # Can be strings or dicts
+    cuisine_preferences: List[Any] = []  # Can be strings or dicts
     mood: str = "balanced"
     is_active: bool = True
     generation_mode: str = "manual"
@@ -78,8 +78,8 @@ class AIWeeklyPlanRequest(BaseModel):
     dietary_preference: Optional[Union[str, List[str]]] = "non-vegetarian"
     calorie_target: Optional[int] = None
     macro_targets: Optional[MacroTargets] = None
-    focus_areas: Optional[List[str]] = []
-    cuisine_preferences: Optional[List[str]] = []
+    focus_areas: Optional[List[Any]] = []  # Can be strings or dicts
+    cuisine_preferences: Optional[List[Any]] = []  # Can be strings or dicts
     day_specific_preferences: Optional[Dict[str, str]] = None
 
 class WeekOffsetRequest(BaseModel):
