@@ -1568,6 +1568,9 @@ const TimeCategorySection = ({ category, categoryData, onSaveRecipe, onViewRecip
 const convertStructuredRecipes = (structuredRecipes) => {
   if (!structuredRecipes || !Array.isArray(structuredRecipes)) return null;
   
+  // Reset the image tracker for this new batch to prevent duplicates
+  resetBatchImageTracker();
+  
   // Convert backend format to frontend recipe format and distribute by time
   const categories = {
     quick: { ...TIME_CATEGORIES.quick, recipes: [] },
@@ -1583,7 +1586,8 @@ const convertStructuredRecipes = (structuredRecipes) => {
       cookingTime: recipe.cooking_time || recipe.cookingTime || '30 min',
       difficulty: recipe.difficulty || 'Medium',
       cuisineHint: recipe.cuisine || '',
-      imageUrl: recipe.thumbnail || getRecipeImage(recipe.title, recipe.cuisine || ''),
+      // Use getUniqueRecipeImage to avoid duplicate images in the batch
+      imageUrl: recipe.thumbnail || getUniqueRecipeImage(recipe.title, recipe.cuisine || ''),
       fullContent: recipe.full_content || '',
       ingredients: recipe.ingredients || [],
       // Source attribution for badges
