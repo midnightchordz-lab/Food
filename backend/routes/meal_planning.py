@@ -120,7 +120,14 @@ async def get_used_recipes(user_id: str, weeks: int = 8) -> List[str]:
             {"user_id": user_id, "week_start": {"$gte": cutoff_str}}
         ).to_list(length=500)
         
-        return [r['recipe_name'] for r in used]
+        # Filter to only include valid string recipe names
+        recipe_names = []
+        for r in used:
+            name = r.get('recipe_name')
+            if isinstance(name, str) and len(name) > 2:
+                recipe_names.append(name)
+        
+        return recipe_names
     except Exception as e:
         logging.error(f"Error getting used recipes: {e}")
         return []
