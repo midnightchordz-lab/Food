@@ -136,6 +136,7 @@ const WeeklyPlannerPage = () => {
   const [subLoading, setSubLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subDayPrefs, setSubDayPrefs] = useState({});  // Day-specific opt-outs
+  const [generatingCurrentWeek, setGeneratingCurrentWeek] = useState(false);  // Track generation state
   
   // Shopping cart
   const shoppingCart = useShoppingCart();
