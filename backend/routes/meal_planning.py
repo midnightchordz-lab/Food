@@ -350,6 +350,7 @@ async def generate_plan_for_week(request: WeekOffsetRequest, current_user: User 
         user_exclusions = await get_user_excluded_ingredients(current_user.id)
         
         logging.info(f"Generating AI meal plan for week: {target_week_str}")
+        logging.info(f"Used recipes to exclude: {used_recipes}")
         
         # Log the parameters being passed for debugging
         focus_areas_val = prefs.get('focus_areas', [])
