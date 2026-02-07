@@ -17,7 +17,7 @@ from .exclusions import (
     filter_unsafe_recipes_from_response,
     filter_recipe_text_strictly
 )
-from .chat import is_mood_change_request, MOOD_RESPONSES
+from .chat import is_mood_change_request, MOOD_RESPONSES, parse_recipes_to_json
 
 router = APIRouter(prefix="/diabetes", tags=["Diabetes"])
 
