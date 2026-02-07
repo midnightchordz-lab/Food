@@ -9,6 +9,7 @@ import os
 import logging
 
 from .deps import User, get_current_user
+from .feature_gating import FeatureGate
 
 router = APIRouter(prefix="/voice", tags=["Voice"])
 
@@ -44,6 +45,20 @@ async def transcribe_voice(
     OPTIMIZED for faster response.
     """
     try:
+        # Check feature access - Voice features require Premium
+        access = await FeatureGate.check_access(current_user.id, "voice_cooking")
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "voice_cooking",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         from voice_service import transcribe_audio, detect_mood_from_text
         
         # Read audio file
