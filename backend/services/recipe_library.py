@@ -34,7 +34,72 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 #     "created_at": datetime,       # When first generated
 #     "last_served": datetime,      # When last shown to a user
 #     "tags": List[str],            # Searchable tags
+#     "is_premium": bool,           # NEW: Whether recipe requires premium subscription
+#     "premium_reason": str,        # NEW: Why recipe is premium (gourmet, complex, etc.)
 # }
+
+# Premium recipe criteria - recipes matching these patterns are marked as premium
+PREMIUM_INDICATORS = {
+    "ingredients": [
+        "truffle", "saffron", "wagyu", "caviar", "foie gras", "lobster",
+        "crab", "champagne", "balsamic reduction", "aged cheese", "prosciutto",
+        "iberico", "matsutake", "black cod", "sea urchin", "uni", "scallop"
+    ],
+    "cooking_methods": [
+        "sous vide", "confit", "braise", "slow-cooked", "flambé",
+        "dehydrated", "fermented", "smoked", "aged", "cured"
+    ],
+    "cuisine_styles": [
+        "fine dining", "molecular gastronomy", "fusion", "tasting menu",
+        "michelin", "gourmet", "artisanal", "chef's special"
+    ]
+}
+
+
+def is_recipe_premium(recipe: Dict[str, Any]) -> tuple[bool, str]:
+    """
+    Determine if a recipe should be marked as premium based on its attributes.
+    
+    Returns:
+        (is_premium: bool, reason: str)
+    """
+    title_lower = recipe.get('title', '').lower()
+    description_lower = recipe.get('description', '').lower()
+    ingredients = [ing.lower() for ing in recipe.get('ingredients', [])]
+    full_content = recipe.get('full_content', '').lower()
+    
+    all_text = f"{title_lower} {description_lower} {' '.join(ingredients)} {full_content}"
+    
+    # Check for premium ingredients
+    for ing in PREMIUM_INDICATORS["ingredients"]:
+        if ing in all_text:
+            return True, f"Contains premium ingredient: {ing}"
+    
+    # Check for advanced cooking methods
+    for method in PREMIUM_INDICATORS["cooking_methods"]:
+        if method in all_text:
+            return True, f"Uses advanced technique: {method}"
+    
+    # Check for premium cuisine styles
+    for style in PREMIUM_INDICATORS["cuisine_styles"]:
+        if style in all_text:
+            return True, f"Premium cuisine style: {style}"
+    
+    # Check for high complexity (many ingredients or long cooking time)
+    if len(ingredients) > 15:
+        return True, "Complex recipe with 15+ ingredients"
+    
+    cooking_time = recipe.get('cooking_time', '').lower()
+    if 'hour' in cooking_time:
+        try:
+            hours = int(''.join(filter(str.isdigit, cooking_time.split('hour')[0])))
+            if hours >= 3:
+                return True, f"Extended cooking time: {hours}+ hours"
+        except:
+            pass
+    
+    # Default: not premium
+    return False, ""
 
 
 def normalize_title(title: str) -> str:
