@@ -509,7 +509,9 @@ const DiabetesMealsPage = () => {
         // Show mood selector if mood changed so user can regenerate recipes
         showMoodChange: response.data.mood_change_detected,
         // Store the current cuisines so we can use them when regenerating
-        previousCuisines: response.data.mood_change_detected ? [...selectedCuisines] : undefined
+        previousCuisines: response.data.mood_change_detected ? [...selectedCuisines] : undefined,
+        // Include structured recipes from backend
+        structuredRecipes: response.data.structured_recipes
       };
       setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
