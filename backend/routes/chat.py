@@ -960,14 +960,15 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
         # This ensures consistent parsing and avoids brittle frontend regex
         # ALWAYS try to parse - the LLM might include recipes in any response
         structured_recipes = None
+        user_cuisine = extract_user_cuisine(request.message)
         try:
-            potential_recipes = parse_recipes_to_json(ai_response)
+            potential_recipes = parse_recipes_to_json(ai_response, user_cuisine)
             # Only include if we found actual recipes (at least 1)
             if potential_recipes and len(potential_recipes) >= 1:
                 structured_recipes = potential_recipes
-                logging.info(f"Parsed {len(structured_recipes)} recipes from AI response")
+                logging.info(f"Parsed {len(structured_recipes)} recipes from AI response with cuisine: {user_cuisine}")
                 for r in structured_recipes[:3]:  # Log first 3
-                    logging.info(f"  - {r.get('title', 'No title')}")
+                    logging.info(f"  - {r.get('title', 'No title')} ({r.get('cuisine', 'No cuisine')})")
         except Exception as parse_error:
             logging.error(f"Recipe parsing error: {parse_error}")
             structured_recipes = None
