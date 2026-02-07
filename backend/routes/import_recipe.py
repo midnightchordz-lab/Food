@@ -258,6 +258,23 @@ async def import_from_url(request: ImportURLRequest, current_user: User = Depend
 async def import_from_image(request: ImportImageRequest, current_user: User = Depends(get_current_user)):
     """Import a recipe from an uploaded image using AI vision"""
     try:
+        # Check feature access - AI Photo Recognition requires Premium
+        access = await check_ai_photo_access(current_user.id)
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "ai_photo_recognition",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
+        # Increment usage counter for photo scans
+        await FeatureGate.increment_usage(current_user.id, "photo_scans")
+        
         logging.info(f"Importing recipe from image: {request.filename}")
         
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
