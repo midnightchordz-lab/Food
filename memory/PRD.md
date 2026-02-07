@@ -744,6 +744,36 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
   - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
 
+- **Feb 07, 2026**: FEATURE - Comprehensive Pricing & Subscription System (COMPLETE)
+  - **Scope**: Implemented full freemium pricing model with 6 subscription tiers
+  - **Plans Implemented**:
+    - **Free** ($0): 5 searches/day, 50+ basic recipes, basic meal planner
+    - **Premium Monthly** ($9.99): Unlimited searches, 2000+ recipes, ad-free, AI photo (10/mo), 4-week planner
+    - **Premium Annual** ($79.99): All Premium + unlimited AI photo, 8-week planner, 33% savings
+    - **Chef Pro Monthly** ($19.99): All Premium + Diabetes module, AI image gen, video import, 12-week planner
+    - **Chef Pro Annual** ($179.99): All Chef Pro features, 25% savings
+    - **Family Plan** ($139.99/yr): Premium Annual + up to 5 family members
+  - **Backend Endpoints**:
+    - `GET /api/subscription/plans` - Get all plans
+    - `GET /api/subscription/current` - Get user's subscription
+    - `POST /api/subscription/create` - Create subscription (with trial support)
+    - `POST /api/subscription/cancel` - Cancel subscription
+    - `POST /api/subscription/upgrade` - Upgrade/change plan
+    - `GET /api/subscription/check-feature/{name}` - Check feature access
+    - `GET /api/subscription/transactions` - Payment history
+    - `GET /api/subscription/stats` - MRR/ARR statistics
+  - **Frontend**: 
+    - Pricing page at `/pricing` with Monthly/Annual toggle
+    - Feature comparison table
+    - FAQ section
+    - Navigation includes "Pricing" tab with CreditCard icon
+  - **Feature Gating**: `check_feature_access()` enforces limits (5 searches/day for free tier)
+  - **Payment**: MOCKED (no real Stripe/Razorpay) - subscriptions created directly in DB
+  - **Testing**: 100% pass rate (19/19 backend tests, all frontend elements working)
+  - **Files Created**:
+    - `/app/backend/routes/subscription.py`
+    - `/app/frontend/src/pages/PricingPage.js`
+
 - **Feb 07, 2026**: BUG FIX - Weekly Planner Auto-Generation Failure (CRITICAL)
   - **Issue**: Next week's meals were blank - auto-generation was failing silently
   - **Root Cause**: 
