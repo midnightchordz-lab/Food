@@ -232,6 +232,42 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 7, 2026**: FEATURE - Comprehensive Feature Gating System (COMPLETE)
+  - **Implemented**: Full subscription-based feature gating across all premium features
+  - **Diabetes Module**: Requires Chef Pro subscription (403 for free users)
+    - Protected endpoints: /research, /recipes, /chat, /weekly-plan/generate
+  - **Recipe Import**: Requires Premium subscription (403 for free users)
+    - Protected endpoints: /url, /image, /video (Chef Pro), /text
+  - **Voice Features**: Requires Premium subscription (403 for free users)
+    - Protected endpoints: /transcribe, /synthesize
+  - **PDF Export**: Requires Premium subscription
+  - **Recipe Search Limits**: Free users limited to 5 searches/day
+  - **Backend Files**:
+    - `/app/backend/routes/feature_gating.py` - FeatureGate class with check_access, check_and_increment_search
+    - `/app/backend/routes/diabetes.py` - Feature gating applied to all endpoints
+    - `/app/backend/routes/import_recipe.py` - Feature gating applied to import endpoints
+    - `/app/backend/routes/voice.py` - Feature gating applied to voice endpoints
+    - `/app/backend/routes/subscription.py` - Razorpay webhook handler implemented
+  - **Frontend Files**:
+    - `/app/frontend/src/components/FeatureGate.jsx` - NEW: FeatureLockedModal component
+    - `/app/frontend/src/pages/ChatPage.js` - Feature lock error handling
+    - `/app/frontend/src/pages/DiabetesMealsPage.js` - Feature lock error handling
+    - `/app/frontend/src/pages/ImportRecipePage.js` - Feature lock error handling
+  - **Bug Fix**: Fixed HTTPException being swallowed by generic exception handlers (403 → 500)
+  - **Testing**: 18/18 backend tests passed
+  - **Test File**: `/app/backend/tests/test_feature_gating.py`
+
+- **Feb 7, 2026**: FEATURE - Razorpay Webhook Handler (COMPLETE)
+  - **Implemented**: Full webhook handling for payment events
+  - **Events Handled**:
+    - `payment.captured` - Activates subscription on successful payment
+    - `payment.failed` - Updates order status with error
+    - `subscription.activated` - Handles Razorpay subscription events
+    - `subscription.cancelled` - Cancels subscription in database
+    - `subscription.charged` - Extends subscription period
+  - **Signature Verification**: HMAC SHA256 signature validation
+  - **Transaction Recording**: All payments logged to payment_transactions collection
+
 - **Feb 4, 2026**: BUGFIX - Image Fallback in D-Planner and Planner
   - **Issue**: When Google Images didn't find results, AI generation wasn't automatically triggered
   - **Fix**: 
