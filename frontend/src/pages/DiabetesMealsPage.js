@@ -739,14 +739,15 @@ const DiabetesMealsPage = () => {
                       )}
                       
                       {/* Recipe display for AI messages */}
-                      {msg.role === 'assistant' && !msg.isResearching && !msg.researchComplete && hasRecipes(msg.content) ? (
+                      {msg.role === 'assistant' && !msg.isResearching && !msg.researchComplete && (hasRecipes(msg.content) || msg.structuredRecipes) ? (
                         <RecipeMessageDisplay 
-                          message={msg.content} 
+                          message={msg.content}
+                          structuredRecipes={msg.structuredRecipes}
                           onSaveRecipe={(recipe) => {
                             setRecipeToSave({
                               title: recipe.title,
                               description: recipe.description,
-                              ingredients: ['See recipe details'],
+                              ingredients: recipe.ingredients || ['See recipe details'],
                               instructions: ['See recipe details'],
                               mood_tags: [selectedMood || 'diabetes-friendly'],
                               prep_time: recipe.cookingTime || '30 min',
