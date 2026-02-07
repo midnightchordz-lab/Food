@@ -664,8 +664,12 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                     if value and value.lower() != "not set":
                         context[key.lower().replace("dietary", "dietary_pref").replace("mealtype", "meal_type")] = value
         
-        # Check if this is a mood change request
-        mood_change = is_mood_change_request(request.message, context)
+        # Check if this is a recipe generation request FIRST
+        # (to avoid mood change detection on structured recipe requests)
+        recipe_params = is_recipe_generation_request(request.message)
+        
+        # Check if this is a mood change request (only if not a recipe generation request)
+        mood_change = is_mood_change_request(request.message, context) if not recipe_params else {"is_mood_change": False}
         
         if mood_change.get("is_mood_change"):
             if mood_change.get("needs_clarification"):
