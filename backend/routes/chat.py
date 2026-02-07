@@ -409,6 +409,52 @@ def is_more_recipes_request(message: str) -> bool:
     ]
     return any(pattern in lower_msg for pattern in more_patterns)
 
+
+def extract_context_params(message: str) -> Optional[dict]:
+    """
+    Extract parameters from [Context: ...] format in the message.
+    This is used when user types follow-up messages like "show more" after initial recipe generation.
+    
+    Returns dict with mood, meal_type, dietary_pref, cuisines or None if no context found.
+    """
+    if "[Context:" not in message:
+        return None
+    
+    try:
+        # Extract the context portion
+        context_match = message.split("[Context:")[1].split("]")[0]
+        params = {"mood": "", "meal_type": "", "dietary_pref": "", "cuisines": ""}
+        
+        for part in context_match.split(","):
+            part = part.strip()
+            if "=" in part:
+                key, value = part.split("=", 1)
+                key = key.strip().lower()
+                value = value.strip()
+                
+                # Skip "not set" values
+                if value.lower() == "not set" or not value:
+                    continue
+                
+                if key == "mood":
+                    params["mood"] = value
+                elif key == "mealtype":
+                    params["meal_type"] = value
+                elif key == "dietary":
+                    params["dietary_pref"] = value
+                elif key == "cuisines":
+                    # Convert comma-separated cuisine IDs to labels if needed
+                    params["cuisines"] = value if value else "any cuisine"
+        
+        # Only return if we have at least mood and one other param
+        if params["mood"] and (params["meal_type"] or params["dietary_pref"]):
+            return params
+        
+        return None
+    except Exception as e:
+        logging.debug(f"Error extracting context params: {e}")
+        return None
+
 def get_cached_recipes(key: str) -> Optional[str]:
     """Get cached recipe response if not expired"""
     if key in _recipe_cache:
