@@ -833,13 +833,20 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
     Uses rate limiting to avoid 429 errors.
     """
     try:
+        # Extract the actual dish name from creative titles
+        # e.g., "Tranquil Tofu Palak" -> "Tofu Palak"
+        # e.g., "Sunny Paneer Tikka Masala" -> "Paneer Tikka Masala"
+        actual_dish = extract_actual_dish_name(dish_name)
+        
         # Build search query optimized for food images
-        search_query = f"{dish_name} food dish"
+        search_query = f"{actual_dish} food dish"
         if cuisine:
-            search_query = f"{dish_name} {cuisine} cuisine food"
+            search_query = f"{actual_dish} {cuisine} food dish"
         
         # Add quality modifiers
         search_query += " recipe photo"
+        
+        logging.info(f"Image search: '{dish_name}' -> '{search_query}'")
         
         params = {
             "api_key": SERPAPI_KEY,
