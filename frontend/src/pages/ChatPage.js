@@ -883,9 +883,33 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
                   </span>
                 )}
                 {selectedDietaryPref && (
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                    🍽️ {FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref)?.label}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200 transition-colors cursor-pointer flex items-center gap-1 border border-green-200"
+                        data-testid="dietary-indicator"
+                      >
+                        🍽️ {FOOD_PREFERENCES.find(p => p.id === selectedDietaryPref)?.label}
+                        <RefreshCw size={12} className="ml-1 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Change Dietary Preference</div>
+                      {FOOD_PREFERENCES.map((pref) => {
+                        const Icon = pref.icon;
+                        return (
+                          <DropdownMenuItem 
+                            key={pref.id}
+                            onClick={() => handleDietaryPrefSelect(pref.id, pref.label)}
+                            className={`cursor-pointer ${selectedDietaryPref === pref.id ? 'bg-green-50' : ''}`}
+                          >
+                            <Icon size={16} className="mr-2" />
+                            {pref.label}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 {selectedCuisines.length > 0 && (
                   <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
