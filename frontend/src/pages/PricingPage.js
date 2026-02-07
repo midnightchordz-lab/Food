@@ -188,23 +188,6 @@ const PricingPage = () => {
     });
   };
 
-      if (response.data.success) {
-        toast.success(response.data.message);
-        setCurrentPlan(plan.plan_id);
-        
-        // Refresh the page after short delay
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      }
-    } catch (error) {
-      console.error('Error subscribing:', error);
-      toast.error(error.response?.data?.detail || 'Failed to process subscription');
-    } finally {
-      setSubscribing(null);
-    }
-  };
-
   const filteredPlans = plans.filter(plan => 
     plan.billing_cycle === billingCycle || plan.plan_id === 'free'
   );
