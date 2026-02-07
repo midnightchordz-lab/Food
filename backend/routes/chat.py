@@ -875,6 +875,15 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
         # (to avoid mood change detection on structured recipe requests)
         recipe_params = is_recipe_generation_request(request.message)
         
+        # If not a structured recipe request, check if it's a "show more" request with context
+        is_show_more = is_more_recipes_request(request.message)
+        if not recipe_params and is_show_more:
+            # Try to extract params from [Context:] format
+            context_params = extract_context_params(request.message)
+            if context_params:
+                recipe_params = context_params
+                logging.info(f"'Show more' request detected with context params: {recipe_params}")
+        
         # Check if this is a mood change request (only if not a recipe generation request)
         mood_change = is_mood_change_request(request.message, context) if not recipe_params else {"is_mood_change": False}
         
