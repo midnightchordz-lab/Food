@@ -11,6 +11,7 @@ import MoodCarousel, { MOOD_IMAGES } from '@/components/MoodCarousel';
 import MealTypeSelector, { MEAL_TYPES } from '@/components/MealTypeSelector';
 import FoodPreferenceSelector, { FOOD_PREFERENCES } from '@/components/FoodPreferenceSelector';
 import CuisineSelector, { CUISINES } from '@/components/CuisineSelector';
+import { FeatureLockedModal, handleFeatureLockedError } from '@/components/FeatureGate';
 import {
   Dialog,
   DialogContent,
