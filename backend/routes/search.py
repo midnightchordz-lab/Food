@@ -17,6 +17,7 @@ from services.serpapi_service import (
     check_ingredient_price_with_store,
     batch_ingredient_prices,
     build_shopping_cart,
+    search_recipes_for_mood,
     SUPPORTED_STORES
 )
 
@@ -28,6 +29,14 @@ class RecipeSearchRequest(BaseModel):
     cuisine: Optional[str] = None
     dietary: Optional[str] = None
     limit: Optional[int] = 10
+
+
+class MoodRecipeSearchRequest(BaseModel):
+    mood: str
+    cuisine: str
+    meal_type: Optional[str] = "dinner"
+    dietary: Optional[str] = None
+    limit: Optional[int] = 6
 
 
 class GroceryStoreRequest(BaseModel):
