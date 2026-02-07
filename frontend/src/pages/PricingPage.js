@@ -148,21 +148,20 @@ const PricingPage = () => {
             );
 
             if (verifyResponse.data.success) {
-              toast.success(verifyResponse.data.message);
-              setCurrentPlan(plan.plan_id);
-              setTimeout(() => {
-                window.location.reload();
-              }, 1500);
+              // Redirect to success page
+              navigate(`/checkout/success?plan=${plan.plan_id}&order_id=${response.razorpay_order_id}`);
+            } else {
+              navigate(`/checkout/failure?error=verification_failed&plan=${plan.plan_id}&order_id=${response.razorpay_order_id}`);
             }
           } catch (verifyError) {
             console.error('Payment verification failed:', verifyError);
-            toast.error('Payment verification failed. Please contact support.');
+            navigate(`/checkout/failure?error=verification_failed&plan=${plan.plan_id}&order_id=${response.razorpay_order_id}`);
           }
         },
         modal: {
           ondismiss: function() {
             setSubscribing(null);
-            toast.info('Payment cancelled');
+            navigate(`/checkout/failure?error=payment_cancelled&plan=${plan.plan_id}`);
           }
         }
       };
