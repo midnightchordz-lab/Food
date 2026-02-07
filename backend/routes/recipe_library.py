@@ -216,6 +216,7 @@ async def get_recipe_by_id(
 ):
     """
     Get a specific recipe from the library by ID.
+    Premium recipes require premium subscription.
     """
     try:
         recipe = await db.recipe_library.find_one(
@@ -225,6 +226,22 @@ async def get_recipe_by_id(
         
         if not recipe:
             raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        # Check if premium recipe and user has access
+        if recipe.get('is_premium'):
+            include_premium = await user_has_premium_access(current_user.id)
+            if not include_premium:
+                raise HTTPException(
+                    status_code=403,
+                    detail={
+                        "error": "feature_locked",
+                        "message": "This is a premium recipe. Upgrade to access gourmet recipes with premium ingredients.",
+                        "feature": "premium_recipes",
+                        "upgrade_to": "premium_monthly",
+                        "recipe_title": recipe.get('title'),
+                        "premium_reason": recipe.get('premium_reason', 'Premium recipe')
+                    }
+                )
         
         # Increment times_served
         await db.recipe_library.update_one(
