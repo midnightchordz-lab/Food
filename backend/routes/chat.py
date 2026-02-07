@@ -73,8 +73,13 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
         r'^(mood|mood-boosting|boosting|stress|comfort|relaxation)',
         r'^#?\s*mood-?boosting\s*benefits?',
         r'benefits?$',
-        r'^(is\s+packed|provides|contains|rich\s+in|high\s+in|low\s+in)',  # Ingredient description starters
-        r'^(can\s+help|helps?\s+with|known\s+for|great\s+for|good\s+for)',  # Benefit phrases
+        r'^(is\s+packed|provides?|contains?|rich\s+in|high\s+in|low\s+in)',
+        r'^(can\s+help|helps?\s+with|known\s+for|great\s+for|good\s+for)',
+        r'^(add|adds|adding)\s+',  # "add fiber", "adds nutrients"
+        r'^(provide|provides|providing)\s+',  # "provide complex carbs"
+        r'^(support|supports|supporting)\s+',  # "supports digestion"
+        r'^(boost|boosts|boosting)\s+',  # "boosts energy"
+        r'^(promote|promotes|promoting)\s+',  # "promotes wellness"
     ]
     
     def is_valid_recipe_name(title: str) -> bool:
