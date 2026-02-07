@@ -91,6 +91,20 @@ async def synthesize_speech(
     OPTIMIZED: Using tts-1 model for 2x faster response.
     """
     try:
+        # Check feature access - Voice features require Premium
+        access = await FeatureGate.check_access(current_user.id, "voice_cooking")
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "voice_cooking",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         from voice_service import generate_mood_aware_speech, detect_mood_from_text, get_voice_description
         
         # Detect mood if not provided
