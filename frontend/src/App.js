@@ -22,6 +22,7 @@ const DiscoverRecipesPage = lazy(() => import("@/pages/DiscoverRecipesPage"));
 const DiabetesMealsPage = lazy(() => import("@/pages/DiabetesMealsPage"));
 const DiabetesWeeklyPlannerPage = lazy(() => import("@/pages/DiabetesWeeklyPlannerPage"));
 const ImportRecipePage = lazy(() => import("@/pages/ImportRecipePage"));
+const PricingPage = lazy(() => import("@/pages/PricingPage"));
 
 // Loading spinner component for Suspense fallback
 const PageLoader = () => (
