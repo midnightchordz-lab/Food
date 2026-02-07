@@ -717,10 +717,8 @@ const parseNumberedRecipes = (message) => {
     let title = match[1].trim();
     const content = match[2].trim();
     
-    // Skip empty titles
-    if (!title || title.length < 3 || title.length > 100) continue;
-    if (skipPatterns.some(pattern => pattern.test(title))) continue;
-    if (title === ':' || title.endsWith(':')) continue;
+    // Use helper for validation
+    if (!isValidRecipeName(title)) continue;
     
     // Extract cooking time
     const timeMatch = content.match(/\*\*(?:Cook(?:ing)?\s*)?Time:?\*\*\s*(\d+[-–]?\d*)\s*min/i) ||
