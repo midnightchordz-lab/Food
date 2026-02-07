@@ -744,6 +744,20 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
   - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
 
+- **Feb 07, 2026**: BUG FIX - Weekly Planner Image Mismatch & Auto-Generation
+  - **Issue 1**: All dishes showing same breakfast eggs image regardless of recipe type
+    - **Root Cause**: PlannerMealCard was not resetting image state when mealName prop changed
+    - **Fix**: Added `previousMealName` useRef tracking + reset logic when cleanName changes
+    - **Also**: Expanded KEYWORD_IMAGES with 70+ dish keywords (teriyaki, greek yogurt, peanut butter, grilled chicken, chickpea salad, thai green, stuffed bell, french toast, quiche, burrito, etc.)
+  - **Issue 2**: Auto-generate doesn't show next week's menu when navigating to future weeks
+    - **Root Cause**: Date format mismatch - checkAndAutoGenerateForWeek used UTC ISO format while getCurrentPlan used local format
+    - **Fix**: Both functions now use consistent local date format (YYYY-MM-DD)
+    - Also added `hasMeals` check to ensure auto-generation only skips if plan has actual meals
+  - **Files Modified**: 
+    - `/app/frontend/src/components/PlannerMealCard.jsx`
+    - `/app/frontend/src/pages/WeeklyPlannerPage.js`
+  - **Testing**: Code review verified both fixes are correctly implemented
+
 - **Feb 07, 2026**: BUG FIX - Weekly Planner Generate Button & Drink Pairings
   - **Issue 1**: No "Generate Plan" button visible when Auto-Generation is active but no meals exist for the current week
     - **Fix**: Added `currentWeekHasMeals()` function and updated button logic to show "Generate This Week" button when mode is manual OR when no meals exist for current week
