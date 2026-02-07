@@ -452,6 +452,109 @@ Click the button below to get new diabetes-friendly recipes that match your {new
         message_lower = request.message.lower().strip()
         detected_cuisine = None
         
+        # Check if this is a "show more" request
+        more_patterns = [
+            "more recipe", "another recipe", "different recipe", 
+            "show more", "more options", "other recipe", "other options",
+            "something else", "different dish", "more dish", "another dish",
+            "more suggestion", "different suggestion", "other suggestion",
+            "more choices", "different choices", "alternatives",
+            "give me more", "show me more", "more please"
+        ]
+        is_show_more = any(pattern in message_lower for pattern in more_patterns)
+        
+        # Handle "show more" request - generate new recipes using existing context
+        if is_show_more and context:
+            cuisines = context.get("cuisines", ["any"])
+            # Convert list to string if needed
+            if isinstance(cuisines, list):
+                cuisines = cuisines[0] if cuisines else "any"
+            cuisine_label = cuisines.replace("_", " ").title() if cuisines != "any" else "International"
+            
+            recipe_system_msg = f"""You are a recipe generator. Generate EXACTLY 3 NEW {cuisine_label} {dietary_pref} {meal_type} recipes.
+
+CRITICAL RULES - MUST FOLLOW:
+1. Each recipe MUST be a REAL DISH NAME
+2. NEVER use tip titles or dietary advice as recipe names
+3. Generate DIFFERENT recipes than before - be creative!
+
+User has diabetes ({diabetes_type}) - keep carbs under 45g per serving.
+User is feeling: {mood}
+
+FORMAT - Follow exactly:
+## Recipe 1: [ACTUAL DISH NAME]
+**Prep Time:** X minutes
+**Cook Time:** X minutes  
+**Difficulty:** Easy/Medium/Hard
+
+**Ingredients:**
+- [ingredient list]
+
+**Instructions:**
+1. [step by step]
+
+---
+
+## Recipe 2: [ACTUAL DISH NAME]
+[same format]
+
+---
+
+## Recipe 3: [ACTUAL DISH NAME]
+[same format]"""
+
+            if user_exclusions:
+                exclusion_list = ", ".join(user_exclusions)
+                recipe_system_msg += f"\n\nFOOD RESTRICTIONS - NEVER include: {exclusion_list}"
+            
+            chat = LlmChat(
+                api_key=llm_api_key,
+                session_id=f"diabetes-more-{request.session_id}-{uuid.uuid4().hex[:8]}",
+                system_message=recipe_system_msg
+            )
+            chat.with_model("openai", "gpt-4o")
+            
+            ai_response = await chat.send_message(
+                UserMessage(text=f"Generate 3 NEW {cuisine_label} {dietary_pref} {meal_type} recipes that are different from previous suggestions.")
+            )
+            
+            if user_exclusions:
+                filtered_response, removed_recipes, violations = filter_unsafe_recipes_from_response(
+                    ai_response, user_exclusions
+                )
+                if removed_recipes:
+                    logging.warning(f"SAFETY (Diabetes Show More): Removed {len(removed_recipes)} unsafe recipes")
+                ai_response = filtered_response
+            
+            await db.diabetes_chat_messages.insert_one({
+                "session_id": request.session_id,
+                "user_id": current_user.id,
+                "role": "user",
+                "content": request.message,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            await db.diabetes_chat_messages.insert_one({
+                "session_id": request.session_id,
+                "user_id": current_user.id,
+                "role": "assistant",
+                "content": ai_response,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+            
+            # Parse recipes to structured JSON
+            structured_recipes = None
+            try:
+                structured_recipes = parse_recipes_to_json(ai_response, cuisine_label)
+                logging.info(f"Diabetes 'show more': Parsed {len(structured_recipes)} recipes")
+            except Exception as parse_error:
+                logging.error(f"Diabetes 'show more' recipe parsing error: {parse_error}")
+            
+            return {
+                "response": ai_response,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "structured_recipes": structured_recipes
+            }
+        
         # Check if user is requesting a specific cuisine
         for cuisine, keywords in cuisine_keywords.items():
             if any(kw in message_lower for kw in keywords):
