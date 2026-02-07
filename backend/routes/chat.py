@@ -968,3 +968,151 @@ async def get_chat_history(session_id: str, current_user: User = Depends(get_cur
     except Exception as e:
         logging.error(f"Error fetching history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+# ============== HYBRID RECIPE GENERATION (SERPAPI + AI) ==============
+
+class HybridRecipeRequest(BaseModel):
+    """Request for hybrid recipe generation using both SerpAPI and AI"""
+    mood: str
+    cuisines: List[str]
+    meal_type: str = "dinner"
+    dietary_preference: Optional[str] = None
+    use_serpapi: bool = True  # Enable/disable SerpAPI search
+    limit: int = 6
+
+class HybridRecipeResponse(BaseModel):
+    """Response containing recipes from both sources"""
+    session_id: str
+    serpapi_recipes: List[Dict[str, Any]] = []  # Real recipes from Google
+    ai_recipes: List[Dict[str, Any]] = []  # AI-generated recipes
+    combined_recipes: List[Dict[str, Any]] = []  # Merged and deduplicated
+    source: str  # "serpapi", "ai", or "hybrid"
+    timestamp: datetime
+
+
+@router.post("/recipes/hybrid", response_model=HybridRecipeResponse)
+async def get_hybrid_recipes(
+    request: HybridRecipeRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate recipes using both SerpAPI (real recipes from Google) and AI.
+    
+    This endpoint:
+    1. First searches SerpAPI for real recipes with ratings, links, and ingredients
+    2. Then generates complementary AI recipes for variety
+    3. Returns a combined list with source attribution
+    
+    Benefits:
+    - Real recipes with verified ratings and user reviews
+    - Links to original recipe sources
+    - AI-generated variety for unique mood-based suggestions
+    """
+    session_id = str(uuid.uuid4())
+    serpapi_recipes = []
+    ai_recipes = []
+    
+    try:
+        # Step 1: Fetch real recipes from SerpAPI
+        if request.use_serpapi:
+            for cuisine in request.cuisines[:2]:  # Limit to 2 cuisines for speed
+                serp_result = await search_recipes_for_mood(
+                    mood=request.mood,
+                    cuisine=cuisine,
+                    meal_type=request.meal_type,
+                    dietary=request.dietary_preference,
+                    limit=max(3, request.limit // len(request.cuisines))
+                )
+                
+                if serp_result.get("success") and serp_result.get("recipes"):
+                    for recipe in serp_result["recipes"]:
+                        serpapi_recipes.append({
+                            "title": recipe.get("title", ""),
+                            "description": recipe.get("description", ""),
+                            "cooking_time": recipe.get("cooking_time", "30 min"),
+                            "difficulty": recipe.get("difficulty", "Medium"),
+                            "cuisine": cuisine,
+                            "rating": recipe.get("rating"),
+                            "reviews": recipe.get("reviews", 0),
+                            "source": recipe.get("source", ""),
+                            "link": recipe.get("link", ""),
+                            "thumbnail": recipe.get("thumbnail", ""),
+                            "ingredients": recipe.get("ingredients", []),
+                            "source_type": "serpapi"  # Mark as SerpAPI recipe
+                        })
+        
+        logging.info(f"SerpAPI returned {len(serpapi_recipes)} recipes for {request.cuisines}")
+        
+        # Step 2: Generate AI recipes for variety (only if we need more)
+        if len(serpapi_recipes) < request.limit:
+            ai_needed = request.limit - len(serpapi_recipes)
+            cuisines_text = ", ".join(request.cuisines)
+            
+            prompt = f"""Generate {ai_needed} unique {request.meal_type} recipes for someone feeling {request.mood}.
+Cuisines: {cuisines_text}
+{"Dietary: " + request.dietary_preference if request.dietary_preference else ""}
+
+For each recipe provide:
+### Recipe Name
+- **Cooking Time:** X minutes
+- **Difficulty:** Easy/Medium/Hard
+- **Description:** 2-3 sentences about the dish
+
+Do NOT repeat these recipes: {', '.join([r['title'] for r in serpapi_recipes])}
+"""
+            
+            chat = LlmChat(
+                api_key=os.environ.get('EMERGENT_LLM_KEY'),
+                model="gpt-4o-mini",
+                system_prompt="You are a creative chef generating unique recipe suggestions."
+            )
+            
+            ai_response = await chat.send_message_async(UserMessage(content=prompt))
+            
+            # Parse AI response
+            ai_parsed = parse_recipes_to_json(ai_response)
+            for recipe in ai_parsed[:ai_needed]:
+                recipe["source_type"] = "ai"  # Mark as AI-generated
+                ai_recipes.append(recipe)
+        
+        # Step 3: Combine and deduplicate
+        combined = []
+        seen_titles = set()
+        
+        # Add SerpAPI recipes first (they have ratings and links)
+        for recipe in serpapi_recipes:
+            title_lower = recipe["title"].lower()
+            if title_lower not in seen_titles:
+                seen_titles.add(title_lower)
+                combined.append(recipe)
+        
+        # Add AI recipes
+        for recipe in ai_recipes:
+            title_lower = recipe["title"].lower()
+            if title_lower not in seen_titles:
+                seen_titles.add(title_lower)
+                combined.append(recipe)
+        
+        # Determine source attribution
+        source = "hybrid"
+        if len(serpapi_recipes) > 0 and len(ai_recipes) == 0:
+            source = "serpapi"
+        elif len(serpapi_recipes) == 0 and len(ai_recipes) > 0:
+            source = "ai"
+        
+        logging.info(f"Hybrid recipe generation: {len(serpapi_recipes)} from SerpAPI, {len(ai_recipes)} from AI")
+        
+        return HybridRecipeResponse(
+            session_id=session_id,
+            serpapi_recipes=serpapi_recipes,
+            ai_recipes=ai_recipes,
+            combined_recipes=combined[:request.limit],
+            source=source,
+            timestamp=datetime.now(timezone.utc)
+        )
+        
+    except Exception as e:
+        logging.error(f"Hybrid recipe generation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
