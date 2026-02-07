@@ -696,9 +696,6 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                 timestamp=assistant_msg.timestamp
             )
         
-        # Check if this is a recipe generation request
-        recipe_params = is_recipe_generation_request(request.message)
-        
         if recipe_params:
             # Check if user is asking for more/different recipes
             skip_cache = is_more_recipes_request(request.message)
