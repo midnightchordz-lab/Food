@@ -927,25 +927,135 @@ async def razorpay_webhook(request: Request):
         
         logging.info(f"Received Razorpay webhook: {event_type}")
         
+        now = datetime.now(timezone.utc)
+        
         if event_type == 'payment.captured':
-            # Payment successful
+            # Payment successful - activate subscription if order exists
             payment = event['payload']['payment']['entity']
-            logging.info(f"Payment captured: {payment['id']}")
+            payment_id = payment['id']
+            order_id = payment.get('order_id')
+            
+            logging.info(f"Payment captured: {payment_id}, Order: {order_id}")
+            
+            if order_id:
+                # Find the order in our database
+                order = await db.razorpay_orders.find_one({"id": order_id})
+                
+                if order and order.get("status") != "paid":
+                    user_id = order.get("user_id")
+                    plan_id = order.get("plan_id")
+                    
+                    if user_id and plan_id:
+                        plan = get_plan_by_id(plan_id)
+                        
+                        if plan:
+                            # Calculate period end
+                            period_end = now
+                            if plan["billing_cycle"] == "monthly":
+                                period_end = now + timedelta(days=30)
+                            elif plan["billing_cycle"] == "annual":
+                                period_end = now + timedelta(days=365)
+                            
+                            # Cancel any existing subscription
+                            await db.user_subscriptions.update_many(
+                                {"user_id": user_id, "status": {"$in": ["active", "trialing"]}},
+                                {"$set": {"status": "canceled", "canceled_at": now.isoformat()}}
+                            )
+                            
+                            # Create new subscription
+                            subscription_id = str(uuid.uuid4())
+                            subscription_doc = {
+                                "id": subscription_id,
+                                "user_id": user_id,
+                                "plan_id": plan_id,
+                                "status": "active",
+                                "current_period_start": now.isoformat(),
+                                "current_period_end": period_end.isoformat(),
+                                "trial_start": None,
+                                "trial_end": None,
+                                "cancel_at_period_end": False,
+                                "payment_provider": "razorpay",
+                                "payment_provider_id": payment_id,
+                                "razorpay_order_id": order_id,
+                                "created_at": now.isoformat(),
+                                "updated_at": now.isoformat()
+                            }
+                            await db.user_subscriptions.insert_one(subscription_doc)
+                            
+                            # Update order status
+                            await db.razorpay_orders.update_one(
+                                {"id": order_id},
+                                {"$set": {"status": "paid", "payment_id": payment_id}}
+                            )
+                            
+                            # Record transaction
+                            transaction_doc = {
+                                "id": str(uuid.uuid4()),
+                                "user_id": user_id,
+                                "subscription_id": subscription_id,
+                                "transaction_id": payment_id,
+                                "payment_provider": "razorpay",
+                                "amount": order.get("amount", 0),
+                                "currency": order.get("currency", "INR"),
+                                "status": "completed",
+                                "transaction_type": "subscription",
+                                "webhook_event": event_type,
+                                "created_at": now.isoformat(),
+                                "paid_at": now.isoformat()
+                            }
+                            await db.payment_transactions.insert_one(transaction_doc)
+                            
+                            logging.info(f"Webhook: Subscription activated for user {user_id}, plan {plan_id}")
             
         elif event_type == 'payment.failed':
-            # Payment failed
+            # Payment failed - update order status
             payment = event['payload']['payment']['entity']
-            logging.warning(f"Payment failed: {payment['id']}")
+            payment_id = payment['id']
+            order_id = payment.get('order_id')
+            error_description = payment.get('error_description', 'Payment failed')
+            
+            logging.warning(f"Payment failed: {payment_id}, Order: {order_id}, Error: {error_description}")
+            
+            if order_id:
+                await db.razorpay_orders.update_one(
+                    {"id": order_id},
+                    {"$set": {"status": "failed", "error": error_description, "updated_at": now.isoformat()}}
+                )
             
         elif event_type == 'subscription.activated':
-            # Subscription activated
+            # Razorpay subscription activated (for recurring)
             subscription = event['payload']['subscription']['entity']
-            logging.info(f"Subscription activated: {subscription['id']}")
+            logging.info(f"Razorpay subscription activated: {subscription['id']}")
             
         elif event_type == 'subscription.cancelled':
-            # Subscription cancelled
+            # Razorpay subscription cancelled
             subscription = event['payload']['subscription']['entity']
-            logging.info(f"Subscription cancelled: {subscription['id']}")
+            subscription_id = subscription['id']
+            
+            logging.info(f"Razorpay subscription cancelled: {subscription_id}")
+            
+            # Find and cancel in our database
+            await db.user_subscriptions.update_one(
+                {"payment_provider_id": subscription_id, "payment_provider": "razorpay"},
+                {"$set": {"status": "canceled", "canceled_at": now.isoformat(), "updated_at": now.isoformat()}}
+            )
+            
+        elif event_type == 'subscription.charged':
+            # Recurring payment successful
+            subscription = event['payload']['subscription']['entity']
+            payment = event['payload'].get('payment', {}).get('entity', {})
+            
+            logging.info(f"Subscription charged: {subscription['id']}")
+            
+            # Extend subscription period
+            await db.user_subscriptions.update_one(
+                {"payment_provider_id": subscription['id'], "payment_provider": "razorpay"},
+                {"$set": {
+                    "status": "active",
+                    "current_period_end": (now + timedelta(days=30)).isoformat(),
+                    "updated_at": now.isoformat()
+                }}
+            )
         
         return {"success": True, "received": True}
         
