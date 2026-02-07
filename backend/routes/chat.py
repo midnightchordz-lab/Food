@@ -127,26 +127,38 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
             
         return True
     
-    def detect_cuisine(text: str) -> str:
-        """Detect cuisine from text"""
+    def detect_cuisine(text: str, default_cuisine: str = '') -> str:
+        """
+        Detect cuisine from text. If default_cuisine is provided, use that instead.
+        The default should be extracted from user's selection.
+        """
+        # If a default cuisine was provided (from user selection), use it
+        if default_cuisine:
+            return default_cuisine
+        
+        # Otherwise try to detect from text (fallback)
         text_lower = text.lower()
-        if any(w in text_lower for w in ['indian', 'curry', 'masala', 'paneer', 'tikka', 'biryani', 'dal']):
+        if any(w in text_lower for w in ['indian', 'curry', 'masala', 'paneer', 'tikka', 'biryani', 'dal', 'naan', 'samosa', 'chana']):
             return 'Indian'
-        if any(w in text_lower for w in ['italian', 'pasta', 'risotto', 'pizza', 'carbonara', 'lasagna']):
+        if any(w in text_lower for w in ['italian', 'pasta', 'risotto', 'pizza', 'carbonara', 'lasagna', 'gnocchi', 'pesto']):
             return 'Italian'
-        if any(w in text_lower for w in ['mexican', 'taco', 'burrito', 'enchilada', 'quesadilla']):
+        if any(w in text_lower for w in ['mexican', 'taco', 'burrito', 'enchilada', 'quesadilla', 'salsa', 'guacamole']):
             return 'Mexican'
-        if any(w in text_lower for w in ['chinese', 'wok', 'stir-fry', 'dumpling', 'dim sum']):
+        if any(w in text_lower for w in ['chinese', 'wok', 'stir-fry', 'dumpling', 'dim sum', 'tofu', 'szechuan']):
             return 'Chinese'
-        if any(w in text_lower for w in ['japanese', 'sushi', 'ramen', 'teriyaki', 'tempura', 'miso']):
+        if any(w in text_lower for w in ['japanese', 'sushi', 'ramen', 'teriyaki', 'tempura', 'miso', 'udon']):
             return 'Japanese'
-        if any(w in text_lower for w in ['thai', 'pad thai', 'tom yum', 'green curry', 'massaman']):
+        if any(w in text_lower for w in ['thai', 'pad thai', 'tom yum', 'green curry', 'massaman', 'basil chicken']):
             return 'Thai'
-        if any(w in text_lower for w in ['korean', 'kimchi', 'bibimbap', 'bulgogi']):
+        if any(w in text_lower for w in ['korean', 'kimchi', 'bibimbap', 'bulgogi', 'gochujang']):
             return 'Korean'
-        if any(w in text_lower for w in ['mediterranean', 'falafel', 'hummus', 'greek']):
+        if any(w in text_lower for w in ['mediterranean', 'falafel', 'hummus', 'greek salad', 'tzatziki', 'shawarma']):
             return 'Mediterranean'
-        return ''
+        if any(w in text_lower for w in ['american', 'burger', 'bbq', 'mac and cheese', 'fried chicken']):
+            return 'American'
+        if any(w in text_lower for w in ['french', 'croissant', 'baguette', 'ratatouille', 'bourguignon']):
+            return 'French'
+        return default_cuisine  # Return whatever was passed if nothing detected
     
     def extract_time(text: str) -> str:
         """Extract cooking time from text"""
