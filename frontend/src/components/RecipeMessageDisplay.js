@@ -703,7 +703,7 @@ const parseNumberedRecipes = (message) => {
   
   // Helper to check if title is a valid recipe name
   const isValidRecipeName = (title) => {
-    if (!title || title.length < 4 || title.length > 100) return false;
+    if (!title || title.length < 10 || title.length > 100) return false;  // Min 10 chars
     if (skipPatterns.some(pattern => pattern.test(title))) return false;
     if (singleFoodItems.test(title.trim())) return false;
     if (title === ':' || title.endsWith(':')) return false;
