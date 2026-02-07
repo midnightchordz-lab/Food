@@ -891,17 +891,19 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
         
         # CRITICAL: Parse recipes to structured JSON on backend
         # This ensures consistent parsing and avoids brittle frontend regex
+        # ALWAYS try to parse - the LLM might include recipes in any response
         structured_recipes = None
-        if recipe_params:
-            try:
-                structured_recipes = parse_recipes_to_json(ai_response)
+        try:
+            potential_recipes = parse_recipes_to_json(ai_response)
+            # Only include if we found actual recipes (at least 1)
+            if potential_recipes and len(potential_recipes) >= 1:
+                structured_recipes = potential_recipes
                 logging.info(f"Parsed {len(structured_recipes)} recipes from AI response")
-                if structured_recipes:
-                    for r in structured_recipes[:3]:  # Log first 3
-                        logging.info(f"  - {r.get('title', 'No title')}")
-            except Exception as parse_error:
-                logging.error(f"Recipe parsing error: {parse_error}")
-                structured_recipes = None
+                for r in structured_recipes[:3]:  # Log first 3
+                    logging.info(f"  - {r.get('title', 'No title')}")
+        except Exception as parse_error:
+            logging.error(f"Recipe parsing error: {parse_error}")
+            structured_recipes = None
         
         assistant_msg = ChatMessage(
             session_id=request.session_id,
