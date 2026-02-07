@@ -458,6 +458,20 @@ FORMAT - Follow exactly for each recipe:
 async def diabetes_chat(request: DiabetesChatRequest, current_user: User = Depends(get_current_user)):
     """Handle free-form chat in diabetes meals section"""
     try:
+        # Check feature access - Diabetes module requires Chef Pro
+        access = await check_diabetes_access(current_user.id)
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "diabetes_module",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
         context = request.context or {}
