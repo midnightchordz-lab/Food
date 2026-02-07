@@ -518,6 +518,13 @@ For EACH recipe provide:
       });
     } catch (error) {
       console.error('Error fetching recipes:', error);
+      
+      // Check if it's a feature locked error (recipe search limit)
+      if (handleFeatureLockedError(error, setFeatureLockedModal)) {
+        setMessages(prev => prev.filter(m => !m.isLoading));
+        return;
+      }
+      
       toast.error('Failed to get recipes. Please try again.');
       
       setMessages(prev => {
