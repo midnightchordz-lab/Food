@@ -11,6 +11,7 @@ import logging
 
 from .deps import db, User, get_current_user
 from .exclusions import get_user_excluded_ingredients
+from .feature_gating import FeatureGate
 
 router = APIRouter(tags=["Meal Planning"])
 
