@@ -1033,6 +1033,23 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
                 logging.info(f"Parsed {len(structured_recipes)} recipes from AI response with cuisine: {user_cuisine}")
                 for r in structured_recipes[:3]:  # Log first 3
                     logging.info(f"  - {r.get('title', 'No title')} ({r.get('cuisine', 'No cuisine')})")
+                
+                # Save successfully parsed recipes to the library
+                if recipe_params:
+                    try:
+                        saved_count = await save_recipes_to_library(
+                            db,
+                            structured_recipes,
+                            mood=recipe_params.get("mood", ""),
+                            meal_type=recipe_params.get("meal_type", ""),
+                            dietary=recipe_params.get("dietary_pref", ""),
+                            cuisine=user_cuisine or recipe_params.get("cuisines", "")
+                        )
+                        if saved_count > 0:
+                            logging.info(f"Saved {saved_count} new recipes to library")
+                    except Exception as save_error:
+                        logging.warning(f"Failed to save recipes to library: {save_error}")
+                        # Don't fail the request if saving fails
         except Exception as parse_error:
             logging.error(f"Recipe parsing error: {parse_error}")
             structured_recipes = None
