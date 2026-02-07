@@ -220,6 +220,12 @@ const ImportRecipePage = () => {
     } catch (error) {
       clearInterval(progressInterval);
       console.error('Error importing from image:', error);
+      
+      // Check if it's a feature locked error
+      if (handleFeatureLockedError(error, setFeatureLockedModal)) {
+        return;
+      }
+      
       toast.error(error.response?.data?.detail || 'Failed to read recipe from image');
     } finally {
       setIsLoading(false);
