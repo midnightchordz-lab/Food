@@ -21,6 +21,7 @@ from .exclusions import (
     filter_unsafe_recipes_from_response,
     filter_recipe_text_strictly
 )
+from .feature_gating import check_and_increment_search
 
 # Import SerpAPI for external recipe search
 sys.path.append('/app/backend')
