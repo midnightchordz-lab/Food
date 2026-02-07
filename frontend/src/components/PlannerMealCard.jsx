@@ -27,6 +27,7 @@ const PlannerMealCard = ({
   const [imageUrl, setImageUrl] = useState(defaultImg);
   const [isLoading, setIsLoading] = useState(false);
   const [imageSource, setImageSource] = useState('default');
+  const [errorCount, setErrorCount] = useState(0);
   const hasFetched = useRef(false);
 
   const cleanName = mealName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
@@ -46,6 +47,7 @@ const PlannerMealCard = ({
     const fetchImage = async () => {
       setIsLoading(true);
       try {
+        // First try without AI fallback for speed
         const response = await axios.post(`${API}/recipe-image/fast`, {
           recipe_name: cleanName,
           cuisine: '',
@@ -68,8 +70,42 @@ const PlannerMealCard = ({
     setTimeout(fetchImage, delay);
   }, [cleanName, enableAI]);
 
-  // Handle broken images
-  const handleImgError = () => {
+  // Handle broken images - try AI fallback on error
+  const handleImgError = async () => {
+    // Only try AI fallback once to prevent infinite loops
+    if (errorCount >= 1 || imageSource === 'ai_generated') {
+      setImageUrl(defaultImg);
+      setImageSource('default');
+      return;
+    }
+    
+    setErrorCount(prev => prev + 1);
+    
+    // Try to get AI-generated image as fallback
+    if (enableAI && cleanName) {
+      setIsLoading(true);
+      try {
+        const response = await axios.post(`${API}/recipe-image/fast`, {
+          recipe_name: cleanName,
+          cuisine: '',
+          use_ai_fallback: true  // Enable AI fallback
+        }, { timeout: 30000 });  // Longer timeout for AI generation
+
+        if (response.data?.image_url && response.data.source !== 'none') {
+          const cacheKey = cleanName.toLowerCase();
+          imageCache.set(cacheKey, { url: response.data.image_url, source: response.data.source });
+          setImageUrl(response.data.image_url);
+          setImageSource(response.data.source || 'ai_generated');
+          return;
+        }
+      } catch {
+        // Fallback to default on error
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    // Final fallback to default image
     setImageUrl(defaultImg);
     setImageSource('default');
   };
