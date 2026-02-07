@@ -224,6 +224,18 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
     pattern2 = r'(?:^\d+\.\s*)?\*\*([^*]+)\*\*\s*([\s\S]*?)(?=(?:^\d+\.\s*)?\*\*[^*]+\*\*|$)'
     matches2 = re.finditer(pattern2, ai_response, re.MULTILINE)
     
+    # Phrases that indicate ingredient/benefit descriptions, NOT recipe content
+    ingredient_description_starters = [
+        r'^is\s+(packed|rich|high|low|full|great)',
+        r'^provides\s+',
+        r'^contains\s+',
+        r'^(helps?|can\s+help)\s+',
+        r'^known\s+for',
+        r'^(great|good|excellent)\s+for',
+        r'^a\s+(great|good|excellent)\s+source',
+        r'^(rich|high)\s+in\s+',
+    ]
+    
     for match in matches2:
         title = match.group(1).strip()
         content = match.group(2).strip()
@@ -233,6 +245,18 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
         title = title.rstrip(':')
         
         if not is_valid_recipe_name(title):
+            continue
+        
+        # Additional check: skip if content starts with ingredient description phrases
+        content_lower = content.lower().strip()
+        is_ingredient_description = False
+        for pattern in ingredient_description_starters:
+            if re.match(pattern, content_lower, re.IGNORECASE):
+                is_ingredient_description = True
+                break
+        
+        if is_ingredient_description:
+            logging.debug(f"Skipping '{title}' - content looks like ingredient description")
             continue
         
         recipes.append({
