@@ -676,8 +676,8 @@ const parseSingleDishFormat = (message) => {
 const parseNumberedRecipes = (message) => {
   const recipes = [];
   
-  // SINGLE INGREDIENT/FOOD SKIP - These are NOT recipes
-  const singleFoodItems = /^(greek yogurt|yogurt|honey|nuts|berries|oats|eggs?|tomato(?:es)?|spinach|cheese|rice|bread|chicken|beef|fish|salmon|tuna|tofu|beans|lentils|avocado|banana|apple|orange|milk|butter|olive oil|garlic|onion|ginger|salt|pepper|sugar|flour|quinoa|pasta|noodles|shrimp|pork|lamb|turkey|hummus|tahini|feta|mozzarella|cheddar|cream|sour cream|mayonnaise|mustard|ketchup|soy sauce|vinegar|lemon|lime|cucumber|carrot|potato|broccoli|cauliflower|mushroom|bell pepper|zucchini|eggplant|lettuce|kale|arugula|basil|cilantro|parsley|mint|oregano|thyme|rosemary|cinnamon|turmeric|cumin|paprika|chili|almonds|walnuts|cashews|peanuts|coconut|chocolate|vanilla|maple syrup|agave)s?$/i;
+  // SINGLE INGREDIENT/FOOD SKIP - These are NOT recipes - comprehensive list
+  const singleFoodItems = /^(greek yogurt|yogurt|honey|nuts|berries|oats|oatmeal|eggs?|tomato(?:es)?|spinach|cheese|rice|bread|chicken|beef|fish|salmon|tuna|tofu|tempeh|beans|lentils|chickpeas|avocado|banana|apple|orange|milk|butter|olive oil|coconut oil|garlic|onion|ginger|salt|pepper|sugar|flour|quinoa|pasta|noodles|shrimp|pork|lamb|turkey|hummus|tahini|feta|mozzarella|cheddar|ricotta|parmesan|cream|cream cheese|sour cream|mayonnaise|mustard|ketchup|soy sauce|vinegar|lemon|lime|cucumber|carrot|carrots|potato|potatoes|broccoli|cauliflower|mushroom|mushrooms|bell pepper|peppers|zucchini|eggplant|lettuce|kale|arugula|cabbage|chard|basil|cilantro|parsley|mint|oregano|thyme|rosemary|cinnamon|turmeric|cumin|paprika|chili|almonds|walnuts|cashews|peanuts|pecans|pistachios|coconut|chocolate|vanilla|maple syrup|agave|vegetables?|veggies?|greens|fruits?|seeds|chia|flax|herbs|spices|grains|legumes|proteins?)s?$/i;
 
   // Comprehensive skip patterns - NOT recipe names
   const skipPatterns = [
