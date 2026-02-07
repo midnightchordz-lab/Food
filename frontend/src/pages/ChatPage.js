@@ -878,9 +878,30 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
                   </DropdownMenu>
                 )}
                 {selectedMealType && (
-                  <span className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-xs font-medium">
-                    {MEAL_TYPES.find(m => m.id === selectedMealType)?.emoji} {MEAL_TYPES.find(m => m.id === selectedMealType)?.label}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-xs font-medium hover:bg-secondary/80 transition-colors cursor-pointer flex items-center gap-1 border border-border"
+                        data-testid="meal-type-indicator"
+                      >
+                        {MEAL_TYPES.find(m => m.id === selectedMealType)?.emoji} {MEAL_TYPES.find(m => m.id === selectedMealType)?.label}
+                        <RefreshCw size={12} className="ml-1 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-40">
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Change Meal Type</div>
+                      {MEAL_TYPES.map((meal) => (
+                        <DropdownMenuItem 
+                          key={meal.id}
+                          onClick={() => handleMealTypeChange(meal.id)}
+                          className={`cursor-pointer ${selectedMealType === meal.id ? 'bg-secondary' : ''}`}
+                        >
+                          <span className="mr-2">{meal.emoji}</span>
+                          {meal.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 {selectedDietaryPref && (
                   <DropdownMenu>
@@ -912,9 +933,30 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
                   </DropdownMenu>
                 )}
                 {selectedCuisines.length > 0 && (
-                  <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                    🌍 {selectedCuisines.includes('any') ? 'Any Cuisine' : selectedCuisines.map(id => CUISINES.find(c => c.id === id)?.label).join(', ')}
-                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button 
+                        className="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium hover:bg-orange-200 transition-colors cursor-pointer flex items-center gap-1 border border-orange-200"
+                        data-testid="cuisine-indicator"
+                      >
+                        🌍 {selectedCuisines.includes('any') ? 'Any Cuisine' : selectedCuisines.map(id => CUISINES.find(c => c.id === id)?.label).join(', ')}
+                        <RefreshCw size={12} className="ml-1 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48 max-h-64 overflow-y-auto">
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">Change Cuisine</div>
+                      {CUISINES.map((cuisine) => (
+                        <DropdownMenuItem 
+                          key={cuisine.id}
+                          onClick={() => handleCuisineChange(cuisine.id)}
+                          className={`cursor-pointer ${selectedCuisines.includes(cuisine.id) ? 'bg-orange-50' : ''}`}
+                        >
+                          <span className="mr-2">{cuisine.flag}</span>
+                          {cuisine.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             )}
