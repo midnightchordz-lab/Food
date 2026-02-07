@@ -232,6 +232,35 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 7, 2026**: FEATURE - Subscription Management UI & Checkout Flow (COMPLETE)
+  - **Subscription Management Page** (`/subscription`):
+    - Current plan display with Active/Trial/Cancelling badges
+    - Usage stats (recipe searches today, limits)
+    - Features included section
+    - Billing history with transaction list
+    - Cancel/Reactivate subscription buttons
+    - Quick links to pricing and cooking
+  - **Checkout Success Page** (`/checkout/success`):
+    - Confetti celebration animation
+    - Welcome message with plan name
+    - Plan details card with dates
+    - Features unlocked list
+    - Start Cooking and View Subscription buttons
+  - **Checkout Failure Page** (`/checkout/failure`):
+    - Error-specific messages (cancelled, failed, declined, etc.)
+    - What happened section with error code
+    - Try Again and View Other Plans buttons
+    - FAQ accordion with common questions
+  - **Backend Endpoints Added**:
+    - `POST /api/subscription/cancel` - Cancel subscription (at period end or immediate)
+    - `POST /api/subscription/reactivate` - Undo cancellation
+    - `GET /api/subscription/billing-history` - Get payment transactions
+    - `GET /api/subscription/invoices/{id}` - Get invoice details
+  - **Bug Fixed**: Reactivate endpoint now queries for both 'active' and 'trialing' status
+  - **Navigation Updated**: Added Subscription link in user dropdown menu
+  - **Testing**: 20/20 backend tests passed, all frontend pages working
+  - **New Package**: canvas-confetti for success page animation
+
 - **Feb 7, 2026**: FEATURE - Comprehensive Feature Gating System (COMPLETE)
   - **Implemented**: Full subscription-based feature gating across all premium features
   - **Diabetes Module**: Requires Chef Pro subscription (403 for free users)
