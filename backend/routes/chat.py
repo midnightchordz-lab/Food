@@ -31,10 +31,14 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 # ============== RECIPE PARSER - BACKEND JSON EXTRACTION ==============
 # This parses the LLM text response into structured JSON to avoid brittle frontend parsing
 
-def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
+def parse_recipes_to_json(ai_response: str, user_cuisine: str = '') -> List[Dict[str, Any]]:
     """
     Parse AI-generated recipe text into structured JSON.
     This is the SINGLE SOURCE OF TRUTH for recipe parsing - done on backend to ensure consistency.
+    
+    Args:
+        ai_response: The raw text response from the AI
+        user_cuisine: The cuisine the user selected (e.g., "Indian") - used for ALL recipes
     """
     recipes = []
     
