@@ -74,16 +74,26 @@ async def browse_recipes(
     """
     Browse recipes from the library with optional filters.
     Returns the most popular matching recipes.
+    Free users will not see premium recipes.
     """
     try:
+        # Check if user has premium access
+        include_premium = await user_has_premium_access(current_user.id)
+        
         recipes = await get_recipes_from_library(
             db,
             mood=mood or '',
             meal_type=meal_type or '',
             dietary=dietary or '',
             cuisine=cuisine or '',
-            limit=limit
+            limit=limit,
+            include_premium=include_premium
         )
+        
+        # Mark premium recipes for UI indication
+        for recipe in recipes:
+            if recipe.get('is_premium') and not include_premium:
+                recipe['premium_locked'] = True
         
         return {
             "success": True,
@@ -94,7 +104,8 @@ async def browse_recipes(
                 "dietary": dietary,
                 "meal_type": meal_type,
                 "mood": mood
-            }
+            },
+            "has_premium_access": include_premium
         }
     except Exception as e:
         logging.error(f"Error browsing recipes: {e}")
