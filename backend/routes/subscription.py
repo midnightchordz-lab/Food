@@ -11,7 +11,7 @@ import logging
 import hashlib
 import hmac
 
-from .deps import db, User, get_current_user, get_current_user_optional
+from .deps import db, User, get_current_user
 
 router = APIRouter(prefix="/subscription", tags=["Subscription"])
 
