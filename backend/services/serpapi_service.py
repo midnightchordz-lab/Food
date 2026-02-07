@@ -41,12 +41,13 @@ async def _rate_limited_request(client: httpx.AsyncClient, url: str, params: dic
 async def search_recipes(query: str, cuisine: str = None, dietary: str = None, limit: int = 10) -> Dict:
     """
     Search for recipes from external websites using Google Search
+    Returns rich recipe data from Google's recipe search results
     """
     try:
-        # Build search query
+        # Build search query optimized for recipe results
         search_query = f"{query} recipe"
         if cuisine:
-            search_query += f" {cuisine}"
+            search_query = f"{cuisine} {query} recipe"
         if dietary:
             search_query += f" {dietary}"
         
@@ -54,47 +55,60 @@ async def search_recipes(query: str, cuisine: str = None, dietary: str = None, l
             "api_key": SERPAPI_KEY,
             "engine": "google",
             "q": search_query,
-            "num": limit,
-            "tbm": "nws" if False else None,  # Can switch to news search
+            "num": limit * 2,  # Get extra results for filtering
+            "gl": "us",
+            "hl": "en",
         }
-        # Remove None values
-        params = {k: v for k, v in params.items() if v is not None}
         
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(SERPAPI_BASE_URL, params=params)
+            response = await _rate_limited_request(client, SERPAPI_BASE_URL, params)
             response.raise_for_status()
             data = response.json()
         
-        # Parse results
         recipes = []
-        organic_results = data.get("organic_results", [])
         
-        for result in organic_results[:limit]:
-            recipe = {
-                "title": result.get("title", ""),
-                "link": result.get("link", ""),
-                "snippet": result.get("snippet", ""),
-                "source": result.get("displayed_link", ""),
-                "thumbnail": result.get("thumbnail", ""),
-                "position": result.get("position", 0)
-            }
-            # Filter for recipe-related results
-            if any(word in recipe["title"].lower() or word in recipe["snippet"].lower() 
-                   for word in ["recipe", "cook", "make", "prepare", "ingredients"]):
-                recipes.append(recipe)
-        
-        # Also check for rich recipe results
+        # PRIORITY 1: Rich recipe results from Google's recipe carousel
+        # These have structured data with ratings, time, ingredients
         if "recipes_results" in data:
-            for r in data["recipes_results"][:5]:
-                recipes.insert(0, {
+            for r in data["recipes_results"][:limit]:
+                recipe = {
                     "title": r.get("title", ""),
                     "link": r.get("link", ""),
-                    "snippet": f"⏱️ {r.get('total_time', 'N/A')} | ⭐ {r.get('rating', 'N/A')} ({r.get('reviews', 0)} reviews)",
                     "source": r.get("source", ""),
-                    "thumbnail": r.get("thumbnail", ""),
+                    "rating": r.get("rating"),
+                    "reviews": r.get("reviews", 0),
+                    "total_time": r.get("total_time", ""),
                     "ingredients": r.get("ingredients", []),
-                    "is_featured": True
-                })
+                    "thumbnail": r.get("thumbnail", ""),
+                    "is_featured": True,
+                    "description": f"From {r.get('source', 'Web')} - {r.get('total_time', 'Time varies')}",
+                }
+                recipes.append(recipe)
+        
+        # PRIORITY 2: Organic search results (as fallback)
+        if len(recipes) < limit:
+            organic_results = data.get("organic_results", [])
+            for result in organic_results:
+                if len(recipes) >= limit:
+                    break
+                # Filter for recipe-related results
+                title = result.get("title", "")
+                snippet = result.get("snippet", "")
+                if any(word in title.lower() or word in snippet.lower() 
+                       for word in ["recipe", "cook", "make", "how to"]):
+                    recipe = {
+                        "title": title.replace(" Recipe", "").replace(" - ", " ").strip(),
+                        "link": result.get("link", ""),
+                        "source": result.get("displayed_link", ""),
+                        "thumbnail": result.get("thumbnail", ""),
+                        "description": snippet[:200] if snippet else "",
+                        "is_featured": False
+                    }
+                    # Avoid duplicates
+                    if not any(r["title"].lower() == recipe["title"].lower() for r in recipes):
+                        recipes.append(recipe)
+        
+        logging.info(f"SerpAPI recipe search for '{search_query}': Found {len(recipes)} recipes")
         
         return {
             "success": True,
@@ -109,6 +123,132 @@ async def search_recipes(query: str, cuisine: str = None, dietary: str = None, l
             "success": False,
             "error": str(e),
             "results": []
+        }
+
+
+async def search_recipes_for_mood(
+    mood: str, 
+    cuisine: str, 
+    meal_type: str = "dinner",
+    dietary: str = None, 
+    limit: int = 6
+) -> Dict:
+    """
+    Search for recipes matching mood, cuisine, and meal type.
+    Returns structured recipe data ready for display in the chat.
+    
+    This is the main function for integrating SerpAPI recipes into the chat flow.
+    """
+    try:
+        # Build an optimized search query based on mood
+        mood_keywords = {
+            "happy": "vibrant colorful",
+            "sad": "comfort food hearty",
+            "stressed": "calming relaxing easy",
+            "tired": "energizing quick simple",
+            "anxious": "soothing warm",
+            "cozy": "comfort warm hearty",
+            "energetic": "fresh light healthy",
+            "romantic": "elegant fancy",
+        }
+        
+        mood_modifier = mood_keywords.get(mood.lower(), "delicious")
+        search_query = f"{mood_modifier} {cuisine} {meal_type} recipe"
+        if dietary:
+            search_query += f" {dietary}"
+        
+        params = {
+            "api_key": SERPAPI_KEY,
+            "engine": "google",
+            "q": search_query,
+            "num": limit * 2,
+            "gl": "us",
+            "hl": "en",
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await _rate_limited_request(client, SERPAPI_BASE_URL, params)
+            response.raise_for_status()
+            data = response.json()
+        
+        recipes = []
+        
+        # Extract rich recipe results
+        if "recipes_results" in data:
+            for r in data["recipes_results"][:limit]:
+                # Parse cooking time to minutes
+                total_time = r.get("total_time", "30 min")
+                time_minutes = 30
+                if total_time:
+                    time_match = re.search(r'(\d+)', total_time)
+                    if time_match:
+                        time_minutes = int(time_match.group(1))
+                        if "hr" in total_time.lower() or "hour" in total_time.lower():
+                            time_minutes *= 60
+                
+                # Determine difficulty based on time and ingredients
+                ingredient_count = len(r.get("ingredients", []))
+                if time_minutes <= 20 and ingredient_count <= 6:
+                    difficulty = "Easy"
+                elif time_minutes >= 60 or ingredient_count >= 12:
+                    difficulty = "Hard"
+                else:
+                    difficulty = "Medium"
+                
+                recipe = {
+                    "title": r.get("title", ""),
+                    "link": r.get("link", ""),
+                    "source": r.get("source", ""),
+                    "rating": r.get("rating"),
+                    "reviews": r.get("reviews", 0),
+                    "cooking_time": total_time,
+                    "difficulty": difficulty,
+                    "ingredients": r.get("ingredients", []),
+                    "thumbnail": r.get("thumbnail", ""),
+                    "cuisine": cuisine,
+                    "description": f"A {mood_modifier} {cuisine} recipe. Rating: {r.get('rating', 'N/A')}⭐ from {r.get('source', 'Web')}",
+                }
+                recipes.append(recipe)
+        
+        # Fallback to organic results if needed
+        if len(recipes) < limit:
+            organic_results = data.get("organic_results", [])
+            for result in organic_results:
+                if len(recipes) >= limit:
+                    break
+                title = result.get("title", "")
+                if any(word in title.lower() for word in ["recipe", cuisine.lower()]):
+                    recipe = {
+                        "title": title.replace(" Recipe", "").strip(),
+                        "link": result.get("link", ""),
+                        "source": result.get("displayed_link", ""),
+                        "thumbnail": result.get("thumbnail", ""),
+                        "cooking_time": "30 min",
+                        "difficulty": "Medium",
+                        "ingredients": [],
+                        "cuisine": cuisine,
+                        "description": result.get("snippet", "")[:150],
+                    }
+                    if not any(r["title"].lower() == recipe["title"].lower() for r in recipes):
+                        recipes.append(recipe)
+        
+        logging.info(f"Mood recipe search for '{mood}' {cuisine} {meal_type}: Found {len(recipes)} recipes")
+        
+        return {
+            "success": True,
+            "mood": mood,
+            "cuisine": cuisine,
+            "meal_type": meal_type,
+            "recipes": recipes[:limit],
+            "total_found": len(recipes)
+        }
+        
+    except Exception as e:
+        logging.error(f"SerpAPI mood recipe search error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "recipes": []
         }
 
 
