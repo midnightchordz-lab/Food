@@ -291,6 +291,22 @@ const WeeklyPlannerPage = () => {
     return plans.find(p => p.week_start === weekKey) || null;
   };
   
+  // Check if current week has any meals
+  const currentWeekHasMeals = () => {
+    const currentPlan = getCurrentPlan();
+    if (!currentPlan || !currentPlan.meals) return false;
+    
+    // Check if any day has any meal
+    for (const day of DAYS) {
+      for (const meal of MEAL_TYPES) {
+        if (currentPlan.meals[day]?.[meal.id]) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  
   const getMealForDayAndType = (dayIndex, mealType) => {
     const currentPlan = getCurrentPlan();
     if (!currentPlan) return null;
