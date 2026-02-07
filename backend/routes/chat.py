@@ -291,42 +291,52 @@ Be warm, concise, and helpful. Ask clarifying questions if needed."""
 
 
 def get_recipe_generation_prompt(mood: str, meal_type: str, dietary_pref: str, cuisines: str, want_different: bool = False):
-    """Generate a focused prompt for recipe suggestions"""
+    """Generate a strict prompt that ONLY returns proper recipes, not ingredients"""
     different_instruction = ""
     if want_different:
-        different_instruction = "\n\nIMPORTANT: Generate completely DIFFERENT recipes than any you may have suggested before. Be creative and suggest unique, varied dishes.\n"
+        different_instruction = "IMPORTANT: Generate completely DIFFERENT recipes than before. "
     
-    return f"""You are an expert chef and sommelier. Generate EXACTLY 4 {dietary_pref} {cuisines} {meal_type} recipes matching a {mood} mood.{different_instruction}
+    return f"""You are an expert chef. {different_instruction}Generate EXACTLY 4 complete {dietary_pref} {cuisines} {meal_type} RECIPES for someone feeling {mood}.
 
-For EACH recipe:
+CRITICAL RULES:
+1. Each item MUST be a COMPLETE DISH with multiple ingredients and cooking steps
+2. NEVER suggest single ingredients like "Greek Yogurt", "Honey", "Nuts", "Tomatoes", "Eggs"
+3. NEVER suggest generic foods - only COMPLETE RECIPES with names like "Greek Yogurt Parfait with Honey and Berries" or "Mediterranean Vegetable Frittata"
+4. Each recipe MUST have: cooking time, difficulty, multiple ingredients, and cooking instructions
 
-### [Recipe Name]
-**Cuisine:** {cuisines} | **Time:** X min | **Difficulty:** Easy/Medium/Hard
+FORMAT - Use this EXACT structure for EACH recipe:
 
-**Why it fits the {mood} mood:** 1-2 sentences
+### 1. [Full Recipe Name - Must be a complete dish name]
+**Cuisine:** {cuisines} | **Time:** [X] minutes | **Difficulty:** [Easy/Medium/Hard]
 
-**Ingredients:** (6-8 items with quantities)
-- [Qty] [Ingredient]
+**Description:** [2 sentences about this complete dish]
 
-**Instructions:** (6-8 specific steps)
-1. [PREP X min] Do this with [specific ingredient]: [technique, cut size, bowl type]
-2. [COOK X min] Heat [specific pan] to [exact temp/heat level]. Add [ingredient]. Cook [X minutes] until [visual cue].
-3. Continue...
+**Key Ingredients:** [List 5-6 main ingredients]
 
-**Chef's Tip:** One unique tip for this dish.
+**Quick Instructions:** [3-4 brief cooking steps]
 
-**🍹 Drink Pairings:**
-- **Non-Alcoholic:** [Specific mocktail or beverage name] - [why it pairs well with flavors]
-- **Alcoholic (21+):** [Specific wine/beer/cocktail] - [why it complements the dish]
+**Mood Benefits:** [1 sentence on why this helps with {mood} mood]
 
 ---
 
-RULES:
-- NO generic phrases like "cook until done" or "season to taste"
-- ALWAYS include: exact temperatures, timing per step, visual/audio cues
-- Each recipe must have UNIQUE, dish-specific instructions
-- Drink pairings must be SPECIFIC (not generic "white wine" but "Sauvignon Blanc" or "Pinot Grigio")
-- Keep total response under 3500 words"""
+### 2. [Next Recipe Name]
+[Same format]
+
+---
+
+WRONG EXAMPLES (NEVER do this):
+- "Greek Yogurt" ❌ (single ingredient)
+- "Honey" ❌ (single ingredient)
+- "Nuts and Berries" ❌ (just ingredients)
+- "Eggs" ❌ (single ingredient)
+
+CORRECT EXAMPLES:
+- "Greek Yogurt Parfait with Honey Granola" ✓ (complete dish)
+- "Mediterranean Shakshuka with Feta" ✓ (complete dish)
+- "Spinach and Feta Frittata" ✓ (complete dish)
+- "Honey Glazed Salmon with Vegetables" ✓ (complete dish)
+
+Generate 4 COMPLETE RECIPES now:"""
 
 
 def get_detailed_recipe_prompt(recipe_title: str, cuisine: str, meal_type: str, dietary_pref: str):
