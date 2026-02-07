@@ -248,14 +248,28 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
     
     # Phrases that indicate ingredient/benefit descriptions, NOT recipe content
     ingredient_description_starters = [
-        r'^is\s+(packed|rich|high|low|full|great)',
-        r'^provides\s+',
-        r'^contains\s+',
-        r'^(helps?|can\s+help)\s+',
+        r'^is\s+(packed|rich|high|low|full|great|an?\s+excellent)',
+        r'^(provide|provides|providing)\s+',
+        r'^(contain|contains|containing)\s+',
+        r'^(help|helps|helping)\s+',
+        r'^(can\s+help|may\s+help)\s+',
         r'^known\s+for',
         r'^(great|good|excellent)\s+for',
         r'^a\s+(great|good|excellent)\s+source',
         r'^(rich|high)\s+in\s+',
+        r'^(add|adds|adding)\s+',  # "add fiber"
+        r'^(support|supports|supporting)\s+',  # "supports digestion"
+        r'^(boost|boosts|boosting)\s+',  # "boosts energy"
+        r'^(promote|promotes|promoting)\s+',  # "promotes wellness"
+        r'^(give|gives|giving)\s+',  # "gives you energy"
+        r'^(aid|aids|aiding)\s+',  # "aids digestion"
+        r'^(improve|improves|improving)\s+',  # "improves mood"
+        r'^(reduce|reduces|reducing)\s+',  # "reduces stress"
+        r'^(lower|lowers|lowering)\s+',  # "lowers blood sugar"
+        r'^(enhance|enhances|enhancing)\s+',  # "enhances flavor"
+        r'^\w+\s+complex\s+carbohydrates',  # "provide complex carbohydrates"
+        r'^\w+\s+fiber',  # "add fiber"
+        r'^\w+\s+(vitamins?|minerals?|nutrients?)',  # "provides vitamins"
     ]
     
     for match in matches2:
