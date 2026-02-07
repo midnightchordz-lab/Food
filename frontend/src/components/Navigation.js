@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activity, Import, CalendarDays, Search, CreditCard } from 'lucide-react';
+import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activity, Import, CalendarDays, Search, CreditCard, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import SearchHub from './SearchHub';
@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
