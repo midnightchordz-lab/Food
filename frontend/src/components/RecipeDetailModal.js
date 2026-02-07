@@ -878,11 +878,14 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                       Non-Alcoholic Options
                     </h4>
                     <div className="grid gap-3">
-                      {parsedRecipe?.drinkPairings?.nonAlcoholic?.length > 0 ? (
-                        parsedRecipe.drinkPairings.nonAlcoholic.map((drink, idx) => (
+                      {(parsedRecipe?.drinkPairings?.nonAlcoholic?.length > 0 || recipe?.drinkPairings?.nonAlcoholic?.length > 0) ? (
+                        (parsedRecipe?.drinkPairings?.nonAlcoholic?.length > 0 
+                          ? parsedRecipe.drinkPairings.nonAlcoholic 
+                          : recipe?.drinkPairings?.nonAlcoholic || []
+                        ).map((drink, idx) => (
                           <div key={idx} className="p-4 bg-teal-50 rounded-xl border border-teal-100">
-                            <p className="font-semibold text-teal-800">{drink.name}</p>
-                            <p className="text-sm text-teal-600 mt-1">{drink.description}</p>
+                            <p className="font-semibold text-teal-800">{drink.name || drink}</p>
+                            <p className="text-sm text-teal-600 mt-1">{drink.description || `A refreshing drink that complements this dish.`}</p>
                           </div>
                         ))
                       ) : (
