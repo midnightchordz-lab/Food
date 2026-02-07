@@ -54,13 +54,32 @@ const PlannerMealCard = ({
           use_ai_fallback: false
         }, { timeout: 8000 });
 
-        if (response.data?.image_url) {
+        // Only update if we got a valid image URL (not null, undefined, or empty string)
+        if (response.data?.image_url && typeof response.data.image_url === 'string' && response.data.image_url.trim()) {
           imageCache.set(cacheKey, { url: response.data.image_url, source: response.data.source });
           setImageUrl(response.data.image_url);
           setImageSource(response.data.source || 'google');
+        } else {
+          // No valid image from API - try AI fallback immediately
+          try {
+            const aiResponse = await axios.post(`${API}/recipe-image/fast`, {
+              recipe_name: cleanName,
+              cuisine: '',
+              use_ai_fallback: true
+            }, { timeout: 25000 });
+            
+            if (aiResponse.data?.image_url && typeof aiResponse.data.image_url === 'string' && aiResponse.data.image_url.trim()) {
+              imageCache.set(cacheKey, { url: aiResponse.data.image_url, source: aiResponse.data.source });
+              setImageUrl(aiResponse.data.image_url);
+              setImageSource(aiResponse.data.source || 'ai_generated');
+            }
+            // If still no valid image, keep the default (already set)
+          } catch {
+            // Keep default image
+          }
         }
       } catch {
-        // Just use default image on error
+        // Just use default image on error - already set
       } finally {
         setIsLoading(false);
       }
