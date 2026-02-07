@@ -151,8 +151,16 @@ async def generate_ai_meal_plan(user, mood, dietary_preference=None, calorie_tar
         dietary_desc = DIETARY_DESCRIPTIONS.get(dietary_preference, DIETARY_DESCRIPTIONS["non-vegetarian"])
         dietary_pref_str = dietary_preference or "non-vegetarian"
     
-    # Additional user dietary restrictions
-    user_restrictions = user.dietary_restrictions if user.dietary_restrictions else []
+    # Additional user dietary restrictions - normalize to strings
+    user_restrictions = []
+    if user.dietary_restrictions:
+        for r in user.dietary_restrictions:
+            if isinstance(r, dict):
+                user_restrictions.append(r.get('label') or r.get('name') or r.get('id') or str(r))
+            elif isinstance(r, str):
+                user_restrictions.append(r)
+            else:
+                user_restrictions.append(str(r))
     
     # Build exclusion list for variety
     exclusion_section = ""
