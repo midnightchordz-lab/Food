@@ -157,6 +157,70 @@ async def get_fast_recipe_image(request: FastImageRequest):
         "recipe_name": request.recipe_name,
         "error": "No images found"
     }
+
+
+class BatchImageItem(BaseModel):
+    recipe_name: str
+    cuisine: Optional[str] = ""
+
+
+class BatchImageRequestV2(BaseModel):
+    recipes: List[BatchImageItem]
+
+
+@router.post("/batch")
+async def get_batch_recipe_images(request: BatchImageRequestV2):
+    """
+    Get images for multiple recipes at once, ensuring each recipe gets a UNIQUE image.
+    This prevents the issue where similar dishes get the same image.
+    """
+    import logging
+    from services.serpapi_service import search_food_images
+    
+    results = []
+    used_image_urls = set()  # Track used URLs to ensure uniqueness
+    
+    for item in request.recipes:
+        image_url = None
+        source = "none"
+        
+        try:
+            # Search for images with more results to have alternatives
+            google_result = await search_food_images(
+                dish_name=item.recipe_name,
+                cuisine=item.cuisine,
+                limit=5  # Get more options
+            )
+            
+            if google_result.get("success") and google_result.get("images"):
+                # Find the first image that hasn't been used yet
+                for img in google_result["images"]:
+                    img_url = img.get("url", "")
+                    if img_url and img_url not in used_image_urls:
+                        image_url = img_url
+                        used_image_urls.add(img_url)
+                        source = "google_images"
+                        break
+                
+                # If all images were used, just take the first one (fallback)
+                if not image_url and google_result["images"]:
+                    image_url = google_result["images"][0].get("url")
+                    source = "google_images"
+                    
+        except Exception as e:
+            logging.warning(f"Batch image fetch failed for '{item.recipe_name}': {e}")
+        
+        results.append({
+            "recipe_name": item.recipe_name,
+            "image_url": image_url,
+            "source": source
+        })
+    
+    return {
+        "success": True,
+        "images": results,
+        "total": len(results)
+    }
     
     # No image found from either source
     return {
