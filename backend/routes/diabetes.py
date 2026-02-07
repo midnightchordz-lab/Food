@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 import os
 import uuid
 import logging
+import sys
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
@@ -18,6 +19,10 @@ from .exclusions import (
     filter_recipe_text_strictly
 )
 from .chat import is_mood_change_request, MOOD_RESPONSES, parse_recipes_to_json
+
+# Import recipe library service
+sys.path.append('/app/backend')
+from services.recipe_library import save_recipes_to_library
 
 router = APIRouter(prefix="/diabetes", tags=["Diabetes"])
 
