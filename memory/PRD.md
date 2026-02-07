@@ -744,6 +744,17 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
   - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
 
+- **Feb 07, 2026**: BUG FIX - D-Planner Missing Recipe Images
+  - **Issue**: Several recipe cells in the D-Planner were showing text alt text instead of images (e.g., "Scrambled eggs with sautéed...", "Chicken tikka...", "Lentil dal...", "Mushroom curry...")
+  - **Root Cause**: PlannerMealCard was using only meal type defaults (breakfast/lunch/dinner) when API returned null/empty image URLs, causing generic or broken images
+  - **Solution**:
+    - Added comprehensive `KEYWORD_IMAGES` mapping with 40+ keywords covering breakfast items, proteins, Indian dishes, salads, etc.
+    - Added `getKeywordImage()` function that matches recipe names against keywords before falling back to meal type defaults
+    - Component now initializes with keyword-matched images (e.g., "scrambled" -> eggs image, "tikka" -> tandoori image)
+    - Improved API response validation to handle null/empty/invalid URLs properly
+  - **Files Modified**: `/app/frontend/src/components/PlannerMealCard.jsx`
+  - **Testing**: Code review verified all 7 problematic recipes now have correct keyword matches
+
 - **Feb 07, 2026**: BUG FIX - Duplicate Recipe Images
   - **Issue**: Two or more recipes in the same batch could have identical images when they matched the same keywords (e.g., two Indian dishes both showing the same curry image)
   - **Root Cause**: Multiple parsing functions (parseRecipeFromMatch, parseRecipeContent, etc.) were using getRecipeImage() which doesn't track used images
