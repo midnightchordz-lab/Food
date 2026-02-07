@@ -712,11 +712,21 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             cached_response = get_cached_recipes(cache_key) if (not user_exclusions and not skip_cache) else None
             
             if cached_response:
-                # Return cached response immediately
+                # Parse structured recipes even for cached responses
+                # This ensures frontend always gets structured data
+                cached_structured_recipes = None
+                try:
+                    cached_structured_recipes = parse_recipes_to_json(cached_response)
+                    logging.info(f"Parsed {len(cached_structured_recipes)} recipes from cached response")
+                except Exception as parse_error:
+                    logging.error(f"Recipe parsing error (cached): {parse_error}")
+                
+                # Return cached response with structured recipes
                 assistant_msg = ChatMessage(
                     session_id=request.session_id,
                     role="assistant",
-                    content=cached_response
+                    content=cached_response,
+                    structured_data={"recipes": cached_structured_recipes} if cached_structured_recipes else None
                 )
                 await db.chat_messages.insert_one({
                     **assistant_msg.model_dump(),
@@ -727,7 +737,8 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                 return ChatResponse(
                     session_id=request.session_id,
                     response=cached_response,
-                    timestamp=assistant_msg.timestamp
+                    timestamp=assistant_msg.timestamp,
+                    structured_recipes=cached_structured_recipes
                 )
             
             system_msg = get_recipe_generation_prompt(
