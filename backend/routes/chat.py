@@ -25,6 +25,7 @@ from .exclusions import (
 # Import SerpAPI for external recipe search
 sys.path.append('/app/backend')
 from services.serpapi_service import search_recipes, search_recipes_for_mood
+from services.recipe_library import save_recipes_to_library, get_recipes_from_library
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
