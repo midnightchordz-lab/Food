@@ -313,6 +313,8 @@ What's your dietary preference?"""
                 "recommendedFoods": guidelines["recommended_foods"]
             }
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error researching diabetes type: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -449,6 +451,8 @@ FORMAT - Follow exactly for each recipe:
             "structured_recipes": structured_recipes
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error generating diabetes recipes: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -798,6 +802,8 @@ IMPORTANT FOOD RESTRICTIONS: The user has allergies/exclusions to: {exclusion_li
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error in diabetes chat: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -863,6 +869,8 @@ async def generate_diabetes_weekly_plan(request: DiabetesMealPlanRequest, curren
             "message": "Diabetes meal plan generated successfully!",
             "exclusions_applied": user_exclusions
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error generating diabetes meal plan: {e}")
         raise HTTPException(status_code=500, detail=str(e))
