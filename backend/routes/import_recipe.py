@@ -475,6 +475,20 @@ Output ONLY the JSON object for this recipe."""
 async def import_from_text(request: ImportTextRequest, current_user: User = Depends(get_current_user)):
     """Import a recipe from plain text"""
     try:
+        # Check feature access - Recipe Import requires Premium
+        access = await check_recipe_import_access(current_user.id)
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "recipe_import",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         logging.info(f"Importing recipe from text ({len(request.recipe_text)} chars)")
         
         if len(request.recipe_text) < 20:
