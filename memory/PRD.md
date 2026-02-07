@@ -721,3 +721,41 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
   - **Solution**: Only detect mood from `messageText` (user input)
   - **Result**: "cozy" → correctly shows "Show Cozy Recipes"
 
+- **Feb 07, 2026**: P0 CRITICAL - Fixed Recipe Generation & Display Pipeline (MAJOR REFACTOR)
+  - **Issue**: Recipes displayed as raw markdown (`**Recipe: Scallion Pancakes...**`) instead of cards. Ingredients like "Greek Yogurt" appeared as recipe titles. "Mood-Boosting Benefits" section headers were parsed as recipe names.
+  - **Root Cause**: Frontend had brittle regex parsing that failed on different LLM response formats. The architecture relied on frontend parsing unreliable AI text responses.
+  - **Solution - Backend JSON Parsing**:
+    - Added `parse_recipes_to_json()` function in `/app/backend/routes/chat.py` (lines 25-180)
+    - Backend now parses LLM text response into structured JSON with fields: title, description, cooking_time, difficulty, cuisine, ingredients
+    - Validates recipe titles: must be 2+ words, not single ingredients, not section headers
+    - ChatResponse now includes `structured_recipes` array alongside raw `response` text
+  - **Solution - Frontend Updates**:
+    - `RecipeMessageDisplay.js` now accepts `structuredRecipes` prop
+    - When structured data exists, renders directly from JSON (no parsing needed)
+    - Falls back to text parsing only when no structured data available
+  - **Additional Fixes by Testing Agent**:
+    - Fixed cached responses to also include `structured_recipes`
+    - Fixed recipe detection priority: checks `is_recipe_generation_request()` BEFORE mood detection
+  - **Files Modified**:
+    - `/app/backend/routes/chat.py` - Added parse_recipes_to_json(), updated ChatResponse
+    - `/app/backend/routes/diabetes.py` - Added structured_recipes to diabetes chat
+    - `/app/frontend/src/components/RecipeMessageDisplay.js` - Added structuredRecipes prop, convertStructuredRecipes()
+    - `/app/frontend/src/pages/ChatPage.js` - Captures and passes structured_recipes
+    - `/app/frontend/src/pages/DiabetesMealsPage.js` - Captures and passes structured_recipes
+  - **Testing**: 7/7 backend tests passed, all cuisines verified (Italian, Indian, Thai, Japanese, Mexican)
+
+- **Feb 07, 2026**: P1 - Fixed Image Fallback in Planners
+  - **Issue**: Images from Google sometimes appeared blank/broken due to CORS. Fallback to AI-generated images wasn't triggering.
+  - **Root Cause**: `PlannerMealCard.jsx` had `use_ai_fallback: false` and `onError` handler only switched to stock images
+  - **Solution**: 
+    - Updated `handleImgError()` to request AI-generated image on first error
+    - Tracks error count to prevent infinite loops
+    - Uses longer timeout (30s) for AI generation
+    - Final fallback to stock images if AI also fails
+  - **File Modified**: `/app/frontend/src/components/PlannerMealCard.jsx`
+
+- **Feb 07, 2026**: P2 - Verified /diabetes-planner Page Access
+  - **Issue**: User reported 403 Forbidden error when accessing `/diabetes-planner`
+  - **Status**: Verified working - page returns 200 OK and renders login prompt for unauthenticated users
+  - **Likely Cause**: Was temporary caching/routing issue that resolved itself
+
