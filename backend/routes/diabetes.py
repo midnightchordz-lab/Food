@@ -809,6 +809,20 @@ IMPORTANT FOOD RESTRICTIONS: The user has allergies/exclusions to: {exclusion_li
 async def generate_diabetes_weekly_plan(request: DiabetesMealPlanRequest, current_user: User = Depends(get_current_user)):
     """Generate a diabetes-optimized weekly meal plan with exclusion filtering"""
     try:
+        # Check feature access - Diabetes module requires Chef Pro
+        access = await check_diabetes_access(current_user.id)
+        if not access["allowed"]:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "feature_locked",
+                    "message": access["reason"],
+                    "feature": "diabetes_module",
+                    "upgrade_to": access["upgrade_to"],
+                    "current_plan": access["current_plan"]
+                }
+            )
+        
         from diabetes_meal_planner import generate_diabetes_weekly_meal_plan
         
         user_exclusions = await get_user_excluded_ingredients(current_user.id)
