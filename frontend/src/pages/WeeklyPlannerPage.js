@@ -69,6 +69,62 @@ const RECIPE_IMAGES = {
   'default': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
 };
 
+// Drink pairings based on cuisine and meal type
+const DRINK_PAIRINGS = {
+  breakfast: {
+    default: { nonAlcoholic: ['Fresh orange juice', 'Hot green tea', 'Oat milk latte'], alcoholic: [] },
+    indian: { nonAlcoholic: ['Masala chai', 'Fresh mango lassi', 'Nimbu pani (lemon water)'], alcoholic: [] },
+    american: { nonAlcoholic: ['Cold brew coffee', 'Fresh squeezed OJ', 'Smoothie'], alcoholic: [] },
+  },
+  lunch: {
+    default: { nonAlcoholic: ['Sparkling water with lemon', 'Iced green tea', 'Kombucha'], alcoholic: ['Light white wine', 'Wheat beer'] },
+    indian: { nonAlcoholic: ['Sweet lassi', 'Nimbu pani', 'Mango aam panna'], alcoholic: ['Indian pale ale', 'Chilled white wine'] },
+    italian: { nonAlcoholic: ['San Pellegrino', 'Limonata', 'Espresso'], alcoholic: ['Pinot Grigio', 'Light Chianti'] },
+    mexican: { nonAlcoholic: ['Agua fresca', 'Horchata', 'Tamarind juice'], alcoholic: ['Mexican lager', 'Light margarita'] },
+    thai: { nonAlcoholic: ['Thai iced tea', 'Coconut water', 'Lemongrass tea'], alcoholic: ['Singha beer', 'Riesling'] },
+    japanese: { nonAlcoholic: ['Mugicha (barley tea)', 'Green tea', 'Ramune'], alcoholic: ['Light sake', 'Japanese beer'] },
+    chinese: { nonAlcoholic: ['Jasmine tea', 'Chrysanthemum tea', 'Soy milk'], alcoholic: ['Tsingtao beer', 'Plum wine'] },
+  },
+  dinner: {
+    default: { nonAlcoholic: ['Herbal tea', 'Sparkling water', 'Fruit-infused water'], alcoholic: ['Red wine', 'Craft beer'] },
+    indian: { nonAlcoholic: ['Rose sharbat', 'Lassi', 'Masala chai'], alcoholic: ['Full-bodied red wine', 'Belgian wheat beer'] },
+    italian: { nonAlcoholic: ['Espresso', 'Limonata', 'Still water'], alcoholic: ['Chianti', 'Montepulciano', 'Prosecco'] },
+    mexican: { nonAlcoholic: ['Jamaica (hibiscus) agua fresca', 'Mexican hot chocolate'], alcoholic: ['Margarita', 'Mezcal', 'Modelo Negra'] },
+    thai: { nonAlcoholic: ['Thai iced tea', 'Coconut shake', 'Ginger tea'], alcoholic: ['Gewürztraminer', 'Thai whisky soda'] },
+    japanese: { nonAlcoholic: ['Genmaicha', 'Hojicha', 'Calpis'], alcoholic: ['Sake', 'Japanese whisky highball', 'Sapporo'] },
+    chinese: { nonAlcoholic: ['Oolong tea', 'Plum juice', 'Soy milk'], alcoholic: ['Plum wine', 'Baijiu', 'Tsingtao'] },
+    mediterranean: { nonAlcoholic: ['Mint tea', 'Ayran', 'Lemon water'], alcoholic: ['Greek wine', 'Ouzo', 'Raki'] },
+  }
+};
+
+// Get drink pairing for a recipe
+const getDrinkPairing = (recipeName, mealType) => {
+  const nameLower = recipeName.toLowerCase();
+  
+  // Detect cuisine from recipe name
+  let cuisine = 'default';
+  if (nameLower.includes('indian') || nameLower.includes('curry') || nameLower.includes('masala') || nameLower.includes('paneer') || nameLower.includes('dal')) {
+    cuisine = 'indian';
+  } else if (nameLower.includes('italian') || nameLower.includes('pasta') || nameLower.includes('pizza') || nameLower.includes('risotto')) {
+    cuisine = 'italian';
+  } else if (nameLower.includes('mexican') || nameLower.includes('taco') || nameLower.includes('burrito') || nameLower.includes('enchilada')) {
+    cuisine = 'mexican';
+  } else if (nameLower.includes('thai') || nameLower.includes('pad') || nameLower.includes('tom yum')) {
+    cuisine = 'thai';
+  } else if (nameLower.includes('japanese') || nameLower.includes('sushi') || nameLower.includes('ramen') || nameLower.includes('teriyaki')) {
+    cuisine = 'japanese';
+  } else if (nameLower.includes('chinese') || nameLower.includes('stir fry') || nameLower.includes('dim sum') || nameLower.includes('kung pao')) {
+    cuisine = 'chinese';
+  } else if (nameLower.includes('mediterranean') || nameLower.includes('greek') || nameLower.includes('hummus') || nameLower.includes('falafel')) {
+    cuisine = 'mediterranean';
+  } else if (nameLower.includes('american') || nameLower.includes('burger') || nameLower.includes('bbq')) {
+    cuisine = 'american';
+  }
+  
+  const mealPairings = DRINK_PAIRINGS[mealType] || DRINK_PAIRINGS.lunch;
+  return mealPairings[cuisine] || mealPairings.default;
+};
+
 // Get image URL for a recipe based on its name
 const getRecipeImage = (recipeName) => {
   const nameLower = recipeName.toLowerCase();
