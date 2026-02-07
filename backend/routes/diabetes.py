@@ -370,6 +370,31 @@ FORMAT - Follow exactly for each recipe:
             
             ai_response = filtered_response
         
+        # Parse recipes to structured JSON
+        structured_recipes = None
+        try:
+            potential_recipes = parse_recipes_to_json(ai_response, request.cuisines)
+            if potential_recipes and len(potential_recipes) >= 1:
+                structured_recipes = potential_recipes
+                logging.info(f"Diabetes /recipes: Parsed {len(structured_recipes)} recipes")
+                
+                # Save to recipe library
+                try:
+                    saved_count = await save_recipes_to_library(
+                        db,
+                        structured_recipes,
+                        mood=request.mood or "",
+                        meal_type=request.meal_type or "",
+                        dietary=request.dietary_pref or "",
+                        cuisine=request.cuisines or ""
+                    )
+                    if saved_count > 0:
+                        logging.info(f"Diabetes: Saved {saved_count} new recipes to library")
+                except Exception as save_error:
+                    logging.warning(f"Failed to save diabetes recipes to library: {save_error}")
+        except Exception as parse_error:
+            logging.error(f"Diabetes recipe parsing error: {parse_error}")
+        
         # Save to chat history
         await db.diabetes_chat_messages.insert_one({
             "session_id": request.session_id,
@@ -383,7 +408,8 @@ FORMAT - Follow exactly for each recipe:
         
         return {
             "response": ai_response,
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "structured_recipes": structured_recipes
         }
         
     except Exception as e:
