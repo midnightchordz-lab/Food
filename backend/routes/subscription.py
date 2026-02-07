@@ -1142,10 +1142,10 @@ async def reactivate_subscription(current_user: User = Depends(get_current_user)
     try:
         now = datetime.now(timezone.utc)
         
-        # Find subscription marked for cancellation
+        # Find subscription marked for cancellation (can be active or trialing)
         subscription = await db.user_subscriptions.find_one({
             "user_id": current_user.id,
-            "status": "active",
+            "status": {"$in": ["active", "trialing"]},
             "cancel_at_period_end": True
         })
         
