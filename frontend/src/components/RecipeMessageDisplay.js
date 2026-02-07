@@ -1398,9 +1398,15 @@ const convertStructuredRecipes = (structuredRecipes) => {
       cookingTime: recipe.cooking_time || recipe.cookingTime || '30 min',
       difficulty: recipe.difficulty || 'Medium',
       cuisineHint: recipe.cuisine || '',
-      imageUrl: getRecipeImage(recipe.title, recipe.cuisine || ''),
+      imageUrl: recipe.thumbnail || getRecipeImage(recipe.title, recipe.cuisine || ''),
       fullContent: recipe.full_content || '',
-      ingredients: recipe.ingredients || []
+      ingredients: recipe.ingredients || [],
+      // Source attribution for badges
+      sourceType: recipe.source_type || 'ai',  // 'serpapi' or 'ai'
+      source: recipe.source || '',  // Website name like "AllRecipes", "Food Network"
+      link: recipe.link || '',  // URL to original recipe
+      rating: recipe.rating || null,  // Star rating
+      reviews: recipe.reviews || 0  // Number of reviews
     };
     
     // Distribute by cooking time
