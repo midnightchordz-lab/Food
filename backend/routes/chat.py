@@ -276,9 +276,12 @@ def parse_recipes_to_json(ai_response: str) -> List[Dict[str, Any]]:
         title = match.group(1).strip()
         content = match.group(2).strip()
         
-        # Clean title
-        title = re.sub(r'\([^)]*\)\s*$', '', title).strip()
-        title = title.rstrip(':')
+        # Clean title - remove common prefixes like "Recipe:", brackets, parentheses
+        title = re.sub(r'^Recipe:\s*', '', title, flags=re.IGNORECASE).strip()  # Remove "Recipe:" prefix
+        title = re.sub(r'^Dish:\s*', '', title, flags=re.IGNORECASE).strip()  # Remove "Dish:" prefix
+        title = re.sub(r'\([^)]*\)\s*$', '', title).strip()  # Remove trailing parentheses
+        title = re.sub(r'\[[^\]]*\]\s*$', '', title).strip()  # Remove trailing brackets
+        title = title.rstrip(':')  # Remove trailing colon
         
         if not is_valid_recipe_name(title):
             continue
