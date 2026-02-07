@@ -299,6 +299,13 @@ const DiabetesMealsPage = () => {
     } catch (error) {
       console.error('Error researching diabetes type:', error);
       
+      // Check if it's a feature locked error
+      if (handleFeatureLockedError(error, setFeatureLockedModal)) {
+        setMessages(prev => prev.filter(m => !m.isResearching));
+        setFlowStep('greeting');
+        return;
+      }
+      
       // Fallback with pre-built guidelines
       const fallbackGuidelines = getFallbackGuidelines(typeId);
       setDiabetesResearch(fallbackGuidelines);
