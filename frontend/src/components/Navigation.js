@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activity, Import, CalendarDays, Search } from 'lucide-react';
+import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activity, Import, CalendarDays, Search, CreditCard } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import SearchHub from './SearchHub';
@@ -28,6 +28,7 @@ const Navigation = () => {
     { path: '/diabetes-planner', icon: CalendarDays, label: 'D-Planner' },
     { path: '/import-recipe', icon: Import, label: 'Import' },
     { path: '/weekly-planner', icon: Calendar, label: 'Planner' },
+    { path: '/pricing', icon: CreditCard, label: 'Pricing' },
   ];
   
   return (
