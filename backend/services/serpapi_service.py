@@ -21,6 +21,52 @@ _api_call_lock = asyncio.Lock()
 _min_delay_seconds = 0.5  # Minimum 500ms between API calls
 
 
+def extract_actual_dish_name(creative_name: str) -> str:
+    """
+    Extract the actual dish name from creative AI-generated recipe titles.
+    
+    Examples:
+    - "Tranquil Tofu Palak" -> "Tofu Palak" (removes "Tranquil")
+    - "Sunny Paneer Tikka Masala Delight" -> "Paneer Tikka Masala" (removes "Sunny" and "Delight")
+    - "Happy Hour Vegetable Biryani" -> "Vegetable Biryani"
+    - "Paneer Tikka" -> "Paneer Tikka" (already good)
+    """
+    if not creative_name:
+        return creative_name
+    
+    # Common creative adjectives/prefixes to remove
+    remove_prefixes = [
+        r'^(tranquil|peaceful|serene|calm|blissful|happy|joyful|sunny|radiant|golden|cozy|warm|hearty|vibrant|colorful|delightful|wonderful|amazing|incredible|fantastic|ultimate|perfect|best|great|lovely|beautiful|gorgeous|stunning|elegant|simple|easy|quick|super|mega|ultra|royal|classic|traditional|authentic|homestyle|homemade|grandma\'?s?|mom\'?s?|chef\'?s?|secret|special|famous|legendary|divine|heavenly|dreamy|magical|enchanted|mystical)\s+',
+    ]
+    
+    # Common creative suffixes to remove
+    remove_suffixes = [
+        r'\s+(delight|bliss|heaven|dream|magic|wonder|joy|love|special|supreme|royale|supreme|deluxe|premium|gourmet|style|twist|remix|fusion|explosion|extravaganza|fiesta|celebration|party|bowl|plate|platter)$',
+    ]
+    
+    result = creative_name
+    
+    # Remove prefixes
+    for pattern in remove_prefixes:
+        result = re.sub(pattern, '', result, flags=re.IGNORECASE)
+    
+    # Remove suffixes
+    for pattern in remove_suffixes:
+        result = re.sub(pattern, '', result, flags=re.IGNORECASE)
+    
+    # Remove parentheses and their contents (often cooking time)
+    result = re.sub(r'\s*\([^)]+\)\s*', ' ', result)
+    
+    # Clean up extra whitespace
+    result = ' '.join(result.split())
+    
+    # If we removed everything, return original
+    if not result or len(result) < 3:
+        return creative_name
+    
+    return result
+
+
 async def _rate_limited_request(client: httpx.AsyncClient, url: str, params: dict) -> httpx.Response:
     """
     Make a rate-limited request to SerpAPI to avoid 429 errors.
