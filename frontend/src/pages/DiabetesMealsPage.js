@@ -78,6 +78,14 @@ const DiabetesMealsPage = () => {
   const [showRecipeDialog, setShowRecipeDialog] = useState(false);
   const [recipeToSave, setRecipeToSave] = useState(null);
   
+  // Feature lock modal state
+  const [featureLockedModal, setFeatureLockedModal] = useState({
+    isOpen: false,
+    feature: '',
+    upgradeTo: '',
+    currentPlan: ''
+  });
+  
   // Flow state
   const [flowStep, setFlowStep] = useState('greeting');
   const [selectedMood, setSelectedMood] = useState(null);
