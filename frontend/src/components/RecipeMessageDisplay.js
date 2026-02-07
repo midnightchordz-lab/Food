@@ -771,9 +771,8 @@ const parseNumberedRecipes = (message) => {
       .trim();
     const content = match[2].trim();
     
-    if (!title || title.length < 3 || title.length > 100) continue;
-    if (skipPatterns.some(pattern => pattern.test(title))) continue;
-    if (title === ':' || title.endsWith(':')) continue;
+    // Use helper for validation
+    if (!isValidRecipeName(title)) continue;
     
     // Skip if title is "Recipe X" - we need the actual name
     if (/^Recipe\s*\d+$/i.test(title)) continue;
