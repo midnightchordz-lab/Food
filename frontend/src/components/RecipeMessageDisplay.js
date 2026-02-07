@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Heart, Clock, ChefHat, Utensils, ChevronRight, Sparkles, RefreshCw, Globe, ExternalLink, Star, Bot } from 'lucide-react';
+import { Heart, Clock, ChefHat, Utensils, ChevronRight, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import RecipeDetailModal from './RecipeDetailModal';
 
