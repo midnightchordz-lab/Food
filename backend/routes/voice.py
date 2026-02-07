@@ -76,6 +76,8 @@ async def transcribe_voice(
             text=text,
             detected_mood=detected_mood if detected_mood != 'default' else None
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error transcribing audio: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -127,6 +129,8 @@ async def synthesize_speech(
             mood=mood,
             voice_description=voice_description
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"Error synthesizing speech: {e}")
         raise HTTPException(status_code=500, detail=str(e))
