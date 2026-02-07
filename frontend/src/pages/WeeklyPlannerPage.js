@@ -483,19 +483,23 @@ const WeeklyPlannerPage = () => {
                   >
                     Update Preferences
                   </Button>
-                  {mealPreferences.generation_mode === 'manual' && (
+                  {/* Show Generate button in manual mode OR when auto mode but no meals for this week */}
+                  {(mealPreferences.generation_mode === 'manual' || !currentWeekHasMeals()) && (
                     <Button
-                      onClick={generateNextWeekPlan}
-                      disabled={generatingNextWeek}
-                      className="rounded-full bg-blue-600 hover:bg-blue-700"
-                      data-testid="generate-next-week-btn"
+                      onClick={generateCurrentWeekPlan}
+                      disabled={generatingCurrentWeek || generatingNextWeek}
+                      className="rounded-full bg-primary hover:bg-primary/90"
+                      data-testid="generate-current-week-btn"
                     >
-                      {generatingNextWeek ? (
-                        <>Generating...</>
+                      {generatingCurrentWeek ? (
+                        <>
+                          <Loader2 className="mr-1 animate-spin" size={16} />
+                          Generating...
+                        </>
                       ) : (
                         <>
-                          <Plus className="mr-1" size={16} />
-                          Generate Next Week
+                          <Sparkles className="mr-1" size={16} />
+                          Generate This Week
                         </>
                       )}
                     </Button>
