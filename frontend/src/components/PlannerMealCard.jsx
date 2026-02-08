@@ -262,48 +262,28 @@ const PlannerMealCard = ({
     setTimeout(fetchImage, delay);
   }, [cleanName, enableAI]);
 
-  // Handle broken images - try AI fallback on error
-  const handleImgError = async () => {
-    // If already using default, nothing more to do
-    if (imageSource === 'default') {
-      return;
-    }
-    
-    // Only try AI fallback once to prevent infinite loops
-    if (errorCount >= 1 || imageSource === 'ai_generated') {
-      setImageUrl(defaultImg);
+  // Handle broken images - fallback immediately to keyword-based or default image
+  const handleImgError = () => {
+    // Prevent infinite loops
+    if (errorCount >= 2) {
+      // Final fallback - use a guaranteed working image
+      setImageUrl(DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
       setImageSource('default');
       return;
     }
     
     setErrorCount(prev => prev + 1);
     
-    // Try to get AI-generated image as fallback
-    if (enableAI && cleanName) {
-      setIsLoading(true);
-      try {
-        const response = await axios.post(`${API}/recipe-image/fast`, {
-          recipe_name: cleanName,
-          cuisine: '',
-          use_ai_fallback: true  // Enable AI fallback
-        }, { timeout: 30000 });  // Longer timeout for AI generation
-
-        if (response.data?.image_url && typeof response.data.image_url === 'string' && response.data.image_url.trim() && response.data.source !== 'none') {
-          const cacheKey = cleanName.toLowerCase();
-          imageCache.set(cacheKey, { url: response.data.image_url, source: response.data.source });
-          setImageUrl(response.data.image_url);
-          setImageSource(response.data.source || 'ai_generated');
-          return;
-        }
-      } catch {
-        // Fallback to default on error
-      } finally {
-        setIsLoading(false);
-      }
+    // First error: try keyword-based image
+    if (errorCount === 0) {
+      const keywordImg = getKeywordImage(cleanName, mealType);
+      setImageUrl(keywordImg);
+      setImageSource('keyword');
+      return;
     }
     
-    // Final fallback to default image
-    setImageUrl(defaultImg);
+    // Second error: use default image based on meal type
+    setImageUrl(DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
     setImageSource('default');
   };
 
