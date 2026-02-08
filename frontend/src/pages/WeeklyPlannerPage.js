@@ -362,10 +362,28 @@ const WeeklyPlannerPage = () => {
       
       if (response.data.already_exists) {
         toast.info('This week\'s plan already exists!');
+        // Still update plans with the existing plan data
+        if (response.data.plan) {
+          setPlans(prev => {
+            const existingIndex = prev.findIndex(p => p.week_start === response.data.plan.week_start);
+            if (existingIndex >= 0) {
+              // Update existing plan
+              const updated = [...prev];
+              updated[existingIndex] = response.data.plan;
+              return updated;
+            } else {
+              // Add to plans
+              return [response.data.plan, ...prev];
+            }
+          });
+        }
       } else {
         toast.success('Meal plan generated successfully!');
+        // Add the new plan
+        if (response.data.plan) {
+          setPlans(prev => [response.data.plan, ...prev]);
+        }
       }
-      loadPlans();
     } catch (error) {
       console.error('Error generating current week plan:', error);
       toast.error(error.response?.data?.detail || 'Failed to generate meal plan');
