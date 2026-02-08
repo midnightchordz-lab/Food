@@ -26,7 +26,6 @@ const KEYWORD_IMAGES = {
   'egg': 'https://images.unsplash.com/photo-1582169296194-e4d644c48063?w=400',
   'benedict': 'https://images.unsplash.com/photo-1608039829572-f9e9f0a19a47?w=400',
   'poached': 'https://images.unsplash.com/photo-1608039829572-f9e9f0a19a47?w=400',
-  'frittata': 'https://images.unsplash.com/photo-1638816750779-ecd5324b92ab?w=400',
   'shakshuka': 'https://images.unsplash.com/photo-1590412200988-a436970781fa?w=400',
   'pancake': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
   'french toast': 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400',
