@@ -174,14 +174,30 @@ const PlannerMealCard = ({
   
   const rawName = getMealTitle(mealName);
   const cleanName = rawName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
-  // Use keyword-based image as initial default for better visual match
-  const defaultImg = cleanName ? getKeywordImage(cleanName, mealType) : (DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
+  
+  // ALWAYS use keyword-based image first - this is guaranteed to work
+  const getGuaranteedImage = (name, type) => {
+    if (!name) return DEFAULT_IMAGES[type] || DEFAULT_IMAGES.default;
+    return getKeywordImage(name, type);
+  };
+  
+  const defaultImg = getGuaranteedImage(cleanName, mealType);
   const [imageUrl, setImageUrl] = useState(defaultImg);
   const [isLoading, setIsLoading] = useState(false);
-  const [imageSource, setImageSource] = useState('default');
+  const [imageSource, setImageSource] = useState('keyword');
   const [errorCount, setErrorCount] = useState(0);
   const hasFetched = useRef(false);
   const previousMealName = useRef(cleanName);
+
+  // Helper to validate image URL
+  const isValidImageUrl = (url) => {
+    if (!url) return false;
+    if (typeof url !== 'string') return false;
+    if (!url.trim()) return false;
+    if (url === 'null' || url === 'undefined') return false;
+    // Must start with http/https or be a data URL
+    return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:');
+  };
 
   // Reset image when mealName changes
   useEffect(() => {
@@ -194,14 +210,17 @@ const PlannerMealCard = ({
       const cacheKey = cleanName.toLowerCase();
       if (imageCache.has(cacheKey)) {
         const cached = imageCache.get(cacheKey);
-        setImageUrl(cached.url);
-        setImageSource(cached.source);
-      } else {
-        // Use keyword-based default immediately
-        const newDefaultImg = cleanName ? getKeywordImage(cleanName, mealType) : (DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
-        setImageUrl(newDefaultImg);
-        setImageSource('default');
+        if (isValidImageUrl(cached.url)) {
+          setImageUrl(cached.url);
+          setImageSource(cached.source);
+          return;
+        }
       }
+      
+      // Always fall back to keyword-based image
+      const newDefaultImg = getGuaranteedImage(cleanName, mealType);
+      setImageUrl(newDefaultImg);
+      setImageSource('keyword');
     }
   }, [cleanName, mealType]);
 
@@ -212,61 +231,45 @@ const PlannerMealCard = ({
     const cacheKey = cleanName.toLowerCase();
     if (imageCache.has(cacheKey)) {
       const cached = imageCache.get(cacheKey);
-      setImageUrl(cached.url);
-      setImageSource(cached.source);
-      return;
+      if (isValidImageUrl(cached.url)) {
+        setImageUrl(cached.url);
+        setImageSource(cached.source);
+        return;
+      }
     }
 
     const fetchImage = async () => {
       setIsLoading(true);
       try {
-        // First try without AI fallback for speed
         const response = await axios.post(`${API}/recipe-image/fast`, {
           recipe_name: cleanName,
           cuisine: '',
           use_ai_fallback: false
         }, { timeout: 8000 });
 
-        // Only update if we got a valid image URL (not null, undefined, or empty string)
-        if (response.data?.image_url && typeof response.data.image_url === 'string' && response.data.image_url.trim()) {
+        // STRICT validation - only use if truly valid
+        if (isValidImageUrl(response.data?.image_url)) {
           imageCache.set(cacheKey, { url: response.data.image_url, source: response.data.source });
           setImageUrl(response.data.image_url);
           setImageSource(response.data.source || 'google');
-        } else {
-          // No valid image from API - try AI fallback immediately
-          try {
-            const aiResponse = await axios.post(`${API}/recipe-image/fast`, {
-              recipe_name: cleanName,
-              cuisine: '',
-              use_ai_fallback: true
-            }, { timeout: 25000 });
-            
-            if (aiResponse.data?.image_url && typeof aiResponse.data.image_url === 'string' && aiResponse.data.image_url.trim()) {
-              imageCache.set(cacheKey, { url: aiResponse.data.image_url, source: aiResponse.data.source });
-              setImageUrl(aiResponse.data.image_url);
-              setImageSource(aiResponse.data.source || 'ai_generated');
-            }
-            // If still no valid image, keep the default (already set)
-          } catch {
-            // Keep default image
-          }
         }
+        // If not valid, we keep the keyword-based default that was already set
       } catch {
-        // Just use default image on error - already set
+        // Keep existing keyword-based image on error
       } finally {
         setIsLoading(false);
       }
     };
 
-    const delay = Math.random() * 500;
+    // Small delay to prevent hammering the API
+    const delay = Math.random() * 300;
     setTimeout(fetchImage, delay);
-  }, [cleanName, enableAI]);
+  }, [cleanName, enableAI, mealType]);
 
-  // Handle broken images - fallback immediately to keyword-based or default image
+  // Handle broken images - immediate fallback, no async calls
   const handleImgError = () => {
-    // Prevent infinite loops
     if (errorCount >= 2) {
-      // Final fallback - use a guaranteed working image
+      // Ultimate fallback
       setImageUrl(DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
       setImageSource('default');
       return;
@@ -274,17 +277,10 @@ const PlannerMealCard = ({
     
     setErrorCount(prev => prev + 1);
     
-    // First error: try keyword-based image
-    if (errorCount === 0) {
-      const keywordImg = getKeywordImage(cleanName, mealType);
-      setImageUrl(keywordImg);
-      setImageSource('keyword');
-      return;
-    }
-    
-    // Second error: use default image based on meal type
-    setImageUrl(DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
-    setImageSource('default');
+    // Immediately use keyword-based or default image
+    const fallbackImg = getGuaranteedImage(cleanName, mealType);
+    setImageUrl(fallbackImg);
+    setImageSource('keyword');
   };
 
   if (!mealName || !cleanName) {
