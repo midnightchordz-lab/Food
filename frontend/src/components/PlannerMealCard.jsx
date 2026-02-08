@@ -264,7 +264,7 @@ const PlannerMealCard = ({
     setImageSource('default');
   };
 
-  if (!mealName) {
+  if (!mealName || !cleanName) {
     return (
       <div className={`bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground/50 ${compact ? 'h-20' : 'h-24'}`}>
         <span className="text-xs">No meal</span>
