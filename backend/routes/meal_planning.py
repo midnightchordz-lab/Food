@@ -357,16 +357,24 @@ async def generate_plan_for_week(request: WeekOffsetRequest, current_user: User 
         if not prefs:
             raise HTTPException(status_code=400, detail="No meal preferences found. Please set your preferences first.")
         
-        # Use local date calculation to match frontend
-        today = datetime.now()  # Local time, not UTC
-        # Get Monday of current week
-        current_week_start = today - timedelta(days=today.weekday())
+        # Use UTC time and calculate Monday of current week
+        # Note: Frontend shows weeks starting Monday, so we calculate accordingly
+        today = datetime.now(timezone.utc)
+        # Get Monday of current week (weekday 0 = Monday, 6 = Sunday)
+        days_since_monday = today.weekday()
+        current_week_start = today - timedelta(days=days_since_monday)
         current_week_start = current_week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # If today is Sunday, frontend shows next week as "This Week" (since Monday hasn't come yet)
+        # So we need to add 1 day to get to the upcoming Monday
+        if today.weekday() == 6:  # Sunday
+            current_week_start = current_week_start + timedelta(days=7)
+        
         # Calculate target week
         target_week_start = current_week_start + timedelta(days=request.week_offset * 7)
         target_week_str = target_week_start.strftime('%Y-%m-%d')
         
-        logging.info(f"Generating plan for week: {target_week_str} (offset: {request.week_offset})")
+        logging.info(f"Generating plan for week: {target_week_str} (offset: {request.week_offset}, today: {today.strftime('%Y-%m-%d %A')})")
         
         existing = await db.weekly_plans.find_one(
             {"user_id": current_user.id, "week_start": target_week_str},
