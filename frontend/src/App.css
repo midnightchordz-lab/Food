@@ -189,3 +189,26 @@ html, body {
   height: var(--safe-area-inset-top);
   background: #4a7c59;
 }
+/* Mobile bottom navigation safe area */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Adjust page content padding for mobile navigation */
+@media (max-width: 767px) {
+  .page-content {
+    padding-top: 56px; /* Mobile header height */
+    padding-bottom: 80px; /* Mobile bottom nav height + safe area */
+  }
+  
+  main {
+    padding-top: 56px;
+    padding-bottom: 80px;
+  }
+}
+
+/* Mobile menu overlay */
+.mobile-menu-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
