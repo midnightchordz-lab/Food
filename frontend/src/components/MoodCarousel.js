@@ -1,88 +1,88 @@
 import { useState } from 'react';
 
-// Mood data with 3D emoji images
+// Mood data with 3D emoji images (no text overlays)
 const MOOD_IMAGES = [
   { 
     id: 'happy', 
     label: 'Happy', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/0b2eae7422977e16a85d3efac05dafbad6454ff4724ea4f49ef70b4b36b8d77f.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/16edf123b603f1805f07178ecee537a877467e7722f80ee97c9432d1ec8bf44b.png',
     description: 'Vibrant, fresh, colorful dishes that match your joyful energy',
     color: 'from-yellow-400 to-orange-400'
   },
   { 
     id: 'sad', 
     label: 'Sad', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/b1137cb1a5f0ea002c7d2def203d8d98820f99315799a25f7fce7c0e88aeb250.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/cd1a60e583b8853e1fdfabecbd885df6de6d1621222b72b07b49a9f90ac15812.png',
     description: 'Comforting, warm soul food to lift your spirits',
     color: 'from-blue-400 to-indigo-400'
   },
   { 
     id: 'stressed', 
     label: 'Stressed', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/89311301f4e1b6ed8c9b3ec0068a511e31b94937cf50e22d58160b6e4061ebfc.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/376cca0afefcf763563217d023594ccad64ca98bf8837d6caccd30684dd8a4da.png',
     description: 'Easy, calming meals with stress-reducing ingredients',
     color: 'from-orange-400 to-red-400'
   },
   { 
     id: 'tired', 
     label: 'Tired', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/504c83712111d53e0b61a86de44fa49e6c43f7ab30310d22ac07f21f456e1016.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/9b1ef716e24413c85652ff741d2097cf9903fb8c6da30ddda879f812a3a4cce1.png',
     description: 'Quick, energizing meals to recharge your body',
     color: 'from-purple-400 to-pink-400'
   },
   { 
     id: 'cozy', 
     label: 'Cozy', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/c8bf05aef5a8330453085e69a155dfb6d788f4aa92905e35896d50f04cb2195e.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/c321a0ee0ad88594d1f7550c3ecaf2cc901306fc71b7bc699952a210d702c79c.png',
     description: 'Warm, hearty comfort food for snuggly moments',
     color: 'from-amber-400 to-yellow-400'
   },
   { 
     id: 'energetic', 
     label: 'Energetic', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/0a5a86fff7be614b6944db0c0d392400bed033fe494311628ccb8242220948dd.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/989cbb722211ee4f601a69853c1c7298c131b6850c46e13feaafaac06aac003d.png',
     description: 'High-protein, power-packed meals for peak performance',
     color: 'from-green-400 to-emerald-400'
   },
   { 
     id: 'anxious', 
     label: 'Anxious', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/6f5d6f5e00719f75912fbdb8e176dfb2b1e6cf9dc76ea4de17b099d5c8657e93.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/84548752c9ab46a1844824f39ac49d93ee1a96b11d837de71c3f53591fc4aca3.png',
     description: 'Soothing meals with anxiety-calming nutrients',
     color: 'from-cyan-400 to-blue-400'
   },
   { 
     id: 'angry', 
     label: 'Angry', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/ad4e1dc87541d4a8c083a3b50805c12710a107cc4de64d96477027b6495b8340.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/bc76d6c0ba4c471e380f76f4613b85189d6c3bbbc26f74665ba80efde3165729.png',
     description: 'Bold, spicy dishes to channel that fiery energy',
     color: 'from-red-500 to-orange-500'
   },
   { 
     id: 'romantic', 
     label: 'Romantic', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/bd256d6e9e67476b129ff860bc2c6b1d748c2b1ee6f75484723e88634f882e23.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/98331697bb2a250cf994e896dd73278b4a45f0bafc4fa1560701b5e69d47f476.png',
     description: 'Elegant, intimate dishes perfect for date night',
     color: 'from-rose-400 to-pink-400'
   },
   { 
     id: 'focused', 
     label: 'Focused', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/66e7c16ece9f3b6f73e7c69c8cadd2e79d6d61371627cbcf6eb3f944b0eb68b4.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/2ee22d27d81cab29f8ca5527fad1871d92a30ca9a311b8fabdc8dc159db26b39.png',
     description: 'Brain-boosting meals for concentration and clarity',
     color: 'from-indigo-400 to-purple-400'
   },
   { 
     id: 'bored', 
     label: 'Bored', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/e3cb8376e4250faedba06651c8def0ef09a83b306c5199b09054b79c59511229.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/bdc704d10d51d104d2d51a3076b02aa5f744b90e4c7add3c640ddcf958af0b4c.png',
     description: 'Exciting, adventurous recipes to spark your interest',
     color: 'from-slate-400 to-gray-400'
   },
   { 
     id: 'celebratory', 
     label: 'Celebratory', 
-    image: 'https://static.prod-images.emergentagent.com/jobs/1c9eafc2-7ba2-4847-90bc-b5d296506d02/images/1647b63f85d645439bfe1eab09b235d2e9972b92d574e7448b3b93aa9f2761b4.png',
+    image: 'https://static.prod-images.emergentagent.com/jobs/9a88e347-8513-4a16-bfc5-752f26a867f9/images/9dec4c45189ce30b55ed17c17a1c5bad433965c3561776d74b6cadd6feab240f.png',
     description: 'Festive, party-worthy dishes for special occasions',
     color: 'from-fuchsia-400 to-pink-400'
   },
