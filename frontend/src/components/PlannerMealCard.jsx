@@ -48,8 +48,9 @@ const KEYWORD_IMAGES = {
   'buckwheat': 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400',
   'burrito': 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400',
   'breakfast burrito': 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400',
-  'quiche': 'https://images.unsplash.com/photo-1638816750779-ecd5324b92ab?w=400',
-  'savory': 'https://images.unsplash.com/photo-1638816750779-ecd5324b92ab?w=400',
+  'frittata': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
+  'savory': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
+  'quiche': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
   // Lunch/Dinner proteins
   'chicken': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400',
   'grilled chicken': 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400',
