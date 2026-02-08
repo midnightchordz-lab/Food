@@ -1,186 +1,243 @@
-# MOOD FOOD - Native Mobile App Build Guide
+# MOOD FOOD - Mobile App Build Guide
 
 ## Overview
-This guide explains how to build native iOS and Android apps from the MOOD FOOD React web application using Capacitor.
+This guide explains how to build the MOOD FOOD app for iOS and Android using Capacitor.
 
 ## Prerequisites
 
-### For iOS Development
+### For iOS Build (Mac Required)
 - macOS computer
-- Xcode 14+ (from Mac App Store)
-- Apple Developer Account ($99/year for App Store publishing)
-- CocoaPods: `sudo gem install cocoapods`
+- Xcode 14+ installed (from Mac App Store)
+- Apple Developer Account ($99/year for App Store distribution)
+- CocoaPods installed: `sudo gem install cocoapods`
 
-### For Android Development
-- Android Studio (any OS)
-- JDK 17+
-- Android SDK (API 33+)
-- Google Play Developer Account ($25 one-time for Play Store publishing)
+### For Android Build
+- Android Studio installed
+- Android SDK (API Level 33+)
+- Java Development Kit (JDK 17+)
 
 ## Project Structure
 ```
 frontend/
-├── capacitor.config.json    # Capacitor configuration
-├── src/
-│   └── capacitor.js         # Native feature integration
-├── ios/                     # iOS native project (generated)
-└── android/                 # Android native project (generated)
+├── ios/                    # iOS native project
+│   └── App/
+│       ├── App.xcworkspace # Open this in Xcode
+│       └── Podfile         # iOS dependencies
+├── android/                # Android native project
+│   └── app/
+│       └── build.gradle    # Android build config
+├── build/                  # Web assets (synced to native)
+└── capacitor.config.json   # Capacitor configuration
 ```
 
-## Build Steps
+## App Configuration
+- **App ID**: `com.moodfood.app`
+- **App Name**: `MOOD FOOD`
+- **Primary Color**: `#4a7c59` (Sage Green)
+- **Background**: `#faf9f6` (Off-White)
 
-### 1. Build the Web App
+## Building the App
+
+### Step 1: Build Web Assets
 ```bash
 cd frontend
 yarn build
 ```
 
-### 2. Add Native Platforms (First Time Only)
-```bash
-# Add iOS platform
-npx cap add ios
-
-# Add Android platform
-npx cap add android
-```
-
-### 3. Sync Web Build to Native Projects
+### Step 2: Sync to Native Projects
 ```bash
 npx cap sync
 ```
 
-### 4. Open Native IDEs
+### Step 3: Build for iOS
 
-**For iOS:**
-```bash
-npx cap open ios
-```
-This opens Xcode where you can:
-- Set your Team/Signing credentials
-- Configure app icons and splash screens
-- Build and run on simulator or device
-- Archive for App Store submission
+1. **Open Xcode Project**
+   ```bash
+   npx cap open ios
+   ```
+   Or manually open: `frontend/ios/App/App.xcworkspace`
 
-**For Android:**
-```bash
-npx cap open android
-```
-This opens Android Studio where you can:
-- Configure signing keys
-- Build APK or App Bundle
-- Run on emulator or device
-- Prepare for Play Store submission
+2. **Install CocoaPods** (first time only)
+   ```bash
+   cd ios/App
+   pod install
+   ```
 
-## Configuration
+3. **Configure Signing in Xcode**
+   - Select "App" target
+   - Go to "Signing & Capabilities"
+   - Select your Development Team
+   - Enable "Automatically manage signing"
 
-### App Icons
-Place app icons in:
-- iOS: `ios/App/App/Assets.xcassets/AppIcon.appiconset/`
-- Android: `android/app/src/main/res/mipmap-*/`
+4. **Build for Device/Simulator**
+   - Select target device (iPhone)
+   - Press `Cmd + R` to build and run
+   - Or `Product > Archive` for App Store build
 
-Use the existing PWA icons from `public/icons/` as source images.
+5. **Create App Store Build**
+   - `Product > Archive`
+   - `Distribute App > App Store Connect`
+   - Upload to App Store Connect
+
+### Step 4: Build for Android
+
+1. **Open Android Studio**
+   ```bash
+   npx cap open android
+   ```
+   Or manually open: `frontend/android/` folder
+
+2. **Build Debug APK**
+   - `Build > Build Bundle(s) / APK(s) > Build APK(s)`
+   - APK location: `android/app/build/outputs/apk/debug/app-debug.apk`
+
+3. **Build Release APK/AAB**
+   ```bash
+   cd android
+   ./gradlew assembleRelease    # For APK
+   ./gradlew bundleRelease      # For AAB (Play Store)
+   ```
+
+4. **Sign Release Build**
+   - Create keystore: `keytool -genkey -v -keystore release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias moodfood`
+   - Update `android/app/build.gradle` with signing config
+
+## App Icons & Splash Screen
+
+### iOS Icons
+Location: `ios/App/App/Assets.xcassets/AppIcon.appiconset/`
+Required sizes: 20, 29, 40, 60, 76, 83.5, 1024 points (various scales)
+
+### Android Icons
+Location: `android/app/src/main/res/`
+- `mipmap-mdpi/` - 48x48
+- `mipmap-hdpi/` - 72x72
+- `mipmap-xhdpi/` - 96x96
+- `mipmap-xxhdpi/` - 144x144
+- `mipmap-xxxhdpi/` - 192x192
 
 ### Splash Screen
-Configure in `capacitor.config.json`:
-```json
-{
-  "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 2000,
-      "backgroundColor": "#faf9f6"
-    }
-  }
-}
+Configured in `capacitor.config.json`:
+- Background: `#faf9f6`
+- Duration: 2 seconds
+- Style: Full screen, immersive
+
+## Environment Configuration
+
+### API URL
+The app connects to the backend at:
+- **Production**: Set in `.env` file
+- **Current**: `https://mobile-meal-prep.preview.emergentagent.com`
+
+For production, update `frontend/.env`:
+```
+REACT_APP_BACKEND_URL=https://your-production-api.com
 ```
 
-### Deep Linking (Optional)
-To enable deep links (e.g., `moodfood://recipe/123`):
-
-**iOS:** Add URL schemes in Xcode under Target > Info > URL Types
-
-**Android:** Add intent filters in `android/app/src/main/AndroidManifest.xml`
-
-## Native Features Available
-
-The app includes these native capabilities via Capacitor plugins:
-
-| Feature | Plugin | Usage |
-|---------|--------|-------|
-| Status Bar | @capacitor/status-bar | Custom status bar styling |
-| Splash Screen | @capacitor/splash-screen | Native splash screen |
-| Keyboard | @capacitor/keyboard | Keyboard event handling |
-| Haptics | @capacitor/haptics | Vibration feedback |
-| Share | @capacitor/share | Native share dialog |
-| Browser | @capacitor/browser | In-app browser |
-| App | @capacitor/app | App lifecycle events |
-
-## API Configuration
-
-The app uses environment variables for the backend API:
-
-**For Development:**
-The app connects to the configured `REACT_APP_BACKEND_URL` from `.env`
-
-**For Production:**
-Update the server URL in `capacitor.config.json`:
-```json
-{
-  "server": {
-    "url": "https://your-production-api.com",
-    "cleartext": false
-  }
-}
-```
-
-Or keep the bundled web app and let it use the built-in API URL.
-
-## Publishing
-
-### iOS App Store
-1. Create App Store Connect record
-2. Configure signing in Xcode
-3. Archive the app (Product > Archive)
-4. Upload via Xcode Organizer
-5. Submit for review
-
-### Google Play Store
-1. Create Google Play Console listing
-2. Generate signed App Bundle: `./gradlew bundleRelease`
-3. Upload AAB file to Play Console
-4. Complete store listing
-5. Submit for review
-
-## Updating the App
-
-After making changes to the web app:
+Then rebuild:
 ```bash
-# Rebuild web app
-yarn build
+yarn build && npx cap sync
+```
 
-# Sync to native projects
-npx cap sync
+## Installed Capacitor Plugins
+- `@capacitor/app` - App lifecycle events
+- `@capacitor/browser` - In-app browser
+- `@capacitor/haptics` - Vibration feedback
+- `@capacitor/keyboard` - Keyboard handling
+- `@capacitor/share` - Native share sheet
+- `@capacitor/splash-screen` - Splash screen
+- `@capacitor/status-bar` - Status bar styling
 
-# Open and rebuild in native IDE
-npx cap open ios
-# or
-npx cap open android
+## Testing
+
+### iOS Simulator
+```bash
+npx cap run ios
+```
+
+### Android Emulator
+```bash
+npx cap run android
+```
+
+### Live Reload (Development)
+```bash
+# Start dev server
+yarn start
+
+# Update capacitor.config.json to use local server
+# Then sync and run
+npx cap sync && npx cap run ios
 ```
 
 ## Troubleshooting
 
-### iOS Build Issues
-- Clean build folder: Xcode > Product > Clean Build Folder
-- Reset pods: `cd ios && pod deintegrate && pod install`
+### iOS: "Code Signing" Errors
+- Ensure you have a valid Apple Developer account
+- Check signing settings in Xcode
+- Try: `Xcode > Preferences > Accounts > Download Manual Profiles`
 
-### Android Build Issues
-- Clean project: Android Studio > Build > Clean Project
-- Invalidate caches: File > Invalidate Caches / Restart
+### Android: "SDK not found"
+- Open Android Studio
+- `Tools > SDK Manager`
+- Install required SDK platforms
 
-### General Issues
-- Ensure `yarn build` completed successfully
-- Run `npx cap sync` after any web changes
-- Check Capacitor version compatibility
+### Web Assets Not Updating
+```bash
+rm -rf build
+yarn build
+npx cap sync
+```
+
+### Plugin Not Working
+```bash
+npx cap sync
+# Then rebuild in Xcode/Android Studio
+```
+
+## App Store Submission Checklist
+
+### iOS (App Store)
+- [ ] App Icons (all sizes)
+- [ ] Screenshots (6.5", 5.5", 12.9" iPad)
+- [ ] App description and keywords
+- [ ] Privacy policy URL
+- [ ] Support URL
+- [ ] App review information
+
+### Android (Play Store)
+- [ ] App Icons (512x512 hi-res)
+- [ ] Feature graphic (1024x500)
+- [ ] Screenshots (phone, 7" tablet, 10" tablet)
+- [ ] App description (short & full)
+- [ ] Privacy policy URL
+- [ ] Content rating questionnaire
+- [ ] Signed AAB file
+
+## Quick Commands Summary
+
+```bash
+# Build web assets
+yarn build
+
+# Sync to native
+npx cap sync
+
+# Open iOS project
+npx cap open ios
+
+# Open Android project
+npx cap open android
+
+# Run on iOS simulator
+npx cap run ios
+
+# Run on Android emulator
+npx cap run android
+```
 
 ## Support
-
-For Capacitor documentation: https://capacitorjs.com/docs
+For issues with the mobile build, check:
+- [Capacitor Documentation](https://capacitorjs.com/docs)
+- [iOS Development Guide](https://developer.apple.com/documentation/)
+- [Android Development Guide](https://developer.android.com/docs)
