@@ -119,7 +119,18 @@ const PlannerMealCard = ({
   compact = false,
   enableAI = true 
 }) => {
-  const cleanName = mealName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
+  // Handle both string and object meal formats
+  const getMealTitle = (meal) => {
+    if (!meal) return '';
+    if (typeof meal === 'string') return meal;
+    if (typeof meal === 'object') {
+      return meal.title || meal.name || meal.recipe_name || '';
+    }
+    return '';
+  };
+  
+  const rawName = getMealTitle(mealName);
+  const cleanName = rawName?.replace(/\s*\(\d+g?\s*carbs?\)/gi, '').trim() || '';
   // Use keyword-based image as initial default for better visual match
   const defaultImg = cleanName ? getKeywordImage(cleanName, mealType) : (DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default);
   const [imageUrl, setImageUrl] = useState(defaultImg);
