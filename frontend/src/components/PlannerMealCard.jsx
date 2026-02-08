@@ -78,7 +78,9 @@ const KEYWORD_IMAGES = {
   'pad thai': 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400',
   'vietnamese': 'https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=400',
   'vietnam': 'https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=400',
-  'korean': 'https://images.unsplash.com/photo-1583187855325-65b7e2e8b8e9?w=400',
+  'korean': 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400',
+  'bulgogi': 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400',
+  'bbq': 'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400',
   'japanese': 'https://images.unsplash.com/photo-1569058242567-93de6f36f8eb?w=400',
   // Indian dishes
   'curry': 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400',
