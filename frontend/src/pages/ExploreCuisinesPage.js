@@ -81,6 +81,89 @@ const CUISINE_REGIONS = [
     image: 'https://images.unsplash.com/photo-1555244162-803834f70033?w=400',
     collections: ['Bistro Favorites', 'Provence Classics', 'French Pastries']
   },
+  // Latin American Cuisines
+  {
+    name: 'Brazilian Cuisine',
+    flag: '🇧🇷',
+    description: 'Vibrant flavors from churrasco to feijoada, a tropical culinary paradise',
+    color: 'from-green-500 to-yellow-500',
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=400',
+    collections: ['Churrasco Classics', 'Street Food', 'Tropical Treats']
+  },
+  {
+    name: 'Peruvian Cuisine',
+    flag: '🇵🇪',
+    description: 'World-renowned fusion of indigenous and global influences',
+    color: 'from-red-500 to-white',
+    image: 'https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?w=400',
+    collections: ['Ceviche Masters', 'Anticuchos', 'Lomo Saltado']
+  },
+  {
+    name: 'Argentinian Cuisine',
+    flag: '🇦🇷',
+    description: 'World-class beef, empanadas, and the art of the asado',
+    color: 'from-sky-400 to-white',
+    image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=400',
+    collections: ['Asado Perfection', 'Empanadas', 'Dulce de Leche Desserts']
+  },
+  {
+    name: 'Cuban Cuisine',
+    flag: '🇨🇺',
+    description: 'Savory slow-roasted meats, beans, rice, and Caribbean soul',
+    color: 'from-blue-600 to-red-500',
+    image: 'https://images.unsplash.com/photo-1574484284002-952d92456975?w=400',
+    collections: ['Ropa Vieja', 'Cuban Sandwiches', 'Mojo Marinades']
+  },
+  {
+    name: 'Colombian Cuisine',
+    flag: '🇨🇴',
+    description: 'Hearty soups, arepas, and flavors from coast to mountains',
+    color: 'from-yellow-400 to-blue-600',
+    image: 'https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?w=400',
+    collections: ['Bandeja Paisa', 'Arepa Varieties', 'Colombian Soups']
+  },
+  {
+    name: 'Chilean Cuisine',
+    flag: '🇨🇱',
+    description: 'Fresh seafood, hearty stews, and world-class wines',
+    color: 'from-red-600 to-white',
+    image: 'https://images.unsplash.com/photo-1534080564583-6be75777b70a?w=400',
+    collections: ['Seafood Delights', 'Pastel de Choclo', 'Chilean Wines']
+  },
+  {
+    name: 'Caribbean Cuisine',
+    flag: '🌴',
+    description: 'Jerk spices, tropical fruits, and island flavors',
+    color: 'from-cyan-400 to-orange-500',
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
+    collections: ['Jerk Chicken', 'Island Rice & Peas', 'Tropical Cocktails']
+  },
+  // African & Middle Eastern
+  {
+    name: 'Moroccan Cuisine',
+    flag: '🇲🇦',
+    description: 'Tagines, couscous, and the intoxicating spices of North Africa',
+    color: 'from-orange-500 to-red-600',
+    image: 'https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=400',
+    collections: ['Tagine Masters', 'Couscous Varieties', 'Moroccan Pastries']
+  },
+  {
+    name: 'Ethiopian Cuisine',
+    flag: '🇪🇹',
+    description: 'Injera bread, spiced stews, and communal dining traditions',
+    color: 'from-green-500 to-yellow-500',
+    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400',
+    collections: ['Doro Wat', 'Vegetarian Feast', 'Injera Combos']
+  },
+  // Southeast Asian
+  {
+    name: 'Vietnamese Cuisine',
+    flag: '🇻🇳',
+    description: 'Fresh herbs, pho perfection, and the balance of flavors',
+    color: 'from-red-500 to-yellow-400',
+    image: 'https://images.unsplash.com/photo-1503764654157-72d979d9af2f?w=400',
+    collections: ['Pho Mastery', 'Banh Mi Sandwiches', 'Fresh Rolls']
+  },
 ];
 
 const ExploreCuisinesPage = () => {
