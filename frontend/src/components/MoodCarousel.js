@@ -102,62 +102,102 @@ const MoodCarousel = ({ onSelect, selectedMood }) => {
       
       {/* 2-Row Grid Layout */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 px-2">
-        {MOOD_IMAGES.map((mood) => {
+        {MOOD_IMAGES.map((mood, index) => {
           const isSelected = selectedMood === mood.id;
           const isHovered = hoveredMood === mood.id;
           
           return (
             <div
               key={mood.id}
-              className={`cursor-pointer transition-all duration-300 ease-out transform ${
-                isSelected ? 'scale-105 z-10' : isHovered ? 'scale-102' : 'hover:scale-105'
-              }`}
+              className="relative cursor-pointer group"
               onClick={() => handleMoodSelect(mood)}
               onMouseEnter={() => setHoveredMood(mood.id)}
               onMouseLeave={() => setHoveredMood(null)}
               data-testid={`mood-card-${mood.id}`}
+              style={{ 
+                animationDelay: `${index * 50}ms`,
+                animation: 'fadeInUp 0.5s ease-out forwards'
+              }}
             >
               <div 
-                className={`relative rounded-2xl overflow-hidden transition-all duration-300 ease-out ${
-                  isSelected 
-                    ? 'ring-4 ring-primary ring-offset-2 shadow-xl shadow-primary/20' 
-                    : 'hover:shadow-lg border border-border/30'
-                }`}
+                className={`relative rounded-2xl overflow-hidden transition-all duration-300 ease-out transform
+                  ${isSelected 
+                    ? 'ring-4 ring-primary ring-offset-2 shadow-xl shadow-primary/30 scale-105' 
+                    : isHovered 
+                      ? 'shadow-lg shadow-stone-300/50 scale-105 -translate-y-1' 
+                      : 'border border-border/30 hover:border-primary/30'
+                  }`}
               >
-                {/* Mood Image */}
-                <div className="aspect-square bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-2">
+                {/* Animated Background Glow on Hover */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${mood.color} opacity-0 transition-opacity duration-300
+                  ${isHovered && !isSelected ? 'opacity-10' : ''}`} 
+                />
+                
+                {/* Mood Image Container */}
+                <div className={`aspect-square bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-2 relative overflow-hidden`}>
+                  {/* Shimmer Effect on Hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full transition-transform duration-700 ease-out
+                    ${isHovered ? 'translate-x-full' : ''}`}
+                  />
+                  
+                  {/* Mood Image with Bounce Animation */}
                   <img 
                     src={mood.image} 
                     alt={`${mood.label} mood`}
-                    className={`w-full h-full object-contain transition-transform duration-300 ${
-                      isSelected ? 'scale-110' : ''
-                    }`}
+                    className={`w-full h-full object-contain transition-all duration-300 ease-out
+                      ${isSelected ? 'scale-110' : ''}
+                      ${isHovered && !isSelected ? 'scale-110 rotate-3' : ''}
+                      group-hover:drop-shadow-lg`}
                     loading="lazy"
                   />
+                  
+                  {/* Floating Particles on Hover */}
+                  {isHovered && !isSelected && (
+                    <>
+                      <div className="absolute top-2 left-2 w-1.5 h-1.5 bg-primary/40 rounded-full animate-ping" />
+                      <div className="absolute bottom-3 right-3 w-1 h-1 bg-primary/30 rounded-full animate-ping" style={{ animationDelay: '0.2s' }} />
+                      <div className="absolute top-4 right-4 w-1 h-1 bg-primary/20 rounded-full animate-ping" style={{ animationDelay: '0.4s' }} />
+                    </>
+                  )}
                 </div>
                 
-                {/* Selection Indicator */}
+                {/* Selection Indicator with Pulse */}
                 {isSelected && (
-                  <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200">
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
+                  <div className="absolute top-1.5 right-1.5">
+                    <div className="absolute inset-0 w-5 h-5 bg-primary rounded-full animate-ping opacity-50" />
+                    <div className="relative w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                   </div>
                 )}
                 
-                {/* Mood Label */}
-                <div className={`py-2 px-1 bg-gradient-to-r ${mood.color} text-white text-center transition-all duration-300`}>
-                  <p className="font-semibold text-xs truncate">{mood.label}</p>
+                {/* Mood Label with Slide-up Animation */}
+                <div className={`py-2 px-1 bg-gradient-to-r ${mood.color} text-white text-center transition-all duration-300 relative overflow-hidden`}>
+                  {/* Label Shine Effect */}
+                  <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full
+                    ${isHovered ? 'animate-shine' : ''}`}
+                  />
+                  <p className={`font-semibold text-xs truncate relative z-10 transition-transform duration-200
+                    ${isHovered ? 'scale-105' : ''}`}>
+                    {mood.label}
+                  </p>
                 </div>
               </div>
               
-              {/* Description tooltip on hover/select */}
+              {/* Enhanced Description Tooltip */}
               {(isHovered || isSelected) && (
-                <div className="absolute left-1/2 -translate-x-1/2 mt-1 z-20 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div className="bg-popover border border-border shadow-lg rounded-lg px-3 py-2 max-w-[180px]">
-                    <p className="text-xs text-muted-foreground leading-snug text-center">
-                      {mood.description}
-                    </p>
+                <div className="absolute left-1/2 -translate-x-1/2 mt-2 z-20">
+                  <div className="relative">
+                    {/* Tooltip Arrow */}
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-popover border-l border-t border-border rotate-45" />
+                    {/* Tooltip Content */}
+                    <div className="bg-popover border border-border shadow-xl rounded-lg px-3 py-2 max-w-[180px] animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200">
+                      <p className="text-xs text-muted-foreground leading-snug text-center">
+                        {mood.description}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -165,6 +205,33 @@ const MoodCarousel = ({ onSelect, selectedMood }) => {
           );
         })}
       </div>
+      
+      {/* Add CSS animations */}
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes shine {
+          from {
+            transform: translateX(-100%);
+          }
+          to {
+            transform: translateX(100%);
+          }
+        }
+        
+        .animate-shine {
+          animation: shine 0.8s ease-out;
+        }
+      `}</style>
       
       {/* Selected mood indicator */}
       {selectedMood && (
