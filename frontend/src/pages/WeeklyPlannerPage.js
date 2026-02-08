@@ -334,9 +334,24 @@ const WeeklyPlannerPage = () => {
       const response = await axios.post(`${API}/weekly-plan/generate-next`);
       if (response.data.already_exists) {
         toast.info('Next week\'s plan already exists!');
+        // Still update plans with the existing plan data
+        if (response.data.plan) {
+          setPlans(prev => {
+            const existingIndex = prev.findIndex(p => p.week_start === response.data.plan.week_start);
+            if (existingIndex >= 0) {
+              const updated = [...prev];
+              updated[existingIndex] = response.data.plan;
+              return updated;
+            } else {
+              return [response.data.plan, ...prev];
+            }
+          });
+        }
       } else {
         toast.success('Next week\'s meal plan generated!');
-        loadPlans();
+        if (response.data.plan) {
+          setPlans(prev => [response.data.plan, ...prev]);
+        }
       }
     } catch (error) {
       console.error('Error generating next week plan:', error);
