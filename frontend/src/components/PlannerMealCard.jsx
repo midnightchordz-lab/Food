@@ -141,10 +141,14 @@ const KEYWORD_IMAGES = {
 
 // Get best matching image for a recipe name
 const getKeywordImage = (recipeName, mealType) => {
+  if (!recipeName) return DEFAULT_IMAGES[mealType] || DEFAULT_IMAGES.default;
+  
   const nameLower = recipeName.toLowerCase();
   
-  // Check keywords first
-  for (const [keyword, url] of Object.entries(KEYWORD_IMAGES)) {
+  // Check keywords - try longer matches first for better accuracy
+  const sortedKeywords = Object.entries(KEYWORD_IMAGES).sort((a, b) => b[0].length - a[0].length);
+  
+  for (const [keyword, url] of sortedKeywords) {
     if (nameLower.includes(keyword)) {
       return url;
     }
