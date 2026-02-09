@@ -1,0 +1,9 @@
+{
+  "name": "MOOD FOOD",
+  "integrations": {
+    "capacitor": {
+      "root": "frontend"
+    }
+  },
+  "type": "react"
+}
