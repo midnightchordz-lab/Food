@@ -24,6 +24,10 @@ workflows:
         script: |
           cd frontend/android
           chmod +x gradlew
+          # Regenerate gradle wrapper if missing
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --gradle-version 8.0.2
+          fi
           ./gradlew assembleDebug
     artifacts:
       - frontend/android/app/build/outputs/**/*.apk
