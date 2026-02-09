@@ -5,5 +5,8 @@
       "root": "frontend"
     }
   },
-  "type": "react"
+  "type": "react",
+  "hooks": {
+    "build:before": "cd frontend && npm install"
+  }
 }
