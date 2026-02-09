@@ -15,6 +15,7 @@ workflows:
       - name: Build web assets
         script: |
           cd frontend
+          export REACT_APP_BACKEND_URL=https://mobile-meal-prep.preview.emergentagent.com
           CI=false npm run build
       - name: Sync Capacitor
         script: |
@@ -45,6 +46,7 @@ workflows:
       - name: Build web assets
         script: |
           cd frontend
+          export REACT_APP_BACKEND_URL=https://mobile-meal-prep.preview.emergentagent.com
           CI=false npm run build
       - name: Sync Capacitor
         script: |
@@ -82,6 +84,7 @@ workflows:
       - name: Build web assets
         script: |
           cd frontend
+          export REACT_APP_BACKEND_URL=https://mobile-meal-prep.preview.emergentagent.com
           CI=false npm run build
       - name: Sync Capacitor
         script: |
