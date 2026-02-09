@@ -35,7 +35,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       node: 18.17.0
-      xcode: latest
+      xcode: 15.4
       cocoapods: default
     scripts:
       - name: Install dependencies
@@ -56,21 +56,39 @@ workflows:
         script: |
           cd frontend/ios/App
           pod install
-      - name: Build iOS (Simulator)
+      - name: Set up code signing (ad-hoc)
         script: |
           cd frontend/ios/App
-          # List available schemes
-          xcodebuild -list -workspace App.xcworkspace
-          # Build for iOS
-          xcodebuild -workspace App.xcworkspace \
+          # Create exportOptions for ad-hoc distribution without signing
+          cat > exportOptions.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>compileBitcode</key>
+            <false/>
+          </dict>
+          </plist>
+          PLIST
+      - name: Build iOS App
+        script: |
+          cd frontend/ios/App
+          # Build for iOS Simulator (no signing required)
+          xcodebuild \
+            -workspace App.xcworkspace \
             -scheme App \
             -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build \
+            -sdk iphonesimulator \
+            -arch x86_64 \
+            -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
             build
     artifacts:
-      - frontend/ios/App/build/**/*.app
+      - frontend/ios/App/DerivedData/Build/Products/Debug-iphonesimulator/*.app
 
   android-release:
     name: Android Release Build
