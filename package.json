@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "MOOD FOOD - When Feelings Need Feeding",
   "scripts": {
-    "start": "cd frontend && yarn start",
-    "build": "cd frontend && yarn build",
-    "install:frontend": "cd frontend && yarn install",
+    "postinstall": "cd frontend && npm install",
+    "start": "cd frontend && npm start",
+    "build": "cd frontend && npm install && npm run build",
     "cap:sync": "cd frontend && npx cap sync",
-    "cap:build:ios": "cd frontend && yarn build && npx cap sync ios",
-    "cap:build:android": "cd frontend && yarn build && npx cap sync android"
+    "cap:build:ios": "cd frontend && npm install && npm run build && npx cap sync ios",
+    "cap:build:android": "cd frontend && npm install && npm run build && npx cap sync android"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,8 @@
   },
   "keywords": ["meal-planning", "mood-food", "capacitor", "react"],
   "author": "MOOD FOOD Team",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
