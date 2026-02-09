@@ -59,12 +59,16 @@ workflows:
       - name: Build iOS (Simulator)
         script: |
           cd frontend/ios/App
+          # List available schemes
+          xcodebuild -list -workspace App.xcworkspace
+          # Build for iOS
           xcodebuild -workspace App.xcworkspace \
             -scheme App \
             -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
-            clean build
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
     artifacts:
       - frontend/ios/App/build/**/*.app
 
