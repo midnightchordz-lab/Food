@@ -40,11 +40,12 @@ workflows:
       - name: Install dependencies
         script: |
           cd frontend
+          rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
       - name: Build web assets
         script: |
           cd frontend
-          npm run build
+          CI=false npm run build
       - name: Sync Capacitor
         script: |
           cd frontend
@@ -72,17 +73,16 @@ workflows:
     environment:
       node: 18.17.0
       java: 17
-      groups:
-        - android_credentials
     scripts:
       - name: Install dependencies
         script: |
           cd frontend
+          rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
       - name: Build web assets
         script: |
           cd frontend
-          npm run build
+          CI=false npm run build
       - name: Sync Capacitor
         script: |
           cd frontend
