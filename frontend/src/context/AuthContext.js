@@ -66,6 +66,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login to:', `${API}/auth/login`);
       const response = await axios.post(`${API}/auth/login`, {
         email,
         password
@@ -78,7 +79,19 @@ export const AuthProvider = ({ children }) => {
       toast.success(`Welcome back, ${userData.name}!`);
       return true;
     } catch (error) {
-      const message = error.response?.data?.detail || 'Login failed';
+      console.error('Login error:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      
+      let message = 'Login failed';
+      if (error.response?.data?.detail) {
+        message = error.response.data.detail;
+      } else if (error.message === 'Network Error') {
+        message = 'Network error - cannot reach server';
+      } else if (error.code === 'ERR_NETWORK') {
+        message = 'Network error - check your internet connection';
+      }
+      
       toast.error(message);
       return false;
     }
