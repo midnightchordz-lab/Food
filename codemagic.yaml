@@ -1,0 +1,96 @@
+workflows:
+  android-build:
+    name: Android Build
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      node: 18.17.0
+      java: 17
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          npm install
+      - name: Build web assets
+        script: |
+          cd frontend
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          cd frontend
+          npx cap sync android
+      - name: Build Android APK
+        script: |
+          cd frontend/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - frontend/android/app/build/outputs/**/*.apk
+
+  ios-build:
+    name: iOS Build
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      node: 18.17.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          npm install
+      - name: Build web assets
+        script: |
+          cd frontend
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          cd frontend
+          npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd frontend/ios/App
+          pod install
+      - name: Build iOS (Simulator)
+        script: |
+          cd frontend/ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            clean build
+    artifacts:
+      - frontend/ios/App/build/**/*.app
+
+  android-release:
+    name: Android Release Build
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      node: 18.17.0
+      java: 17
+      groups:
+        - android_credentials
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          npm install
+      - name: Build web assets
+        script: |
+          cd frontend
+          npm run build
+      - name: Sync Capacitor
+        script: |
+          cd frontend
+          npx cap sync android
+      - name: Build Android Release
+        script: |
+          cd frontend/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+    artifacts:
+      - frontend/android/app/build/outputs/**/*.apk
+      - frontend/android/app/build/outputs/**/*.aab
