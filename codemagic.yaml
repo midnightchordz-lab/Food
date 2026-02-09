@@ -35,7 +35,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       node: 18.17.0
-      xcode: 15.4
+      xcode: latest
       cocoapods: default
     scripts:
       - name: Install dependencies
