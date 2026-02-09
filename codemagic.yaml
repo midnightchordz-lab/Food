@@ -90,8 +90,7 @@ workflows:
       - name: Build Android Release
         script: |
           cd frontend/android
-          chmod +x gradlew
-          ./gradlew assembleRelease
+          gradle assembleRelease --no-daemon
     artifacts:
       - frontend/android/app/build/outputs/**/*.apk
       - frontend/android/app/build/outputs/**/*.aab
