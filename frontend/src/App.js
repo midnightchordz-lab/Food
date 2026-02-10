@@ -69,36 +69,37 @@ function App() {
 
   return (
     <AuthProvider>
-      <ShoppingCartProvider>
-        <div className="App min-h-screen">
-          <BrowserRouter>
-            <Navigation />
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/chat" element={<ChatPage />} />
-                <Route path="/diabetes-meals" element={<DiabetesMealsPage />} />
-                <Route path="/diabetes-planner" element={<DiabetesWeeklyPlannerPage />} />
-                <Route path="/import-recipe" element={<ImportRecipePage />} />
-                <Route path="/saved-recipes" element={<SavedRecipes />} />
-                <Route path="/shopping-list" element={<ShoppingListPage />} />
-                <Route path="/weekly-planner" element={<WeeklyPlannerPage />} />
-                <Route path="/planner" element={<WeeklyPlannerPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/explore-cuisines" element={<ExploreCuisinesPage />} />
-                <Route path="/recipes/cuisine/:cuisine" element={<CuisineRecipesPage />} />
-                <Route path="/discover-recipes" element={<DiscoverRecipesPage />} />
-                <Route path="/discover-recipes/:cuisine" element={<DiscoverRecipesPage />} />
-                <Route path="/pricing" element={<PricingPage />} />
-                <Route path="/subscription" element={<SubscriptionManagementPage />} />
-                <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
-                <Route path="/checkout/failure" element={<CheckoutFailurePage />} />
-                <Route path="/fridge-scanner" element={<FridgeScannerPage />} />
-              </Routes>
-            </Suspense>
-            <ShoppingCartModal />
-            {!isNative && <PWAInstallPrompt />}
-          </BrowserRouter>
+      <SubscriptionProvider>
+        <ShoppingCartProvider>
+          <div className="App min-h-screen">
+            <BrowserRouter>
+              <Navigation />
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/diabetes-meals" element={<DiabetesMealsPage />} />
+                  <Route path="/diabetes-planner" element={<DiabetesWeeklyPlannerPage />} />
+                  <Route path="/import-recipe" element={<ImportRecipePage />} />
+                  <Route path="/saved-recipes" element={<SavedRecipes />} />
+                  <Route path="/shopping-list" element={<ShoppingListPage />} />
+                  <Route path="/weekly-planner" element={<WeeklyPlannerPage />} />
+                  <Route path="/planner" element={<WeeklyPlannerPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/explore-cuisines" element={<ExploreCuisinesPage />} />
+                  <Route path="/recipes/cuisine/:cuisine" element={<CuisineRecipesPage />} />
+                  <Route path="/discover-recipes" element={<DiscoverRecipesPage />} />
+                  <Route path="/discover-recipes/:cuisine" element={<DiscoverRecipesPage />} />
+                  <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="/subscription" element={<SubscriptionManagementPage />} />
+                  <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
+                  <Route path="/checkout/failure" element={<CheckoutFailurePage />} />
+                  <Route path="/fridge-scanner" element={<FridgeScannerPage />} />
+                </Routes>
+              </Suspense>
+              <ShoppingCartModal />
+              {!isNative && <PWAInstallPrompt />}
+            </BrowserRouter>
           <Toaster />
         </div>
       </ShoppingCartProvider>
