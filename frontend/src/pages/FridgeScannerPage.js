@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Upload, Scan, ChefHat, Clock, Utensils, X, Loader2, RefreshCw, Apple, Carrot, Milk, Beef, Fish, Package } from 'lucide-react';
+import { Camera, Upload, Scan, ChefHat, Clock, Utensils, X, Loader2, RefreshCw, Apple, Carrot, Milk, Beef, Fish, Package, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
