@@ -86,10 +86,13 @@ Categories: vegetable, fruit, dairy, meat, seafood, beverage, condiment, grain, 
 Only include items you can clearly identify. Be thorough - check all shelves, doors, and drawers visible in the image."""
         ).with_model("openai", "gpt-5.2")
         
-        # Create message with image
+        # Create message with image using FileContent
         user_message = UserMessage(
             text="Please analyze this refrigerator photo and identify all visible food ingredients. List each item with its category and estimated quantity if visible.",
-            image_contents=[ImageContent(image_base64=image_base64)]
+            file_contents=[FileContent(
+                content_type=file.content_type,
+                file_content_base64=image_base64
+            )]
         )
         
         # Get ingredient analysis
