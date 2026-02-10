@@ -67,6 +67,7 @@ app.include_router(search_router, prefix="/api")
 app.include_router(recipe_library_router, prefix="/api")
 app.include_router(subscription_router, prefix="/api")
 app.include_router(scheduled_tasks_router, prefix="/api")
+app.include_router(twilio_router)
 
 # CORS middleware
 app.add_middleware(
