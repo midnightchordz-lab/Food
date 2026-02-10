@@ -72,7 +72,7 @@ const Navigation = () => {
                     key={item.path}
                     to={item.path}
                     data-testid={`nav-${item.label.toLowerCase()}`}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 whitespace-nowrap ${
                       isActive
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-secondary/50 hover:bg-secondary text-foreground'
