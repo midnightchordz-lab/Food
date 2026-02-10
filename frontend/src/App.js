@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import { ShoppingCartProvider } from "@/context/ShoppingCartContext";
+import { SubscriptionProvider } from "@/components/FeatureGate";
 import { Suspense, lazy, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import ShoppingCartModal from "@/components/ShoppingCartModal";
