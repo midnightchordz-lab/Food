@@ -329,7 +329,7 @@ const FridgeScanner = () => {
                       
                       <p className="text-sm text-muted-foreground mb-3">{recipe.description}</p>
                       
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-4 text-sm flex-wrap">
                         <div className="flex items-center gap-1 text-muted-foreground">
                           <Clock className="w-4 h-4" />
                           {recipe.cooking_time}
@@ -338,6 +338,12 @@ const FridgeScanner = () => {
                           <Utensils className="w-4 h-4" />
                           {recipe.ingredients_used?.length || 0} ingredients
                         </div>
+                        {recipe.servings && (
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Users className="w-4 h-4" />
+                            {recipe.servings} servings
+                          </div>
+                        )}
                       </div>
 
                       {recipe.ingredients_used && recipe.ingredients_used.length > 0 && (
