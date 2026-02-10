@@ -26,6 +26,7 @@ const PricingPage = lazy(() => import("@/pages/PricingPage"));
 const SubscriptionManagementPage = lazy(() => import("@/pages/SubscriptionManagementPage"));
 const CheckoutSuccessPage = lazy(() => import("@/pages/CheckoutSuccessPage"));
 const CheckoutFailurePage = lazy(() => import("@/pages/CheckoutFailurePage"));
+const FridgeScannerPage = lazy(() => import("@/pages/FridgeScannerPage"));
 
 // Loading spinner component for Suspense fallback
 const PageLoader = () => (
