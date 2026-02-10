@@ -169,7 +169,7 @@ async def send_whatsapp_message(request: WhatsAppMessageRequest, current_user: U
         raise HTTPException(status_code=500, detail=f"Error sending WhatsApp: {str(e)}")
 
 @router.post("/whatsapp/send-meal-plan")
-async def send_meal_plan_whatsapp(request: SendMealPlanRequest, current_user: dict = Depends(get_current_user)):
+async def send_meal_plan_whatsapp(request: SendMealPlanRequest, current_user: User = Depends(get_current_user)):
     """Send weekly meal plan via WhatsApp"""
     if not twilio_client:
         raise HTTPException(status_code=500, detail="Twilio not configured")
@@ -177,7 +177,7 @@ async def send_meal_plan_whatsapp(request: SendMealPlanRequest, current_user: di
     try:
         # Get user's meal plan for the week
         meal_plan = await db.weekly_plans.find_one({
-            "user_id": current_user["user_id"],
+            "user_id": current_user.id,
             "week_start_date": request.week_start
         })
         
