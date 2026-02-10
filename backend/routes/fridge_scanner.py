@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContent
 from .deps import db, get_current_user, User
 
 router = APIRouter(prefix="/api/fridge-scanner", tags=["Fridge Scanner"])
