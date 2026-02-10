@@ -138,58 +138,6 @@ Be concise. Identify 5-15 ingredients max. Suggest 3 quick recipes with 3-5 inst
     except Exception as e:
         print(f"Fridge scan error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to analyze image: {str(e)}")
-        )
-        
-        # Get ingredient analysis
-        ingredient_response = await chat.send_message(user_message)
-        
-        # Parse ingredients from response
-        ingredients = parse_ingredients(ingredient_response)
-        
-        # Create a new chat for recipe suggestions
-        recipe_chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"recipe-suggest-{current_user.id}-{datetime.utcnow().timestamp()}",
-            system_message="""You are a creative chef who suggests delicious recipes based on available ingredients.
-
-Given a list of ingredients, suggest 3-5 recipes that can be made.
-For each recipe, include detailed step-by-step cooking instructions.
-
-Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
-{"recipes": [{"title": "Recipe Name", "description": "Brief description", "cooking_time": "30 mins", "difficulty": "Easy", "servings": "2-4", "ingredients_used": ["ingredient1", "ingredient2"], "missing_ingredients": ["optional ingredient"], "instructions": ["Step 1: Prepare ingredients by...", "Step 2: Heat pan and...", "Step 3: Cook until...", "Step 4: Serve and enjoy!"]}]}
-
-Make the instructions clear and detailed enough for a beginner cook to follow."""
-        ).with_model("openai", "gpt-5.1")
-        
-        ingredient_names = [ing["name"] for ing in ingredients]
-        recipe_message = UserMessage(
-            text=f"I have these ingredients in my fridge: {', '.join(ingredient_names)}. Suggest 3-5 recipes I can make with detailed cooking instructions for each recipe."
-        )
-        
-        recipe_response = await recipe_chat.send_message(recipe_message)
-        recipes = parse_recipes(recipe_response)
-        
-        # Generate scan ID and save to database
-        import uuid
-        scan_id = str(uuid.uuid4())
-        
-        await db.fridge_scans.insert_one({
-            "scan_id": scan_id,
-            "user_id": current_user.id,
-            "ingredients": ingredients,
-            "suggested_recipes": recipes,
-            "scanned_at": datetime.utcnow()
-        })
-        
-        return FridgeScanResult(
-            ingredients=[IngredientItem(**ing) for ing in ingredients],
-            suggested_recipes=recipes,
-            scan_id=scan_id
-        )
-        
-    except Exception as e:
-        print(f"Fridge scan error: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to analyze image: {str(e)}")
 
 
 @router.get("/history")
