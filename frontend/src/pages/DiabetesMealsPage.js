@@ -742,7 +742,7 @@ const DiabetesMealsPage = () => {
     }
   };
   
-  if (loading) {
+  if (loading || featureLoading) {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center" data-testid="diabetes-loading">
         <Loader2 className="animate-spin text-primary" size={32} />
@@ -756,6 +756,18 @@ const DiabetesMealsPage = () => {
   
   return (
     <>
+      {/* Feature Locked Modal */}
+      <FeatureLockedModal
+        isOpen={featureLockedModal.isOpen}
+        onClose={() => {
+          setFeatureLockedModal(prev => ({ ...prev, isOpen: false }));
+          navigate('/');
+        }}
+        feature={featureLockedModal.feature}
+        upgradeTo={featureLockedModal.upgradeTo}
+        currentPlan={featureLockedModal.currentPlan}
+      />
+      
       <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8" data-testid="diabetes-meals-page">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
