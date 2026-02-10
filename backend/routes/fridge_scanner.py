@@ -62,32 +62,82 @@ async def scan_fridge(
         )
     
     try:
-        # Read and encode image
+        # Read image
         image_data = await file.read()
+        
+        # Compress image if too large (max 1MB)
+        from PIL import Image
+        import io
+        
+        if len(image_data) > 1024 * 1024:  # If larger than 1MB
+            img = Image.open(io.BytesIO(image_data))
+            # Resize to max 1024px on longest side
+            max_size = 1024
+            ratio = min(max_size / img.width, max_size / img.height)
+            if ratio < 1:
+                new_size = (int(img.width * ratio), int(img.height * ratio))
+                img = img.resize(new_size, Image.LANCZOS)
+            # Convert to RGB if needed
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+            # Save compressed
+            buffer = io.BytesIO()
+            img.save(buffer, format='JPEG', quality=75)
+            image_data = buffer.getvalue()
+        
         image_base64 = base64.b64encode(image_data).decode('utf-8')
         
-        # Create AI chat instance for ingredient detection using GPT-5.1 (vision capable)
+        # Single AI call for BOTH ingredients AND recipes (faster!)
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"fridge-scan-{current_user.id}-{datetime.utcnow().timestamp()}",
-            system_message="""You are an expert at identifying food ingredients from refrigerator photos.
-            
-When shown a fridge photo, identify ALL visible food items and ingredients.
-Be specific about what you see - don't guess if something is unclear.
+            system_message="""You are an expert chef and food identifier. Analyze fridge photos to identify ingredients AND suggest recipes in one response.
 
-Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
-{"ingredients": [{"name": "ingredient name", "category": "category", "quantity": "estimated quantity if visible"}]}
+Respond ONLY with valid JSON (no markdown):
+{
+  "ingredients": [{"name": "item", "category": "vegetable/fruit/dairy/meat/seafood/beverage/condiment/grain/snack/other", "quantity": "amount if visible"}],
+  "recipes": [{"title": "Recipe Name", "description": "Brief description", "cooking_time": "X mins", "difficulty": "Easy/Medium/Hard", "servings": "2-4", "ingredients_used": ["item1", "item2"], "missing_ingredients": ["optional item"], "instructions": ["Step 1...", "Step 2...", "Step 3..."]}]
+}
 
-Categories: vegetable, fruit, dairy, meat, seafood, beverage, condiment, grain, snack, leftover, other
-
-Only include items you can clearly identify."""
+Be concise. Identify 5-15 ingredients max. Suggest 3 quick recipes with 3-5 instruction steps each."""
         ).with_model("openai", "gpt-5.1")
         
-        # Create message with image using ImageContent
+        # Single message with image
         image_content = ImageContent(image_base64=image_base64)
         user_message = UserMessage(
-            text="Please analyze this refrigerator photo and identify all visible food ingredients. List each item with its category.",
+            text="Identify all food ingredients in this fridge photo and suggest 3 quick recipes I can make. Include cooking instructions.",
             file_contents=[image_content]
+        )
+        
+        # Get combined response
+        response = await chat.send_message(user_message)
+        
+        # Parse combined response
+        result = parse_combined_response(response)
+        ingredients = result.get("ingredients", [])
+        recipes = result.get("recipes", [])
+        
+        # Generate scan ID and save to database
+        import uuid
+        scan_id = str(uuid.uuid4())
+        
+        await db.fridge_scans.insert_one({
+            "scan_id": scan_id,
+            "user_id": current_user.id,
+            "ingredients": ingredients,
+            "suggested_recipes": recipes,
+            "scanned_at": datetime.utcnow()
+        })
+        
+        return FridgeScanResult(
+            ingredients=[IngredientItem(**ing) for ing in ingredients],
+            suggested_recipes=recipes,
+            scan_id=scan_id
+        )
+        
+    except Exception as e:
+        print(f"Fridge scan error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to analyze image: {str(e)}")
         )
         
         # Get ingredient analysis
