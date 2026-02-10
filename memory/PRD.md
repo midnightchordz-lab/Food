@@ -232,6 +232,17 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 10, 2026**: P0 FIX - Fridge Scanner Optimization (COMPLETE)
+  - **Issue**: Fridge Scanner was very slow due to making two separate AI calls (one for ingredients, one for recipes)
+  - **Root Cause**: Missing `parse_combined_response()` function left the file in a broken state
+  - **Solution**: 
+    - Added `parse_combined_response()` function to handle combined JSON response
+    - Single AI call now returns both ingredients AND recipes with cooking instructions
+    - Optimized prompt for concise, structured JSON output
+  - **Performance**: Response time ~10 seconds (down from potentially minutes with two calls)
+  - **File Fixed**: `/app/backend/routes/fridge_scanner.py`
+  - **Testing**: Endpoint verified working with correct response structure
+
 - **Feb 7, 2026**: FEATURE - Subscription Management UI & Checkout Flow (COMPLETE)
   - **Subscription Management Page** (`/subscription`):
     - Current plan display with Active/Trial/Cancelling badges
