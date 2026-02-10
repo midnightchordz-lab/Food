@@ -179,6 +179,49 @@ async def get_scan_details(
         raise HTTPException(status_code=500, detail=f"Failed to get scan: {str(e)}")
 
 
+def parse_combined_response(response: str) -> dict:
+    """Parse combined ingredients and recipes from AI response (optimized single-call)"""
+    try:
+        # Clean response - remove markdown code blocks if present
+        cleaned = response.strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r'^```\w*\n?', '', cleaned)
+            cleaned = re.sub(r'\n?```$', '', cleaned)
+        
+        # Try to extract JSON from response
+        json_match = re.search(r'\{[\s\S]*\}', cleaned)
+        if json_match:
+            data = json.loads(json_match.group())
+            # Validate structure
+            result = {
+                "ingredients": data.get("ingredients", []),
+                "recipes": data.get("recipes", [])
+            }
+            return result
+        
+        # Try direct parse
+        data = json.loads(cleaned)
+        return {
+            "ingredients": data.get("ingredients", []),
+            "recipes": data.get("recipes", [])
+        }
+        
+    except Exception as e:
+        print(f"Parse combined response error: {e}, response: {response[:200]}")
+        return {
+            "ingredients": [{"name": "Unable to identify ingredients", "category": "other", "quantity": None}],
+            "recipes": [{
+                "title": "Unable to suggest recipes",
+                "description": "Please try scanning again with a clearer image",
+                "cooking_time": "N/A",
+                "difficulty": "N/A",
+                "ingredients_used": [],
+                "missing_ingredients": [],
+                "instructions": []
+            }]
+        }
+
+
 def parse_ingredients(response: str) -> List[dict]:
     """Parse ingredients from AI response"""
     try:
