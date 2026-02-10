@@ -223,7 +223,7 @@ async def send_meal_plan_whatsapp(request: SendMealPlanRequest, current_user: di
         
         # Send via WhatsApp
         whatsapp_to = f"whatsapp:{request.phone_number}"
-        whatsapp_from = f"whatsapp:{TWILIO_PHONE_NUMBER}"
+        whatsapp_from = f"whatsapp:{TWILIO_WHATSAPP_NUMBER}"
         
         message = twilio_client.messages.create(
             body=full_message,
