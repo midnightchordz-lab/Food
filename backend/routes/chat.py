@@ -918,15 +918,18 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             # Check recipe search limit for free tier users
             search_check = await check_and_increment_search(current_user.id)
             if not search_check["allowed"]:
-                raise HTTPException(
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
                     status_code=403,
-                    detail={
-                        "error": "feature_locked",
-                        "message": search_check["reason"],
-                        "feature": "recipe_search",
-                        "upgrade_to": search_check["upgrade_to"],
-                        "used": search_check["used"],
-                        "limit": search_check["limit"]
+                    content={
+                        "detail": {
+                            "error": "feature_locked",
+                            "message": search_check["reason"],
+                            "feature": "recipe_search",
+                            "upgrade_to": search_check["upgrade_to"],
+                            "used": search_check["used"],
+                            "limit": search_check["limit"]
+                        }
                     }
                 )
             
