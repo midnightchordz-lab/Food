@@ -172,7 +172,7 @@ const FridgeScanner = () => {
                   
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Button
-                      onClick={() => cameraInputRef.current?.click()}
+                      onClick={handleCameraCapture}
                       className="flex items-center gap-2"
                       data-testid="camera-btn"
                     >
@@ -196,7 +196,7 @@ const FridgeScanner = () => {
                     accept="image/*"
                     capture="environment"
                     className="hidden"
-                    onChange={handleCameraCapture}
+                    onChange={handleWebCameraCapture}
                   />
                   <input
                     ref={fileInputRef}
