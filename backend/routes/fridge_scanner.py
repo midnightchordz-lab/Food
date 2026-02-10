@@ -50,7 +50,22 @@ async def scan_fridge(
     """
     Scan a fridge photo to identify ingredients and suggest recipes.
     Accepts: JPEG, PNG, WEBP images
+    Requires: Premium subscription or higher
     """
+    # Check feature access - Fridge Scanner requires Premium
+    access = await FeatureGate.check_access(current_user.id, "fridge_scanner")
+    if not access["allowed"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_locked",
+                "message": access["reason"],
+                "feature": "fridge_scanner",
+                "upgrade_to": access["upgrade_to"],
+                "current_plan": access["current_plan"]
+            }
+        )
+    
     if not EMERGENT_LLM_KEY:
         raise HTTPException(status_code=500, detail="AI service not configured")
     
