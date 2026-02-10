@@ -207,60 +207,54 @@ async def get_scan_details(
 
 def parse_ingredients(response: str) -> List[dict]:
     """Parse ingredients from AI response"""
-    import json
-    import re
-    
     try:
+        # Clean response - remove markdown code blocks if present
+        cleaned = response.strip()
+        if cleaned.startswith("```"):
+            # Remove ```json and ``` markers
+            cleaned = re.sub(r'^```\w*\n?', '', cleaned)
+            cleaned = re.sub(r'\n?```$', '', cleaned)
+        
         # Try to extract JSON from response
-        json_match = re.search(r'\{[\s\S]*\}', response)
+        json_match = re.search(r'\{[\s\S]*\}', cleaned)
         if json_match:
             data = json.loads(json_match.group())
             if "ingredients" in data:
                 return data["ingredients"]
         
-        # Fallback: parse as plain text
-        ingredients = []
-        lines = response.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line and not line.startswith('{') and not line.startswith('}'):
-                # Try to extract ingredient name
-                if ':' in line:
-                    name = line.split(':')[0].strip('- •*')
-                    ingredients.append({
-                        "name": name,
-                        "category": "other",
-                        "quantity": None
-                    })
-                elif line.startswith('-') or line.startswith('•'):
-                    name = line.strip('- •*')
-                    ingredients.append({
-                        "name": name,
-                        "category": "other",
-                        "quantity": None
-                    })
+        # Try direct parse
+        data = json.loads(cleaned)
+        if "ingredients" in data:
+            return data["ingredients"]
         
-        return ingredients if ingredients else [{"name": "Unable to identify ingredients", "category": "other", "quantity": None}]
+        return [{"name": "Unable to identify ingredients", "category": "other", "quantity": None}]
         
     except Exception as e:
-        print(f"Parse ingredients error: {e}")
+        print(f"Parse ingredients error: {e}, response: {response[:200]}")
         return [{"name": "Unable to parse ingredients", "category": "other", "quantity": None}]
 
 
 def parse_recipes(response: str) -> List[dict]:
     """Parse recipes from AI response"""
-    import json
-    import re
-    
     try:
+        # Clean response - remove markdown code blocks if present
+        cleaned = response.strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r'^```\w*\n?', '', cleaned)
+            cleaned = re.sub(r'\n?```$', '', cleaned)
+        
         # Try to extract JSON from response
-        json_match = re.search(r'\{[\s\S]*\}', response)
+        json_match = re.search(r'\{[\s\S]*\}', cleaned)
         if json_match:
             data = json.loads(json_match.group())
             if "recipes" in data:
                 return data["recipes"]
         
-        # Fallback: create simple recipe suggestions
+        # Try direct parse
+        data = json.loads(cleaned)
+        if "recipes" in data:
+            return data["recipes"]
+        
         return [{
             "title": "Custom Recipe",
             "description": "Create your own dish with available ingredients",
@@ -271,7 +265,7 @@ def parse_recipes(response: str) -> List[dict]:
         }]
         
     except Exception as e:
-        print(f"Parse recipes error: {e}")
+        print(f"Parse recipes error: {e}, response: {response[:200]}")
         return [{
             "title": "Unable to suggest recipes",
             "description": "Please try scanning again",
