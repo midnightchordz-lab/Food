@@ -20,6 +20,7 @@ class FeatureGate:
         "premium_recipes": "premium_monthly",
         "ad_free": "premium_monthly",
         "ai_photo_recognition": "premium_monthly",
+        "fridge_scanner": "premium_monthly",  # Fridge Scanner requires Premium
         "ai_image_generation": "chef_pro_monthly",
         "diabetes_module": "chef_pro_monthly",
         "video_import": "chef_pro_monthly",
