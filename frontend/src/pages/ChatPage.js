@@ -617,15 +617,19 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
       setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
       console.error('Error fetching recipes:', error);
-      toast.error('Failed to get recipes. Please try again.');
       
-      const errorMsg = {
-        role: 'assistant',
-        content: `I'm sorry, I had trouble creating recipes. Let me try again...`,
-        timestamp: new Date().toISOString(),
-        showRetryButton: true
-      };
-      setMessages(prev => [...prev, errorMsg]);
+      // Check if it's a feature lock error (search limit reached)
+      if (!handleFeatureLockedError(error, setFeatureLockedModal)) {
+        toast.error('Failed to get recipes. Please try again.');
+        
+        const errorMsg = {
+          role: 'assistant',
+          content: `I'm sorry, I had trouble creating recipes. Let me try again...`,
+          timestamp: new Date().toISOString(),
+          showRetryButton: true
+        };
+        setMessages(prev => [...prev, errorMsg]);
+      }
     } finally {
       setIsLoading(false);
     }
