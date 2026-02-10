@@ -162,7 +162,10 @@ const FridgeScanner = () => {
       toast.success(`Found ${response.data.ingredients.length} ingredients!`);
     } catch (error) {
       console.error('Scan error:', error);
-      toast.error(error.response?.data?.detail || 'Failed to scan image');
+      // Check if it's a feature lock error
+      if (!handleFeatureLockedError(error, setFeatureLockedModal)) {
+        toast.error(error.response?.data?.detail?.message || error.response?.data?.detail || 'Failed to scan image');
+      }
     } finally {
       setScanning(false);
     }
@@ -178,9 +181,33 @@ const FridgeScanner = () => {
     const Icon = categoryIcons[category] || Package;
     return Icon;
   };
+  
+  // Show loading while checking auth/feature access
+  if (authLoading || featureLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24 pt-20">
+      {/* Feature Locked Modal */}
+      <FeatureLockedModal
+        isOpen={featureLockedModal.isOpen}
+        onClose={() => {
+          setFeatureLockedModal(prev => ({ ...prev, isOpen: false }));
+          navigate('/');
+        }}
+        feature={featureLockedModal.feature}
+        upgradeTo={featureLockedModal.upgradeTo}
+        currentPlan={featureLockedModal.currentPlan}
+      />
+      
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="text-center mb-8">
