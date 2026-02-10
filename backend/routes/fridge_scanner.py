@@ -103,15 +103,17 @@ Only include items you can clearly identify."""
             system_message="""You are a creative chef who suggests delicious recipes based on available ingredients.
 
 Given a list of ingredients, suggest 3-5 recipes that can be made.
-Consider variety - include both quick meals and more elaborate options.
+For each recipe, include detailed step-by-step cooking instructions.
 
 Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
-{"recipes": [{"title": "Recipe Name", "description": "Brief description", "cooking_time": "30 mins", "difficulty": "Easy", "ingredients_used": ["ingredient1", "ingredient2"], "missing_ingredients": ["optional ingredient"]}]}"""
+{"recipes": [{"title": "Recipe Name", "description": "Brief description", "cooking_time": "30 mins", "difficulty": "Easy", "servings": "2-4", "ingredients_used": ["ingredient1", "ingredient2"], "missing_ingredients": ["optional ingredient"], "instructions": ["Step 1: Prepare ingredients by...", "Step 2: Heat pan and...", "Step 3: Cook until...", "Step 4: Serve and enjoy!"]}]}
+
+Make the instructions clear and detailed enough for a beginner cook to follow."""
         ).with_model("openai", "gpt-5.1")
         
         ingredient_names = [ing["name"] for ing in ingredients]
         recipe_message = UserMessage(
-            text=f"I have these ingredients in my fridge: {', '.join(ingredient_names)}. Suggest 3-5 recipes I can make."
+            text=f"I have these ingredients in my fridge: {', '.join(ingredient_names)}. Suggest 3-5 recipes I can make with detailed cooking instructions for each recipe."
         )
         
         recipe_response = await recipe_chat.send_message(recipe_message)
