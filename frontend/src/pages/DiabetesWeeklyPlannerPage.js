@@ -8,9 +8,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import RecipeDetailModal from '@/components/RecipeDetailModal';
 import PlannerMealCard from '@/components/PlannerMealCard';
+import { FeatureLockedModal, useFeatureAccess } from '@/components/FeatureGate';
 import {
   Dialog,
   DialogContent,
