@@ -359,6 +359,10 @@ async def check_feature_access(user_id: str, feature_name: str, increment: bool 
         result["allowed"] = features.get("recipe_import", False)
         result["upgrade_required"] = not result["allowed"]
     
+    elif feature_name == "fridge_scanner":
+        result["allowed"] = features.get("ai_photo_recognition_enabled", False)
+        result["upgrade_required"] = not result["allowed"]
+    
     return result
 
 
