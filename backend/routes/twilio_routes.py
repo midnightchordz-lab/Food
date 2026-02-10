@@ -233,7 +233,7 @@ async def send_meal_plan_whatsapp(request: SendMealPlanRequest, current_user: Us
         
         # Log the message
         await db.whatsapp_messages.insert_one({
-            "user_id": current_user["user_id"],
+            "user_id": current_user.id,
             "to": request.phone_number,
             "type": "meal_plan",
             "week_start": request.week_start,
