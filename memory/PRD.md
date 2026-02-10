@@ -232,6 +232,26 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 10, 2026**: P0 FIX - Feature Gating Enforcement (COMPLETE)
+  - **Issue**: Free users had access to all premium features (Diabetes Module, Fridge Scanner, etc.)
+  - **Root Cause**: Frontend wasn't checking feature access on page load, only on API calls
+  - **Solution**: 
+    - Added `SubscriptionProvider` to App.js for global subscription state
+    - Added `useFeatureAccess` hook to check subscription on page load
+    - Fridge Scanner now requires Premium subscription ($9.99/mo)
+    - Diabetes Module requires Chef Pro subscription ($19.99/mo)
+    - Feature lock modal shows upgrade prompt with plan details
+    - Backend returns 403 with detailed error for locked features
+  - **Files Modified**:
+    - `/app/backend/routes/feature_gating.py` - Added fridge_scanner feature
+    - `/app/backend/routes/fridge_scanner.py` - Added feature gate check
+    - `/app/backend/routes/subscription.py` - Added fridge_scanner to check_feature_access
+    - `/app/frontend/src/App.js` - Added SubscriptionProvider
+    - `/app/frontend/src/components/FeatureGate.jsx` - Added fridge_scanner support
+    - `/app/frontend/src/pages/FridgeScannerPage.js` - Added feature access check
+    - `/app/frontend/src/pages/DiabetesMealsPage.js` - Added feature access check
+  - **Testing**: Verified 403 responses and upgrade modals for free users
+
 - **Feb 10, 2026**: P0 FIX - Fridge Scanner Optimization (COMPLETE)
   - **Issue**: Fridge Scanner was very slow due to making two separate AI calls (one for ingredients, one for recipes)
   - **Root Cause**: Missing `parse_combined_response()` function left the file in a broken state
@@ -242,6 +262,10 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
   - **Performance**: Response time ~10 seconds (down from potentially minutes with two calls)
   - **File Fixed**: `/app/backend/routes/fridge_scanner.py`
   - **Testing**: Endpoint verified working with correct response structure
+
+- **Feb 10, 2026**: UI FIX - Navigation Tab Alignment
+  - Changed "D-Planner" to "DPlan" to prevent text wrapping
+  - Added `whitespace-nowrap` to nav items for consistent alignment
 
 - **Feb 7, 2026**: FEATURE - Subscription Management UI & Checkout Flow (COMPLETE)
   - **Subscription Management Page** (`/subscription`):
