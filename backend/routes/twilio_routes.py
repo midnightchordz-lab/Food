@@ -131,7 +131,7 @@ async def verify_otp(request: VerifyOTPRequest):
 # ============== WHATSAPP MESSAGES ==============
 
 @router.post("/whatsapp/send")
-async def send_whatsapp_message(request: WhatsAppMessageRequest, current_user: dict = Depends(get_current_user)):
+async def send_whatsapp_message(request: WhatsAppMessageRequest, current_user: User = Depends(get_current_user)):
     """Send a WhatsApp message"""
     if not twilio_client:
         raise HTTPException(status_code=500, detail="Twilio not configured")
@@ -149,7 +149,7 @@ async def send_whatsapp_message(request: WhatsAppMessageRequest, current_user: d
         
         # Log the message
         await db.whatsapp_messages.insert_one({
-            "user_id": current_user["user_id"],
+            "user_id": current_user.id,
             "to": request.phone_number,
             "message": request.message,
             "sid": message.sid,
