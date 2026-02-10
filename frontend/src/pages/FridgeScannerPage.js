@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Camera, Upload, Scan, ChefHat, Clock, Utensils, X, Loader2, RefreshCw, Apple, Carrot, Milk, Beef, Fish, Package, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,8 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
+import { useAuth } from '@/context/AuthContext';
+import { useFeatureAccess, FeatureLockedModal, handleFeatureLockedError } from '@/components/FeatureGate';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -40,11 +43,44 @@ const FridgeScanner = () => {
   const [isNative, setIsNative] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  
+  // Auth and feature access
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('fridge_scanner');
+  
+  // Feature lock modal state
+  const [featureLockedModal, setFeatureLockedModal] = useState({
+    isOpen: false,
+    feature: '',
+    upgradeTo: '',
+    currentPlan: ''
+  });
 
   useEffect(() => {
     // Check if running on native platform
     setIsNative(Capacitor.isNativePlatform());
   }, []);
+  
+  // Redirect to home if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast.error('Please login to use Fridge Scanner');
+      navigate('/');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
+  
+  // Show feature lock if user doesn't have access
+  useEffect(() => {
+    if (!featureLoading && !hasAccess && isAuthenticated) {
+      setFeatureLockedModal({
+        isOpen: true,
+        feature: 'fridge_scanner',
+        upgradeTo: 'premium_monthly',
+        currentPlan: 'free'
+      });
+    }
+  }, [hasAccess, featureLoading, isAuthenticated]);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
