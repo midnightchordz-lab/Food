@@ -720,34 +720,44 @@ const ImportRecipePage = () => {
   }
   
   return (
-    <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-amber-50/50 via-background to-orange-50/30 dark:from-amber-950/10 dark:via-background dark:to-orange-950/10" data-testid="import-recipe-page">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary text-sm font-medium mb-4">
-            <Sparkles size={16} />
-            AI-Powered Conversion
+    <>
+      {/* Feature Locked Modal */}
+      <FeatureLockedModal
+        isOpen={featureLockedModal.isOpen}
+        onClose={handleCloseFeatureLock}
+        feature={featureLockedModal.feature}
+        upgradeTo={featureLockedModal.upgradeTo}
+        currentPlan={featureLockedModal.currentPlan}
+      />
+      
+      <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-amber-50/50 via-background to-orange-50/30 dark:from-amber-950/10 dark:via-background dark:to-orange-950/10" data-testid="import-recipe-page">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary text-sm font-medium mb-4">
+              <Sparkles size={16} />
+              AI-Powered Conversion
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-1 bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent" data-testid="import-title">
+              MOOD FOOD
+            </h1>
+            <p className="text-primary font-medium mb-2">When Feelings Need Feeding</p>
+            <p className="text-muted-foreground text-lg max-w-md mx-auto">
+              Import your favorite recipes from anywhere
+            </p>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-serif font-bold mb-1 bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent" data-testid="import-title">
-            MOOD FOOD
-          </h1>
-          <p className="text-primary font-medium mb-2">When Feelings Need Feeding</p>
-          <p className="text-muted-foreground text-lg max-w-md mx-auto">
-            Import your favorite recipes from anywhere
-          </p>
-        </div>
-        
-        {/* Import Method Selection */}
-        {!selectedMethod ? (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
-              {IMPORT_METHODS.map((method) => {
-                const Icon = method.icon;
-                return (
-                  <button
-                    key={method.id}
-                    onClick={() => setSelectedMethod(method.id)}
-                    className="group p-6 bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-border/40 shadow-lg shadow-black/5 hover:shadow-xl hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 text-left"
+          
+          {/* Import Method Selection */}
+          {!selectedMethod ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-10">
+                {IMPORT_METHODS.map((method) => {
+                  const Icon = method.icon;
+                  return (
+                    <button
+                      key={method.id}
+                      onClick={() => setSelectedMethod(method.id)}
+                      className="group p-6 bg-white/80 dark:bg-card/80 backdrop-blur-sm rounded-2xl border border-white/60 dark:border-border/40 shadow-lg shadow-black/5 hover:shadow-xl hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 text-left"
                     data-testid={`import-method-${method.id}`}
                   >
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-400/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
