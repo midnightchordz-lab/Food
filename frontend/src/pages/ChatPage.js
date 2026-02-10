@@ -359,17 +359,23 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
       });
     } catch (error) {
       console.error('Error fetching recipes:', error);
-      toast.error('Failed to get recipes. Please try again.');
       
-      setMessages(prev => {
-        const filtered = prev.filter(m => !m.isLoading);
-        return [...filtered, {
-          role: 'assistant',
-          content: `I'm sorry, I had trouble finding ${dietaryPref?.label} recipes. Let me try again...`,
-          timestamp: new Date().toISOString(),
-          showRetryButton: true
-        }];
-      });
+      // Check if it's a feature lock error (search limit reached)
+      if (handleFeatureLockedError(error, setFeatureLockedModal)) {
+        setMessages(prev => prev.filter(m => !m.isLoading));
+      } else {
+        toast.error('Failed to get recipes. Please try again.');
+        
+        setMessages(prev => {
+          const filtered = prev.filter(m => !m.isLoading);
+          return [...filtered, {
+            role: 'assistant',
+            content: `I'm sorry, I had trouble finding ${dietaryPref?.label} recipes. Let me try again...`,
+            timestamp: new Date().toISOString(),
+            showRetryButton: true
+          }];
+        });
+      }
     } finally {
       setIsLoading(false);
     }
