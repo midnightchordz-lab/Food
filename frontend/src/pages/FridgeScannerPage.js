@@ -365,6 +365,26 @@ const FridgeScanner = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Cooking Instructions */}
+                      {recipe.instructions && recipe.instructions.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-border">
+                          <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <ChefHat className="w-4 h-4 text-primary" />
+                            Cooking Instructions
+                          </p>
+                          <ol className="space-y-2">
+                            {recipe.instructions.map((step, i) => (
+                              <li key={i} className="flex gap-3 text-sm">
+                                <span className="flex-shrink-0 w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-xs font-medium">
+                                  {i + 1}
+                                </span>
+                                <span className="text-muted-foreground pt-0.5">{step.replace(/^Step \d+:?\s*/i, '')}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
