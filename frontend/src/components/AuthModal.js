@@ -253,6 +253,8 @@ const AuthModal = ({ open, onClose }) => {
     setOtpSent(false);
     setOtpVerified(false);
     setIsNewPhoneUser(false);
+    setPhoneAuthToken(null);
+    setPhoneAuthUser(null);
     setRegistrationStep('credentials');
     setPendingExclusions([]);
   };
