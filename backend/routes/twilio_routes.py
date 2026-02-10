@@ -258,7 +258,7 @@ async def send_meal_plan_whatsapp(request: SendMealPlanRequest, current_user: Us
 # ============== USER PHONE MANAGEMENT ==============
 
 @router.post("/link-phone")
-async def link_phone_to_account(request: SendOTPRequest, current_user: dict = Depends(get_current_user)):
+async def link_phone_to_account(request: SendOTPRequest, current_user: User = Depends(get_current_user)):
     """Link a verified phone number to user account"""
     try:
         # Check if phone is verified
@@ -272,7 +272,7 @@ async def link_phone_to_account(request: SendOTPRequest, current_user: dict = De
         
         # Update user with phone number
         await db.users.update_one(
-            {"user_id": current_user["user_id"]},
+            {"id": current_user.id},
             {
                 "$set": {
                     "phone_number": request.phone_number,
