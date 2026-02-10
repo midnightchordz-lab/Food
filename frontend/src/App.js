@@ -102,7 +102,8 @@ function App() {
             </BrowserRouter>
           <Toaster />
         </div>
-      </ShoppingCartProvider>
+        </ShoppingCartProvider>
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }
