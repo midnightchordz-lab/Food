@@ -47,7 +47,7 @@ const Navigation = () => {
     { path: '/', icon: Home, label: 'Home' },
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
     { path: '/diabetes-meals', icon: Activity, label: 'Diabetes' },
-    { path: '/diabetes-planner', icon: CalendarDays, label: 'D-Planner' },
+    { path: '/diabetes-planner', icon: CalendarDays, label: 'DPlan' },
     { path: '/import-recipe', icon: Import, label: 'Import' },
     { path: '/weekly-planner', icon: Calendar, label: 'Planner' },
     { path: '/pricing', icon: CreditCard, label: 'Pricing' },
