@@ -108,6 +108,18 @@ const DiabetesWeeklyPlannerPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const { isAuthenticated, user, loading } = useAuth();
+  const navigate = useNavigate();
+  
+  // Feature access check
+  const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('diabetes_module');
+  
+  // Feature lock modal state
+  const [featureLockedModal, setFeatureLockedModal] = useState({
+    isOpen: false,
+    feature: '',
+    upgradeTo: '',
+    currentPlan: ''
+  });
   
   // Recipe detail modal state
   const [showRecipeDetail, setShowRecipeDetail] = useState(false);
@@ -115,6 +127,18 @@ const DiabetesWeeklyPlannerPage = () => {
   
   // User exclusions
   const [userExclusions, setUserExclusions] = useState([]);
+  
+  // Show feature lock if user doesn't have access
+  useEffect(() => {
+    if (!featureLoading && !hasAccess && isAuthenticated) {
+      setFeatureLockedModal({
+        isOpen: true,
+        feature: 'diabetes_module',
+        upgradeTo: 'chef_pro_monthly',
+        currentPlan: 'free'
+      });
+    }
+  }, [hasAccess, featureLoading, isAuthenticated]);
   
   // Preferences state
   const [preferences, setPreferences] = useState(null);
