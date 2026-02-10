@@ -33,6 +33,7 @@ const Navigation = () => {
   
   // Additional items shown in "More" menu on mobile
   const moreNavItems = [
+    { path: '/fridge-scanner', icon: Scan, label: 'Fridge Scanner' },
     { path: '/diabetes-meals', icon: Activity, label: 'Diabetes Meals' },
     { path: '/diabetes-planner', icon: CalendarDays, label: 'Diabetes Planner' },
     { path: '/import-recipe', icon: Import, label: 'Import Recipe' },
