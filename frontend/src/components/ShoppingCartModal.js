@@ -64,10 +64,10 @@ const ShoppingCartModal = () => {
 
   return (
     <>
-      {/* Floating Cart Button */}
+      {/* Floating Cart Button - positioned above bottom nav on mobile */}
       <button
         onClick={() => setIsCartOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105"
+        className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105"
         data-testid="floating-cart-btn"
       >
         <ShoppingCart size={20} />
