@@ -115,6 +115,13 @@ class FeatureGate:
                 result["reason"] = "AI Photo Recognition requires Premium subscription"
                 result["upgrade_to"] = "premium_monthly"
                 
+        elif feature == "fridge_scanner":
+            if features.get("ai_photo_recognition_enabled", False):
+                result["allowed"] = True
+            else:
+                result["reason"] = "Fridge Scanner requires Premium subscription"
+                result["upgrade_to"] = "premium_monthly"
+                
         elif feature == "ai_image_generation":
             if features.get("ai_image_generation_enabled", False):
                 result["allowed"] = True
