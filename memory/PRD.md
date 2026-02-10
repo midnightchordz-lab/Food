@@ -232,6 +232,18 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
 
 ## Changelog
 
+- **Feb 10, 2026**: P0 FIX - Chat Recipe Search Limit Enforcement (COMPLETE)
+  - **Issue**: Free users could bypass the 5 recipe search limit by changing mood/cuisine
+  - **Root Cause**: Frontend error handlers weren't checking for feature_locked errors
+  - **Solution**: 
+    - Fixed backend to return proper JSON 403 response (was returning string)
+    - Added `handleFeatureLockedError` to all recipe fetch error handlers in ChatPage
+    - When limit reached, shows "Daily Limit Reached" modal with upgrade option
+  - **Files Modified**:
+    - `/app/backend/routes/chat.py` - Fixed 403 response format to use JSONResponse
+    - `/app/frontend/src/pages/ChatPage.js` - Added feature lock error handling to all catch blocks
+  - **Testing**: Verified 403 returns after 5 searches, modal displays correctly
+
 - **Feb 10, 2026**: P0 FIX - Feature Gating Enforcement (COMPLETE)
   - **Issue**: Free users had access to all premium features (Diabetes Module, Fridge Scanner, etc.)
   - **Root Cause**: Frontend wasn't checking feature access on page load, only on API calls
@@ -240,6 +252,7 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - Added `useFeatureAccess` hook to check subscription on page load
     - Fridge Scanner now requires Premium subscription ($9.99/mo)
     - Diabetes Module requires Chef Pro subscription ($19.99/mo)
+    - Recipe Import requires Premium subscription ($9.99/mo)
     - Feature lock modal shows upgrade prompt with plan details
     - Backend returns 403 with detailed error for locked features
   - **Files Modified**:
@@ -250,6 +263,8 @@ The monolithic server.py (3691 lines) was refactored into modular routers for be
     - `/app/frontend/src/components/FeatureGate.jsx` - Added fridge_scanner support
     - `/app/frontend/src/pages/FridgeScannerPage.js` - Added feature access check
     - `/app/frontend/src/pages/DiabetesMealsPage.js` - Added feature access check
+    - `/app/frontend/src/pages/DiabetesWeeklyPlannerPage.js` - Added feature access check
+    - `/app/frontend/src/pages/ImportRecipePage.js` - Added feature access check
   - **Testing**: Verified 403 responses and upgrade modals for free users
 
 - **Feb 10, 2026**: P0 FIX - Fridge Scanner Optimization (COMPLETE)
