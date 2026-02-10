@@ -50,7 +50,7 @@ async def scan_fridge(
     Scan a fridge photo to identify ingredients and suggest recipes.
     Accepts: JPEG, PNG, WEBP images
     """
-    if not openai_client:
+    if not EMERGENT_LLM_KEY:
         raise HTTPException(status_code=500, detail="AI service not configured")
     
     # Validate file type
@@ -66,17 +66,12 @@ async def scan_fridge(
         image_data = await file.read()
         image_base64 = base64.b64encode(image_data).decode('utf-8')
         
-        # Determine mime type
-        mime_type = file.content_type if file.content_type else "image/jpeg"
-        
-        # Call GPT-4o Vision API for ingredient detection
-        ingredient_response = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are an expert at identifying food ingredients from refrigerator photos.
-                    
+        # Create AI chat instance for ingredient detection using GPT-5.1 (vision capable)
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"fridge-scan-{current_user.id}-{datetime.utcnow().timestamp()}",
+            system_message="""You are an expert at identifying food ingredients from refrigerator photos.
+            
 When shown a fridge photo, identify ALL visible food items and ingredients.
 Be specific about what you see - don't guess if something is unclear.
 
@@ -86,54 +81,41 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 Categories: vegetable, fruit, dairy, meat, seafood, beverage, condiment, grain, snack, leftover, other
 
 Only include items you can clearly identify."""
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Please analyze this refrigerator photo and identify all visible food ingredients. List each item with its category."},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{image_base64}",
-                                "detail": "high"
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens=1000
+        ).with_model("openai", "gpt-5.1")
+        
+        # Create message with image using ImageContent
+        image_content = ImageContent(image_base64=image_base64)
+        user_message = UserMessage(
+            text="Please analyze this refrigerator photo and identify all visible food ingredients. List each item with its category.",
+            file_contents=[image_content]
         )
         
+        # Get ingredient analysis
+        ingredient_response = await chat.send_message(user_message)
+        
         # Parse ingredients from response
-        ingredient_text = ingredient_response.choices[0].message.content
-        ingredients = parse_ingredients(ingredient_text)
+        ingredients = parse_ingredients(ingredient_response)
         
-        # Now get recipe suggestions based on ingredients
-        ingredient_names = [ing["name"] for ing in ingredients]
-        
-        recipe_response = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """You are a creative chef who suggests delicious recipes based on available ingredients.
+        # Create a new chat for recipe suggestions
+        recipe_chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"recipe-suggest-{current_user.id}-{datetime.utcnow().timestamp()}",
+            system_message="""You are a creative chef who suggests delicious recipes based on available ingredients.
 
 Given a list of ingredients, suggest 3-5 recipes that can be made.
 Consider variety - include both quick meals and more elaborate options.
 
 Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 {"recipes": [{"title": "Recipe Name", "description": "Brief description", "cooking_time": "30 mins", "difficulty": "Easy", "ingredients_used": ["ingredient1", "ingredient2"], "missing_ingredients": ["optional ingredient"]}]}"""
-                },
-                {
-                    "role": "user",
-                    "content": f"I have these ingredients in my fridge: {', '.join(ingredient_names)}. Suggest 3-5 recipes I can make."
-                }
-            ],
-            max_tokens=1500
+        ).with_model("openai", "gpt-5.1")
+        
+        ingredient_names = [ing["name"] for ing in ingredients]
+        recipe_message = UserMessage(
+            text=f"I have these ingredients in my fridge: {', '.join(ingredient_names)}. Suggest 3-5 recipes I can make."
         )
         
-        recipe_text = recipe_response.choices[0].message.content
-        recipes = parse_recipes(recipe_text)
+        recipe_response = await recipe_chat.send_message(recipe_message)
+        recipes = parse_recipes(recipe_response)
         
         # Generate scan ID and save to database
         import uuid
