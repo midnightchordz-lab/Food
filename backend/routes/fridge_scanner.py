@@ -26,7 +26,7 @@ openai_client = None
 if EMERGENT_LLM_KEY:
     openai_client = OpenAI(
         api_key=EMERGENT_LLM_KEY,
-        base_url="https://llm.tnow.me/v1"
+        base_url="https://api.tnow.me/v1"
     )
 
 # Response Models
