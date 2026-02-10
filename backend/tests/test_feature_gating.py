@@ -17,7 +17,7 @@ from datetime import datetime
 # Get backend URL from environment
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://mobile-meal-prep.preview.emergentagent.com"
+    BASE_URL = "https://ingredient-ai-vision.preview.emergentagent.com"
 
 class TestSetup:
     """Setup utilities for tests"""
