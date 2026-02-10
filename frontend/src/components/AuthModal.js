@@ -65,6 +65,8 @@ const AuthModal = ({ open, onClose }) => {
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [isNewPhoneUser, setIsNewPhoneUser] = useState(false);
+  const [phoneAuthToken, setPhoneAuthToken] = useState(null);
+  const [phoneAuthUser, setPhoneAuthUser] = useState(null);
   
   // Exclusions state (for onboarding step)
   const [pendingExclusions, setPendingExclusions] = useState([]);
