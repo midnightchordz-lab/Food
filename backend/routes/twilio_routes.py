@@ -139,7 +139,7 @@ async def send_whatsapp_message(request: WhatsAppMessageRequest, current_user: d
     try:
         # WhatsApp numbers need 'whatsapp:' prefix
         whatsapp_to = f"whatsapp:{request.phone_number}"
-        whatsapp_from = f"whatsapp:{TWILIO_PHONE_NUMBER}"
+        whatsapp_from = f"whatsapp:{TWILIO_WHATSAPP_NUMBER}"
         
         message = twilio_client.messages.create(
             body=request.message,
