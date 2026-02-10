@@ -1,6 +1,6 @@
 """
 Fridge Scanner - AI-powered ingredient detection from fridge photos
-Uses GPT-4o Vision to identify ingredients and suggest recipes
+Uses GPT-5.1 Vision to identify ingredients and suggest recipes
 """
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from pydantic import BaseModel
@@ -11,23 +11,15 @@ import json
 import re
 from datetime import datetime
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
+from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from .deps import db, get_current_user, User
 
 router = APIRouter(prefix="/api/fridge-scanner", tags=["Fridge Scanner"])
 
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
-
-# Initialize OpenAI client with Emergent key
-openai_client = None
-if EMERGENT_LLM_KEY:
-    openai_client = OpenAI(
-        api_key=EMERGENT_LLM_KEY,
-        base_url="https://api.tnow.me/v1"
-    )
 
 # Response Models
 class IngredientItem(BaseModel):
