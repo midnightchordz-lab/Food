@@ -209,11 +209,37 @@ const AuthModal = ({ open, onClose }) => {
       return;
     }
     
-    // For now, just use the token we already have and update profile
-    // In a real app, you'd call an update profile endpoint
-    toast.success(`Welcome to MOOD FOOD, ${name}!`);
-    onClose();
-    resetForm();
+    setLoading(true);
+    try {
+      // Login with the stored token
+      if (phoneAuthToken && phoneAuthUser) {
+        await loginWithToken(phoneAuthToken, {
+          ...phoneAuthUser,
+          name: name.trim()
+        });
+        
+        // Update profile with name
+        try {
+          await axios.put(`${API}/auth/profile`, { name: name.trim() }, {
+            headers: { Authorization: `Bearer ${phoneAuthToken}` }
+          });
+        } catch (e) {
+          console.log('Profile update optional:', e);
+        }
+        
+        toast.success(`Welcome to MOOD FOOD, ${name}!`);
+        onClose();
+        resetForm();
+      } else {
+        toast.error('Session expired. Please try again.');
+        resetForm();
+      }
+    } catch (error) {
+      console.error('Complete registration error:', error);
+      toast.error('Failed to complete registration');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
