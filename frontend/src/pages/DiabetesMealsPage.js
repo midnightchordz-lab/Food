@@ -106,6 +106,9 @@ const DiabetesMealsPage = () => {
   const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
   
+  // Feature access check
+  const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('diabetes_module');
+  
   // Scroll to bottom
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -120,6 +123,18 @@ const DiabetesMealsPage = () => {
       scrollToBottom();
     }
   }, [messages, scrollToBottom, isInitialLoad]);
+  
+  // Show feature lock if user doesn't have access
+  useEffect(() => {
+    if (!featureLoading && !hasAccess && isAuthenticated) {
+      setFeatureLockedModal({
+        isOpen: true,
+        feature: 'diabetes_module',
+        upgradeTo: 'chef_pro_monthly',
+        currentPlan: 'free'
+      });
+    }
+  }, [hasAccess, featureLoading, isAuthenticated]);
   
   // Clear and reset chat when user changes
   useEffect(() => {
