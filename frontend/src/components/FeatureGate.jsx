@@ -70,6 +70,7 @@ const FEATURE_DISPLAY_NAMES = {
   'recipe_import': 'Recipe Import',
   'video_import': 'Video Import',
   'ai_photo_recognition': 'AI Photo Recognition',
+  'fridge_scanner': 'Fridge Scanner',
   'ai_image_generation': 'AI Image Generation',
   'voice_cooking': 'Voice-Guided Cooking',
   'export_pdf': 'PDF Export',
