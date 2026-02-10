@@ -87,6 +87,21 @@ const ImportRecipePage = () => {
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
+  // Feature access check
+  const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('recipe_import');
+  
+  // Show feature lock if user doesn't have access
+  useEffect(() => {
+    if (!featureLoading && !hasAccess && isAuthenticated) {
+      setFeatureLockedModal({
+        isOpen: true,
+        feature: 'recipe_import',
+        upgradeTo: 'premium_monthly',
+        currentPlan: 'free'
+      });
+    }
+  }, [hasAccess, featureLoading, isAuthenticated]);
+  
   // Load recent imports
   useEffect(() => {
     if (isAuthenticated) {
