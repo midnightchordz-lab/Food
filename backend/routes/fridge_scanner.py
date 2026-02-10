@@ -16,6 +16,7 @@ load_dotenv()
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from .deps import db, get_current_user, User
+from .feature_gating import FeatureGate
 
 router = APIRouter(prefix="/api/fridge-scanner", tags=["Fridge Scanner"])
 
