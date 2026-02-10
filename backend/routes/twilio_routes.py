@@ -7,7 +7,7 @@ import os
 import random
 import string
 
-from .deps import db, get_current_user
+from .deps import db, get_current_user, User
 
 router = APIRouter(prefix="/api/twilio", tags=["Twilio"])
 
