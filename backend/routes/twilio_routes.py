@@ -293,11 +293,11 @@ async def link_phone_to_account(request: SendOTPRequest, current_user: User = De
         raise HTTPException(status_code=500, detail=f"Error linking phone: {str(e)}")
 
 @router.get("/phone-status")
-async def get_phone_status(current_user: dict = Depends(get_current_user)):
+async def get_phone_status(current_user: User = Depends(get_current_user)):
     """Get user's phone verification status"""
     try:
         user = await db.users.find_one(
-            {"user_id": current_user["user_id"]},
+            {"id": current_user.id},
             {"phone_number": 1, "phone_verified": 1}
         )
         
