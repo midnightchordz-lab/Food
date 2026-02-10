@@ -180,6 +180,10 @@ const AuthModal = ({ open, onClose }) => {
       setOtpVerified(true);
       setIsNewPhoneUser(response.data.is_new_user);
       
+      // Store the token for later use
+      setPhoneAuthToken(response.data.access_token);
+      setPhoneAuthUser(response.data.user);
+      
       if (response.data.is_new_user) {
         // New user - show profile setup
         toast.success('Phone verified! Please complete your profile.');
