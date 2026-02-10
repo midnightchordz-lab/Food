@@ -504,7 +504,7 @@ const ImportRecipePage = () => {
     }
   }, [loading, isAuthenticated, navigate]);
   
-  if (loading) {
+  if (loading || featureLoading) {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center">
         <Loader2 className="animate-spin text-primary" size={32} />
@@ -519,6 +519,12 @@ const ImportRecipePage = () => {
       </div>
     );
   }
+  
+  // Feature Locked Modal Handler
+  const handleCloseFeatureLock = () => {
+    setFeatureLockedModal(prev => ({ ...prev, isOpen: false }));
+    navigate('/');
+  };
   
   // Recipe Preview Modal
   if (previewRecipe) {
