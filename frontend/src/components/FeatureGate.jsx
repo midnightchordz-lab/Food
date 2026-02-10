@@ -241,6 +241,7 @@ export const useFeatureAccess = (feature) => {
     case 'video_import':
       return { allowed: features.video_import === true, loading: false };
     case 'ai_photo_recognition':
+    case 'fridge_scanner':
       return { allowed: features.ai_photo_recognition_enabled === true, loading: false };
     case 'voice_cooking':
       return { allowed: features.voice_guided_cooking === true, loading: false };
