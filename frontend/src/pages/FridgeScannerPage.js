@@ -37,8 +37,14 @@ const FridgeScanner = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
+  const [isNative, setIsNative] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+
+  useEffect(() => {
+    // Check if running on native platform
+    setIsNative(Capacitor.isNativePlatform());
+  }, []);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -53,7 +59,42 @@ const FridgeScanner = () => {
     }
   };
 
-  const handleCameraCapture = (event) => {
+  const handleCameraCapture = async () => {
+    try {
+      if (isNative) {
+        // Use Capacitor Camera on native
+        const image = await CapCamera.getPhoto({
+          quality: 80,
+          allowEditing: false,
+          resultType: CameraResultType.Base64,
+          source: CameraSource.Camera,
+        });
+        
+        // Convert base64 to blob/file
+        const base64Response = await fetch(`data:image/jpeg;base64,${image.base64String}`);
+        const blob = await base64Response.blob();
+        const file = new File([blob], 'fridge-photo.jpg', { type: 'image/jpeg' });
+        
+        setSelectedImage(file);
+        setPreviewUrl(`data:image/jpeg;base64,${image.base64String}`);
+        setScanResult(null);
+      } else {
+        // Use file input on web
+        cameraInputRef.current?.click();
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      if (error.message?.includes('cancelled')) {
+        // User cancelled, don't show error
+      } else {
+        toast.error('Failed to access camera');
+        // Fallback to file input
+        cameraInputRef.current?.click();
+      }
+    }
+  };
+
+  const handleWebCameraCapture = (event) => {
     const file = event.target.files[0];
     if (file) {
       setSelectedImage(file);
