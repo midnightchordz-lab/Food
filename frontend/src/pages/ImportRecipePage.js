@@ -1086,16 +1086,7 @@ Instructions:
           </div>
         )}
       </div>
-      
-      {/* Feature Locked Modal */}
-      <FeatureLockedModal
-        isOpen={featureLockedModal.isOpen}
-        onClose={() => setFeatureLockedModal(prev => ({ ...prev, isOpen: false }))}
-        feature={featureLockedModal.feature}
-        upgradeTo={featureLockedModal.upgradeTo}
-        currentPlan={featureLockedModal.currentPlan}
-      />
-    </div>
+    </>
   );
 };
 
