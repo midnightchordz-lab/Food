@@ -589,26 +589,6 @@ For EACH recipe provide:
   
   // Handle cuisine selection (initial flow)
   const handleCuisineSelect = async (cuisineIds, cuisineLabels) => {
-    // Check quota BEFORE proceeding
-    try {
-      const quotaCheck = await axios.get(`${API}/subscription/check-feature/recipe_search`);
-      const { allowed, remaining, used, limit } = quotaCheck.data;
-      
-      if (!allowed || remaining === 0) {
-        setFeatureLockedModal({
-          isOpen: true,
-          feature: 'recipe_search',
-          upgradeTo: 'premium_monthly',
-          currentPlan: 'free',
-          usedLimit: used,
-          maxLimit: limit
-        });
-        return; // Don't proceed
-      }
-    } catch (quotaError) {
-      console.error('Error checking quota:', quotaError);
-    }
-    
     setSelectedCuisines(cuisineIds);
     
     const userMsg = {
