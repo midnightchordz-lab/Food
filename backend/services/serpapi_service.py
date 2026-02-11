@@ -24,52 +24,95 @@ _min_delay_seconds = 0.5  # Minimum 500ms between API calls
 def extract_actual_dish_name(creative_name: str) -> str:
     """
     Extract the actual dish name from creative AI-generated recipe titles.
+    Uses a smarter approach: identify food-related words and keep only those.
     
     Examples:
-    - "Tranquil Tofu Palak" -> "Tofu Palak" (removes "Tranquil")
-    - "Sunny Paneer Tikka Masala Delight" -> "Paneer Tikka Masala" (removes "Sunny" and "Delight")
-    - "Happy Hour Vegetable Biryani" -> "Vegetable Biryani"
-    - "Seaside Shrimp Revuelto" -> "Shrimp Revuelto"
-    - "Happy Mussalana Prawn Poha" -> "Prawn Poha"
-    - "Paneer Tikka" -> "Paneer Tikka" (already good)
+    - "Tranquil Tofu Palak" -> "Tofu Palak"
+    - "Lively Paneer Jalfrezi" -> "Paneer Jalfrezi"
+    - "Morning Delight Shrimp Congee" -> "Shrimp Congee"
     """
     if not creative_name:
         return creative_name
     
-    # Common creative adjectives/prefixes to remove (can appear multiple times)
-    creative_words = r'(tranquil|peaceful|serene|calm|blissful|happy|joyful|sunny|radiant|golden|cozy|warm|hearty|vibrant|colorful|delightful|wonderful|amazing|incredible|fantastic|ultimate|perfect|best|great|lovely|beautiful|gorgeous|stunning|elegant|simple|easy|quick|super|mega|ultra|royal|classic|traditional|authentic|homestyle|homemade|grandma\'?s?|mom\'?s?|chef\'?s?|secret|special|famous|legendary|divine|heavenly|dreamy|magical|enchanted|mystical|seaside|coastal|ocean|beachside|tropical|island|garden|forest|countryside|rustic|modern|fusion|artisan|gourmet|decadent|luxurious|comforting|soothing|refreshing|energizing|wholesome|mussalana|sensational|morning|evening|afternoon|delight|bliss|heaven|wonder|joy|love|special|midnight|sunrise|sunset|exquisite|savory|aromatic|zesty|tangy|spicy|mild|rich|creamy|crispy|crunchy|tender|succulent|luscious|mouthwatering|tasty|yummy|scrumptious|delectable|sumptuous|appetizing|flavorful|fragrant|lively|cheery|breezy|zesty|perky|peppy|bubbly|sparkly|glowing|bright|fresh|light|airy|gentle|soft|smooth|silky|velvety|buttery|nutty|earthy|rustic|homey|cozy|snug|toasty|steamy|sizzling|piping|bubbling|crackling|crispy|crunchy|chewy|gooey|melty|oozy|drippy|saucy|tangy|zingy|punchy|bold|robust|hearty|filling|satisfying|comforting|nourishing|wholesome|healthy|nutritious|balanced|complete|perfect|ideal|ultimate|supreme|premier|prime|top|best|finest|choice|select|premium|gourmet|artisan|handcrafted|homemade|traditional|classic|authentic|genuine|real|true|pure|natural|organic|fresh|local|seasonal|farm|garden|orchard|meadow|forest|mountain|river|ocean|sea|beach|coastal|tropical|exotic|mediterranean|asian|indian|mexican|italian|french|spanish|greek|middle|eastern|african|caribbean|latin|south|north|east|west|central|southern|northern|eastern|western)'
+    # Known food words - proteins, dishes, cooking styles, ingredients
+    food_words = {
+        # Proteins
+        'chicken', 'beef', 'pork', 'lamb', 'mutton', 'goat', 'fish', 'salmon', 'tuna', 'cod', 'tilapia',
+        'shrimp', 'prawn', 'prawns', 'lobster', 'crab', 'scallop', 'clam', 'mussel', 'oyster', 'squid', 'octopus',
+        'tofu', 'tempeh', 'seitan', 'paneer', 'egg', 'eggs', 'duck', 'turkey', 'quail', 'venison',
+        'keema', 'kheema', 'mince', 'ground',
+        # Grains/Carbs
+        'rice', 'pasta', 'noodle', 'noodles', 'bread', 'roti', 'naan', 'paratha', 'dosa', 'idli', 'uttapam',
+        'quinoa', 'couscous', 'bulgur', 'barley', 'oats', 'poha', 'upma', 'congee', 'porridge', 'risotto',
+        'spaghetti', 'penne', 'linguine', 'fettuccine', 'ravioli', 'lasagna', 'gnocchi', 'udon', 'ramen', 'soba',
+        # Dishes
+        'curry', 'korma', 'masala', 'tikka', 'tandoori', 'biryani', 'pulao', 'pilaf', 'khichdi', 'dal', 'daal',
+        'sambar', 'rasam', 'chutney', 'pickle', 'achaar', 'raita', 'kebab', 'kabab', 'seekh', 'kofta',
+        'jalfrezi', 'vindaloo', 'madras', 'rogan', 'josh', 'saag', 'palak', 'bhaji', 'pakora', 'samosa',
+        'stir-fry', 'stirfry', 'fried', 'grilled', 'roasted', 'baked', 'steamed', 'braised', 'sauteed',
+        'soup', 'stew', 'chowder', 'bisque', 'broth', 'stock',
+        'salad', 'slaw', 'wrap', 'roll', 'bowl', 'plate',
+        'tacos', 'burrito', 'enchilada', 'quesadilla', 'nachos', 'fajita', 'tamale',
+        'sushi', 'sashimi', 'maki', 'temaki', 'nigiri', 'teriyaki', 'tempura', 'katsu', 'ramen', 'udon',
+        'pad', 'thai', 'tom', 'yum', 'green', 'red', 'massaman', 'panang',
+        'pho', 'banh', 'mi', 'spring', 'summer', 'winter',
+        'paella', 'tapas', 'gazpacho', 'tortilla', 'empanada',
+        'moussaka', 'souvlaki', 'gyro', 'falafel', 'hummus', 'shawarma', 'kebap',
+        'schnitzel', 'goulash', 'stroganoff', 'pierogi', 'borscht',
+        'carbonara', 'bolognese', 'alfredo', 'pesto', 'marinara', 'primavera', 'piccata', 'marsala',
+        'cassoulet', 'ratatouille', 'bouillabaisse', 'coq', 'vin', 'bourguignon',
+        'tagine', 'couscous', 'harira', 'bastilla',
+        'jerk', 'callaloo', 'ackee', 'saltfish',
+        'adobo', 'sinigang', 'kare', 'lumpia', 'pancit',
+        'rendang', 'satay', 'nasi', 'goreng', 'mie', 'laksa', 'rojak',
+        # Vegetables
+        'vegetable', 'vegetables', 'veggie', 'veggies', 'veg',
+        'potato', 'potatoes', 'aloo', 'sweet', 'yam',
+        'tomato', 'onion', 'garlic', 'ginger', 'pepper', 'chili', 'chilli',
+        'spinach', 'kale', 'lettuce', 'cabbage', 'broccoli', 'cauliflower', 'carrot', 'beans', 'peas',
+        'mushroom', 'mushrooms', 'eggplant', 'aubergine', 'zucchini', 'squash', 'pumpkin',
+        'corn', 'maize', 'okra', 'bhindi', 'ladyfinger',
+        'mango', 'coconut', 'banana', 'plantain', 'jackfruit', 'papaya', 'pineapple',
+        'lemon', 'lime', 'orange', 'mint', 'cilantro', 'coriander', 'basil', 'parsley', 'thyme', 'oregano',
+        # Dairy
+        'cheese', 'cream', 'milk', 'butter', 'yogurt', 'curd', 'ghee',
+        'mozzarella', 'parmesan', 'cheddar', 'feta', 'ricotta', 'brie', 'gouda',
+        # Descriptive food words (keep these)
+        'spicy', 'hot', 'mild', 'sweet', 'sour', 'tangy', 'savory', 'smoky', 'bbq', 'barbecue',
+        'crispy', 'crunchy', 'creamy', 'buttery', 'cheesy',
+        'stuffed', 'filled', 'topped', 'glazed', 'marinated', 'seasoned',
+        'breakfast', 'lunch', 'dinner', 'brunch', 'snack', 'appetizer', 'dessert', 'side',
+    }
     
-    remove_prefixes = [
-        rf'^{creative_words}\s+',
-    ]
+    words = creative_name.split()
+    food_related_words = []
     
-    # Common creative suffixes to remove
-    remove_suffixes = [
-        r'\s+(delight|bliss|heaven|dream|magic|wonder|joy|love|special|supreme|royale|supreme|deluxe|premium|gourmet|style|twist|remix|fusion|explosion|extravaganza|fiesta|celebration|party|bowl|plate|platter|medley|symphony|harmony|sensation|paradise|escape|adventure|journey|experience)$',
-    ]
+    for word in words:
+        word_lower = word.lower().strip('.,!?()[]{}')
+        # Check if this word or its root is food-related
+        if word_lower in food_words or any(fw in word_lower for fw in food_words if len(fw) > 3):
+            food_related_words.append(word)
     
-    result = creative_name
+    if food_related_words:
+        result = ' '.join(food_related_words)
+        # Clean up
+        result = re.sub(r'\s*\([^)]+\)\s*', ' ', result)
+        result = ' '.join(result.split())
+        if len(result) >= 3:
+            return result
     
-    # Remove prefixes (may need multiple passes for stacked adjectives like "Happy Mussalana")
-    for _ in range(3):  # Up to 3 creative words at start
-        for pattern in remove_prefixes:
-            result = re.sub(pattern, '', result, flags=re.IGNORECASE)
+    # Fallback: remove common first word if it's clearly decorative
+    simple_decorative = ['the', 'a', 'an', 'my', 'our', 'your', 'this', 'that', 
+                         'happy', 'sunny', 'cozy', 'warm', 'fresh', 'tasty', 'yummy',
+                         'delicious', 'amazing', 'wonderful', 'perfect', 'best',
+                         'morning', 'evening', 'night', 'sunrise', 'sunset',
+                         'lively', 'cheery', 'breezy', 'peaceful', 'tranquil', 'serene',
+                         'vibrant', 'colorful', 'golden', 'bright', 'light']
     
-    # Remove suffixes
-    for pattern in remove_suffixes:
-        result = re.sub(pattern, '', result, flags=re.IGNORECASE)
+    if len(words) > 1 and words[0].lower() in simple_decorative:
+        return ' '.join(words[1:])
     
-    # Remove parentheses and their contents (often cooking time)
-    result = re.sub(r'\s*\([^)]+\)\s*', ' ', result)
-    
-    # Clean up extra whitespace
-    result = ' '.join(result.split())
-    
-    # If we removed everything, return original
-    if not result or len(result) < 3:
-        return creative_name
-    
-    return result
+    return creative_name
 
 
 async def _rate_limited_request(client: httpx.AsyncClient, url: str, params: dict) -> httpx.Response:
