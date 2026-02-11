@@ -1083,26 +1083,29 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                     <p className="text-sm text-muted-foreground mb-1">Rate this recipe</p>
                     <StarRating rating={userRating} onRate={setUserRating} />
                   </div>
-                  <Button 
-                    onClick={handleAddAllIngredients}
-                    variant="outline"
-                    data-testid="add-all-ingredients-btn"
-                  >
-                    <ShoppingCart size={16} className="mr-2" />
-                    Add to List
-                  </Button>
                 </div>
                 
-                {/* Buy Ingredients Button */}
+                {/* Single Buy Ingredients Button - Opens Smart Shopping Sheet */}
                 {parsedRecipe?.ingredients && parsedRecipe.ingredients.length > 0 && (
-                  <BuyIngredientsButton 
-                    ingredients={parsedRecipe.ingredients}
-                    recipeName={displayTitle}
-                    location="USA"
-                  />
+                  <Button 
+                    onClick={() => setIsBuySheetOpen(true)}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    data-testid="buy-ingredients-btn"
+                  >
+                    <ShoppingCart size={16} className="mr-2" />
+                    Buy Ingredients
+                  </Button>
                 )}
               </div>
             </div>
+            
+            {/* Buy Ingredients Sheet */}
+            <BuyIngredientsSheet
+              isOpen={isBuySheetOpen}
+              onClose={() => setIsBuySheetOpen(false)}
+              ingredients={parsedRecipe?.ingredients || []}
+              recipeName={displayTitle}
+            />
           </>
         )}
       </DialogContent>
