@@ -335,7 +335,39 @@ const ShoppingListPage = () => {
     });
     
     await navigator.clipboard.writeText(text);
+    hapticFeedback('light');
     toast.success('List copied to clipboard!');
+  };
+
+  // Share list (native on mobile, clipboard on web)
+  const shareList = async () => {
+    if (!activeList?.items?.length) return;
+    
+    let text = `🛒 ${activeList.name}\n\n`;
+    const organized = getItemsByCategory();
+    
+    Object.entries(organized).forEach(([category, items]) => {
+      text += `${CATEGORY_LABELS[category] || category}\n`;
+      items.forEach(item => {
+        const checkbox = item.checked ? '☑' : '☐';
+        text += `  ${checkbox} ${item.name}\n`;
+      });
+      text += '\n';
+    });
+    
+    if (isNative) {
+      try {
+        await nativeShare(activeList.name, text, '');
+        hapticFeedback('medium');
+      } catch (error) {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(text);
+        toast.success('List copied to clipboard!');
+      }
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast.success('List copied to clipboard!');
+    }
   };
 
   // Download list
@@ -362,6 +394,7 @@ const ShoppingListPage = () => {
     a.download = `${activeList.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.txt`;
     a.click();
     URL.revokeObjectURL(url);
+    hapticFeedback('light');
     toast.success('List downloaded!');
   };
 
