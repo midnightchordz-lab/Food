@@ -668,11 +668,12 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
     MATCHING PRIORITY:
     1. Exact recipe name match
     2. Specific dish names (yakitori, ramen, biryani, etc.)
-    3. High-priority proteins (salmon, tuna, shrimp) - before cooking styles
-    4. Multi-word matches in database
-    5. Generic ingredients (chicken, beef, etc.)
-    6. Cuisine fallback
-    7. Generic food image
+    3. Dish type combinations (prawn + curry = prawn curry, not raw prawn)
+    4. High-priority proteins (salmon, tuna, shrimp) - before cooking styles
+    5. Multi-word matches in database
+    6. Generic ingredients (chicken, beef, etc.)
+    7. Cuisine fallback
+    8. Generic food image
     """
     # Normalize recipe name for lookup
     name_lower = recipe_name.lower().strip()
@@ -701,13 +702,45 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
                 if two_word in key:
                     return url
     
+    # STEP 2.5: Check for DISH TYPE COMBINATIONS
+    # If recipe has both a protein AND a dish type (curry, stew, etc.), 
+    # prioritize the dish type to show cooked food, not raw ingredients
+    dish_types = {'curry', 'stew', 'soup', 'stir fry', 'stir-fry', 'roast', 'baked', 
+                  'grilled', 'fried', 'braised', 'salad', 'bowl', 'wrap', 'sandwich'}
+    proteins = {'prawn', 'prawns', 'shrimp', 'chicken', 'beef', 'pork', 'lamb', 
+                'fish', 'salmon', 'tuna', 'cod', 'duck', 'turkey', 'tofu'}
+    
+    has_dish_type = None
+    has_protein = None
+    
+    for word in words:
+        if word in dish_types:
+            has_dish_type = word
+        if word in proteins:
+            has_protein = word
+    
+    # If we have both protein + dish type, try to find that combination
+    if has_protein and has_dish_type:
+        combo_searches = [
+            f"{has_protein} {has_dish_type}",
+            f"{has_dish_type}",  # Fallback to dish type (curry image is better than raw prawn)
+        ]
+        for combo in combo_searches:
+            if combo in FOOD_IMAGES:
+                return FOOD_IMAGES[combo]
+            for key, url in FOOD_IMAGES.items():
+                if combo in key:
+                    return url
+    
     # STEP 3: Check for HIGH PRIORITY PROTEINS (salmon, tuna, etc.)
     # These should match BEFORE cooking styles like teriyaki
-    for word in words:
-        if word in HIGH_PRIORITY_PROTEINS:
-            for key, url in FOOD_IMAGES.items():
-                if word in key.split():
-                    return url
+    # But only if there's no dish type that would indicate it's a cooked dish
+    if not has_dish_type:
+        for word in words:
+            if word in HIGH_PRIORITY_PROTEINS:
+                for key, url in FOOD_IMAGES.items():
+                    if word in key.split():
+                        return url
     
     # STEP 4: Try matching multi-word dish names from database
     # But SKIP if it's just a cooking style
