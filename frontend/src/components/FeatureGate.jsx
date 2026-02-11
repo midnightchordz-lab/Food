@@ -258,8 +258,12 @@ export const useFeatureAccess = (feature) => {
  * Handle API errors that are feature-locked
  */
 export const handleFeatureLockedError = (error, setModalState) => {
-  if (error.response?.status === 403) {
+  console.log('handleFeatureLockedError called with:', error?.response?.status, error?.response?.data);
+  
+  // Check for 403 status
+  if (error.response?.status === 403 || error.response?.status === 520) {
     const detail = error.response.data?.detail;
+    console.log('Feature lock detail:', detail);
     
     // Check if it's a feature_locked error
     if (detail?.error === 'feature_locked' || (typeof detail === 'string' && detail.includes('feature_locked'))) {
@@ -277,7 +281,7 @@ export const handleFeatureLockedError = (error, setModalState) => {
       
       setModalState({
         isOpen: true,
-        feature: errorData.feature || 'unknown',
+        feature: errorData.feature || 'recipe_search',
         upgradeTo: errorData.upgrade_to || 'premium_monthly',
         currentPlan: errorData.current_plan || 'free',
         usedLimit: errorData.used,
@@ -286,6 +290,20 @@ export const handleFeatureLockedError = (error, setModalState) => {
       
       return true; // Error was handled
     }
+  }
+  
+  // Also check for the error in the response data itself (in case status is 200 but contains error)
+  if (error.response?.data?.detail?.error === 'feature_locked') {
+    const errorData = error.response.data.detail;
+    setModalState({
+      isOpen: true,
+      feature: errorData.feature || 'recipe_search',
+      upgradeTo: errorData.upgrade_to || 'premium_monthly',
+      currentPlan: errorData.current_plan || 'free',
+      usedLimit: errorData.used,
+      maxLimit: errorData.limit
+    });
+    return true;
   }
   
   return false; // Error was not a feature lock
