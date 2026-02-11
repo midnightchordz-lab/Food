@@ -6,6 +6,7 @@ This is the main application entry point that imports and includes all modular r
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from pathlib import Path
@@ -103,3 +104,8 @@ async def shutdown_db_client():
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "version": "2.0.0"}
+
+# Mount static files for audio cache
+audio_cache_dir = Path("/app/uploads/audio-cache")
+audio_cache_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads/audio-cache", StaticFiles(directory=str(audio_cache_dir)), name="audio-cache")
