@@ -987,6 +987,11 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                     # LIMIT to quota - only return allowed number of recipes
                     cached_structured_recipes = all_cached_recipes[:recipes_to_generate]
                     logging.info(f"Returning {len(cached_structured_recipes)} recipes from cache (quota: {recipes_to_generate})")
+                    
+                    # INCREMENT USAGE COUNTER for cached responses too
+                    if cached_structured_recipes and len(cached_structured_recipes) > 0:
+                        await increment_recipe_count(current_user.id, len(cached_structured_recipes))
+                        logging.info(f"Incremented recipe count for cached response by {len(cached_structured_recipes)}")
                 except Exception as parse_error:
                     logging.error(f"Recipe parsing error (cached): {parse_error}")
                 
