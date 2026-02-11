@@ -29,6 +29,7 @@ def extract_actual_dish_name(creative_name: str) -> str:
     - "Tranquil Tofu Palak" -> "Tofu Palak" (removes "Tranquil")
     - "Sunny Paneer Tikka Masala Delight" -> "Paneer Tikka Masala" (removes "Sunny" and "Delight")
     - "Happy Hour Vegetable Biryani" -> "Vegetable Biryani"
+    - "Seaside Shrimp Revuelto" -> "Shrimp Revuelto"
     - "Paneer Tikka" -> "Paneer Tikka" (already good)
     """
     if not creative_name:
@@ -36,12 +37,12 @@ def extract_actual_dish_name(creative_name: str) -> str:
     
     # Common creative adjectives/prefixes to remove
     remove_prefixes = [
-        r'^(tranquil|peaceful|serene|calm|blissful|happy|joyful|sunny|radiant|golden|cozy|warm|hearty|vibrant|colorful|delightful|wonderful|amazing|incredible|fantastic|ultimate|perfect|best|great|lovely|beautiful|gorgeous|stunning|elegant|simple|easy|quick|super|mega|ultra|royal|classic|traditional|authentic|homestyle|homemade|grandma\'?s?|mom\'?s?|chef\'?s?|secret|special|famous|legendary|divine|heavenly|dreamy|magical|enchanted|mystical)\s+',
+        r'^(tranquil|peaceful|serene|calm|blissful|happy|joyful|sunny|radiant|golden|cozy|warm|hearty|vibrant|colorful|delightful|wonderful|amazing|incredible|fantastic|ultimate|perfect|best|great|lovely|beautiful|gorgeous|stunning|elegant|simple|easy|quick|super|mega|ultra|royal|classic|traditional|authentic|homestyle|homemade|grandma\'?s?|mom\'?s?|chef\'?s?|secret|special|famous|legendary|divine|heavenly|dreamy|magical|enchanted|mystical|seaside|coastal|ocean|beachside|tropical|island|garden|forest|countryside|rustic|modern|fusion|artisan|gourmet|decadent|luxurious|comforting|soothing|refreshing|energizing|wholesome)\s+',
     ]
     
     # Common creative suffixes to remove
     remove_suffixes = [
-        r'\s+(delight|bliss|heaven|dream|magic|wonder|joy|love|special|supreme|royale|supreme|deluxe|premium|gourmet|style|twist|remix|fusion|explosion|extravaganza|fiesta|celebration|party|bowl|plate|platter)$',
+        r'\s+(delight|bliss|heaven|dream|magic|wonder|joy|love|special|supreme|royale|supreme|deluxe|premium|gourmet|style|twist|remix|fusion|explosion|extravaganza|fiesta|celebration|party|bowl|plate|platter|medley|symphony|harmony|sensation|paradise|escape|adventure|journey|experience)$',
     ]
     
     result = creative_name
