@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useShoppingCart } from '@/context/ShoppingCartContext';
-import { BuyIngredientsButton } from './ShoppingWidget';
+import BuyIngredientsSheet from './BuyIngredientsSheet';
 import RecipeVoicePlayer from './RecipeVoicePlayer';
 import CookingModePlayer from './CookingModePlayer';
 import axios from 'axios';
