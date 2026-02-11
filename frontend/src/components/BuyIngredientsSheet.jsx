@@ -89,8 +89,29 @@ const BuyIngredientsSheet = ({
       setStep('select');
       setPriceEstimate(null);
       fetchDeliveryApps();
+      fetchShoppingLists();
     }
   }, [isOpen, ingredients]);
+
+  // Fetch user's shopping lists
+  const fetchShoppingLists = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/shopping/lists`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setShoppingLists(response.data.lists || []);
+        // Auto-select first list if available
+        if (response.data.lists?.length > 0 && !selectedListId) {
+          setSelectedListId(response.data.lists[0].list_id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch shopping lists:', error);
+    }
+  };
 
   // Get browser timezone-based country hint
   const getBrowserCountryHint = () => {
