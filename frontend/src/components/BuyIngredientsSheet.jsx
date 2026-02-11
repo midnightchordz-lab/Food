@@ -711,6 +711,9 @@ const BuyIngredientsSheet = ({
               <FolderOpen size={20} className="text-primary" />
               Save to Shopping List
             </DialogTitle>
+            <DialogDescription>
+              Select an existing list or create a new one
+            </DialogDescription>
           </DialogHeader>
           
           <div className="py-4 space-y-4">
