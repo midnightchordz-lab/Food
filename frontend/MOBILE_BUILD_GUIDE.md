@@ -127,7 +127,7 @@ Configured in `capacitor.config.json`:
 ### API URL
 The app connects to the backend at:
 - **Production**: Set in `.env` file
-- **Current**: `https://ingredient-ai-vision.preview.emergentagent.com`
+- **Current**: `https://usage-limit-fix.preview.emergentagent.com`
 
 For production, update `frontend/.env`:
 ```
