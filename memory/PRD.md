@@ -174,6 +174,14 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 11, 2026)
 
+### Multiple Shopping Lists Feature ✅ NEW
+1. ✅ Full CRUD API for shopping lists (33/33 tests passed)
+2. ✅ Multiple lists per user (create, rename, delete, clear)
+3. ✅ ShoppingListPage with sidebar navigation
+4. ✅ BuyIngredientsSheet list selector integration
+5. ✅ Copy/Download list functionality
+6. ✅ Toggle checked items, categorized view
+
 ### Smart Shopping Flow Complete ✅
 1. ✅ Backend APIs implemented (23/23 tests passed)
 2. ✅ Regional delivery app configuration for 7 countries
