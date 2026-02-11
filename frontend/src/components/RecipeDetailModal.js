@@ -595,28 +595,28 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
             </div>
             
             {/* Recipe Info Bar */}
-            <div className="px-6 py-4 bg-muted/30 border-b flex flex-wrap items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-6 text-sm">
+            <div className="px-4 sm:px-6 py-4 bg-muted/30 border-b flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm">
                 <div className="flex items-center gap-2">
-                  <Clock size={18} className="text-primary" />
-                  <span><strong>Total:</strong> {info.totalTime || recipe.cookingTime || '30 min'}</span>
+                  <Clock size={18} className="text-primary flex-shrink-0" />
+                  <span className="whitespace-nowrap"><strong>Total:</strong> {info.totalTime || recipe.cookingTime || '30 min'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Timer size={18} className="text-orange-500" />
-                  <span><strong>Prep:</strong> {info.prepTime || '10 min'}</span>
+                  <Timer size={18} className="text-orange-500 flex-shrink-0" />
+                  <span className="whitespace-nowrap"><strong>Prep:</strong> {info.prepTime || '10 min'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Flame size={18} className="text-red-500" />
-                  <span><strong>Cook:</strong> {info.cookTime || '20 min'}</span>
+                  <Flame size={18} className="text-red-500 flex-shrink-0" />
+                  <span className="whitespace-nowrap"><strong>Cook:</strong> {info.cookTime || '20 min'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users size={18} className="text-blue-500" />
-                  <span><strong>Serves:</strong> {info.servings || '4'}</span>
+                  <Users size={18} className="text-blue-500 flex-shrink-0" />
+                  <span className="whitespace-nowrap"><strong>Serves:</strong> {info.servings || '4'}</span>
                 </div>
                 <DifficultyBadge difficulty={info.difficulty || recipe.difficulty || 'Medium'} />
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={handlePrint}>
                   <Printer size={16} className="mr-1" /> Print
                 </Button>
@@ -636,15 +636,15 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
             
             {/* Description */}
             {parsedRecipe?.description && (
-              <div className="px-6 py-4 border-b">
-                <p className="text-muted-foreground leading-relaxed">
+              <div className="px-4 sm:px-6 py-4 border-b">
+                <p className="text-muted-foreground leading-relaxed break-words">
                   {parsedRecipe.description}
                 </p>
               </div>
             )}
             
             {/* Main Content Tabs */}
-            <div className="px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm">
+            <div className="px-4 sm:px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm">
               <div className="flex gap-1 overflow-x-auto">
                 {['instructions', 'ingredients', 'drinks', 'tips', 'nutrition', 'storage'].map((tab) => (
                   <Button
