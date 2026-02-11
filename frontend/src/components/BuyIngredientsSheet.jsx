@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { hapticFeedback } from '../capacitor';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
