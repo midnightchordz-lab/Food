@@ -887,15 +887,23 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
         
         # Identify main protein/ingredient for better image matching
         proteins = ['shrimp', 'chicken', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'lamb', 
-                   'tofu', 'paneer', 'prawns', 'lobster', 'crab', 'duck', 'turkey']
+                   'tofu', 'paneer', 'prawns', 'lobster', 'crab', 'duck', 'turkey', 'scallop',
+                   'mushroom', 'vegetable', 'egg', 'pasta', 'rice', 'noodle']
         main_protein = None
         for protein in proteins:
             if protein.lower() in actual_dish.lower():
                 main_protein = protein
                 break
         
+        # Words that might cause wrong image matches (cooking styles that have their own imagery)
+        confusing_terms = ['revuelto', 'scramble', 'stir-fry', 'casserole', 'stew', 'soup', 'curry']
+        has_confusing_term = any(term in actual_dish.lower() for term in confusing_terms)
+        
         # Build search query optimized for food images
-        if main_protein:
+        if main_protein and has_confusing_term:
+            # When there's a confusing cooking term, focus on the protein
+            search_query = f"{main_protein} dish plated"
+        elif main_protein:
             # Put protein first for better image matching
             search_query = f"{main_protein} {actual_dish} dish"
         else:
@@ -905,7 +913,7 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
             search_query = f"{search_query} {cuisine}"
         
         # Add quality modifiers
-        search_query += " recipe photo plated"
+        search_query += " recipe photo"
         
         logging.info(f"Image search: '{dish_name}' -> '{search_query}'")
         
