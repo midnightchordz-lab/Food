@@ -686,8 +686,10 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
     words = name_lower.replace('-', ' ').split()
     
     # STEP 2: Look for SPECIFIC DISH NAMES first (yakitori, biryani, ramen, etc.)
+    # But be careful: if the word is also a dish type (curry, stew), skip to step 2.5
+    dish_type_words = {'curry', 'stew', 'soup', 'salad', 'bowl'}
     for word in words:
-        if word in SPECIFIC_DISHES:
+        if word in SPECIFIC_DISHES and word not in dish_type_words:
             for key, url in FOOD_IMAGES.items():
                 if word in key.split() or word == key:
                     return url
