@@ -959,6 +959,9 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
     <>
       <div className="min-h-screen pt-20 pb-6 px-4 sm:px-6 lg:px-8" data-testid="chat-page">
         <div className="max-w-4xl mx-auto">
+          {/* Usage Limit Banner for Free Users */}
+          {isFreeTier && <UsageLimitBanner type="recipes" />}
+          
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
