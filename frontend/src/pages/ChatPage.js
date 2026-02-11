@@ -370,7 +370,13 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
     } catch (error) {
       console.error('Error fetching recipes:', error);
       
-      // Check if it's a feature lock error (search limit reached)
+      // Check if it's a usage limit error using the new hook
+      if (handleLimitError(error)) {
+        setMessages(prev => prev.filter(m => !m.isLoading));
+        return;
+      }
+      
+      // Fallback to old feature lock error handling
       if (handleFeatureLockedError(error, setFeatureLockedModal)) {
         setMessages(prev => prev.filter(m => !m.isLoading));
       } else {
