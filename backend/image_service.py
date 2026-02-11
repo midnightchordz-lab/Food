@@ -721,16 +721,19 @@ def get_food_image(recipe_name: str, cuisine: str = None) -> str:
     
     # If we have both protein + dish type, try to find that combination
     if has_protein and has_dish_type:
-        combo_searches = [
-            f"{has_protein} {has_dish_type}",
-            f"{has_dish_type}",  # Fallback to dish type (curry image is better than raw prawn)
-        ]
-        for combo in combo_searches:
-            if combo in FOOD_IMAGES:
-                return FOOD_IMAGES[combo]
-            for key, url in FOOD_IMAGES.items():
-                if combo in key:
-                    return url
+        # First try exact combo match
+        combo = f"{has_protein} {has_dish_type}"
+        if combo in FOOD_IMAGES:
+            return FOOD_IMAGES[combo]
+        
+        # Try with 's' suffix for plurals (prawn/prawns)
+        combo_plural = f"{has_protein}s {has_dish_type}"
+        if combo_plural in FOOD_IMAGES:
+            return FOOD_IMAGES[combo_plural]
+        
+        # Fallback to just the dish type (a curry image is better than raw prawn)
+        if has_dish_type in FOOD_IMAGES:
+            return FOOD_IMAGES[has_dish_type]
     
     # STEP 3: Check for HIGH PRIORITY PROTEINS (salmon, tuna, etc.)
     # These should match BEFORE cooking styles like teriyaki
