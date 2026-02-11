@@ -23,7 +23,6 @@ from .exclusions import (
 )
 
 # Import the new usage limit service
-import sys
 sys.path.insert(0, '/app/backend')
 from services.usage_limit_service import (
     check_recipe_limit,
