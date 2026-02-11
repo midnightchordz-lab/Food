@@ -2,11 +2,13 @@
 Audio Routes - ElevenLabs TTS endpoints for recipe narration
 """
 from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from pydantic import BaseModel
 from typing import Optional, List
+from pathlib import Path
 import logging
 import os
+import aiofiles
 
 from .deps import db, User, get_current_user
 from services.elevenlabs_service import elevenlabs_service
