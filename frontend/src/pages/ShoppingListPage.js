@@ -698,6 +698,9 @@ const ShoppingListPage = () => {
               <ListPlus size={20} className="text-primary" />
               Create New List
             </DialogTitle>
+            <DialogDescription>
+              Enter a name for your new shopping list
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input
