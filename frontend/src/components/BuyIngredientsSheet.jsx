@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   ShoppingCart, Check, MapPin, ExternalLink, Loader2, 
   BookmarkPlus, ChevronRight, Store, Clock, Globe, DollarSign,
-  TrendingDown
+  TrendingDown, ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,12 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -21,6 +27,17 @@ const API = process.env.REACT_APP_BACKEND_URL + '/api';
 const CURRENCY_SYMBOLS = {
   'USD': '$', 'INR': '₹', 'GBP': '£', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$', 'SGD': 'S$', 'AED': 'AED '
 };
+
+// Available countries for manual selection
+const AVAILABLE_COUNTRIES = [
+  { code: 'IN', name: 'India', flag: '🇮🇳' },
+  { code: 'US', name: 'USA', flag: '🇺🇸' },
+  { code: 'GB', name: 'UK', flag: '🇬🇧' },
+  { code: 'AE', name: 'UAE', flag: '🇦🇪' },
+  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+];
 
 /**
  * BuyIngredientsSheet - Smart Shopping Flow Component
