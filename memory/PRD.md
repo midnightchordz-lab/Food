@@ -72,6 +72,7 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - **Regional Delivery Apps**: Auto-detects user's country and shows relevant delivery apps
 - **Direct Deep Links**: Opens delivery app with ingredients pre-filled in search
 - **Save to Shopping List**: Persist ingredients to MongoDB for later
+- **Price Comparison** ✅ NEW: Shows estimated total price range before clicking through to delivery apps
 
 #### Supported Regions & Apps
 | Country | Delivery Apps |
@@ -90,6 +91,7 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - `POST /api/shopping/list/add` - Save ingredients to shopping list
 - `GET /api/shopping/list` - Get user's shopping list
 - `POST /api/shopping/set-country` - Set preferred country
+- `POST /api/shopping/price-estimate` - Get estimated prices via SerpAPI
 
 #### Files
 - `backend/config/delivery_apps.py` - Regional app configuration
