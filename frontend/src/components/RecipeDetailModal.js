@@ -375,6 +375,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   const [activeSection, setActiveSection] = useState('instructions');
   const [aiImageUrl, setAiImageUrl] = useState(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [showCookingMode, setShowCookingMode] = useState(false);
+  const [selectedVoiceLanguage, setSelectedVoiceLanguage] = useState('en');
   
   const shoppingCart = useShoppingCart();
   
