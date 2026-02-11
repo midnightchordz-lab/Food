@@ -3,11 +3,12 @@
  * ElevenLabs TTS with language selector
  * Works on Web, iOS (Capacitor), and Android (Capacitor)
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Volume2, VolumeX, Play, Pause, Loader2, Globe, Lock, Crown, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuth } from '../context/AuthContext';
+import { isNative, platform, hapticFeedback } from '../capacitor';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -121,7 +122,12 @@ const RecipeVoicePlayer = ({ recipe, isPremiumUser = false }) => {
     generateAudio(langCode);
   };
 
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
+    // Haptic feedback on mobile
+    if (isNative) {
+      hapticFeedback('light');
+    }
+    
     if (!audioUrl) {
       generateAudio(selectedLanguage);
       return;
@@ -132,8 +138,16 @@ const RecipeVoicePlayer = ({ recipe, isPremiumUser = false }) => {
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current.play().catch(e => console.error('Play failed:', e));
-        setIsPlaying(true);
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+        } catch (e) {
+          console.error('Play failed:', e);
+          // On iOS, user interaction is required - try regenerating
+          if (platform === 'ios') {
+            generateAudio(selectedLanguage);
+          }
+        }
       }
     }
   };
