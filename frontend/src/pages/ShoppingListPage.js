@@ -424,7 +424,7 @@ const ShoppingListPage = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8" data-testid="shopping-list-page">
+    <div className="min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8 safe-area-inset-bottom" data-testid="shopping-list-page">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start gap-4">
