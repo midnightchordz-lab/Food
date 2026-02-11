@@ -77,6 +77,14 @@ const ChatPage = () => {
   const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
   
+  // Usage limit hook for recipe quota tracking
+  const { 
+    canGenerateRecipes, 
+    handleLimitError, 
+    refreshUsage,
+    isFreeTier 
+  } = useUsageLimit();
+  
   // Scroll to bottom when messages change
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
