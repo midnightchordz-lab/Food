@@ -904,7 +904,7 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
         has_confusing_term = any(term in actual_dish.lower() for term in confusing_terms)
         
         # Indian/Asian dishes where the dish type matters more than the protein
-        dish_type_priority = ['poha', 'biryani', 'pulao', 'pilaf', 'fried rice', 'noodles', 
+        dish_type_priority = ['congee', 'porridge', 'poha', 'biryani', 'pulao', 'pilaf', 'fried rice', 'noodles', 
                              'pasta', 'risotto', 'paella', 'curry', 'korma', 'tikka masala',
                              'dosa', 'idli', 'uttapam', 'upma', 'khichdi', 'dal', 'sambar']
         main_dish_type = None
