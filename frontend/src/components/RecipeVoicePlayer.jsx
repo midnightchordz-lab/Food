@@ -306,6 +306,14 @@ const RecipeVoicePlayer = ({ recipe, isPremiumUser = false }) => {
         </p>
       )}
 
+      {error === 'elevenlabs_disabled' && (
+        <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <p className="text-sm text-amber-700">
+            Voice feature temporarily unavailable. The ElevenLabs API requires a paid subscription.
+          </p>
+        </div>
+      )}
+
       {error === 'playback_failed' && (
         <p className="text-sm text-red-500 mt-2">
           Audio playback failed. Please try again.
