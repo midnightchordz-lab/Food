@@ -200,6 +200,10 @@ AUDIO_CACHE_HOURS=168
 
 ## Backlog
 
+### P0 - Mobile App Parity (User Requested)
+- Investigate iOS/Android mobile app architecture
+- Port all new web features to native apps
+
 ### P1 - Next Priority
 - Case-insensitive user search bug fix
 - Add voice player to more recipe views (DiscoverRecipes if needed)
