@@ -1411,9 +1411,25 @@ export const hasRecipes = (message) => {
 
 // Clickable Recipe Card Component - Simple and Fast
 const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
-  const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
+  // Use a stable initial image - either from recipe or from cache
+  const getInitialImage = () => {
+    const cacheKey = recipe.title?.toLowerCase();
+    if (cacheKey && imageCache.has(cacheKey)) {
+      return imageCache.get(cacheKey);
+    }
+    return recipe.imageUrl;
+  };
+  
+  const [imageUrl, setImageUrl] = useState(getInitialImage);
   const [isLoading, setIsLoading] = useState(false);
   const hasFetched = useRef(false);
+  const mountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     if (!recipe.title || hasFetched.current) return;
@@ -1424,36 +1440,38 @@ const RecipeCard = ({ recipe, onSave, onViewDetails }) => {
     // Check if image is already in cache
     if (imageCache.has(cacheKey)) {
       const cachedUrl = imageCache.get(cacheKey);
-      // Make sure this URL isn't already used by another card in this view
-      if (!usedImageUrls.has(cachedUrl) || cachedUrl === imageUrl) {
+      if (mountedRef.current && cachedUrl !== imageUrl) {
         setImageUrl(cachedUrl);
         usedImageUrls.add(cachedUrl);
-        return;
       }
+      return;
     }
 
     const fetchImage = async () => {
       setIsLoading(true);
       try {
         const result = await getFastImage(recipe.title, recipe.cuisineHint);
-        if (result?.url) {
+        if (result?.url && mountedRef.current) {
           imageCache.set(cacheKey, result.url);
           setImageUrl(result.url);
         }
       } catch { /* ignore */ } 
-      finally { setIsLoading(false); }
+      finally { 
+        if (mountedRef.current) setIsLoading(false); 
+      }
     };
 
     // Stagger requests to avoid rate limiting
     setTimeout(fetchImage, Math.random() * 800 + 200);
-  }, [recipe.title, recipe.cuisineHint, imageUrl]);
+  }, [recipe.title, recipe.cuisineHint]); // Removed imageUrl from deps to prevent re-fetching
 
   const handleImgError = () => {
     // On error, try to get an alternative image
-    const cacheKey = recipe.title.toLowerCase();
-    imageCache.delete(cacheKey);
+    const cacheKey = recipe.title?.toLowerCase();
+    if (cacheKey) imageCache.delete(cacheKey);
     usedImageUrls.delete(imageUrl);
-    setImageUrl(recipe.imageUrl || GENERIC_FOOD_IMAGES[Math.floor(Math.random() * GENERIC_FOOD_IMAGES.length)]);
+    const fallbackImage = recipe.imageUrl || GENERIC_FOOD_IMAGES[Math.floor(Math.random() * GENERIC_FOOD_IMAGES.length)];
+    if (mountedRef.current) setImageUrl(fallbackImage);
   };
 
   return (
