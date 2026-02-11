@@ -273,6 +273,9 @@ const ShoppingListPage = () => {
   const handleToggleItem = async (itemName, currentChecked) => {
     if (!activeList) return;
     
+    // Haptic feedback for mobile
+    hapticFeedback('light');
+    
     try {
       await axios.patch(`${API}/shopping/lists/${activeList.list_id}/items/toggle`, {
         item_name: itemName,
