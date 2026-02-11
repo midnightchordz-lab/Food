@@ -980,12 +980,14 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                 cached_structured_recipes = None
                 user_cuisine = extract_user_cuisine(request.message)
                 try:
-                    cached_structured_recipes = parse_recipes_to_json(cached_response, user_cuisine)
-                    logging.info(f"Parsed {len(cached_structured_recipes)} recipes from cached response with cuisine: {user_cuisine}")
+                    all_cached_recipes = parse_recipes_to_json(cached_response, user_cuisine)
+                    # LIMIT to quota - only return allowed number of recipes
+                    cached_structured_recipes = all_cached_recipes[:recipes_to_generate]
+                    logging.info(f"Returning {len(cached_structured_recipes)} recipes from cache (quota: {recipes_to_generate})")
                 except Exception as parse_error:
                     logging.error(f"Recipe parsing error (cached): {parse_error}")
                 
-                # Return cached response with structured recipes
+                # Return cached response with LIMITED structured recipes
                 assistant_msg = ChatMessage(
                     session_id=request.session_id,
                     role="assistant",
