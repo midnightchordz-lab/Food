@@ -276,9 +276,6 @@ async def serve_audio_file(filename: str):
     GET /api/audio/file/:filename
     Serve audio files directly with proper MIME type
     """
-    import aiofiles
-    from fastapi.responses import Response
-    
     try:
         file_path = Path("/app/uploads/audio-cache") / filename
         
