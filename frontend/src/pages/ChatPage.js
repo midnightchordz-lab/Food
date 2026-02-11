@@ -617,6 +617,26 @@ For EACH recipe provide:
   
   // Handle cuisine selection (initial flow)
   const handleCuisineSelect = async (cuisineIds, cuisineLabels) => {
+    // Check quota BEFORE proceeding
+    try {
+      const quotaCheck = await axios.get(`${API}/subscription/check-feature/recipe_search`);
+      const { allowed, remaining, used, limit } = quotaCheck.data;
+      
+      if (!allowed || remaining === 0) {
+        setFeatureLockedModal({
+          isOpen: true,
+          feature: 'recipe_search',
+          upgradeTo: 'premium_monthly',
+          currentPlan: 'free',
+          usedLimit: used,
+          maxLimit: limit
+        });
+        return; // Don't proceed
+      }
+    } catch (quotaError) {
+      console.error('Error checking quota:', quotaError);
+    }
+    
     setSelectedCuisines(cuisineIds);
     
     const userMsg = {
@@ -654,7 +674,7 @@ For EACH recipe provide:
 - Dietary Preference: ${dietaryPref?.label}
 - Cuisine(s): ${cuisineLabels}
 
-Create 6 ORIGINAL ${mealType?.label?.toLowerCase()} recipes that:
+Create 4 ORIGINAL ${mealType?.label?.toLowerCase()} recipes that:
 1. Match the ${mood?.label?.toLowerCase()} mood perfectly
 2. Are ${dietaryPref?.label?.toLowerCase()} friendly
 3. Feature authentic ${cuisineLabels} flavors and techniques
