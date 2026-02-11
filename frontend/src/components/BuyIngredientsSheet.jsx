@@ -443,17 +443,44 @@ const BuyIngredientsSheet = ({
                   </div>
                 )}
 
-                {/* Region Info */}
+                {/* Region Info with Country Selector */}
                 <div className="flex items-center gap-2 mb-6 p-3 bg-muted/50 rounded-xl">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span className="text-sm">
-                    Showing apps for <strong>{countryInfo?.country || 'your region'}</strong>
+                  <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span className="text-sm flex-1">
+                    Showing apps for
                   </span>
-                  {countryInfo?.detectedFrom === 'ip_detection' && (
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      (auto-detected)
-                    </span>
-                  )}
+                  
+                  {/* Country Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-2 font-medium"
+                        data-testid="country-selector"
+                      >
+                        {AVAILABLE_COUNTRIES.find(c => c.code === countryInfo?.countryCode)?.flag || '🌍'}{' '}
+                        <strong>{countryInfo?.country || 'Select'}</strong>
+                        <ChevronDown className="w-4 h-4 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {AVAILABLE_COUNTRIES.map((country) => (
+                        <DropdownMenuItem
+                          key={country.code}
+                          onClick={() => handleCountryChange(country.code)}
+                          className={countryInfo?.countryCode === country.code ? 'bg-primary/10' : ''}
+                          data-testid={`country-option-${country.code}`}
+                        >
+                          <span className="mr-2">{country.flag}</span>
+                          {country.name}
+                          {countryInfo?.countryCode === country.code && (
+                            <Check className="w-4 h-4 ml-auto text-primary" />
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 {/* Loading State */}
