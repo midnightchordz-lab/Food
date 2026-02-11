@@ -885,13 +885,27 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
         # e.g., "Sunny Paneer Tikka Masala" -> "Paneer Tikka Masala"
         actual_dish = extract_actual_dish_name(dish_name)
         
+        # Identify main protein/ingredient for better image matching
+        proteins = ['shrimp', 'chicken', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'lamb', 
+                   'tofu', 'paneer', 'prawns', 'lobster', 'crab', 'duck', 'turkey']
+        main_protein = None
+        for protein in proteins:
+            if protein.lower() in actual_dish.lower():
+                main_protein = protein
+                break
+        
         # Build search query optimized for food images
-        search_query = f"{actual_dish} food dish"
+        if main_protein:
+            # Put protein first for better image matching
+            search_query = f"{main_protein} {actual_dish} dish"
+        else:
+            search_query = f"{actual_dish} food dish"
+            
         if cuisine:
-            search_query = f"{actual_dish} {cuisine} food dish"
+            search_query = f"{search_query} {cuisine}"
         
         # Add quality modifiers
-        search_query += " recipe photo"
+        search_query += " recipe photo plated"
         
         logging.info(f"Image search: '{dish_name}' -> '{search_query}'")
         
