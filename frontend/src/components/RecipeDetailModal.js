@@ -703,16 +703,16 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             : 'bg-card border-border hover:border-primary/30'
                         }`}
                       >
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-3 sm:gap-4">
                           <button
                             onClick={() => handleStepCheck(inst.step)}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-sm sm:text-base ${
                               checkedSteps[inst.step]
                                 ? 'bg-green-500 text-white'
                                 : 'bg-primary/10 text-primary hover:bg-primary/20'
                             }`}
                           >
-                            {checkedSteps[inst.step] ? <Check size={20} /> : inst.step}
+                            {checkedSteps[inst.step] ? <Check size={18} /> : inst.step}
                           </button>
                           
                           <div className="flex-1 min-w-0">
