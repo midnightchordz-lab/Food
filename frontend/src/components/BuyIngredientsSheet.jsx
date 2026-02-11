@@ -701,6 +701,73 @@ const BuyIngredientsSheet = ({
           </div>
         </div>
       </SheetContent>
+
+      {/* List Selector Dialog */}
+      <Dialog open={showListSelector} onOpenChange={setShowListSelector}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderOpen size={20} className="text-primary" />
+              Save to Shopping List
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            {/* Existing lists */}
+            {shoppingLists.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground mb-2">Choose a list:</p>
+                {shoppingLists.map((list) => (
+                  <button
+                    key={list.list_id}
+                    onClick={() => handleSaveToSelectedList(list.list_id)}
+                    disabled={isSavingToList}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border hover:bg-secondary/50 transition-all text-left"
+                    data-testid={`list-option-${list.list_id}`}
+                  >
+                    <ListPlus className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{list.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {list.items?.length || 0} items
+                      </p>
+                    </div>
+                    {isSavingToList && selectedListId === list.list_id && (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {/* Create new list */}
+            <div className="border-t pt-4">
+              <p className="text-sm text-muted-foreground mb-2">Or create a new list:</p>
+              <div className="flex gap-2">
+                <Input
+                  value={newListName}
+                  onChange={(e) => setNewListName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCreateListAndSave()}
+                  placeholder="e.g., Weekly Groceries"
+                  className="flex-1 rounded-xl"
+                  data-testid="new-list-input"
+                />
+                <Button
+                  onClick={handleCreateListAndSave}
+                  disabled={!newListName.trim() || isCreatingList}
+                  className="rounded-xl"
+                >
+                  {isCreatingList ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 };
