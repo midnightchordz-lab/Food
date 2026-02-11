@@ -268,6 +268,23 @@ const SavedRecipes = () => {
                   </div>
                 )}
                 
+                {/* Voice Cooking Guide */}
+                <RecipeVoicePlayer
+                  recipe={{
+                    id: selectedRecipe.id || selectedRecipe._id,
+                    name: selectedRecipe.title,
+                    cuisine: selectedRecipe.cuisine,
+                    totalTime: selectedRecipe.cook_time?.replace(/\D/g, '') || '30',
+                    servings: selectedRecipe.servings || '4',
+                    ingredients: selectedRecipe.ingredients?.map(i => ({
+                      name: typeof i === 'string' ? i : i.name,
+                      amount: typeof i === 'string' ? '' : i.amount
+                    })) || [],
+                    instructions: selectedRecipe.instructions || [],
+                    tips: []
+                  }}
+                />
+                
                 <div>
                   <h3 className="font-serif text-xl mb-3">Ingredients</h3>
                   <ul className="space-y-2">
