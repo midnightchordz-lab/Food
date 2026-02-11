@@ -1076,8 +1076,9 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
             potential_recipes = parse_recipes_to_json(ai_response, user_cuisine)
             # Only include if we found actual recipes (at least 1)
             if potential_recipes and len(potential_recipes) >= 1:
-                structured_recipes = potential_recipes
-                logging.info(f"Parsed {len(structured_recipes)} recipes from AI response with cuisine: {user_cuisine}")
+                # LIMIT to quota - only return allowed number of recipes
+                structured_recipes = potential_recipes[:recipes_to_generate] if recipe_params else potential_recipes
+                logging.info(f"Returning {len(structured_recipes)} recipes (quota: {recipes_to_generate if recipe_params else 'unlimited'})")
                 for r in structured_recipes[:3]:  # Log first 3
                     logging.info(f"  - {r.get('title', 'No title')} ({r.get('cuisine', 'No cuisine')})")
                 
