@@ -733,6 +733,9 @@ const ShoppingListPage = () => {
               <Edit2 size={20} className="text-primary" />
               Rename List
             </DialogTitle>
+            <DialogDescription>
+              Enter a new name for your shopping list
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input
