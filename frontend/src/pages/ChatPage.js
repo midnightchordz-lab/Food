@@ -640,6 +640,12 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
     } catch (error) {
       console.error('Error fetching recipes:', error);
       
+      // Check if it's a usage limit error using the new hook
+      if (handleLimitError(error)) {
+        // Modal is shown by the hook
+        return;
+      }
+      
       // Check if it's a feature lock error (search limit reached)
       if (!handleFeatureLockedError(error, setFeatureLockedModal)) {
         toast.error('Failed to get recipes. Please try again.');
@@ -654,6 +660,8 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
       }
     } finally {
       setIsLoading(false);
+      // Refresh usage status after recipe generation
+      refreshUsage();
     }
   };
   
