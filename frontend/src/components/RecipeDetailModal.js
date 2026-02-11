@@ -667,7 +667,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
             </div>
             
             {/* Content Sections */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {/* Instructions Section */}
               {activeSection === 'instructions' && (
                 <div className="space-y-6">
@@ -675,7 +675,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   {parsedRecipe?.equipment?.length > 0 && (
                     <div className="mb-6">
                       <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
-                        <Utensils size={20} className="text-primary" />
+                        <Utensils size={20} className="text-primary flex-shrink-0" />
                         Equipment Needed
                       </h3>
                       <div className="flex flex-wrap gap-2">
@@ -689,7 +689,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   )}
                   
                   <h3 className="text-xl font-serif font-semibold flex items-center gap-2">
-                    <BookOpen size={22} className="text-primary" />
+                    <BookOpen size={22} className="text-primary flex-shrink-0" />
                     Step-by-Step Instructions
                   </h3>
                   
@@ -697,7 +697,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                     {parsedRecipe?.instructions?.map((inst, idx) => (
                       <div 
                         key={idx}
-                        className={`p-4 rounded-xl border transition-all ${
+                        className={`p-3 sm:p-4 rounded-xl border transition-all ${
                           checkedSteps[inst.step] 
                             ? 'bg-green-50 border-green-200' 
                             : 'bg-card border-border hover:border-primary/30'
