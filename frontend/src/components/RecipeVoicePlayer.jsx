@@ -72,11 +72,62 @@ const RecipeVoicePlayer = ({ recipe, isPremiumUser = false }) => {
       const token = localStorage.getItem('token');
       const recipeId = recipe._id || recipe.id || recipe.recipe_id;
       
-      const response = await axios.post(
-        `${API}/api/audio/recipe/${recipeId}`,
-        { language },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      let response;
+      
+      // Check if recipe has a valid database ID or if it's a chat-generated recipe
+      const hasValidId = recipeId && !recipeId.includes('undefined') && recipeId.length > 10;
+      
+      if (hasValidId) {
+        // Try fetching by ID first (for saved recipes)
+        try {
+          response = await axios.post(
+            `${API}/api/audio/recipe/${recipeId}`,
+            { language },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        } catch (idError) {
+          // If recipe not found by ID, fall back to generating from data
+          if (idError.response?.status === 404) {
+            console.log('Recipe not found by ID, generating from data...');
+            response = await axios.post(
+              `${API}/api/audio/generate`,
+              { 
+                language,
+                recipe: {
+                  name: recipe.name || recipe.title,
+                  cuisine: recipe.cuisine,
+                  totalTime: recipe.totalTime || recipe.cookTime || '30',
+                  servings: recipe.servings || '4',
+                  ingredients: recipe.ingredients || [],
+                  instructions: recipe.instructions || [],
+                  tips: recipe.tips || []
+                }
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          } else {
+            throw idError;
+          }
+        }
+      } else {
+        // No valid ID, generate from recipe data directly
+        response = await axios.post(
+          `${API}/api/audio/generate`,
+          { 
+            language,
+            recipe: {
+              name: recipe.name || recipe.title,
+              cuisine: recipe.cuisine,
+              totalTime: recipe.totalTime || recipe.cookTime || '30',
+              servings: recipe.servings || '4',
+              ingredients: recipe.ingredients || [],
+              instructions: recipe.instructions || [],
+              tips: recipe.tips || []
+            }
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
 
       if (response.data.success) {
         const fullUrl = response.data.audioUrl.startsWith('http') 
