@@ -97,9 +97,13 @@ const RecipeVoicePlayer = ({ recipe, isPremiumUser = false }) => {
       }
     } catch (err) {
       console.error('Audio generation error:', err);
+      const errorMsg = err.response?.data?.detail || err.message || 'Unknown error';
+      
       if (err.response?.status === 402 || err.response?.data?.error === 'multilingual_locked') {
         setShowUpgradePrompt(true);
         setError('upgrade_required');
+      } else if (errorMsg.includes('ElevenLabs Free Tier') || errorMsg.includes('unusual activity')) {
+        setError('elevenlabs_disabled');
       } else {
         setError('generation_failed');
       }
