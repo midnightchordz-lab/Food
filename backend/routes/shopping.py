@@ -1,7 +1,7 @@
 """
 Shopping Routes - Buy ingredients and regional delivery app integration
 """
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from pydantic import BaseModel
 from typing import List, Optional
 import logging
