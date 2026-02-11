@@ -632,6 +632,9 @@ SPECIFIC_DISHES = {
     'falafel', 'shawarma', 'kebab', 'hummus', 'shakshuka', 'tagine',
     # Other specific dishes
     'paella', 'ratatouille', 'schnitzel', 'goulash', 'moussaka', 'souvlaki',
+    # Curry dishes - these should match as cooked dishes, not raw ingredients
+    'curry', 'prawn curry', 'shrimp curry', 'fish curry', 'chicken curry',
+    'lamb curry', 'beef curry', 'vegetable curry', 'coconut curry',
 }
 
 # Generic ingredients - only match these if no specific dish is found
