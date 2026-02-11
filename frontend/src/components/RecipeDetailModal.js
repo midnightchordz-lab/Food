@@ -733,7 +733,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             
                             {inst.visualCue && (
                               <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                <p className="text-sm text-blue-700">
+                                <p className="text-sm text-blue-700 break-words">
                                   <strong>👁 Visual Cue:</strong> {inst.visualCue}
                                 </p>
                               </div>
@@ -741,7 +741,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             
                             {inst.important && (
                               <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                                <p className="text-sm text-amber-700">
+                                <p className="text-sm text-amber-700 break-words">
                                   <strong>⚠️ Important:</strong> {inst.important}
                                 </p>
                               </div>
@@ -749,7 +749,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             
                             {inst.technique && (
                               <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
-                                <p className="text-sm text-purple-700">
+                                <p className="text-sm text-purple-700 break-words">
                                   <strong>📝 Technique Note:</strong> {inst.technique}
                                 </p>
                               </div>
