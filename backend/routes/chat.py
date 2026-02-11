@@ -922,9 +922,8 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             )
         
         if recipe_params:
-            # Check recipe quota for free tier users
-            # First check without incrementing to see remaining
-            quota_check = await check_feature_access(current_user.id, "recipe_search", increment=False)
+            # Check recipe quota for free tier users using the new usage limit service
+            quota_check = await check_recipe_limit(current_user.id)
             
             if not quota_check["allowed"]:
                 from fastapi.responses import JSONResponse
@@ -944,7 +943,8 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             
             # Determine how many recipes to generate based on remaining quota
             remaining = quota_check.get("remaining", 5)
-            recipes_to_generate = min(4, remaining)  # Max 4 per request, but limited by quota
+            # For unlimited users (remaining = -1), generate up to 4
+            recipes_to_generate = 4 if remaining == -1 else min(4, remaining)
             
             if recipes_to_generate == 0:
                 from fastapi.responses import JSONResponse
@@ -961,9 +961,6 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                         }
                     }
                 )
-            
-            # Now increment by the number of recipes we'll generate
-            await check_feature_access(current_user.id, "recipe_search", increment=recipes_to_generate)
             
             # Check if user is asking for more/different recipes
             skip_cache = is_more_recipes_request(request.message)
