@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
 import { X, Download, Smartphone } from 'lucide-react';
 
@@ -6,6 +7,7 @@ const PWAInstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     // Check if already installed (standalone mode)
@@ -46,6 +48,17 @@ const PWAInstallPrompt = () => {
     };
   }, []);
 
+  // Auto-dismiss on chat page after 10 seconds to avoid blocking interactions
+  useEffect(() => {
+    if (showPrompt && location.pathname === '/chat') {
+      const autoDismissTimer = setTimeout(() => {
+        setShowPrompt(false);
+      }, 10000);
+      
+      return () => clearTimeout(autoDismissTimer);
+    }
+  }, [showPrompt, location.pathname]);
+
   const handleInstall = async () => {
     if (window.installPWA) {
       await window.installPWA();
@@ -61,7 +74,7 @@ const PWAInstallPrompt = () => {
   if (!showPrompt || isStandalone) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-20 sm:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-40 animate-in slide-in-from-bottom-4 duration-300">
       <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 relative">
         {/* Close button */}
         <button
@@ -74,34 +87,33 @@ const PWAInstallPrompt = () => {
         
         {/* Content */}
         <div className="flex gap-4">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0">
-            <Smartphone className="text-primary" size={28} />
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0">
+            <Smartphone className="text-primary" size={24} />
           </div>
           
           <div className="flex-1 pr-4">
-            <h3 className="font-serif font-bold text-lg mb-1">
+            <h3 className="font-serif font-bold text-base sm:text-lg mb-1">
               Install MOOD FOOD
             </h3>
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-3">
               Add to your home screen for quick access and offline support.
             </p>
             
             {isIOS ? (
-              <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2 sm:p-3">
                 <p className="font-medium mb-1">To install on iOS:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Tap the Share button <span className="inline-block px-1">⬆️</span></li>
-                  <li>Scroll down and tap "Add to Home Screen"</li>
-                  <li>Tap "Add" to confirm</li>
+                <ol className="list-decimal list-inside space-y-0.5">
+                  <li>Tap the Share button ⬆️</li>
+                  <li>Tap "Add to Home Screen"</li>
                 </ol>
               </div>
             ) : (
               <Button 
                 onClick={handleInstall}
-                className="w-full gap-2"
+                className="w-full gap-2 h-9 text-sm"
                 data-testid="pwa-install-button"
               >
-                <Download size={18} />
+                <Download size={16} />
                 Install App
               </Button>
             )}
