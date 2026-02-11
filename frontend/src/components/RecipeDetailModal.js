@@ -4,7 +4,7 @@ import {
   Share2, Star, ShoppingCart, BookOpen, X, ChevronRight, ChevronLeft,
   Timer, Leaf, AlertCircle, Check, Plus, Loader2, RefreshCw,
   Thermometer, Package, Info, AlertTriangle, Wine, GlassWater, Sparkles,
-  DollarSign
+  DollarSign, Volume2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,6 +17,8 @@ import {
 import { toast } from 'sonner';
 import { useShoppingCart } from '@/context/ShoppingCartContext';
 import { BuyIngredientsButton } from './ShoppingWidget';
+import RecipeVoicePlayer from './RecipeVoicePlayer';
+import CookingModePlayer from './CookingModePlayer';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
