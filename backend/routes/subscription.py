@@ -322,19 +322,23 @@ async def check_feature_access(user_id: str, feature_name: str, increment: bool 
         usage_doc = await db.usage_tracking.find_one({"key": usage_key})
         used = usage_doc["count"] if usage_doc else 0
         
-        if increment and used < limit:
+        # Check if allowed BEFORE incrementing
+        # Allow if used < limit (so if limit is 5, allow when used is 0,1,2,3,4)
+        allowed = used < limit
+        
+        if increment and allowed:
             await db.usage_tracking.update_one(
                 {"key": usage_key},
                 {"$inc": {"count": 1}, "$set": {"updated_at": datetime.now(timezone.utc)}},
                 upsert=True
             )
-            used += 1
+            used += 1  # Update local count after incrementing
         
         result["limit"] = limit
         result["used"] = used
         result["remaining"] = max(0, limit - used)
-        result["allowed"] = used < limit
-        result["upgrade_required"] = used >= limit
+        result["allowed"] = allowed
+        result["upgrade_required"] = not allowed
         
     elif feature_name == "diabetes_module":
         result["allowed"] = features.get("diabetes_module", False)
