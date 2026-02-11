@@ -24,6 +24,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
+import { hapticFeedback, nativeShare, isNative } from '../capacitor';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
