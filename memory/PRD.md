@@ -174,7 +174,18 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 11, 2026)
 
-### Recipe Image Matching Fix ✅ NEW
+### Recipe Detail Modal Mobile Fix ✅ NEW
+Fixed the issue where step-by-step cooking instructions didn't fit properly on mobile screens:
+1. ✅ Text wrapping with `wordBreak: 'break-word'` and `overflowWrap: 'anywhere'`
+2. ✅ Smaller step number circles on mobile (7x7 vs 10x10)
+3. ✅ Horizontally scrollable tab bar with hidden scrollbar
+4. ✅ Full-width action buttons (Print/Share/Save) on mobile
+5. ✅ 2-column grid layout for recipe info (time, servings)
+6. ✅ Compact visual cue boxes with smaller padding/text
+7. ✅ Safe-area CSS support for iOS notch
+8. ✅ PWA install prompt repositioned to avoid blocking UI
+
+### Recipe Image Matching Fix ✅
 Fixed issue where curry dishes (like "Spicy Prawn Curry") showed raw ingredient images instead of cooked dishes:
 1. ✅ Added smart dish type + protein combination matching
 2. ✅ Curry dishes now prioritize cooked curry images over raw ingredients
