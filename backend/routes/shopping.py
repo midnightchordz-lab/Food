@@ -290,9 +290,13 @@ async def get_shopping_list(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Failed to get shopping list")
 
 
+class SetCountryRequest(BaseModel):
+    country_code: str
+
+
 @router.post("/set-country")
 async def set_preferred_country(
-    country_code: str,
+    request: SetCountryRequest,
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -300,6 +304,8 @@ async def set_preferred_country(
     Save user's preferred country for delivery apps
     """
     try:
+        country_code = request.country_code
+        
         # Validate country code
         if country_code not in DELIVERY_APPS and country_code != "DEFAULT":
             raise HTTPException(status_code=400, detail="Invalid country code")
