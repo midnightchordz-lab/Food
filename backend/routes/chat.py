@@ -679,7 +679,8 @@ def is_mood_change_request(message: str, context: dict = None) -> dict:
 
 def is_recipe_generation_request(message: str) -> dict:
     """Detect if message is a structured recipe request and extract parameters"""
-    if "[User Preferences]" in message and "Please suggest" in message:
+    # Check for [User Preferences] marker - handle various message formats
+    if "[User Preferences]" in message:
         lines = message.split("\n")
         params = {"mood": "", "meal_type": "", "dietary_pref": "", "cuisines": ""}
         for line in lines:
