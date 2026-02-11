@@ -22,6 +22,7 @@ from .exclusions import (
     filter_recipe_text_strictly
 )
 from .feature_gating import check_and_increment_search
+from .subscription import check_feature_access
 
 # Import SerpAPI for external recipe search
 sys.path.append('/app/backend')
