@@ -45,6 +45,82 @@ async def get_supported_languages():
     }
 
 
+@router.post("/generate")
+async def generate_audio_from_data(
+    request: RecipeDataAudioRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    POST /api/audio/generate
+    Generate audio from recipe data (for chat-generated recipes without DB IDs)
+    
+    Body: { 
+        "language": "en",
+        "recipe": {
+            "name": "Recipe Title",
+            "cuisine": "Italian",
+            "totalTime": "30",
+            "servings": "4",
+            "ingredients": [{"name": "...", "amount": "..."}],
+            "instructions": ["Step 1...", "Step 2..."],
+            "tips": ["Tip 1..."]
+        }
+    }
+    """
+    try:
+        language = request.language
+        recipe_data = request.recipe
+        
+        if not recipe_data:
+            raise HTTPException(status_code=400, detail="Recipe data is required")
+        
+        # Get user's subscription tier
+        tier = await get_user_subscription_tier(current_user.id)
+        is_free_tier = tier == 'free'
+        
+        # Free users: English only
+        if is_free_tier and language != 'en':
+            return {
+                "success": False,
+                "error": "multilingual_locked",
+                "message": "Multilingual audio is a Premium feature",
+                "upgradePrompt": {
+                    "title": "Unlock Multilingual Voice Cooking!",
+                    "subtitle": "Get recipes narrated in 14+ languages",
+                    "features": [
+                        "14+ language narrations",
+                        "Real-time step-by-step voice guidance",
+                        "Hindi, Spanish, French, Japanese + more"
+                    ],
+                    "ctaText": "Upgrade to Premium",
+                    "price": "$9.99/month"
+                }
+            }
+        
+        # Generate a hash-based ID for caching
+        import hashlib
+        recipe_name = recipe_data.get('name', recipe_data.get('title', 'unknown'))
+        cache_id = hashlib.md5(f"{recipe_name}-{language}".encode()).hexdigest()[:16]
+        recipe_data['id'] = cache_id
+        
+        # Generate audio
+        result = await elevenlabs_service.generate_recipe_audio(recipe_data, language)
+        
+        return {
+            "success": True,
+            "audioUrl": result['audioUrl'],
+            "fromCache": result.get('fromCache', False),
+            "language": language,
+            "duration": result.get('duration')
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Audio generation from data error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate audio: {str(e)}")
+
+
 @router.post("/recipe/{recipe_id}")
 async def generate_recipe_audio(
     recipe_id: str,
