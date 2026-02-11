@@ -903,8 +903,21 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
         confusing_terms = ['revuelto', 'scramble', 'stir-fry', 'casserole', 'stew', 'soup', 'curry']
         has_confusing_term = any(term in actual_dish.lower() for term in confusing_terms)
         
+        # Indian/Asian dishes where the dish type matters more than the protein
+        dish_type_priority = ['poha', 'biryani', 'pulao', 'pilaf', 'fried rice', 'noodles', 
+                             'pasta', 'risotto', 'paella', 'curry', 'korma', 'tikka masala',
+                             'dosa', 'idli', 'uttapam', 'upma', 'khichdi', 'dal', 'sambar']
+        main_dish_type = None
+        for dish_type in dish_type_priority:
+            if dish_type.lower() in actual_dish.lower():
+                main_dish_type = dish_type
+                break
+        
         # Build search query optimized for food images
-        if main_protein and has_confusing_term:
+        if main_dish_type:
+            # Prioritize the dish type (e.g., "Prawn Poha" -> search for "poha prawn")
+            search_query = f"{main_dish_type} {main_protein or ''} dish plated"
+        elif main_protein and has_confusing_term:
             # When there's a confusing cooking term, focus on the protein
             search_query = f"{main_protein} dish plated"
         elif main_protein:
