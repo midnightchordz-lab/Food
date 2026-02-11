@@ -264,3 +264,83 @@ async def set_preferred_country(
     except Exception as e:
         logging.error(f"Set country error: {e}")
         raise HTTPException(status_code=500, detail="Failed to set country")
+
+
+class PriceEstimateRequest(BaseModel):
+    ingredients: List[IngredientItem]
+    country_code: str
+
+
+@router.post("/price-estimate")
+async def get_price_estimate(
+    request: PriceEstimateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    POST /api/shopping/price-estimate
+    Get estimated total price range for selected ingredients
+    Uses SerpAPI Google Shopping for price data
+    """
+    try:
+        if not request.ingredients:
+            raise HTTPException(status_code=400, detail="No ingredients provided")
+        
+        # Import the batch pricing function
+        import sys
+        sys.path.insert(0, '/app/backend')
+        from services.serpapi_service import batch_ingredient_prices
+        
+        # Get ingredient names
+        ingredient_names = [ing.name for ing in request.ingredients if ing.name][:10]  # Limit to 10
+        
+        if not ingredient_names:
+            return {
+                "success": True,
+                "estimated_total": {"min": 0, "max": 0, "currency": "$"},
+                "ingredients": {},
+                "message": "No valid ingredients to price"
+            }
+        
+        # Get country-specific location
+        location_mapping = {
+            "IN": "India",
+            "US": "USA",
+            "GB": "United Kingdom",
+            "UK": "United Kingdom",
+            "AE": "UAE",
+            "AU": "Australia",
+            "SG": "Singapore",
+            "CA": "Canada",
+            "DEFAULT": "USA"
+        }
+        location = location_mapping.get(request.country_code, "USA")
+        
+        # Fetch prices
+        result = await batch_ingredient_prices(ingredient_names, location)
+        
+        if result.get("success"):
+            return {
+                "success": True,
+                "estimated_total": result.get("estimated_total", {"min": 0, "max": 0}),
+                "currency": result.get("currency", "USD"),
+                "ingredients": result.get("ingredients", {}),
+                "location": location
+            }
+        else:
+            return {
+                "success": False,
+                "error": result.get("error", "Price fetch failed"),
+                "estimated_total": {"min": 0, "max": 0, "currency": "USD"}
+            }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Price estimate error: {e}")
+        # Return graceful fallback instead of error
+        return {
+            "success": False,
+            "error": "Could not fetch prices",
+            "estimated_total": {"min": 0, "max": 0, "currency": "USD"},
+            "ingredients": {}
+        }
