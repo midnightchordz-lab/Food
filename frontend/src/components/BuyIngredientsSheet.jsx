@@ -68,6 +68,13 @@ const BuyIngredientsSheet = ({
   const [priceEstimate, setPriceEstimate] = useState(null);
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   
+  // State for shopping lists
+  const [shoppingLists, setShoppingLists] = useState([]);
+  const [selectedListId, setSelectedListId] = useState(null);
+  const [showListSelector, setShowListSelector] = useState(false);
+  const [newListName, setNewListName] = useState('');
+  const [isCreatingList, setIsCreatingList] = useState(false);
+  
   // Step state: 'select' (ingredients) or 'apps' (delivery apps)
   const [step, setStep] = useState('select');
 
