@@ -275,8 +275,9 @@ class ElevenLabsService:
         return str(file_path)
     
     def _path_to_url(self, file_path: str) -> str:
-        """Convert file path to URL"""
-        return file_path.replace('/app/uploads', '/uploads')
+        """Convert file path to URL using the API endpoint"""
+        filename = Path(file_path).name
+        return f"/api/audio/file/{filename}"
     
     def _estimate_duration(self, text: str) -> int:
         """Estimate audio duration in seconds (avg 150 words/minute)"""
