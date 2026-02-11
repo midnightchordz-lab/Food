@@ -174,7 +174,14 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 11, 2026)
 
-### Mobile App Parity Complete ✅ NEW
+### Recipe Image Matching Fix ✅ NEW
+Fixed issue where curry dishes (like "Spicy Prawn Curry") showed raw ingredient images instead of cooked dishes:
+1. ✅ Added smart dish type + protein combination matching
+2. ✅ Curry dishes now prioritize cooked curry images over raw ingredients
+3. ✅ Added specific entries for prawn curry, shrimp curry, fish curry
+4. ✅ Improved matching logic to skip dish type words in generic matching
+
+### Mobile App Parity Complete ✅
 The app uses **Capacitor** hybrid framework - all web features are automatically available on iOS/Android. Enhancements made:
 1. ✅ Safe-area CSS support for notched devices (iPhone X+)
 2. ✅ Haptic feedback on item toggles and actions
