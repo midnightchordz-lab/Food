@@ -88,6 +88,7 @@ class ElevenLabsService:
             from dotenv import load_dotenv
             load_dotenv('/app/backend/.env', override=True)
             self._api_key = os.environ.get('ELEVENLABS_API_KEY', '')
+            logging.info(f"ElevenLabs API key loaded, length: {len(self._api_key)}")
             if not self._api_key:
                 logging.warning("ELEVENLABS_API_KEY not found in environment")
         return self._api_key
