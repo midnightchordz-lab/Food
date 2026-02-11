@@ -888,12 +888,19 @@ Make each recipe name unique and appetizing - avoid generic names like "Vegetabl
       console.error('Error sending message:', error);
       console.error('Error details:', error.response?.data || error.message);
       
+      // Check if it's a usage limit error using the new hook
+      if (handleLimitError(error)) {
+        return;
+      }
+      
       // Check if it's a feature lock error (search limit reached)
       if (!handleFeatureLockedError(error, setFeatureLockedModal)) {
         toast.error(error.response?.data?.detail || 'Failed to send message. Please try again.');
       }
     } finally {
       setIsLoading(false);
+      // Refresh usage status
+      refreshUsage();
     }
   };
   
