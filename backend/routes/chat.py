@@ -915,23 +915,48 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             )
         
         if recipe_params:
-            # Check recipe search limit for free tier users
-            search_check = await check_and_increment_search(current_user.id)
-            if not search_check["allowed"]:
+            # Check recipe quota for free tier users
+            # First check without incrementing to see remaining
+            quota_check = await check_feature_access(current_user.id, "recipe_search", increment=False)
+            
+            if not quota_check["allowed"]:
                 from fastapi.responses import JSONResponse
                 return JSONResponse(
                     status_code=403,
                     content={
                         "detail": {
                             "error": "feature_locked",
-                            "message": search_check["reason"],
+                            "message": f"Daily recipe limit reached ({quota_check['limit']} recipes/day). Upgrade for unlimited recipes!",
                             "feature": "recipe_search",
-                            "upgrade_to": search_check["upgrade_to"],
-                            "used": search_check["used"],
-                            "limit": search_check["limit"]
+                            "upgrade_to": "premium_monthly",
+                            "used": quota_check["used"],
+                            "limit": quota_check["limit"]
                         }
                     }
                 )
+            
+            # Determine how many recipes to generate based on remaining quota
+            remaining = quota_check.get("remaining", 5)
+            recipes_to_generate = min(4, remaining)  # Max 4 per request, but limited by quota
+            
+            if recipes_to_generate == 0:
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    status_code=403,
+                    content={
+                        "detail": {
+                            "error": "feature_locked", 
+                            "message": f"Daily recipe limit reached ({quota_check['limit']} recipes/day). Upgrade for unlimited recipes!",
+                            "feature": "recipe_search",
+                            "upgrade_to": "premium_monthly",
+                            "used": quota_check["used"],
+                            "limit": quota_check["limit"]
+                        }
+                    }
+                )
+            
+            # Now increment by the number of recipes we'll generate
+            await check_feature_access(current_user.id, "recipe_search", increment=recipes_to_generate)
             
             # Check if user is asking for more/different recipes
             skip_cache = is_more_recipes_request(request.message)
