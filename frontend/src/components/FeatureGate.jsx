@@ -167,7 +167,7 @@ export const FeatureLockedModal = ({
           
           <p className="text-stone-600 mt-2">
             {isLimitReached 
-              ? `You've used all ${maxLimit} recipe searches for today`
+              ? `You've used all ${maxLimit} recipes for today`
               : `${featureName} requires an upgraded plan`
             }
           </p>
@@ -190,7 +190,7 @@ export const FeatureLockedModal = ({
           <ul className="space-y-2 mb-6">
             <li className="flex items-center gap-2 text-sm text-stone-600">
               <Sparkles size={16} className="text-amber-500" />
-              {isLimitReached ? 'Unlimited recipe searches' : `Unlock ${featureName}`}
+              {isLimitReached ? 'Unlimited recipes daily' : `Unlock ${featureName}`}
             </li>
             <li className="flex items-center gap-2 text-sm text-stone-600">
               <Sparkles size={16} className="text-amber-500" />
