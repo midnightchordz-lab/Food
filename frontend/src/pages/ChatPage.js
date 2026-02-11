@@ -308,26 +308,6 @@ const ChatPage = () => {
   
   // Fetch recipes with specific dietary preference (used when preference changes)
   const fetchRecipesWithDietary = async (cuisineIds, dietaryPrefId) => {
-    // Check quota BEFORE making the request
-    try {
-      const quotaCheck = await axios.get(`${API}/subscription/check-feature/recipe_search`);
-      const { allowed, remaining, used, limit } = quotaCheck.data;
-      
-      if (!allowed || remaining === 0) {
-        setFeatureLockedModal({
-          isOpen: true,
-          feature: 'recipe_search',
-          upgradeTo: 'premium_monthly',
-          currentPlan: 'free',
-          usedLimit: used,
-          maxLimit: limit
-        });
-        return; // Don't proceed with recipe generation
-      }
-    } catch (quotaError) {
-      console.error('Error checking quota:', quotaError);
-    }
-    
     setIsLoading(true);
     
     const mood = MOOD_IMAGES.find(m => m.id === selectedMood);
