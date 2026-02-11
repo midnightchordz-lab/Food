@@ -515,7 +515,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-4xl w-full max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 bg-background"
+        className="max-w-4xl w-full max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 bg-background sm:rounded-lg"
         data-testid="recipe-detail-modal"
         hideCloseButton={true}
       >
@@ -528,18 +528,18 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
         
         {/* Loading State */}
         {isLoadingDetails && (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="flex flex-col items-center justify-center py-20 gap-4 px-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading detailed recipe...</p>
-            <p className="text-sm text-muted-foreground">Generating professional cooking instructions...</p>
+            <p className="text-muted-foreground text-center">Loading detailed recipe...</p>
+            <p className="text-sm text-muted-foreground text-center">Generating professional cooking instructions...</p>
           </div>
         )}
         
         {/* Recipe Content */}
         {!isLoadingDetails && (
           <>
-            {/* Hero Section */}
-            <div className="relative h-64 overflow-hidden">
+            {/* Hero Section - Reduced height on mobile */}
+            <div className="relative h-48 sm:h-64 overflow-hidden">
               {/* AI Image with loading state */}
               {isGeneratingImage && !aiImageUrl && (
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-900/70 to-blue-900/70 flex items-center justify-center z-10">
@@ -556,7 +556,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               />
               {/* AI Badge */}
               {aiImageUrl && (
-                <div className="absolute top-4 left-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-20">
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-20">
                   <Sparkles className="w-3 h-3" />
                   <span>AI Generated</span>
                 </div>
@@ -569,11 +569,11 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   variant="ghost"
                   size="sm"
                   onClick={onClose}
-                  className="absolute top-4 left-4 bg-white/90 hover:bg-white text-foreground z-20"
-                  style={{ left: aiImageUrl ? '120px' : '16px' }}
+                  className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-white/90 hover:bg-white text-foreground z-20"
+                  style={{ left: aiImageUrl ? '120px' : '12px' }}
                   data-testid="back-to-planner-btn"
                 >
-                  <ChevronLeft size={16} className="mr-1" /> Back to Planner
+                  <ChevronLeft size={16} className="mr-1" /> Back
                 </Button>
               )}
               
@@ -582,19 +582,19 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="absolute top-4 right-4 bg-white/90 hover:bg-white rounded-full z-20"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 hover:bg-white rounded-full z-20"
               >
                 <X size={20} />
               </Button>
               
               {/* Title Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <h1 className="text-3xl font-serif text-white font-bold mb-2">
+              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+                <h1 className="text-xl sm:text-3xl font-serif text-white font-bold mb-2 leading-tight">
                   {displayTitle}
                 </h1>
-                <div className="flex flex-wrap gap-2">
-                  {info.dietaryTags && info.dietaryTags.split(',').map((tag, idx) => (
-                    <span key={idx} className="px-2 py-1 bg-white/20 text-white text-xs rounded-full backdrop-blur-sm">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {info.dietaryTags && info.dietaryTags.split(',').slice(0, 3).map((tag, idx) => (
+                    <span key={idx} className="px-2 py-0.5 sm:py-1 bg-white/20 text-white text-xs rounded-full backdrop-blur-sm">
                       {tag.trim()}
                     </span>
                   ))}
@@ -602,57 +602,57 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               </div>
             </div>
             
-            {/* Recipe Info Bar */}
-            <div className="px-4 sm:px-6 py-4 bg-muted/30 border-b flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <Clock size={18} className="text-primary flex-shrink-0" />
-                  <span className="whitespace-nowrap"><strong>Total:</strong> {info.totalTime || recipe.cookingTime || '30 min'}</span>
+            {/* Recipe Info Bar - Mobile optimized grid */}
+            <div className="px-3 sm:px-6 py-3 sm:py-4 bg-muted/30 border-b">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-6 text-xs sm:text-sm mb-3 sm:mb-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Clock size={16} className="text-primary flex-shrink-0" />
+                  <span><strong>Total:</strong> {info.totalTime || recipe.cookingTime || '30 min'}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Timer size={18} className="text-orange-500 flex-shrink-0" />
-                  <span className="whitespace-nowrap"><strong>Prep:</strong> {info.prepTime || '10 min'}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Timer size={16} className="text-orange-500 flex-shrink-0" />
+                  <span><strong>Prep:</strong> {info.prepTime || '10 min'}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Flame size={18} className="text-red-500 flex-shrink-0" />
-                  <span className="whitespace-nowrap"><strong>Cook:</strong> {info.cookTime || '20 min'}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Flame size={16} className="text-red-500 flex-shrink-0" />
+                  <span><strong>Cook:</strong> {info.cookTime || '20 min'}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users size={18} className="text-blue-500 flex-shrink-0" />
-                  <span className="whitespace-nowrap"><strong>Serves:</strong> {info.servings || '4'}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <Users size={16} className="text-blue-500 flex-shrink-0" />
+                  <span><strong>Serves:</strong> {info.servings || '4'}</span>
                 </div>
-                <DifficultyBadge difficulty={info.difficulty || recipe.difficulty || 'Medium'} />
               </div>
               
-              <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={handlePrint}>
-                  <Printer size={16} className="mr-1" /> Print
+              {/* Action buttons - Full width on mobile */}
+              <div className="flex gap-2 mt-3 sm:mt-0 sm:justify-end">
+                <Button variant="outline" size="sm" onClick={handlePrint} className="flex-1 sm:flex-none text-xs sm:text-sm">
+                  <Printer size={14} className="mr-1" /> Print
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleShare}>
-                  <Share2 size={16} className="mr-1" /> Share
+                <Button variant="outline" size="sm" onClick={handleShare} className="flex-1 sm:flex-none text-xs sm:text-sm">
+                  <Share2 size={14} className="mr-1" /> Share
                 </Button>
                 <Button 
                   variant="default" 
                   size="sm" 
                   onClick={() => onSave && onSave(recipe)}
-                  className="bg-primary hover:bg-primary/90"
+                  className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-xs sm:text-sm"
                 >
-                  <Heart size={16} className="mr-1" /> Save
+                  <Heart size={14} className="mr-1" /> Save
                 </Button>
               </div>
             </div>
             
-            {/* Description */}
+            {/* Description - Better mobile padding */}
             {parsedRecipe?.description && (
-              <div className="px-4 sm:px-6 py-4 border-b">
-                <p className="text-muted-foreground leading-relaxed break-words">
+              <div className="px-3 sm:px-6 py-3 sm:py-4 border-b">
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                   {parsedRecipe.description}
                 </p>
               </div>
             )}
             
             {/* Voice Cooking Guide */}
-            <div className="px-4 sm:px-6 py-4 border-b">
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b">
               {showCookingMode ? (
                 <CookingModePlayer
                   recipe={{
@@ -692,51 +692,51 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                       data-testid="start-cooking-mode-btn"
                     >
                       <Volume2 className="w-4 h-4" />
-                      Start Step-by-Step Cooking Mode
+                      <span className="text-sm">Start Step-by-Step Cooking Mode</span>
                     </Button>
                   )}
                 </div>
               )}
             </div>
             
-            {/* Main Content Tabs */}
-            <div className="px-4 sm:px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm">
-              <div className="flex gap-1 overflow-x-auto">
+            {/* Main Content Tabs - Scrollable on mobile */}
+            <div className="px-2 sm:px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm">
+              <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1">
                 {['instructions', 'ingredients', 'drinks', 'tips', 'nutrition', 'storage'].map((tab) => (
                   <Button
                     key={tab}
                     variant={activeSection === tab ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setActiveSection(tab)}
-                    className="capitalize whitespace-nowrap"
+                    className="capitalize whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 flex-shrink-0"
                   >
-                    {tab === 'instructions' && <BookOpen size={14} className="mr-1" />}
-                    {tab === 'ingredients' && <Utensils size={14} className="mr-1" />}
-                    {tab === 'drinks' && <Wine size={14} className="mr-1" />}
-                    {tab === 'tips' && <AlertCircle size={14} className="mr-1" />}
-                    {tab === 'nutrition' && <Leaf size={14} className="mr-1" />}
-                    {tab === 'storage' && <Package size={14} className="mr-1" />}
-                    {tab === 'drinks' ? 'Drink Pairings' : tab}
+                    {tab === 'instructions' && <BookOpen size={14} className="mr-1 hidden sm:inline" />}
+                    {tab === 'ingredients' && <Utensils size={14} className="mr-1 hidden sm:inline" />}
+                    {tab === 'drinks' && <Wine size={14} className="mr-1 hidden sm:inline" />}
+                    {tab === 'tips' && <AlertCircle size={14} className="mr-1 hidden sm:inline" />}
+                    {tab === 'nutrition' && <Leaf size={14} className="mr-1 hidden sm:inline" />}
+                    {tab === 'storage' && <Package size={14} className="mr-1 hidden sm:inline" />}
+                    {tab === 'drinks' ? 'Drinks' : tab}
                   </Button>
                 ))}
               </div>
             </div>
             
-            {/* Content Sections */}
-            <div className="p-4 sm:p-6">
+            {/* Content Sections - Mobile optimized padding */}
+            <div className="p-3 sm:p-6">
               {/* Instructions Section */}
               {activeSection === 'instructions' && (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Equipment */}
                   {parsedRecipe?.equipment?.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
-                        <Utensils size={20} className="text-primary flex-shrink-0" />
+                    <div className="mb-4 sm:mb-6">
+                      <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2 mb-2 sm:mb-3">
+                        <Utensils size={18} className="text-primary flex-shrink-0" />
                         Equipment Needed
                       </h3>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {parsedRecipe.equipment.map((item, idx) => (
-                          <span key={idx} className="px-3 py-1 bg-muted rounded-full text-sm">
+                          <span key={idx} className="px-2 sm:px-3 py-1 bg-muted rounded-full text-xs sm:text-sm">
                             {item}
                           </span>
                         ))}
@@ -744,12 +744,13 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                     </div>
                   )}
                   
-                  <h3 className="text-xl font-serif font-semibold flex items-center gap-2">
-                    <BookOpen size={22} className="text-primary flex-shrink-0" />
+                  <h3 className="text-lg sm:text-xl font-serif font-semibold flex items-center gap-2">
+                    <BookOpen size={20} className="text-primary flex-shrink-0" />
                     Step-by-Step Instructions
                   </h3>
                   
-                  <div className="space-y-4">
+                  {/* Mobile-optimized instruction cards */}
+                  <div className="space-y-3 sm:space-y-4">
                     {parsedRecipe?.instructions?.map((inst, idx) => (
                       <div 
                         key={idx}
@@ -759,62 +760,70 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             : 'bg-card border-border hover:border-primary/30'
                         }`}
                       >
-                        <div className="flex items-start gap-3 sm:gap-4">
+                        <div className="flex items-start gap-2.5 sm:gap-4">
+                          {/* Step number circle - smaller on mobile */}
                           <button
                             onClick={() => handleStepCheck(inst.step)}
-                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-sm sm:text-base ${
+                            className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-xs sm:text-base font-medium ${
                               checkedSteps[inst.step]
                                 ? 'bg-green-500 text-white'
                                 : 'bg-primary/10 text-primary hover:bg-primary/20'
                             }`}
                           >
-                            {checkedSteps[inst.step] ? <Check size={18} /> : inst.step}
+                            {checkedSteps[inst.step] ? <Check size={14} /> : inst.step}
                           </button>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <span className="font-semibold text-foreground">
+                            {/* Step header with time badge */}
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                              <span className="font-semibold text-sm sm:text-base text-foreground">
                                 {inst.isFinal ? 'Final Step' : `Step ${inst.step}`}
                               </span>
                               {inst.time && (
-                                <span className="flex items-center gap-1 text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                                  <Clock size={12} /> {inst.time}
+                                <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 sm:px-2 py-0.5 rounded-full">
+                                  <Clock size={10} /> {inst.time}
                                 </span>
                               )}
                             </div>
                             
-                            <p className={`text-foreground leading-relaxed break-words whitespace-pre-wrap ${checkedSteps[inst.step] ? 'line-through text-muted-foreground' : ''}`}>
+                            {/* Instruction text - Mobile optimized */}
+                            <p className={`text-sm sm:text-base text-foreground leading-relaxed ${checkedSteps[inst.step] ? 'line-through text-muted-foreground' : ''}`}
+                               style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                               {inst.text}
                             </p>
                             
+                            {/* Visual Cue - Compact on mobile */}
                             {inst.visualCue && (
-                              <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                <p className="text-sm text-blue-700 break-words">
+                              <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-blue-50 rounded-lg border border-blue-100">
+                                <p className="text-xs sm:text-sm text-blue-700">
                                   <strong>👁 Visual Cue:</strong> {inst.visualCue}
                                 </p>
                               </div>
                             )}
                             
+                            {/* Important note - Compact on mobile */}
                             {inst.important && (
-                              <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                                <p className="text-sm text-amber-700 break-words">
+                              <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-amber-50 rounded-lg border border-amber-100">
+                                <p className="text-xs sm:text-sm text-amber-700">
                                   <strong>⚠️ Important:</strong> {inst.important}
                                 </p>
                               </div>
                             )}
                             
+                            {/* Technique note */}
                             {inst.technique && (
-                              <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
-                                <p className="text-sm text-purple-700 break-words">
-                                  <strong>📝 Technique Note:</strong> {inst.technique}
+                              <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-purple-50 rounded-lg border border-purple-100">
+                                <p className="text-xs sm:text-sm text-purple-700">
+                                  <strong>📝 Technique:</strong> {inst.technique}
                                 </p>
                               </div>
                             )}
                             
+                            {/* Serving suggestion */}
                             {inst.servingSuggestion && (
-                              <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-100">
-                                <p className="text-sm text-green-700">
-                                  <strong>🍽 Serving Suggestion:</strong> {inst.servingSuggestion}
+                              <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-green-50 rounded-lg border border-green-100">
+                                <p className="text-xs sm:text-sm text-green-700">
+                                  <strong>🍽 Serving:</strong> {inst.servingSuggestion}
                                 </p>
                               </div>
                             )}
@@ -826,16 +835,16 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   
                   {/* Common Mistakes */}
                   {parsedRecipe?.mistakes?.length > 0 && (
-                    <div className="mt-8 p-4 bg-red-50 rounded-xl border border-red-100">
-                      <h4 className="font-semibold text-red-800 flex items-center gap-2 mb-3">
-                        <AlertTriangle size={18} />
+                    <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-red-50 rounded-xl border border-red-100">
+                      <h4 className="font-semibold text-red-800 flex items-center gap-2 mb-2 sm:mb-3 text-sm sm:text-base">
+                        <AlertTriangle size={16} />
                         Common Mistakes to Avoid
                       </h4>
-                      <ul className="space-y-2">
+                      <ul className="space-y-1.5 sm:space-y-2">
                         {parsedRecipe.mistakes.map((mistake, idx) => (
-                          <li key={idx} className="text-sm text-red-700 flex items-start gap-2">
-                            <span className="text-red-500">•</span>
-                            {mistake}
+                          <li key={idx} className="text-xs sm:text-sm text-red-700 flex items-start gap-2">
+                            <span className="text-red-500 flex-shrink-0">•</span>
+                            <span>{mistake}</span>
                           </li>
                         ))}
                       </ul>
