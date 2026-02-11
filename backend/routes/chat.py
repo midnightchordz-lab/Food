@@ -1085,6 +1085,12 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
                 for r in structured_recipes[:3]:  # Log first 3
                     logging.info(f"  - {r.get('title', 'No title')} ({r.get('cuisine', 'No cuisine')})")
                 
+                # INCREMENT USAGE COUNTER after successful recipe generation
+                # This is the key fix - we count RECIPES, not REQUESTS
+                if recipe_params and len(structured_recipes) > 0:
+                    await increment_recipe_count(current_user.id, len(structured_recipes))
+                    logging.info(f"Incremented recipe count for user {current_user.id} by {len(structured_recipes)}")
+                
                 # Save successfully parsed recipes to the library
                 if recipe_params:
                     try:
