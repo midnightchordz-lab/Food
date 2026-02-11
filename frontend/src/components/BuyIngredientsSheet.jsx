@@ -219,6 +219,43 @@ const BuyIngredientsSheet = ({
   // Get currency symbol
   const getCurrencySymbol = (currency) => CURRENCY_SYMBOLS[currency] || '$';
 
+  // Handle country change
+  const handleCountryChange = async (countryCode) => {
+    setIsLoadingApps(true);
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Save preference to backend
+      await axios.post(`${API}/shopping/set-country`, {
+        country_code: countryCode
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Refetch delivery apps with new country
+      const response = await axios.get(`${API}/shopping/delivery-apps?country_hint=${countryCode}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setDeliveryApps(response.data.apps || []);
+        setCountryInfo({
+          country: response.data.country,
+          countryCode: response.data.country_code,
+          currencySymbol: response.data.currency_symbol,
+          detectedFrom: 'user_preference'
+        });
+        setPriceEstimate(null); // Clear old prices
+        toast.success(`Switched to ${response.data.country}`);
+      }
+    } catch (error) {
+      console.error('Failed to change country:', error);
+      toast.error('Failed to change region');
+    } finally {
+      setIsLoadingApps(false);
+    }
+  };
+
   // Handle continue to apps - fetch prices first
   const handleContinueToApps = async () => {
     setStep('apps');
