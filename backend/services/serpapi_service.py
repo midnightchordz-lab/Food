@@ -942,29 +942,58 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
                 main_protein = protein
                 break
         
-        # Words that might cause wrong image matches (cooking styles that have their own imagery)
-        confusing_terms = ['revuelto', 'scramble', 'stir-fry', 'casserole', 'stew', 'soup', 'curry']
-        has_confusing_term = any(term in actual_dish.lower() for term in confusing_terms)
+        # Indian/Asian dishes where the dish type matters MORE than the protein
+        # For these dishes, show the cooked dish (curry, biryani), NOT raw ingredients
+        dish_type_priority = {
+            'curry': 'curry',         # Prawn Curry -> "prawn curry dish"
+            'biryani': 'biryani',
+            'pulao': 'pulao',
+            'pilaf': 'pilaf',
+            'korma': 'korma',
+            'masala': 'masala',       # Tikka Masala -> "chicken tikka masala"
+            'tikka': 'tikka',
+            'vindaloo': 'vindaloo',
+            'jalfrezi': 'jalfrezi',
+            'congee': 'congee',
+            'porridge': 'porridge',
+            'poha': 'poha',
+            'fried rice': 'fried rice',
+            'noodles': 'noodles',
+            'pasta': 'pasta',
+            'risotto': 'risotto',
+            'paella': 'paella',
+            'dosa': 'dosa',
+            'idli': 'idli',
+            'uttapam': 'uttapam',
+            'upma': 'upma',
+            'khichdi': 'khichdi',
+            'dal': 'dal',
+            'sambar': 'sambar',
+            'stew': 'stew',
+            'soup': 'soup',
+            'stir-fry': 'stir fry',
+            'stir fry': 'stir fry',
+        }
         
-        # Indian/Asian dishes where the dish type matters more than the protein
-        dish_type_priority = ['congee', 'porridge', 'poha', 'biryani', 'pulao', 'pilaf', 'fried rice', 'noodles', 
-                             'pasta', 'risotto', 'paella', 'curry', 'korma', 'tikka masala',
-                             'dosa', 'idli', 'uttapam', 'upma', 'khichdi', 'dal', 'sambar']
+        # Find if dish contains a dish type that should take priority
         main_dish_type = None
-        for dish_type in dish_type_priority:
-            if dish_type.lower() in actual_dish.lower():
-                main_dish_type = dish_type
+        actual_lower = actual_dish.lower()
+        for dish_key, search_term in dish_type_priority.items():
+            if dish_key in actual_lower:
+                main_dish_type = search_term
                 break
         
         # Build search query optimized for food images
+        # Priority 1: If we have a dish type (curry, biryani, etc), use "protein dish_type dish"
         if main_dish_type:
-            # Prioritize the dish type (e.g., "Prawn Poha" -> search for "poha prawn")
-            search_query = f"{main_dish_type} {main_protein or ''} dish plated"
-        elif main_protein and has_confusing_term:
-            # When there's a confusing cooking term, focus on the protein
-            search_query = f"{main_protein} dish plated"
+            if main_protein:
+                # e.g., "Spicy Prawn Curry" -> "prawn curry dish plated"
+                search_query = f"{main_protein} {main_dish_type} dish plated"
+            else:
+                # e.g., "Vegetable Curry" -> "vegetable curry dish plated"
+                search_query = f"{main_dish_type} dish plated"
         elif main_protein:
-            # Put protein first for better image matching
+            # No dish type, just protein - e.g., "Grilled Salmon" -> "salmon grilled dish"
             search_query = f"{main_protein} {actual_dish} dish"
         else:
             search_query = f"{actual_dish} food dish"
