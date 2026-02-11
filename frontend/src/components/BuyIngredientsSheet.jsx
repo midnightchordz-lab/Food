@@ -329,17 +329,90 @@ const BuyIngredientsSheet = ({
       return;
     }
 
+    // If no list selected, show list selector
+    if (!selectedListId && shoppingLists.length > 0) {
+      setShowListSelector(true);
+      return;
+    }
+
+    // If no lists exist, create a new one
+    if (shoppingLists.length === 0) {
+      setShowListSelector(true);
+      return;
+    }
+
     setIsSavingToList(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API}/shopping/list/add`, {
+      await axios.post(`${API}/shopping/lists/${selectedListId}/items`, {
         ingredients: selected,
         recipe_name: recipeName
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      toast.success(`${selected.length} ingredients saved to your shopping list!`);
+      const listName = shoppingLists.find(l => l.list_id === selectedListId)?.name || 'your list';
+      toast.success(`${selected.length} ingredients saved to "${listName}"!`);
+      onClose();
+    } catch (error) {
+      console.error('Failed to save to list:', error);
+      toast.error('Failed to save to shopping list');
+    } finally {
+      setIsSavingToList(false);
+    }
+  };
+
+  // Create new list and save ingredients
+  const handleCreateListAndSave = async () => {
+    if (!newListName.trim()) {
+      toast.error('Please enter a list name');
+      return;
+    }
+
+    const selected = getSelectedIngredients();
+    setIsCreatingList(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/shopping/lists`, {
+        name: newListName.trim(),
+        ingredients: selected
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        toast.success(`Created "${newListName}" with ${selected.length} ingredients!`);
+        setShowListSelector(false);
+        setNewListName('');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Failed to create list:', error);
+      toast.error('Failed to create list');
+    } finally {
+      setIsCreatingList(false);
+    }
+  };
+
+  // Save to selected list from selector
+  const handleSaveToSelectedList = async (listId) => {
+    const selected = getSelectedIngredients();
+    if (selected.length === 0) return;
+
+    setIsSavingToList(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/shopping/lists/${listId}/items`, {
+        ingredients: selected,
+        recipe_name: recipeName
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const listName = shoppingLists.find(l => l.list_id === listId)?.name || 'your list';
+      toast.success(`${selected.length} ingredients saved to "${listName}"!`);
+      setShowListSelector(false);
       onClose();
     } catch (error) {
       console.error('Failed to save to list:', error);
