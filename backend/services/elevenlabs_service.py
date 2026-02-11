@@ -11,6 +11,10 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional, List
 import logging
 import httpx
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(Path(__file__).parent.parent / '.env', override=False)
 
 from .recipe_text_prep_service import recipe_text_prep_service
 
