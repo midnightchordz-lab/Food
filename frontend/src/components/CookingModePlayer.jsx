@@ -9,6 +9,7 @@ import { Volume2, ChevronLeft, ChevronRight, RotateCcw, Loader2, Check, Play } f
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
 import { useAuth } from '../context/AuthContext';
+import { isNative, platform, hapticFeedback } from '../capacitor';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -81,6 +82,10 @@ const CookingModePlayer = ({ recipe, language = 'en', onClose }) => {
 
   const goToStep = (index) => {
     if (index >= 0 && index < steps.length) {
+      // Haptic feedback on step change
+      if (isNative) {
+        hapticFeedback('light');
+      }
       setCurrentStep(index);
       if (audioRef.current) {
         audioRef.current.pause();
@@ -90,6 +95,10 @@ const CookingModePlayer = ({ recipe, language = 'en', onClose }) => {
   };
 
   const toggleStepCompletion = (index) => {
+    // Haptic feedback on completion toggle
+    if (isNative) {
+      hapticFeedback('medium');
+    }
     setCompletedSteps(prev => {
       const newSet = new Set(prev);
       if (newSet.has(index)) {
