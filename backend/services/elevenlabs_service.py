@@ -211,7 +211,14 @@ class ElevenLabsService:
             if response.status_code != 200:
                 error_detail = response.text
                 logging.error(f"ElevenLabs API error: {response.status_code} - {error_detail}")
-                raise Exception(f"ElevenLabs API error: {response.status_code}")
+                
+                # Check for specific error types
+                if 'detected_unusual_activity' in error_detail.lower() or 'free tier' in error_detail.lower():
+                    raise Exception("ElevenLabs Free Tier disabled. Please upgrade to a paid ElevenLabs plan.")
+                elif response.status_code == 401:
+                    raise Exception("ElevenLabs API key is invalid or expired")
+                else:
+                    raise Exception(f"ElevenLabs API error: {response.status_code}")
             
             return response.content
     
