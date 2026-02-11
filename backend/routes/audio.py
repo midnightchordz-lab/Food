@@ -19,6 +19,12 @@ class RecipeAudioRequest(BaseModel):
     language: str = 'en'
 
 
+class RecipeDataAudioRequest(BaseModel):
+    """Request with recipe data embedded (for chat-generated recipes)"""
+    language: str = 'en'
+    recipe: Optional[dict] = None
+
+
 class StepAudioRequest(BaseModel):
     stepText: str
     stepNumber: int
