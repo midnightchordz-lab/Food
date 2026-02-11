@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import {
   ShoppingCart, Check, MapPin, ExternalLink, Loader2, 
   BookmarkPlus, ChevronRight, Store, Clock, Globe, DollarSign,
-  TrendingDown, ChevronDown
+  TrendingDown, ChevronDown, Plus, ListPlus, FolderOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -12,6 +13,12 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
