@@ -1,167 +1,142 @@
 <analysis>**original_problem_statement:**
-The user wants to implement a Buy Ingredients — Smart Shopping Flow with Regional Delivery Integration.
+The user's initial request was to add a Save to Shopping List feature to the application. This was then expanded with the following product requirements:
+- Support for multiple, named shopping lists.
+- Functionality to clear all items from a list.
 
-**PRODUCT REQUIREMENTS:**
-
-**Current Problem:**
-1.  Two confusing buttons: Add to List and Buy Ingredients.
-2.  No ability for users to select which ingredients they want to buy.
-3.  No detection of the user's region to suggest relevant delivery apps.
-4.  The estimated price range is inaccurate and confusing.
-
-**Desired Solution:**
-1.  **Single Buy Ingredients Button**: Remove the Add to List button from the main recipe view.
-2.  **Ingredient Selection Sheet**: Clicking Buy Ingredients should open a bottom sheet where users can uncheck ingredients they already have.
-3.  **Regional Delivery Apps**: After selecting ingredients, the user is presented with a list of relevant grocery delivery apps based on their detected country (e.g., Blinkit/Zepto for India, Instacart/Amazon Fresh for the USA).
-4.  **Direct Integration**: Clicking a delivery app should open the app's website or deep link with the selected ingredients pre-filled in the search query.
-5.  **Save to List Option**: The ingredient selection sheet should also contain a secondary option to Save to Shopping List.
-6.  **Backend Support**:
-    *   Create a service to detect the user's country via their IP address.
-    *   Create API endpoints to get available delivery apps for a region and to build the final delivery URL.
-    *   Maintain a configuration of delivery apps for various countries (India, USA, UK, UAE, Australia, etc.).
+Throughout the session, the user added further requests:
+- **P0: Mobile App Parity:** Ensure all web features are available and optimized for the mobile app.
+- **P1: Incorrect Recipe Images:** Fix an issue where recipes (e.g., Spicy Prawn Curry) were showing incorrect images (e.g., raw prawns).
+- **P2: Mobile Recipe View Layout:** Redesign the recipe detail modal so that cooking instructions fit properly on mobile screens.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a recipe generator named MoodFood. The backend is built with Python (FastAPI) and the frontend with React. It uses MongoDB as its database.
-Key features implemented in this session:
-1.  **Freemium Usage Limit System**: A robust system that tracks recipe views for free users, limits them to a daily quota, and presents an upgrade modal when the limit is reached.
-2.  **ElevenLabs Text-to-Voice**: A premium feature that generates and plays audio narrations of recipes in multiple languages. This includes a full recipe player and a step-by-step cooking mode player. The system can generate audio from both database-saved recipes and on-the-fly chat-generated recipes.
-3.  **Admin Access**: A specific user () has been granted Chef Pro premium access.
-4.  **Basic Shopping List**: A basic Add to List and Buy Ingredients functionality exists but is slated for replacement by the new Smart Shopping Flow.
+The project is a full-stack recipe application using React for the frontend and Python/Flask for the backend with a MongoDB database. Key features include user authentication, AI-powered recipe generation, and a persistent, multi-list shopping feature. The application is wrapped in a Capacitor-based hybrid mobile app, so web features are available on mobile. Mobile-specific optimizations like haptic feedback, safe-area handling, and native sharing have been implemented.
 
 **Last working item**:
-- Last item agent was working: The agent acknowledged the user's request to implement the Buy Ingredients — Smart Shopping Flow and was about to begin the implementation based on the detailed requirements provided.
-- Status: NOT STARTED
-- Agent Testing Done: N
-- Which testing method agent to use? both
-- User Testing Done: N
+The user reported that recipe images are still incorrect on the mobile app, which is a recurrence of a previously addressed issue.
+
+-   **Last item agent was working:** The agent was addressing the user's report of incorrect recipe images. A previous fix was implemented in , but it proved insufficient. The issue lies in the backend logic that matches a recipe title to an image URL.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** Y (Agent tested the backend API and confirmed the fix for specific cases, but the user's report indicates the fix was not comprehensive.)
+-   **Which testing method agent to use?**: backend testing agent
+-   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-This section is empty as there are no pending issues.
+-   Issue 1: (P0) Recipe images are not matching the recipe title correctly.
+
+**Issues Detail:**
+-   **Issue 1: Incorrect Recipe Images**
+    -   **Attempted fixes:** The agent modified the  function in . The fix involved adding more specific keywords for dishes like prawn curry and attempting to prioritize matching dish names over raw ingredients. This approach was not robust enough and failed on variations of recipe titles.
+    -   **Next debug checklist:**
+        1.  Thoroughly review the matching algorithm in  in .
+        2.  Add logging to trace the input  and the resulting  for failing recipe titles.
+        3.  Implement a more robust matching algorithm. Consider using keyword scoring or a weighted approach instead of relying on dictionary iteration order.
+        4.  Test the function with a diverse set of recipe titles, including those with multiple descriptive words (e.g., Spicy, Grilled, with Rice).
+    -   **Why fix this issue and what will be achieved with the fix?**: Correct images are critical for user experience and app professionalism. This will ensure recipes are visually represented accurately.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Blocked on other issue:** None
 
 **In progress Task List**:
-This section is empty as there are no tasks in progress.
+There are no partially completed tasks; the remaining work is categorized as a pending issue.
 
 **Upcoming and Future Tasks**
-*   **P0: Implement the Smart Shopping Flow**
-    *   **Task**: Create backend infrastructure for the shopping feature.
-        *   **File**:  - Create a new config file to store regional delivery app data (URLs, logos, etc.).
-        *   **File**:  - Create a service to detect the user's country from their IP address.
-        *   **File**:  - Create new API endpoints for  and .
-        *   **File**:  - Register the new  router.
-    *   **Task**: Create the frontend Buy Ingredients sheet.
-        *   **File**:  - Create the main React component for the bottom sheet, which includes ingredient selection and the delivery app chooser.
-        *   **File**:  - Create the corresponding CSS for styling.
-    *   **Task**: Integrate the new shopping flow into the recipe view.
-        *   **File**:  (and any other recipe display components) - Remove the old Add to List and Buy Ingredients buttons and replace them with a single button that opens the new .
+Based on the  backlog:
+-   **P1: Recipe Sharing & Importing:** Allow users to share recipes via a public link and import from other websites.
+-   **P1: Meal Planning:** Implement a feature for users to plan weekly meals.
+-   **P2: Pantry Tracking:** Allow users to track home ingredients and receive recipe suggestions based on available items.
+-   **P2: UI Theme Customization:** Add light and dark mode options.
 
 **Completed work in this session**
-- **Freemium Usage Limit System (DONE)**: Implemented a full-stack feature to limit free users' daily recipe views.
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-- **Granted Premium User Access (DONE)**: Upgraded user  to the Chef Pro tier with unlimited access.
-- **ElevenLabs Text-to-Voice Integration (DONE)**: Integrated ElevenLabs TTS for recipe narration.
-  - 
-  - 
-  - 
-  - 
-  - 
-- **Audio Playback Bug Fix (DONE)**: Resolved an Audio playback failed error by creating a dedicated endpoint () to serve audio files, bypassing a static file serving issue.
-- **Dynamic Audio Generation for Chat Recipes (DONE)**: Fixed a bug where TTS failed for chat-generated recipes by creating a new endpoint () that accepts recipe data directly, instead of requiring a database ID.
+-   **Multiple Shopping Lists Feature (P0):** Implemented full backend and frontend support for creating, viewing, and managing multiple shopping lists.
+    -   Files: , , .
+-   **Mobile App Feature Parity & Optimization (P0):** Ensured web features work on mobile via Capacitor and added mobile-specific enhancements.
+    -   Features: Haptic feedback, native share, safe-area padding.
+    -   Files: , , .
+-   **Mobile Recipe Detail View Redesign (P2):** Improved the mobile layout of the recipe detail modal to ensure text and elements fit correctly on smaller screens.
+    -   File: .
+-   **PWA Install Prompt UX:** Made the PWA install prompt on mobile less intrusive by having it auto-dismiss.
+    -   File: .
+-   **Documentation:** Updated  to reflect completed work and the current backlog.
 
 **Earlier issues found/mentioned but not fixed**
-   - Issue 1: The root cause of the static file serving issue (where  was returning ) was bypassed by creating a dedicated API endpoint (). The underlying issue with FastAPI's  mount or the ingress configuration might still exist and could affect future static assets.
-     - Why to solve this issue and what will be achieved with this? To ensure robust and correct static file serving for any future assets (images, other media) without needing API workarounds.
-     - Should Test frontend/backend/both after fix: backend
-     - Is recurring issue? N
+None. The agent addressed all issues raised by the user, although one fix was incomplete and is now the primary pending issue.
 
 **Known issue recurrence from previous fork**
-- No previous fork summary was provided, so there are no known recurring issues from a prior session.
+-   **Issue recurrence in previous fork:** The issue of incorrect recipe images was fixed once in this session but was reported again by the user, indicating the fix was not sufficient.
+-   **Recurrence count:** 1
+-   **Status:** IN PROGRESS
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend**: Python, FastAPI
-- **Frontend**: JavaScript, React
-- **Database**: MongoDB
-- **Authentication**: JWT (JSON Web Tokens)
-- **Third-Party APIs**: ElevenLabs (Text-to-Speech)
-- **Deployment**: Docker, Kubernetes
+-   **Frontend:** React, Vite, Tailwind CSS, shadcn/ui, Capacitor.js
+-   **Backend:** Python, Flask
+-   **Database:** MongoDB
+-   **Architecture:** Monorepo-style with a REST API connecting the frontend and backend. A hybrid mobile app is generated from the web frontend using Capacitor.
 
 **key DB schema**
-- **users**: 
-- **recipes**: 
-- **library_recipes**: 
-- **shopping_lists**: (To be created) 
+-   ****: 
+-   ****: 
+-   ****: 
+
+**changes in tech stack**
+No changes were made to the core technologies. A database index on the  collection was modified to support the multi-list feature.
 
 **All files of reference**
-- : Core service for interacting with the ElevenLabs API, including caching logic.
-- : API endpoints for generating, streaming, and serving recipe audio files.
-- : Manages usage tracking (recipe views) for different subscription tiers.
-- : FastAPI middleware to enforce usage limits on relevant routes.
-- : Frontend component for the full-recipe audio player.
-- : The modal used to display recipe details, where the new Buy Ingredients button will be integrated.
-- : Page for displaying user-saved recipes; also integrated with the voice player.
+-   ****: Contains the flawed image matching logic that is the source of the current P0 issue.
+-   ****: Contains the backend logic for the completed shopping list feature.
+-   ****: Main frontend page for the shopping list feature.
+-   ****: The recipe modal that was updated for mobile responsiveness.
+-   ****: The product requirements document, updated with progress.
 
 **Areas that need refactoring**:
-- The static file mount in  should be investigated to fix the root cause of the audio file serving issue, which would be a cleaner solution than the current API endpoint workaround.
+-   The  function in  requires a complete refactor. The current hardcoded dictionary and simple string matching logic is not scalable or reliable.
 
 **key api endpoints**
-- : Generate audio for a recipe stored in the DB.
-- : Generate audio from raw recipe data (for chat-generated recipes).
-- : Serves a cached audio file.
-- : Retrieves the current usage status (count, limit, remaining) for the user.
-- **(Upcoming)** : Get delivery apps for the user's region.
-- **(Upcoming)** : Create a deep link for a specific delivery app and ingredients.
+-    (POST): User authentication.
+-    (GET): Retrieve all shopping lists.
+-    (POST): Create a new list.
+-    (POST): Add items to a list.
+-    (GET): Retrieves an image URL for a given food query (This is the endpoint connected to the buggy logic).
 
 **Critical Info for New Agent**
-- **ElevenLabs API Key**: The free tier key () was disabled due to unusual activity. The user has upgraded to a Starter plan, and the key is now functional. Be aware that this is a paid dependency.
-- **Audio File Serving**: Standard static file mounting in FastAPI () failed to serve audio files with the correct  content type, likely due to an ingress controller misconfiguration. A workaround was implemented by creating a dedicated API endpoint () to serve the files. The new shopping feature will involve serving images (app logos), so you may need a similar workaround or to fix the root cause.
-- **Dynamic vs. DB Recipes**: The app handles two types of recipes: those from the database (e.g., in ) which have a persistent , and those generated on-the-fly in the chat, which do not. The TTS feature was adapted to handle both cases, and the new shopping feature should be similarly mindful of this distinction if it needs to persist or reference recipe data.
+-   Your highest priority is to permanently fix the recurring bug where recipe images do not match the recipe title. The core of the problem is in . The previous fix was too simplistic.
+-   The application uses Capacitor, meaning the mobile app is a wrapper around the React web app. Mobile-related UI bugs should be fixed in the React components.
+-   Authentication ( / ) is needed to access most features. Be aware that Playwright automation for login has been unstable in the past.
 
 **documents and test reports created in this job**
--  (updated)
-- 
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1. **User**: Reports Failed to generate audio error with a screenshot.
-2. **Agent**: Investigates the error, finds the recipe ID doesn't exist for chat-generated recipes.
-3. **Agent**: Proposes a fix: a new endpoint to generate audio from raw recipe data. Implements the fix.
-4. **Agent**: Confirms the fix works and voice generation is now successful for chat recipes.
-5. **User**: Reports Audio playback failed error with a screenshot.
-6. **Agent**: Investigates, finds the audio file is being served with the wrong content type ().
-7. **Agent**: Proposes a fix: a dedicated endpoint to serve audio files correctly. Implements the fix.
-8. **Agent**: Confirms the audio now plays correctly in the browser.
-9. **User**: Provides a detailed feature request and PRD for a Smart Shopping Flow.
-10. **Agent**: Acknowledges the request and confirms it will start working on it.
+1.  **the image are not according to the recipe on the APP as well fix it**: User reports the image bug for the second time. (PENDING)
+2.  **ok here is the problem in the app the recipe view is not complete...**: User requests a fix for the mobile recipe detail layout. (COMPLETED)
+3.  **Look at the SS the prawn recipe image is not correct...**: User reports the incorrect image bug for the first time. (ATTEMPTED/FAILED)
+4.  **Complete P0 activity**: User confirms the priority of the mobile parity task. (COMPLETED)
+5.  **Yes to 1 question, question 2 its a new requirement, Clear list, Multiple list option**: User provides initial requirements for the shopping list feature. (COMPLETED)
+6.  **Please use ask_human tool and confirm your plan now.**: Initial instruction. (COMPLETED)
 
 **Project Health Check:**
-- **Working**: Core recipe generation, freemium usage limits, user authentication, ElevenLabs TTS for both saved and chat-generated recipes.
-- **Broken**: The underlying static file serving mechanism appears to be misconfigured, as it serves files with the wrong content type. This was bypassed with a workaround for audio but may affect other static assets.
-- **Mocked**: None.
+-   **Broken:** The recipe image service () is unreliable.
+-   **Mocked:** The image search is not a real integration but a simplified utility function that simulates image lookups.
 
 **3rd Party Integrations**
-- **ElevenLabs API**: Used for Text-to-Speech generation. The API key is stored in the backend  file (). It requires a paid user plan.
-- **(Upcoming) ipapi.co**: To be used for IP-based geolocation for the shopping feature. It has a free tier.
+-   **OpenAI GPT-4o**: Used for recipe generation. Uses Emergent LLM Key.
+-   **Unsplash (Implicit)**: Image URLs are from Unsplash, but they are hardcoded in a Python dictionary in , not fetched via a live API.
+-   **Capacitor**: Framework for building the hybrid mobile app.
 
 **Testing status**
-- Testing agent used after significant changes: YES
-- Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: 
-- Known regressions: None.
+-   **Testing agent used after significant changes:** YES
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** []
+-   **Known regressions:** The recipe image accuracy feature has regressed and is a known recurring issue.
 
 **Credentials to test flow:**
-- A premium user account has been set up:
-  - **Email**: 
-  - **Password**: (The password is not available, but the user is already logged in in the test environment).
-- This user has the Chef Pro tier and can access all premium features without limits.
+-   **Email:** 
+-   **Password:** 
 
 **What agent forgot to execute**
-- The agent was about to begin the new feature request (Smart Shopping Flow) when the session ended. No tasks from the current request were overlooked.</analysis>
+The agent did not forget to execute any tasks but implemented an insufficient fix for the image accuracy issue, failing to test it against a wide variety of edge cases, which led to the bug's recurrence.</analysis>
