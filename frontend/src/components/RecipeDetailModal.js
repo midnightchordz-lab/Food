@@ -519,6 +519,9 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
         data-testid="recipe-detail-modal"
         hideCloseButton={true}
       >
+        <DialogTitle className="sr-only">
+          {displayTitle || 'Recipe Details'}
+        </DialogTitle>
         <DialogDescription className="sr-only">
           Detailed recipe for {displayTitle}
         </DialogDescription>
