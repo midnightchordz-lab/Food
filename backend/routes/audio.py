@@ -266,3 +266,42 @@ async def clear_recipe_audio_cache(
     except Exception as e:
         logging.error(f"Cache clear error: {e}")
         raise HTTPException(status_code=500, detail="Failed to clear cache")
+
+
+@router.get("/file/{filename}")
+async def serve_audio_file(filename: str):
+    """
+    GET /api/audio/file/:filename
+    Serve audio files directly with proper MIME type
+    """
+    import aiofiles
+    from fastapi.responses import Response
+    
+    try:
+        file_path = Path("/app/uploads/audio-cache") / filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="Audio file not found")
+        
+        # Security check - ensure filename doesn't escape directory
+        if ".." in filename or filename.startswith("/"):
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        
+        async with aiofiles.open(str(file_path), 'rb') as f:
+            content = await f.read()
+        
+        return Response(
+            content=content,
+            media_type="audio/mpeg",
+            headers={
+                "Accept-Ranges": "bytes",
+                "Content-Disposition": f"inline; filename={filename}",
+                "Cache-Control": "public, max-age=604800"  # 7 days
+            }
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error serving audio file: {e}")
+        raise HTTPException(status_code=500, detail="Failed to serve audio file")
