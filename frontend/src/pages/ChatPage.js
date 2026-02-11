@@ -541,7 +541,13 @@ For EACH recipe provide:
     } catch (error) {
       console.error('Error fetching recipes:', error);
       
-      // Check if it's a feature locked error (recipe search limit)
+      // Check if it's a usage limit error using the new hook
+      if (handleLimitError(error)) {
+        setMessages(prev => prev.filter(m => !m.isLoading));
+        return;
+      }
+      
+      // Fallback to old feature locked error handling (recipe search limit)
       if (handleFeatureLockedError(error, setFeatureLockedModal)) {
         setMessages(prev => prev.filter(m => !m.isLoading));
         return;
