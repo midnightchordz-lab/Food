@@ -1644,35 +1644,35 @@ const RecipeMessageDisplay = ({ message, onSaveRecipe, structuredRecipes }) => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   
-  // PRIORITY 1: Use structured recipes from backend if available
-  // This ensures consistent parsing and avoids brittle frontend regex
-  let categories = null;
-  let usingStructuredData = false;
-  
-  if (structuredRecipes && Array.isArray(structuredRecipes) && structuredRecipes.length > 0) {
-    categories = convertStructuredRecipes(structuredRecipes);
-    usingStructuredData = true;
-    console.log('Using structured recipes from backend:', structuredRecipes.length, 'recipes');
-  }
-  
-  // PRIORITY 2: Fallback to frontend parsing for backward compatibility
-  // Only parse if we don't have structured data AND the message looks like it has recipes
-  if (!usingStructuredData && message && hasRecipes(message)) {
-    try {
-      const parsedCategories = parseRecipesWithCategories(message);
-      // Only use parsed categories if they have valid recipes (proper titles, not ingredients)
-      const validRecipes = Object.values(parsedCategories)
-        .flatMap(cat => cat.recipes || [])
-        .filter(r => r.title && r.title.split(' ').length >= 2 && r.title.length >= 10);
-      
-      if (validRecipes.length > 0) {
-        categories = parsedCategories;
-        console.log('Using frontend-parsed recipes (fallback):', validRecipes.length, 'valid recipes');
-      }
-    } catch (parseError) {
-      console.warn('Frontend recipe parsing failed:', parseError);
+  // MEMOIZE categories to prevent re-parsing on every render
+  // This was causing images to disappear when the batch tracker was reset
+  const categories = useMemo(() => {
+    // PRIORITY 1: Use structured recipes from backend if available
+    if (structuredRecipes && Array.isArray(structuredRecipes) && structuredRecipes.length > 0) {
+      console.log('Using structured recipes from backend:', structuredRecipes.length, 'recipes');
+      return convertStructuredRecipes(structuredRecipes);
     }
-  }
+    
+    // PRIORITY 2: Fallback to frontend parsing for backward compatibility
+    if (message && hasRecipes(message)) {
+      try {
+        const parsedCategories = parseRecipesWithCategories(message);
+        // Only use parsed categories if they have valid recipes (proper titles, not ingredients)
+        const validRecipes = Object.values(parsedCategories)
+          .flatMap(cat => cat.recipes || [])
+          .filter(r => r.title && r.title.split(' ').length >= 2 && r.title.length >= 10);
+        
+        if (validRecipes.length > 0) {
+          console.log('Using frontend-parsed recipes (fallback):', validRecipes.length, 'valid recipes');
+          return parsedCategories;
+        }
+      } catch (parseError) {
+        console.warn('Frontend recipe parsing failed:', parseError);
+      }
+    }
+    
+    return null;
+  }, [message, structuredRecipes]); // Only re-compute when message or structuredRecipes change
   
   const hasAnyRecipes = categories && Object.values(categories).some(cat => cat.recipes && cat.recipes.length > 0);
   
