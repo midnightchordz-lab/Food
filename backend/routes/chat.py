@@ -21,8 +21,14 @@ from .exclusions import (
     filter_unsafe_recipes_from_response,
     filter_recipe_text_strictly
 )
-from .feature_gating import check_and_increment_search
-from .subscription import check_feature_access
+
+# Import the new usage limit service
+import sys
+sys.path.insert(0, '/app/backend')
+from services.usage_limit_service import (
+    check_recipe_limit,
+    increment_recipe_count
+)
 
 # Import SerpAPI for external recipe search
 sys.path.append('/app/backend')
