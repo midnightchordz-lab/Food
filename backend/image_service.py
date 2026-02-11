@@ -1,6 +1,227 @@
+"""
+Dynamic Food Image Service
+Fetches high-quality recipe images from Unsplash and Pexels APIs
+Falls back to curated static images when APIs are unavailable
+"""
+
 import os
-from typing import Optional, List
+import httpx
+import asyncio
+import logging
+from typing import Optional, List, Dict
 import hashlib
+from functools import lru_cache
+
+# API Keys - Unsplash and Pexels (free tier)
+# These are free public API keys with generous limits
+UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY', 'demo-key')  # Replace with actual key
+PEXELS_API_KEY = os.environ.get('PEXELS_API_KEY', 'demo-key')  # Replace with actual key
+
+# In-memory cache for fetched images (to avoid repeated API calls)
+_image_cache: Dict[str, str] = {}
+_cache_lock = asyncio.Lock()
+
+logger = logging.getLogger(__name__)
+
+
+def extract_dish_keywords(recipe_name: str) -> List[str]:
+    """
+    Extract meaningful food keywords from a recipe name.
+    Removes decorative/mood words and keeps food-related terms.
+    
+    Examples:
+    - "Spicy Prawn Curry with Coconut Rice" -> ["prawn", "curry", "coconut", "rice"]
+    - "Tranquil Tofu Palak" -> ["tofu", "palak"]
+    """
+    # Decorative/mood words to remove
+    skip_words = {
+        'a', 'an', 'the', 'with', 'and', 'or', 'in', 'on', 'of', 'for', 'to',
+        'style', 'fresh', 'homemade', 'traditional', 'classic', 'authentic',
+        'delicious', 'amazing', 'wonderful', 'perfect', 'best', 'my', 'our',
+        'morning', 'evening', 'night', 'sunrise', 'sunset', 'day', 'noon',
+        'lively', 'cheery', 'breezy', 'peaceful', 'tranquil', 'serene', 'happy',
+        'vibrant', 'colorful', 'golden', 'bright', 'light', 'cozy', 'warm',
+        'easy', 'quick', 'simple', 'healthy', 'light', 'rich', 'tangy',
+        'recipe', 'dish', 'meal', 'food', 'plated', 'served', 'bowl', 'plate'
+    }
+    
+    # Food-related words to prioritize
+    food_keywords = {
+        # Proteins
+        'chicken', 'beef', 'pork', 'lamb', 'mutton', 'fish', 'salmon', 'tuna',
+        'shrimp', 'prawn', 'prawns', 'lobster', 'crab', 'scallop', 'squid',
+        'tofu', 'tempeh', 'paneer', 'egg', 'eggs', 'duck', 'turkey',
+        # Dish types
+        'curry', 'biryani', 'pulao', 'risotto', 'pasta', 'pizza', 'burger',
+        'tacos', 'burrito', 'soup', 'stew', 'salad', 'sandwich', 'wrap',
+        'noodles', 'ramen', 'pho', 'sushi', 'sashimi', 'tempura', 'kebab',
+        'tikka', 'tandoori', 'masala', 'korma', 'vindaloo', 'jalfrezi',
+        'pad thai', 'fried rice', 'dosa', 'idli', 'samosa', 'pakora',
+        'falafel', 'shawarma', 'hummus', 'gyros', 'souvlaki', 'moussaka',
+        # Cooking styles that affect images
+        'grilled', 'roasted', 'fried', 'baked', 'steamed', 'braised',
+        'stir-fried', 'barbecue', 'bbq', 'smoked', 'crispy',
+        # Descriptive food words
+        'spicy', 'creamy', 'cheesy', 'stuffed', 'glazed'
+    }
+    
+    words = recipe_name.lower().replace('-', ' ').replace('_', ' ').split()
+    keywords = []
+    
+    for word in words:
+        word_clean = word.strip('.,!?()[]{}')
+        if word_clean not in skip_words and len(word_clean) > 2:
+            keywords.append(word_clean)
+    
+    # Prioritize food keywords
+    prioritized = [w for w in keywords if w in food_keywords]
+    others = [w for w in keywords if w not in food_keywords and w not in skip_words]
+    
+    return prioritized + others
+
+
+def build_search_query(recipe_name: str, cuisine: str = '') -> str:
+    """
+    Build an optimized search query for food images.
+    """
+    keywords = extract_dish_keywords(recipe_name)
+    
+    # Check for specific dish patterns that need special handling
+    name_lower = recipe_name.lower()
+    
+    # Curry dishes - ensure we search for "curry" with the protein
+    if 'curry' in name_lower:
+        # Find the protein
+        proteins = ['prawn', 'prawns', 'shrimp', 'chicken', 'lamb', 'beef', 'fish', 'vegetable', 'paneer', 'tofu']
+        found_protein = None
+        for p in proteins:
+            if p in name_lower:
+                found_protein = p
+                break
+        if found_protein:
+            return f"{found_protein} curry dish plated"
+        return "curry dish plated"
+    
+    # Biryani - always show the rice dish
+    if 'biryani' in name_lower:
+        return "biryani rice dish plated"
+    
+    # Use first 3-4 meaningful keywords
+    query_words = keywords[:4] if keywords else [recipe_name]
+    query = ' '.join(query_words)
+    
+    # Add cuisine context if helpful
+    if cuisine and cuisine.lower() not in query.lower():
+        query = f"{cuisine} {query}"
+    
+    # Ensure we get food images
+    if 'food' not in query.lower() and 'dish' not in query.lower():
+        query += ' food dish'
+    
+    return query
+
+
+async def fetch_unsplash_image(query: str) -> Optional[str]:
+    """
+    Fetch an image URL from Unsplash API.
+    """
+    if UNSPLASH_ACCESS_KEY == 'demo-key':
+        return None
+        
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                'https://api.unsplash.com/search/photos',
+                params={
+                    'query': query,
+                    'per_page': 3,
+                    'orientation': 'landscape',
+                    'content_filter': 'high'
+                },
+                headers={
+                    'Authorization': f'Client-ID {UNSPLASH_ACCESS_KEY}'
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                results = data.get('results', [])
+                if results:
+                    # Get the first high-quality result
+                    return results[0].get('urls', {}).get('regular')
+    except Exception as e:
+        logger.warning(f"Unsplash API error: {e}")
+    
+    return None
+
+
+async def fetch_pexels_image(query: str) -> Optional[str]:
+    """
+    Fetch an image URL from Pexels API.
+    """
+    if PEXELS_API_KEY == 'demo-key':
+        return None
+        
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                'https://api.pexels.com/v1/search',
+                params={
+                    'query': query,
+                    'per_page': 3,
+                    'orientation': 'landscape'
+                },
+                headers={
+                    'Authorization': PEXELS_API_KEY
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                photos = data.get('photos', [])
+                if photos:
+                    return photos[0].get('src', {}).get('large')
+    except Exception as e:
+        logger.warning(f"Pexels API error: {e}")
+    
+    return None
+
+
+async def fetch_dynamic_image(recipe_name: str, cuisine: str = '') -> Optional[str]:
+    """
+    Fetch a dynamic image from Unsplash or Pexels APIs.
+    Returns None if no image is found or APIs are unavailable.
+    """
+    query = build_search_query(recipe_name, cuisine)
+    cache_key = hashlib.md5(query.encode()).hexdigest()
+    
+    # Check cache first
+    async with _cache_lock:
+        if cache_key in _image_cache:
+            return _image_cache[cache_key]
+    
+    # Try Unsplash first, then Pexels
+    image_url = await fetch_unsplash_image(query)
+    if not image_url:
+        image_url = await fetch_pexels_image(query)
+    
+    # Cache the result
+    if image_url:
+        async with _cache_lock:
+            # Limit cache size
+            if len(_image_cache) > 500:
+                # Remove oldest entries
+                keys_to_remove = list(_image_cache.keys())[:100]
+                for k in keys_to_remove:
+                    del _image_cache[k]
+            _image_cache[cache_key] = image_url
+    
+    return image_url
+
+
+# ============================================================
+# STATIC FALLBACK IMAGES (used when APIs are unavailable)
+# ============================================================
 
 # Comprehensive curated high-quality food images from Unsplash (royalty-free)
 # Organized by global regions for better matching
