@@ -103,12 +103,45 @@ const BuyIngredientsSheet = ({
     }
   };
 
+  // Fetch price estimates for selected ingredients
+  const fetchPriceEstimate = async () => {
+    const selected = getSelectedIngredients();
+    if (selected.length === 0) return;
+
+    setIsLoadingPrices(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/shopping/price-estimate`, {
+        ingredients: selected,
+        country_code: countryInfo?.countryCode || 'US'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setPriceEstimate({
+          min: response.data.estimated_total?.min || 0,
+          max: response.data.estimated_total?.max || 0,
+          currency: response.data.currency || 'USD',
+          ingredients: response.data.ingredients || {}
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch price estimate:', error);
+      // Don't show error to user, just skip price display
+    } finally {
+      setIsLoadingPrices(false);
+    }
+  };
+
   // Toggle ingredient selection
   const toggleIngredient = (idx) => {
     setSelectedIngredients(prev => ({
       ...prev,
       [idx]: !prev[idx]
     }));
+    // Clear price estimate when selection changes
+    setPriceEstimate(null);
   };
 
   // Select/Deselect all
@@ -118,6 +151,7 @@ const BuyIngredientsSheet = ({
       updated[idx] = select;
     });
     setSelectedIngredients(updated);
+    setPriceEstimate(null);
   };
 
   // Get selected ingredients list
@@ -133,6 +167,16 @@ const BuyIngredientsSheet = ({
 
   // Count selected
   const selectedCount = Object.values(selectedIngredients).filter(Boolean).length;
+
+  // Get currency symbol
+  const getCurrencySymbol = (currency) => CURRENCY_SYMBOLS[currency] || '$';
+
+  // Handle continue to apps - fetch prices first
+  const handleContinueToApps = async () => {
+    setStep('apps');
+    // Fetch price estimate in the background
+    fetchPriceEstimate();
+  };
 
   // Handle delivery app click - build URL and open
   const handleDeliveryAppClick = async (app) => {
