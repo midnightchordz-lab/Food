@@ -30,14 +30,17 @@ def extract_actual_dish_name(creative_name: str) -> str:
     - "Sunny Paneer Tikka Masala Delight" -> "Paneer Tikka Masala" (removes "Sunny" and "Delight")
     - "Happy Hour Vegetable Biryani" -> "Vegetable Biryani"
     - "Seaside Shrimp Revuelto" -> "Shrimp Revuelto"
+    - "Happy Mussalana Prawn Poha" -> "Prawn Poha"
     - "Paneer Tikka" -> "Paneer Tikka" (already good)
     """
     if not creative_name:
         return creative_name
     
-    # Common creative adjectives/prefixes to remove
+    # Common creative adjectives/prefixes to remove (can appear multiple times)
+    creative_words = r'(tranquil|peaceful|serene|calm|blissful|happy|joyful|sunny|radiant|golden|cozy|warm|hearty|vibrant|colorful|delightful|wonderful|amazing|incredible|fantastic|ultimate|perfect|best|great|lovely|beautiful|gorgeous|stunning|elegant|simple|easy|quick|super|mega|ultra|royal|classic|traditional|authentic|homestyle|homemade|grandma\'?s?|mom\'?s?|chef\'?s?|secret|special|famous|legendary|divine|heavenly|dreamy|magical|enchanted|mystical|seaside|coastal|ocean|beachside|tropical|island|garden|forest|countryside|rustic|modern|fusion|artisan|gourmet|decadent|luxurious|comforting|soothing|refreshing|energizing|wholesome|mussalana|sensational|exquisite|savory|aromatic|zesty|tangy|spicy|mild|rich|creamy|crispy|crunchy|tender|succulent|luscious|mouthwatering|tasty|yummy|scrumptious|delectable|sumptuous|appetizing|flavorful|fragrant)'
+    
     remove_prefixes = [
-        r'^(tranquil|peaceful|serene|calm|blissful|happy|joyful|sunny|radiant|golden|cozy|warm|hearty|vibrant|colorful|delightful|wonderful|amazing|incredible|fantastic|ultimate|perfect|best|great|lovely|beautiful|gorgeous|stunning|elegant|simple|easy|quick|super|mega|ultra|royal|classic|traditional|authentic|homestyle|homemade|grandma\'?s?|mom\'?s?|chef\'?s?|secret|special|famous|legendary|divine|heavenly|dreamy|magical|enchanted|mystical|seaside|coastal|ocean|beachside|tropical|island|garden|forest|countryside|rustic|modern|fusion|artisan|gourmet|decadent|luxurious|comforting|soothing|refreshing|energizing|wholesome)\s+',
+        rf'^{creative_words}\s+',
     ]
     
     # Common creative suffixes to remove
@@ -47,9 +50,10 @@ def extract_actual_dish_name(creative_name: str) -> str:
     
     result = creative_name
     
-    # Remove prefixes
-    for pattern in remove_prefixes:
-        result = re.sub(pattern, '', result, flags=re.IGNORECASE)
+    # Remove prefixes (may need multiple passes for stacked adjectives like "Happy Mussalana")
+    for _ in range(3):  # Up to 3 creative words at start
+        for pattern in remove_prefixes:
+            result = re.sub(pattern, '', result, flags=re.IGNORECASE)
     
     # Remove suffixes
     for pattern in remove_suffixes:
