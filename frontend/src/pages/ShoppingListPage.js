@@ -698,15 +698,27 @@ const ShoppingListPage = () => {
                         </div>
                         
                         <div className="flex flex-wrap gap-3">
-                          <Button 
-                            variant="outline" 
-                            onClick={copyToClipboard}
-                            className="flex-1 sm:flex-none rounded-full"
-                            data-testid="copy-list-button"
-                          >
-                            <Copy size={16} className="mr-2" />
-                            Copy List
-                          </Button>
+                          {isNative ? (
+                            <Button 
+                              variant="outline" 
+                              onClick={shareList}
+                              className="flex-1 sm:flex-none rounded-full"
+                              data-testid="share-list-button"
+                            >
+                              <Copy size={16} className="mr-2" />
+                              Share List
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="outline" 
+                              onClick={copyToClipboard}
+                              className="flex-1 sm:flex-none rounded-full"
+                              data-testid="copy-list-button"
+                            >
+                              <Copy size={16} className="mr-2" />
+                              Copy List
+                            </Button>
+                          )}
                           <Button 
                             variant="outline" 
                             onClick={downloadList}
