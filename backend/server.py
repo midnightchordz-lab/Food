@@ -53,6 +53,7 @@ from routes.subscription import router as subscription_router
 from routes.twilio_routes import router as twilio_router
 from routes.fridge_scanner import router as fridge_scanner_router
 from routes.usage import router as usage_router
+from routes.audio import router as audio_router
 from services.scheduled_tasks import router as scheduled_tasks_router, start_scheduler, stop_scheduler
 
 # Include all routers with /api prefix
@@ -72,6 +73,7 @@ app.include_router(scheduled_tasks_router, prefix="/api")
 app.include_router(twilio_router)
 app.include_router(fridge_scanner_router)
 app.include_router(usage_router, prefix="/api")
+app.include_router(audio_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(
