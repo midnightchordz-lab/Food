@@ -647,6 +647,54 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               </div>
             )}
             
+            {/* Voice Cooking Guide */}
+            <div className="px-4 sm:px-6 py-4 border-b">
+              {showCookingMode ? (
+                <CookingModePlayer
+                  recipe={{
+                    ...recipe,
+                    id: recipe.id || recipe._id || recipe.recipe_id,
+                    instructions: parsedRecipe?.instructions?.map(i => i.text) || []
+                  }}
+                  language={selectedVoiceLanguage}
+                  onClose={() => setShowCookingMode(false)}
+                />
+              ) : (
+                <div className="space-y-3">
+                  <RecipeVoicePlayer
+                    recipe={{
+                      ...recipe,
+                      id: recipe.id || recipe._id || recipe.recipe_id,
+                      name: parsedRecipe?.title || recipe.title,
+                      cuisine: parsedRecipe?.info?.cuisine || recipe.cuisine,
+                      totalTime: parsedRecipe?.info?.totalTime || recipe.cookTime || '30',
+                      servings: parsedRecipe?.info?.servings || recipe.servings || '4',
+                      ingredients: parsedRecipe?.ingredients?.map(i => ({ 
+                        name: i.item, 
+                        amount: i.amount 
+                      })) || [],
+                      instructions: parsedRecipe?.instructions?.map(i => i.text) || [],
+                      tips: parsedRecipe?.tips || []
+                    }}
+                  />
+                  
+                  {/* Cooking Mode Toggle */}
+                  {parsedRecipe?.instructions?.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={() => setShowCookingMode(true)}
+                      data-testid="start-cooking-mode-btn"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                      Start Step-by-Step Cooking Mode
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+            
             {/* Main Content Tabs */}
             <div className="px-4 sm:px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm">
               <div className="flex gap-1 overflow-x-auto">
