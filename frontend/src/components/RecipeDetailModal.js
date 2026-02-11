@@ -715,8 +715,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             {checkedSteps[inst.step] ? <Check size={20} /> : inst.step}
                           </button>
                           
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <span className="font-semibold text-foreground">
                                 {inst.isFinal ? 'Final Step' : `Step ${inst.step}`}
                               </span>
@@ -727,7 +727,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                               )}
                             </div>
                             
-                            <p className={`text-foreground leading-relaxed ${checkedSteps[inst.step] ? 'line-through text-muted-foreground' : ''}`}>
+                            <p className={`text-foreground leading-relaxed break-words whitespace-pre-wrap ${checkedSteps[inst.step] ? 'line-through text-muted-foreground' : ''}`}>
                               {inst.text}
                             </p>
                             
