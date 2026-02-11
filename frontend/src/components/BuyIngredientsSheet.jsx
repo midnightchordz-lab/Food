@@ -68,12 +68,43 @@ const BuyIngredientsSheet = ({
     }
   }, [isOpen, ingredients]);
 
+  // Get browser timezone-based country hint
+  const getBrowserCountryHint = () => {
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      // Map common timezones to country codes
+      const tzCountryMap = {
+        'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN', 'Asia/Mumbai': 'IN',
+        'America/New_York': 'US', 'America/Los_Angeles': 'US', 'America/Chicago': 'US', 'America/Denver': 'US',
+        'Europe/London': 'GB', 'Europe/Dublin': 'GB',
+        'Asia/Dubai': 'AE', 'Asia/Abu_Dhabi': 'AE',
+        'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Australia/Perth': 'AU',
+        'Asia/Singapore': 'SG',
+        'America/Toronto': 'CA', 'America/Vancouver': 'CA',
+        'Europe/Paris': 'FR', 'Europe/Berlin': 'DE', 'Europe/Rome': 'IT',
+        'Asia/Tokyo': 'JP', 'Asia/Seoul': 'KR', 'Asia/Shanghai': 'CN'
+      };
+      return tzCountryMap[timezone] || null;
+    } catch {
+      return null;
+    }
+  };
+
   // Fetch delivery apps based on user's region
   const fetchDeliveryApps = async () => {
     setIsLoadingApps(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/shopping/delivery-apps`, {
+      
+      // Get browser country hint from timezone
+      const countryHint = getBrowserCountryHint();
+      
+      const params = new URLSearchParams();
+      if (countryHint) {
+        params.append('country_hint', countryHint);
+      }
+      
+      const response = await axios.get(`${API}/shopping/delivery-apps${params.toString() ? '?' + params.toString() : ''}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
