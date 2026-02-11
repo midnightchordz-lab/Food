@@ -330,6 +330,34 @@ const BuyIngredientsSheet = ({
             ) : (
               /* Step 2: Delivery App Selection */
               <div className="p-6">
+                {/* Price Estimate Banner */}
+                {(isLoadingPrices || priceEstimate) && (
+                  <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-green-500/10">
+                        {isLoadingPrices ? (
+                          <Loader2 className="w-5 h-5 text-green-600 animate-spin" />
+                        ) : (
+                          <TrendingDown className="w-5 h-5 text-green-600" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-800">
+                          {isLoadingPrices ? 'Calculating prices...' : 'Estimated Total'}
+                        </p>
+                        {priceEstimate && priceEstimate.max > 0 ? (
+                          <p className="text-lg font-bold text-green-700">
+                            {getCurrencySymbol(priceEstimate.currency)}{priceEstimate.min.toFixed(2)} - {getCurrencySymbol(priceEstimate.currency)}{priceEstimate.max.toFixed(2)}
+                          </p>
+                        ) : priceEstimate ? (
+                          <p className="text-sm text-green-600">Prices vary by store</p>
+                        ) : null}
+                      </div>
+                      <DollarSign className="w-6 h-6 text-green-400" />
+                    </div>
+                  </div>
+                )}
+
                 {/* Region Info */}
                 <div className="flex items-center gap-2 mb-6 p-3 bg-muted/50 rounded-xl">
                   <MapPin className="w-4 h-4 text-primary" />
