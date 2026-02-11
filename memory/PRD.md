@@ -185,12 +185,22 @@ Fixed the issue where step-by-step cooking instructions didn't fit properly on m
 7. ✅ Safe-area CSS support for iOS notch
 8. ✅ PWA install prompt repositioned to avoid blocking UI
 
-### Recipe Image Matching Fix ✅
-Fixed issue where curry dishes (like "Spicy Prawn Curry") showed raw ingredient images instead of cooked dishes:
-1. ✅ Added smart dish type + protein combination matching
-2. ✅ Curry dishes now prioritize cooked curry images over raw ingredients
-3. ✅ Added specific entries for prawn curry, shrimp curry, fish curry
-4. ✅ Improved matching logic to skip dish type words in generic matching
+### Recipe Image Matching Fix ✅ (Feb 11, 2026 - Recurring Issue RESOLVED)
+Fixed recurring issue where curry dishes (like "Spicy Prawn Curry") showed raw ingredient images instead of cooked dishes:
+
+**Root Cause:** The SerpAPI image search was building incorrect queries like "prawns dish plated" (missing the dish type).
+
+**Fix Applied (serpapi_service.py lines 936-1028):**
+1. ✅ Changed protein detection to dictionary with singular/plural forms: `{'prawn': 'prawn', 'prawns': 'prawn', ...}`
+2. ✅ Added comprehensive dish_type_priority dictionary: curry, biryani, korma, masala, stew, soup, etc.
+3. ✅ Fixed search query building: now builds `"{protein} {dish_type} dish plated"` instead of `"{protein} dish plated"`
+4. ✅ Example: "Spicy Prawn Curry" → search query: "prawn curry dish plated Indian recipe photo"
+
+**Verification (13/13 tests passed):**
+- "Spicy Prawn Curry" → Returns Kadai Prawns curry image from foodiesterminal.com ✅
+- "Chicken Biryani" → Returns plated biryani dish ✅
+- "Palak Paneer" → Returns palak paneer curry ✅
+- Batch images → All unique images returned ✅
 
 ### Mobile App Parity Complete ✅
 The app uses **Capacitor** hybrid framework - all web features are automatically available on iOS/Android. Enhancements made:
