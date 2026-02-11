@@ -174,7 +174,16 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 11, 2026)
 
-### Multiple Shopping Lists Feature ✅ NEW
+### Mobile App Parity Complete ✅ NEW
+The app uses **Capacitor** hybrid framework - all web features are automatically available on iOS/Android. Enhancements made:
+1. ✅ Safe-area CSS support for notched devices (iPhone X+)
+2. ✅ Haptic feedback on item toggles and actions
+3. ✅ Native Share integration (uses native share sheet on mobile)
+4. ✅ Keyboard handling for better UX
+5. ✅ Touch target optimization (44px minimum)
+6. ✅ Codemagic CI/CD configured for builds
+
+### Multiple Shopping Lists Feature ✅
 1. ✅ Full CRUD API for shopping lists (33/33 tests passed)
 2. ✅ Multiple lists per user (create, rename, delete, clear)
 3. ✅ ShoppingListPage with sidebar navigation
@@ -199,10 +208,6 @@ AUDIO_CACHE_HOURS=168
 6. ✅ Audio caching for cost optimization
 
 ## Backlog
-
-### P0 - Mobile App Parity (User Requested)
-- Investigate iOS/Android mobile app architecture
-- Port all new web features to native apps
 
 ### P1 - Next Priority
 - Case-insensitive user search bug fix
