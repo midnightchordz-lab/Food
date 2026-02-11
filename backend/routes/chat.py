@@ -1022,10 +1022,10 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
 - Avoid all variations (e.g., if "shrimp" excluded, also avoid prawns)
 - Choose alternative proteins/ingredients instead"""
             
-            user_text = f"Generate 4 {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine."
+            user_text = f"Generate {recipes_to_generate} {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine."
             if user_exclusions:
                 user_text += f" Avoid: {', '.join(user_exclusions)}."
-            logging.info(f"Recipe generation request: {recipe_params}, exclusions: {user_exclusions}")
+            logging.info(f"Recipe generation request: {recipe_params}, exclusions: {user_exclusions}, count: {recipes_to_generate}")
         else:
             system_msg = get_system_message(current_user.dietary_restrictions, current_user.cuisine_preferences)
             if user_exclusions:
