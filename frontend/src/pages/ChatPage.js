@@ -179,6 +179,34 @@ const ChatPage = () => {
     setFlowStep('mood');
   }, [isAuthenticated, user, navigate, loading]);
   
+  // Check recipe quota on mount - show upgrade modal if limit reached
+  useEffect(() => {
+    const checkQuota = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        const response = await axios.get(`${API}/subscription/check-feature/recipe_search`);
+        const { allowed, used, limit, remaining } = response.data;
+        
+        // If user has no remaining recipes, show upgrade modal
+        if (!allowed || remaining === 0) {
+          setFeatureLockedModal({
+            isOpen: true,
+            feature: 'recipe_search',
+            upgradeTo: 'premium_monthly',
+            currentPlan: 'free',
+            usedLimit: used,
+            maxLimit: limit
+          });
+        }
+      } catch (error) {
+        console.error('Error checking recipe quota:', error);
+      }
+    };
+    
+    checkQuota();
+  }, [isAuthenticated]);
+  
   // Load user exclusions on mount
   useEffect(() => {
     const loadExclusions = async () => {
