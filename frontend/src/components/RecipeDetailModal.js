@@ -510,7 +510,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-4xl max-h-[95vh] overflow-y-auto p-0 bg-background"
+        className="max-w-4xl w-full max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 bg-background"
         data-testid="recipe-detail-modal"
         hideCloseButton={true}
       >
