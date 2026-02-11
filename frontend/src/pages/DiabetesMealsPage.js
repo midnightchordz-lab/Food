@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   Send, Loader2, Heart, Home, Sparkles, AlertCircle, 
-  Activity, Droplets, Search, CheckCircle2, Info, Settings, RefreshCw
+  Activity, Droplets, Search, CheckCircle2, Info, Settings, RefreshCw, Volume2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -15,6 +15,7 @@ import MealTypeSelector, { MEAL_TYPES } from '@/components/MealTypeSelector';
 import FoodPreferenceSelector, { FOOD_PREFERENCES } from '@/components/FoodPreferenceSelector';
 import CuisineSelector, { CUISINES } from '@/components/CuisineSelector';
 import { FeatureLockedModal, handleFeatureLockedError, useFeatureAccess } from '@/components/FeatureGate';
+import RecipeVoicePlayer from '@/components/RecipeVoicePlayer';
 import {
   Dialog,
   DialogContent,
