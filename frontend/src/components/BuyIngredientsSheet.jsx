@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   ShoppingCart, Check, MapPin, ExternalLink, Loader2, 
-  BookmarkPlus, ChevronRight, Store, Clock, Globe
+  BookmarkPlus, ChevronRight, Store, Clock, Globe, DollarSign,
+  TrendingDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +17,11 @@ import axios from 'axios';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
+// Currency symbols mapping
+const CURRENCY_SYMBOLS = {
+  'USD': '$', 'INR': '₹', 'GBP': '£', 'EUR': '€', 'CAD': 'C$', 'AUD': 'A$', 'SGD': 'S$', 'AED': 'AED '
+};
+
 /**
  * BuyIngredientsSheet - Smart Shopping Flow Component
  * 
@@ -24,6 +30,7 @@ const API = process.env.REACT_APP_BACKEND_URL + '/api';
  * 2. Regional delivery app detection based on user's IP/country
  * 3. Direct deep links to delivery apps with pre-filled search
  * 4. Save to shopping list option
+ * 5. Price comparison before clicking through
  */
 const BuyIngredientsSheet = ({ 
   isOpen, 
@@ -40,6 +47,10 @@ const BuyIngredientsSheet = ({
   const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [isSavingToList, setIsSavingToList] = useState(false);
   
+  // State for price estimation
+  const [priceEstimate, setPriceEstimate] = useState(null);
+  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
+  
   // Step state: 'select' (ingredients) or 'apps' (delivery apps)
   const [step, setStep] = useState('select');
 
@@ -52,6 +63,7 @@ const BuyIngredientsSheet = ({
       });
       setSelectedIngredients(initial);
       setStep('select');
+      setPriceEstimate(null);
       fetchDeliveryApps();
     }
   }, [isOpen, ingredients]);
