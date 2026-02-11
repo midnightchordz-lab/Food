@@ -17,43 +17,64 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 
 #### Backend Implementation
 - **Service**: `/app/backend/services/usage_limit_service.py`
-  - `get_user_usage_status()` - Returns tier, used, limit, remaining, reset_at
-  - `check_recipe_limit()` - Checks if user can generate more recipes
-  - `increment_recipe_count()` - Increments after successful generation
-  - `check_meal_plan_limit()` - Checks meal plan quota
-  - `increment_meal_plan_count()` - Increments meal plan counter
-
 - **Routes**: `/app/backend/routes/usage.py`
-  - `GET /api/usage/status` - Returns full usage status
-  - `GET /api/usage/check/recipes` - Quick recipe limit check
-  - `GET /api/usage/check/meal-plans` - Quick meal plan limit check
-
-#### Frontend Implementation
-- **Service**: `/app/frontend/src/services/usageLimitService.js`
-- **Hook**: `/app/frontend/src/hooks/useUsageLimit.js` - Provides global usage state
-- **Provider**: `UsageLimitProvider` wraps the app in App.js
-- **Components**:
-  - `UsageLimitBanner.jsx` - Shows usage status at top of ChatPage
-  - `UpgradeModal.jsx` - Appears when limit is reached
 
 #### Limits
 - **Free Tier**: 5 recipes/day, 3 meal plans/week
 - **Premium/Chef Pro**: Unlimited (-1)
 
-#### Key Technical Details
-- Counter increments by NUMBER OF RECIPES generated (not requests)
-- Daily reset at midnight UTC
-- Weekly reset on Monday
-- Stored in `user_usage` MongoDB collection
-- Automatic date-based reset logic (no cron needed)
+### 3. ElevenLabs Voice Cooking Guide (IMPLEMENTED - Feb 11, 2026)
+**Text-to-Speech feature for recipe narration in 14+ languages.**
 
-### 3. Feature Gating
+#### Backend Implementation
+- **Text Prep Service**: `/app/backend/services/recipe_text_prep_service.py`
+  - Converts recipe data to speakable text
+  - Handles multilingual formatting
+  - Writes out numbers as words for better TTS
+  
+- **ElevenLabs Service**: `/app/backend/services/elevenlabs_service.py`
+  - Integrates with ElevenLabs API
+  - Supports 14+ languages
+  - Uses caching to avoid re-generating audio
+  - Standard model for full recipes, Flash model for real-time steps
+
+- **Audio Routes**: `/app/backend/routes/audio.py`
+  - `GET /api/audio/languages` - List supported languages
+  - `POST /api/audio/recipe/:id` - Generate full recipe narration
+  - `POST /api/audio/step` - Generate single step audio
+  - `DELETE /api/audio/cache/:recipeId` - Clear cached audio
+
+#### Frontend Components
+- **RecipeVoicePlayer.jsx**: Full recipe voice player with language selector
+- **CookingModePlayer.jsx**: Step-by-step cooking mode with auto-advance
+
+#### Feature Gating
+| Feature | Free User | Premium User |
+|---------|-----------|-------------|
+| English narration | ✅ | ✅ |
+| 14+ languages (Hindi, Spanish, etc.) | 🔒 | ✅ |
+| Step-by-step cooking mode | ✅ (English) | ✅ (All) |
+
+#### IMPORTANT: ElevenLabs API Key Status
+The ElevenLabs Free Tier has been disabled for the current API key due to "unusual activity" detection. 
+**To enable voice features, the user needs to:**
+1. Upgrade to ElevenLabs paid plan ($5/month Starter, $22/month Creator)
+2. Or generate a new API key
+
+#### Cost Calculation
+- Average recipe = ~1,500 characters
+- Creator plan ($22/month) = 200,000 chars = ~133 unique recipes
+- With caching, same recipe can be played unlimited times at no extra cost
+
+### 4. Feature Gating
 - Diabetes Module: Premium only
 - Fridge Scanner: Premium only
 - Recipe Import: Premium only
 - Basic Chat: All users
+- Voice (English): All users
+- Voice (Multilingual): Premium only
 
-### 4. Other Features
+### 5. Other Features
 - Recipe library with save/favorite functionality
 - Weekly meal planner
 - Shopping list generation
@@ -65,6 +86,7 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - **Backend**: FastAPI (Python), MongoDB
 - **AI**: OpenAI GPT-4o via Emergent LLM Key
 - **Images**: SerpAPI for recipe images
+- **TTS**: ElevenLabs API (requires paid subscription)
 
 ## Database Schema
 
@@ -80,67 +102,64 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 }
 ```
 
-### user_subscriptions Collection
-```javascript
-{
-  user_id: string,
-  plan_id: string, // "free", "premium_monthly", "chef_pro_annual", etc.
-  status: string,  // "active", "trialing", "canceled"
-  created_at: datetime
-}
-```
-
 ## API Endpoints
+
+### Audio/TTS System
+- `GET /api/audio/languages` - Get supported languages (public)
+- `POST /api/audio/recipe/:id` - Generate recipe narration (auth required)
+- `POST /api/audio/step` - Generate step audio (auth required)
+- `DELETE /api/audio/cache/:recipeId` - Clear cache (auth required)
 
 ### Usage System
 - `GET /api/usage/status` - Get usage status (auth required)
 - `GET /api/usage/check/recipes` - Check recipe quota (auth required)
-- `GET /api/usage/check/meal-plans` - Check meal plan quota (auth required)
-
-### Recipe Generation
-- `POST /api/chat/send` - Generate recipes (rate limited for free users)
 
 ## Test Credentials
 - Email: lloydmasih1976@gmail.com
 - Password: Milokiko*25
-- Tier: Free
+- Tier: Chef Pro (Admin-granted full access)
 
 ## Recent Changes (Feb 11, 2026)
 
-### Freemium System Complete Rewrite
-1. Created new database-centric usage tracking system
-2. Backend service tracks RECIPES (not requests)
-3. Counter increments AFTER successful generation
-4. Frontend shows UsageLimitBanner with remaining count
-5. UpgradeModal appears when limit reached with 403 response
-6. Fixed bug in `is_recipe_generation_request()` to properly detect recipe requests
+### ElevenLabs Voice Integration
+1. Created backend services for text preparation and ElevenLabs API
+2. Added audio routes with proper feature gating
+3. Built RecipeVoicePlayer component with language selector
+4. Built CookingModePlayer for step-by-step cooking
+5. Integrated voice player into SavedRecipes page
+6. Added audio file caching for cost optimization
 
-### Testing Results
-- All 10 backend tests passing
-- Frontend components working correctly
-- Usage tracking accurate
-- Reset logic verified
-- Modal displays correctly on limit
+### Status
+- ✅ Backend services implemented
+- ✅ Frontend components implemented
+- ⚠️ ElevenLabs API requires paid subscription (Free tier disabled)
 
 ## Backlog
+
+### P0 - Immediate
+- Get ElevenLabs paid API key for voice features
 
 ### P1 - Next Priority
 - Case-insensitive user search bug fix
 
 ### P2 - Future
-- Mobile improvements (offline mode, push notifications, haptic feedback)
+- Mobile improvements (offline mode, push notifications)
 - Stripe payment integration for actual subscriptions
 - Email notifications for usage warnings
 
-## Known Issues
-- None currently blocking
+## Environment Variables
+
+### Backend (.env)
+```
+ELEVENLABS_API_KEY=<your_paid_api_key>
+AUDIO_CACHE_DIR=/app/uploads/audio-cache
+AUDIO_CACHE_HOURS=168
+```
 
 ## Files of Reference
-- Backend Usage Service: `/app/backend/services/usage_limit_service.py`
-- Backend Usage Routes: `/app/backend/routes/usage.py`
-- Backend Chat Routes: `/app/backend/routes/chat.py`
-- Frontend Usage Service: `/app/frontend/src/services/usageLimitService.js`
-- Frontend Usage Hook: `/app/frontend/src/hooks/useUsageLimit.js`
-- Frontend Banner: `/app/frontend/src/components/UsageLimitBanner.jsx`
-- Frontend Modal: `/app/frontend/src/components/UpgradeModal.jsx`
-- App.js: `/app/frontend/src/App.js`
+- Backend Text Prep: `/app/backend/services/recipe_text_prep_service.py`
+- Backend ElevenLabs: `/app/backend/services/elevenlabs_service.py`
+- Backend Audio Routes: `/app/backend/routes/audio.py`
+- Frontend Voice Player: `/app/frontend/src/components/RecipeVoicePlayer.jsx`
+- Frontend Cooking Mode: `/app/frontend/src/components/CookingModePlayer.jsx`
+- SavedRecipes Page: `/app/frontend/src/pages/SavedRecipes.js`
