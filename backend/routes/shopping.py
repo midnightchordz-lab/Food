@@ -35,24 +35,66 @@ class AddToListRequest(BaseModel):
     recipe_name: Optional[str] = None
 
 
-async def detect_country_from_ip(ip_address: str) -> str:
+async def detect_country_from_ip(request: Request) -> tuple[str, str]:
     """
     Detect user's country from their IP address
     Uses free ipapi.co service
+    Returns: (country_code, detection_method)
     """
     try:
-        # Skip for localhost/private IPs
-        if ip_address in ['127.0.0.1', '::1', 'localhost'] or ip_address.startswith('10.') or ip_address.startswith('192.168.'):
-            return 'IN'  # Default to India for development
+        # Try to get the real client IP from various headers
+        # Check Cloudflare header first (most reliable)
+        cf_country = request.headers.get('cf-ipcountry')
+        if cf_country and cf_country != 'XX':
+            logging.info(f"Country from Cloudflare: {cf_country}")
+            return cf_country, 'cloudflare'
         
+        # Get IP from forwarded headers
+        ip_address = None
+        forwarded = request.headers.get('x-forwarded-for')
+        if forwarded:
+            # Get the first (original client) IP
+            ip_address = forwarded.split(',')[0].strip()
+        
+        if not ip_address:
+            ip_address = request.headers.get('x-real-ip')
+        
+        if not ip_address and request.client:
+            ip_address = request.client.host
+        
+        if not ip_address:
+            return 'DEFAULT', 'fallback'
+        
+        logging.info(f"Detecting country for IP: {ip_address}")
+        
+        # Skip for localhost/private IPs - but try to use a geo service anyway
+        if ip_address in ['127.0.0.1', '::1', 'localhost']:
+            return 'DEFAULT', 'localhost'
+        
+        # Check if private IP (10.x, 192.168.x, 172.16-31.x)
+        if (ip_address.startswith('10.') or 
+            ip_address.startswith('192.168.') or 
+            ip_address.startswith('172.') and 16 <= int(ip_address.split('.')[1]) <= 31):
+            # For private IPs in k8s, try to detect via external service
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                response = await client.get("https://ipapi.co/country/")
+                if response.status_code == 200:
+                    country = response.text.strip()
+                    logging.info(f"Country from ipapi (server IP): {country}")
+                    return country, 'server_ip'
+            return 'DEFAULT', 'private_ip'
+        
+        # For public IPs, detect country
         async with httpx.AsyncClient(timeout=3.0) as client:
             response = await client.get(f"https://ipapi.co/{ip_address}/country/")
             if response.status_code == 200:
-                return response.text.strip()
+                country = response.text.strip()
+                logging.info(f"Country from ipapi: {country}")
+                return country, 'ip_detection'
     except Exception as e:
         logging.error(f"IP detection failed: {e}")
     
-    return 'DEFAULT'
+    return 'DEFAULT', 'error'
 
 
 def get_client_ip(request: Request) -> str:
@@ -71,6 +113,7 @@ def get_client_ip(request: Request) -> str:
 @router.get("/delivery-apps")
 async def get_delivery_apps(
     request: Request,
+    country_hint: str = Query(None, description="Optional country code hint from browser"),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -79,16 +122,29 @@ async def get_delivery_apps(
     Called when user opens the Buy Ingredients sheet
     """
     try:
-        # Get user's IP
-        ip = get_client_ip(request)
-        logging.info(f"Detecting region for IP: {ip}")
-        
-        # Check if user has saved preference
+        # Check if user has saved preference first
         user_doc = await db.users.find_one({"id": current_user.id}, {"preferred_country": 1})
         saved_country = user_doc.get("preferred_country") if user_doc else None
         
-        # Detect country from IP if no preference
-        country_code = saved_country or await detect_country_from_ip(ip)
+        if saved_country:
+            apps_data = get_apps_for_country(saved_country)
+            return {
+                "success": True,
+                **apps_data,
+                "detected_from": "user_preference"
+            }
+        
+        # Use country hint from browser if provided (more reliable than IP)
+        if country_hint and len(country_hint) == 2:
+            apps_data = get_apps_for_country(country_hint.upper())
+            return {
+                "success": True,
+                **apps_data,
+                "detected_from": "browser_hint"
+            }
+        
+        # Detect country from IP as fallback
+        country_code, detection_method = await detect_country_from_ip(request)
         
         # Get apps for that country
         apps_data = get_apps_for_country(country_code)
@@ -96,7 +152,7 @@ async def get_delivery_apps(
         return {
             "success": True,
             **apps_data,
-            "detected_from": "user_preference" if saved_country else "ip_detection"
+            "detected_from": detection_method
         }
     
     except Exception as e:
