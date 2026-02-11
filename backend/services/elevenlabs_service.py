@@ -72,13 +72,25 @@ class ElevenLabsService:
     """ElevenLabs Text-to-Speech Service"""
     
     def __init__(self):
-        self.api_key = ELEVENLABS_API_KEY
         self.base_url = ELEVENLABS_BASE_URL
         self.cache_dir = AUDIO_CACHE_DIR
         self.cache_hours = AUDIO_CACHE_HOURS
         self.voice_map = VOICE_MAP
         self.standard_model = STANDARD_MODEL
         self.fast_model = FAST_MODEL
+        self._api_key = None  # Lazy-loaded
+    
+    @property
+    def api_key(self):
+        """Lazy-load API key to ensure env is loaded"""
+        if self._api_key is None:
+            # Try to load from env, with fresh read
+            from dotenv import load_dotenv
+            load_dotenv('/app/backend/.env', override=True)
+            self._api_key = os.environ.get('ELEVENLABS_API_KEY', '')
+            if not self._api_key:
+                logging.warning("ELEVENLABS_API_KEY not found in environment")
+        return self._api_key
     
     async def generate_recipe_audio(self, recipe: Dict, language: str = 'en', 
                                      mode: str = 'full') -> Dict:
