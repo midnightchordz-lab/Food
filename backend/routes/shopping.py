@@ -333,6 +333,361 @@ class PriceEstimateRequest(BaseModel):
     country_code: str
 
 
+class CreateListRequest(BaseModel):
+    name: str
+    ingredients: Optional[List[IngredientItem]] = []
+
+
+class RenameListRequest(BaseModel):
+    name: str
+
+
+@router.get("/lists")
+async def get_all_shopping_lists(current_user: User = Depends(get_current_user)):
+    """
+    GET /api/shopping/lists
+    Get all shopping lists for the user
+    """
+    try:
+        cursor = db.shopping_lists.find(
+            {"user_id": current_user.id},
+            {"_id": 0}
+        ).sort("updated_at", -1)
+        
+        lists = await cursor.to_list(length=50)
+        
+        return {
+            "success": True,
+            "lists": lists,
+            "total": len(lists)
+        }
+    except Exception as e:
+        logging.error(f"Get all lists error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get shopping lists")
+
+
+@router.post("/lists")
+async def create_shopping_list(
+    request: CreateListRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    POST /api/shopping/lists
+    Create a new shopping list
+    """
+    try:
+        from datetime import datetime, timezone
+        import uuid
+        
+        list_id = str(uuid.uuid4())[:8]
+        
+        items = []
+        for ing in request.ingredients:
+            items.append({
+                "name": ing.name,
+                "amount": ing.amount,
+                "unit": ing.unit,
+                "checked": False,
+                "added_at": datetime.now(timezone.utc).isoformat()
+            })
+        
+        new_list = {
+            "list_id": list_id,
+            "user_id": current_user.id,
+            "name": request.name,
+            "items": items,
+            "status": "active",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.shopping_lists.insert_one(new_list)
+        
+        # Return without _id
+        new_list.pop("_id", None)
+        
+        return {
+            "success": True,
+            "list": new_list,
+            "message": f"Created list '{request.name}'"
+        }
+    except Exception as e:
+        logging.error(f"Create list error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create shopping list")
+
+
+@router.get("/lists/{list_id}")
+async def get_shopping_list_by_id(
+    list_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    GET /api/shopping/lists/{list_id}
+    Get a specific shopping list
+    """
+    try:
+        shopping_list = await db.shopping_lists.find_one(
+            {"list_id": list_id, "user_id": current_user.id},
+            {"_id": 0}
+        )
+        
+        if not shopping_list:
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        return {
+            "success": True,
+            "list": shopping_list
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Get list error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get shopping list")
+
+
+@router.put("/lists/{list_id}")
+async def update_shopping_list(
+    list_id: str,
+    request: RenameListRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    PUT /api/shopping/lists/{list_id}
+    Rename a shopping list
+    """
+    try:
+        from datetime import datetime, timezone
+        
+        result = await db.shopping_lists.update_one(
+            {"list_id": list_id, "user_id": current_user.id},
+            {"$set": {
+                "name": request.name,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        return {
+            "success": True,
+            "message": f"List renamed to '{request.name}'"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Update list error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update shopping list")
+
+
+@router.delete("/lists/{list_id}")
+async def delete_shopping_list(
+    list_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    DELETE /api/shopping/lists/{list_id}
+    Delete a shopping list
+    """
+    try:
+        result = await db.shopping_lists.delete_one(
+            {"list_id": list_id, "user_id": current_user.id}
+        )
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        return {
+            "success": True,
+            "message": "List deleted"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Delete list error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete shopping list")
+
+
+@router.post("/lists/{list_id}/clear")
+async def clear_shopping_list(
+    list_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    POST /api/shopping/lists/{list_id}/clear
+    Clear all items from a shopping list
+    """
+    try:
+        from datetime import datetime, timezone
+        
+        result = await db.shopping_lists.update_one(
+            {"list_id": list_id, "user_id": current_user.id},
+            {"$set": {
+                "items": [],
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        return {
+            "success": True,
+            "message": "List cleared"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Clear list error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to clear shopping list")
+
+
+@router.post("/lists/{list_id}/items")
+async def add_items_to_list(
+    list_id: str,
+    request: AddToListRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    POST /api/shopping/lists/{list_id}/items
+    Add items to a specific shopping list
+    """
+    try:
+        from datetime import datetime, timezone
+        
+        if not request.ingredients:
+            raise HTTPException(status_code=400, detail="No ingredients provided")
+        
+        # Get current list
+        shopping_list = await db.shopping_lists.find_one(
+            {"list_id": list_id, "user_id": current_user.id}
+        )
+        
+        if not shopping_list:
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        # Add ingredients (avoid duplicates)
+        existing_names = {item["name"].lower() for item in shopping_list.get("items", [])}
+        
+        new_items = []
+        for ing in request.ingredients:
+            if ing.name.lower() not in existing_names:
+                new_items.append({
+                    "name": ing.name,
+                    "amount": ing.amount,
+                    "unit": ing.unit,
+                    "recipe_id": request.recipe_id,
+                    "recipe_name": request.recipe_name,
+                    "checked": False,
+                    "added_at": datetime.now(timezone.utc).isoformat()
+                })
+                existing_names.add(ing.name.lower())
+        
+        # Update list
+        await db.shopping_lists.update_one(
+            {"list_id": list_id, "user_id": current_user.id},
+            {
+                "$push": {"items": {"$each": new_items}},
+                "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": f"Added {len(new_items)} ingredients",
+            "added_count": len(new_items)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Add items to list error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to add items")
+
+
+@router.delete("/lists/{list_id}/items/{item_name}")
+async def remove_item_from_list(
+    list_id: str,
+    item_name: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    DELETE /api/shopping/lists/{list_id}/items/{item_name}
+    Remove an item from a shopping list
+    """
+    try:
+        from datetime import datetime, timezone
+        from urllib.parse import unquote
+        
+        decoded_name = unquote(item_name)
+        
+        result = await db.shopping_lists.update_one(
+            {"list_id": list_id, "user_id": current_user.id},
+            {
+                "$pull": {"items": {"name": {"$regex": f"^{decoded_name}$", "$options": "i"}}},
+                "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        return {
+            "success": True,
+            "message": f"Removed '{decoded_name}'"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Remove item error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to remove item")
+
+
+class ToggleItemRequest(BaseModel):
+    item_name: str
+    checked: bool
+
+
+@router.patch("/lists/{list_id}/items/toggle")
+async def toggle_item_checked(
+    list_id: str,
+    request: ToggleItemRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    PATCH /api/shopping/lists/{list_id}/items/toggle
+    Toggle checked state of an item
+    """
+    try:
+        from datetime import datetime, timezone
+        
+        result = await db.shopping_lists.update_one(
+            {
+                "list_id": list_id,
+                "user_id": current_user.id,
+                "items.name": {"$regex": f"^{request.item_name}$", "$options": "i"}
+            },
+            {
+                "$set": {
+                    "items.$.checked": request.checked,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="List or item not found")
+        
+        return {
+            "success": True,
+            "checked": request.checked
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Toggle item error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to toggle item")
+
+
 @router.post("/price-estimate")
 async def get_price_estimate(
     request: PriceEstimateRequest,
