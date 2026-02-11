@@ -933,13 +933,34 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
         actual_dish = extract_actual_dish_name(dish_name)
         
         # Identify main protein/ingredient for better image matching
-        proteins = ['shrimp', 'chicken', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'lamb', 
-                   'tofu', 'paneer', 'prawns', 'lobster', 'crab', 'duck', 'turkey', 'scallop',
-                   'mushroom', 'vegetable', 'egg', 'pasta', 'rice', 'noodle']
+        # Include both singular and plural forms
+        proteins = {
+            'prawn': 'prawn', 'prawns': 'prawn',
+            'shrimp': 'shrimp',
+            'chicken': 'chicken',
+            'beef': 'beef',
+            'pork': 'pork',
+            'fish': 'fish',
+            'salmon': 'salmon',
+            'tuna': 'tuna',
+            'lamb': 'lamb',
+            'mutton': 'mutton',
+            'tofu': 'tofu',
+            'paneer': 'paneer',
+            'lobster': 'lobster',
+            'crab': 'crab',
+            'duck': 'duck',
+            'turkey': 'turkey',
+            'scallop': 'scallop',
+            'mushroom': 'mushroom',
+            'vegetable': 'vegetable', 'vegetables': 'vegetable', 'veg': 'vegetable',
+            'egg': 'egg', 'eggs': 'egg',
+        }
         main_protein = None
-        for protein in proteins:
-            if protein.lower() in actual_dish.lower():
-                main_protein = protein
+        actual_lower = actual_dish.lower()
+        for protein_key, protein_val in proteins.items():
+            if protein_key in actual_lower:
+                main_protein = protein_val
                 break
         
         # Indian/Asian dishes where the dish type matters MORE than the protein
