@@ -793,12 +793,13 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-serif font-semibold flex items-center gap-2">
-                      <Utensils size={22} className="text-primary" />
+                      <Utensils size={22} className="text-primary flex-shrink-0" />
                       Ingredients
                     </h3>
-                    <Button onClick={handleAddAllIngredients} variant="default" size="sm">
+                    <Button onClick={handleAddAllIngredients} variant="default" size="sm" className="flex-shrink-0">
                       <ShoppingCart size={16} className="mr-2" />
-                      Add All to Cart
+                      <span className="hidden sm:inline">Add All to Cart</span>
+                      <span className="sm:hidden">Add All</span>
                     </Button>
                   </div>
                   
@@ -820,16 +821,16 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                           {items.map((ing) => (
                             <div 
                               key={ing.originalIdx}
-                              className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                              className={`flex items-center justify-between p-3 rounded-lg border transition-all gap-2 ${
                                 checkedIngredients[ing.originalIdx]
                                   ? 'bg-muted/50 border-muted'
                                   : 'bg-card border-border hover:border-primary/30'
                               }`}
                             >
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <button
                                   onClick={() => handleIngredientCheck(ing.originalIdx)}
-                                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                                     checkedIngredients[ing.originalIdx]
                                       ? 'bg-green-500 border-green-500 text-white'
                                       : 'border-muted-foreground/30 hover:border-primary'
@@ -837,7 +838,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                                 >
                                   {checkedIngredients[ing.originalIdx] && <Check size={12} />}
                                 </button>
-                                <span className={checkedIngredients[ing.originalIdx] ? 'line-through text-muted-foreground' : ''}>
+                                <span className={`break-words ${checkedIngredients[ing.originalIdx] ? 'line-through text-muted-foreground' : ''}`}>
                                   {ing.amount && <span className="font-medium text-primary mr-2">{ing.amount}</span>}
                                   {ing.item}
                                 </span>
@@ -846,7 +847,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleAddIngredient(ing, ing.originalIdx)}
-                                className={addedIngredients[ing.originalIdx] ? 'text-green-500' : ''}
+                                className={`flex-shrink-0 ${addedIngredients[ing.originalIdx] ? 'text-green-500' : ''}`}
                               >
                                 {addedIngredients[ing.originalIdx] ? (
                                   <Check size={16} />
