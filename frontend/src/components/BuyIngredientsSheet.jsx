@@ -221,6 +221,7 @@ const BuyIngredientsSheet = ({
 
   // Toggle ingredient selection
   const toggleIngredient = (idx) => {
+    hapticFeedback('light');
     setSelectedIngredients(prev => ({
       ...prev,
       [idx]: !prev[idx]
@@ -231,6 +232,7 @@ const BuyIngredientsSheet = ({
 
   // Select/Deselect all
   const toggleAll = (select) => {
+    hapticFeedback('medium');
     const updated = {};
     ingredients.forEach((_, idx) => {
       updated[idx] = select;
