@@ -63,16 +63,17 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - `POST /api/audio/step` - Generate single step audio
 - `DELETE /api/audio/cache/:recipeId` - Clear cache
 
-### 4. Smart Shopping Flow ✅ NEW (Feb 11, 2026)
-**Regional grocery delivery integration with ingredient selection.**
+### 4. Smart Shopping Flow ✅ UPDATED (Feb 11, 2026)
+**Regional grocery delivery integration with ingredient selection and multiple shopping lists.**
 
 #### Features
 - **Single "Buy Ingredients" Button**: Replaces old confusing dual-button UI
 - **Ingredient Selection Sheet**: Bottom sheet where users can uncheck ingredients they already have
 - **Regional Delivery Apps**: Auto-detects user's country and shows relevant delivery apps
 - **Direct Deep Links**: Opens delivery app with ingredients pre-filled in search
-- **Save to Shopping List**: Persist ingredients to MongoDB for later
-- **Price Comparison** ✅ NEW: Shows estimated total price range before clicking through to delivery apps
+- **Multiple Shopping Lists** ✅ NEW: Create, rename, delete, and clear multiple shopping lists
+- **List Selector**: Choose which list to save ingredients to when using BuyIngredientsSheet
+- **Price Comparison**: Shows estimated total price range before clicking through to delivery apps
 
 #### Supported Regions & Apps
 | Country | Delivery Apps |
@@ -85,18 +86,28 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 | 🇸🇬 Singapore | RedMart, FairPrice |
 | 🇨🇦 Canada | Instacart, Loblaws |
 
-#### API Endpoints
+#### Shopping List API Endpoints
+- `GET /api/shopping/lists` - Get all user's shopping lists
+- `POST /api/shopping/lists` - Create a new shopping list
+- `GET /api/shopping/lists/{id}` - Get specific list
+- `PUT /api/shopping/lists/{id}` - Rename a list
+- `DELETE /api/shopping/lists/{id}` - Delete a list
+- `POST /api/shopping/lists/{id}/clear` - Clear all items from list
+- `POST /api/shopping/lists/{id}/items` - Add items to list
+- `DELETE /api/shopping/lists/{id}/items/{name}` - Remove item
+- `PATCH /api/shopping/lists/{id}/items/toggle` - Toggle item checked state
+
+#### Delivery App API Endpoints
 - `GET /api/shopping/delivery-apps` - Get delivery apps for user's region
 - `POST /api/shopping/build-url` - Build deep link with ingredients
-- `POST /api/shopping/list/add` - Save ingredients to shopping list
-- `GET /api/shopping/list` - Get user's shopping list
 - `POST /api/shopping/set-country` - Set preferred country
 - `POST /api/shopping/price-estimate` - Get estimated prices via SerpAPI
 
 #### Files
 - `backend/config/delivery_apps.py` - Regional app configuration
-- `backend/routes/shopping.py` - API endpoints
-- `frontend/src/components/BuyIngredientsSheet.jsx` - Bottom sheet UI
+- `backend/routes/shopping.py` - API endpoints (shopping lists + delivery)
+- `frontend/src/pages/ShoppingListPage.js` - Multiple lists UI with sidebar
+- `frontend/src/components/BuyIngredientsSheet.jsx` - Bottom sheet with list selector
 
 ### 5. Feature Gating
 - Diabetes Module: Premium only
