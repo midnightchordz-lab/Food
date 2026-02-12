@@ -949,7 +949,7 @@ INGREDIENT_DATA = [
         "alternate_names": ["green chilli", "hari mirch", "fresh green pepper", "serrano", "thai chili", "finger chili"],
         "category": "vegetable",
         "images": {
-            "primary": "https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=400",
+            "primary": "https://images.unsplash.com/photo-1763221126437-ebf2339c7b67?w=400",
             "comparison": [
                 {"url": "", "caption": "Whole green chilies"},
                 {"url": "", "caption": "Sliced green chili"}
