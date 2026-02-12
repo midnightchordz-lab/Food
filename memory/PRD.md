@@ -371,10 +371,14 @@ The app uses **Capacitor** hybrid framework - all web features are automatically
 ## Backlog
 
 ### P1 - Next Priority
+- **Ingredient Encyclopedia Page** - Create `/pages/IngredientEncyclopedia.jsx` to browse/search all ingredients from the database
+- **Ingredient Detail Page** - Create dynamic route `/ingredients/:id` for individual ingredient details
+
+### P2 - Medium Priority
 - Case-insensitive user search bug fix
 - Add voice player to more recipe views (DiscoverRecipes if needed)
 
-### P2 - Future
+### P3 - Future
 - Offline voice caching for mobile
 - Push notifications
 - Stripe payment integration
