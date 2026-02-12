@@ -159,6 +159,7 @@ const BuyIngredientsSheet = ({
       fetchDeliveryApps();
       fetchShoppingLists();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, ingredients]);
 
   // Fetch user's shopping lists
