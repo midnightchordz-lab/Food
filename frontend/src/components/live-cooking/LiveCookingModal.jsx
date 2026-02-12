@@ -107,7 +107,7 @@ export default function LiveCookingModal() {
     nextStep,
     prevStep,
     togglePlay,
-    mood = 'calm'
+    mood: storeMood
   } = useLiveCooking();
 
   const videoRef = useRef(null);
@@ -124,6 +124,9 @@ export default function LiveCookingModal() {
   const [whisperText, setWhisperText] = useState('');
   const [showWhisper, setShowWhisper] = useState(false);
 
+  // Get mood from store or localStorage fallback
+  const mood = storeMood || localStorage.getItem('selectedMood') || 'calm';
+  
   // Get mood theme
   const theme = MOOD_THEMES[mood] || MOOD_THEMES.calm;
 
