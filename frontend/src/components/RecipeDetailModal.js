@@ -950,15 +950,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                           </div>
                         </div>
                       </div>
-                    ))}
-                    
-                    {/* Fallback if no instructions parsed */}
-                    {(!parsedRecipe?.instructions || parsedRecipe.instructions.length === 0) && (
-                      <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                        <p className="text-amber-700 text-sm">
-                          <strong>Note:</strong> Instructions are being prepared. Please check back in a moment or view the raw recipe text above.
-                        </p>
-                      </div>
+                    ))
                     )}
                   </div>
                   
