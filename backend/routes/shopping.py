@@ -122,7 +122,16 @@ async def get_delivery_apps(
     Called when user opens the Buy Ingredients sheet
     """
     try:
-        # Check if user has saved preference first
+        # Priority 1: Use country hint from browser/UI if provided (user explicitly selected)
+        if country_hint and len(country_hint) == 2:
+            apps_data = get_apps_for_country(country_hint.upper())
+            return {
+                "success": True,
+                **apps_data,
+                "detected_from": "user_selection"
+            }
+        
+        # Priority 2: Check if user has saved preference
         user_doc = await db.users.find_one({"id": current_user.id}, {"preferred_country": 1})
         saved_country = user_doc.get("preferred_country") if user_doc else None
         
@@ -134,16 +143,7 @@ async def get_delivery_apps(
                 "detected_from": "user_preference"
             }
         
-        # Use country hint from browser if provided (more reliable than IP)
-        if country_hint and len(country_hint) == 2:
-            apps_data = get_apps_for_country(country_hint.upper())
-            return {
-                "success": True,
-                **apps_data,
-                "detected_from": "browser_hint"
-            }
-        
-        # Detect country from IP as fallback
+        # Priority 3: Detect country from IP as fallback
         country_code, detection_method = await detect_country_from_ip(request)
         
         # Get apps for that country
