@@ -40,7 +40,6 @@ export default function LiveCookingModal() {
   
   // Camera preview state
   const [showCamera, setShowCamera] = useState(true);
-  const [cameraVideoElement, setCameraVideoElement] = useState(null);
 
   // Get current step text
   const currentStepText = instructions[currentStep]?.text || 
