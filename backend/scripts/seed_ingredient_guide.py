@@ -1210,6 +1210,243 @@ INGREDIENT_DATA = [
         "what_to_look_for": "Firm, dry skin, no soft spots or sprouting. Heavy for size means more moisture inside.",
         "featured": True,
         "popularity": 100
+    },
+    
+    {
+        "name": "black pepper",
+        "display_name": "Black Pepper",
+        "alternate_names": ["kali mirch", "peppercorns", "black peppercorns", "ground black pepper", "pepper"],
+        "category": "spice_whole",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1599909533601-fc71c5c8c8b9?w=400",
+            "comparison": [
+                {"url": "", "caption": "Whole peppercorns"},
+                {"url": "", "caption": "Ground pepper"}
+            ],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Dark brown to black",
+            "shape": "Small, round, wrinkled spheres",
+            "size": "3-5mm diameter",
+            "texture": "Wrinkled, hard exterior",
+            "visual_description": "Small, round, wrinkled dark berries. The wrinkled surface distinguishes them from smooth allspice berries. When ground, produces grey-black powder with visible specks."
+        },
+        "similar_to": [
+            {
+                "name": "White pepper",
+                "how_to_differentiate": "White pepper is the same berry with outer skin removed - it's tan/cream colored and has milder, more earthy flavor."
+            },
+            {
+                "name": "Allspice",
+                "how_to_differentiate": "Allspice berries are larger, smoother, and brown. They taste like cinnamon-clove-nutmeg combined, not peppery."
+            }
+        ],
+        "confused_with": [
+            {
+                "name": "Allspice",
+                "warning": "Despite looking similar, allspice is NOT pepper! It tastes like warm baking spices (cinnamon, clove). Using allspice instead of pepper will completely change your dish."
+            }
+        ],
+        "aroma": "Sharp, pungent, woody, slightly floral",
+        "taste": "Sharp, hot, biting heat that hits the back of throat",
+        "common_uses": [
+            "Universal seasoning in almost all cuisines",
+            "Freshly ground on finished dishes",
+            "Marinades and rubs",
+            "Soups, stews, sauces"
+        ],
+        "cuisines": ["Universal - used worldwide"],
+        "preparation_tips": [
+            "Always grind fresh for best flavor",
+            "Pre-ground pepper loses flavor quickly",
+            "Add at end of cooking for more heat",
+            "Add during cooking for deeper, mellower flavor",
+            "Toast whole peppercorns to intensify flavor"
+        ],
+        "storage": {
+            "method": "Airtight container, away from light and heat",
+            "shelf_life": "Whole: 3-4 years, Ground: 3-4 months",
+            "signs_of_spoilage": ["Loss of aroma", "No heat when tasted", "Dusty/musty smell"]
+        },
+        "substitutes": [
+            {"name": "White pepper", "ratio": "1:1", "notes": "Milder, good for light-colored dishes"},
+            {"name": "Green peppercorns", "ratio": "1:1", "notes": "Fresher, milder taste"},
+            {"name": "Pink peppercorns", "ratio": "1:1", "notes": "Milder, slightly sweet (not true pepper)"}
+        ],
+        "nutritional_highlights": ["Contains piperine (aids nutrient absorption)", "Antioxidant properties", "Aids digestion"],
+        "beginner_notes": "Pre-ground pepper from the store loses flavor within weeks. Invest in a pepper grinder and buy whole peppercorns - the difference is HUGE! A good pepper grinder is one of the best $15 you'll spend on your kitchen.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Buy whole peppercorns, not pre-ground. Look for uniform size and strong aroma when crushed.",
+        "featured": True,
+        "popularity": 100
+    },
+    
+    {
+        "name": "tomato",
+        "display_name": "Tomato",
+        "alternate_names": ["tamatar", "tomatoes", "fresh tomato", "roma tomato"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1546470427-0d4db154ceb8?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Red (ripe), green (unripe), also yellow, orange varieties",
+            "shape": "Round to slightly oval",
+            "size": "5-10cm diameter depending on variety",
+            "texture": "Smooth, shiny skin, juicy flesh with seeds",
+            "visual_description": "Round red fruit with smooth, shiny skin. Inside has juicy flesh with seed cavities. Roma tomatoes are more oval/elongated."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Fresh, slightly sweet, vegetal",
+        "taste": "Sweet-tart, umami, juicy",
+        "common_uses": [
+            "Base for curries and sauces",
+            "Salads",
+            "Sandwiches",
+            "Soups and stews"
+        ],
+        "cuisines": ["Italian", "Indian", "Mexican", "Mediterranean", "Universal"],
+        "preparation_tips": [
+            "Store at room temperature for best flavor (not fridge)",
+            "Blanch in hot water to easily peel skin",
+            "Remove seeds for smoother sauces",
+            "Roma tomatoes have less water - best for cooking"
+        ],
+        "storage": {
+            "method": "Room temperature until ripe, then refrigerate",
+            "shelf_life": "5-7 days at room temp, 2 weeks refrigerated",
+            "signs_of_spoilage": ["Soft spots", "Mold", "Wrinkled skin", "Off smell"]
+        },
+        "substitutes": [
+            {"name": "Canned tomatoes", "ratio": "1 fresh = 1/2 cup canned", "notes": "Good for cooking"},
+            {"name": "Tomato paste + water", "ratio": "1 tbsp paste + 1/2 cup water = 1 tomato", "notes": "For sauces"}
+        ],
+        "nutritional_highlights": ["High in lycopene (antioxidant)", "Vitamin C", "Potassium"],
+        "beginner_notes": "Never store tomatoes in the fridge until they're fully ripe - cold kills the flavor! Keep them on the counter stem-side down. If they're too firm, put them in a paper bag with a banana to ripen faster.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Firm but gives slightly when pressed. Deep red color. Avoid cracks or soft spots.",
+        "featured": True,
+        "popularity": 100
+    },
+    
+    {
+        "name": "salt",
+        "display_name": "Salt",
+        "alternate_names": ["namak", "table salt", "sea salt", "rock salt", "kosher salt"],
+        "category": "other",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1518110925495-5fe2fda0442c?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White (table salt), pink (Himalayan), grey (Celtic sea salt)",
+            "shape": "Fine crystals to coarse flakes",
+            "size": "Varies by type",
+            "texture": "Crystalline, dissolves in water",
+            "visual_description": "White crystalline mineral. Table salt is fine and uniform. Sea salt and kosher salt have larger, irregular flakes. Himalayan salt is pink."
+        },
+        "similar_to": [],
+        "confused_with": [
+            {
+                "name": "Sugar",
+                "warning": "They look similar! Always taste a tiny bit before adding large amounts to avoid a disaster."
+            }
+        ],
+        "aroma": "None",
+        "taste": "Salty, enhances other flavors",
+        "common_uses": [
+            "Seasoning everything",
+            "Bringing out flavors",
+            "Preserving food",
+            "Baking (controls yeast)"
+        ],
+        "cuisines": ["Universal"],
+        "preparation_tips": [
+            "Salt during cooking, not just at the end",
+            "Kosher salt is less salty by volume than table salt",
+            "Add salt to pasta water (should taste like the sea)",
+            "Salt draws out moisture - good for browning meat"
+        ],
+        "storage": {
+            "method": "Airtight container, dry place",
+            "shelf_life": "Indefinite",
+            "signs_of_spoilage": ["Clumping (add rice to absorb moisture)"]
+        },
+        "substitutes": [
+            {"name": "Low-sodium salt", "ratio": "1:1", "notes": "For health reasons"},
+            {"name": "Soy sauce", "ratio": "1/4 tsp salt = 1 tsp soy sauce", "notes": "Adds umami too"}
+        ],
+        "nutritional_highlights": ["Essential mineral", "Needed for nerve and muscle function"],
+        "beginner_notes": "Different salts have different saltiness by volume! 1 tsp table salt = 1.5 tsp kosher salt = 2 tsp flaky sea salt. If a recipe doesn't specify, assume table salt. Always taste and adjust!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Kosher salt is preferred by chefs for its clean taste and easy pinching.",
+        "featured": True,
+        "popularity": 100
+    },
+    
+    {
+        "name": "cooking oil",
+        "display_name": "Cooking Oil",
+        "alternate_names": ["vegetable oil", "oil", "neutral oil", "canola oil", "sunflower oil"],
+        "category": "oil",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Pale yellow to golden (varies by type)",
+            "shape": "Liquid",
+            "size": "N/A",
+            "texture": "Smooth, viscous liquid",
+            "visual_description": "Clear to golden liquid. Vegetable and canola oils are very pale. Olive oil is more golden-green. Sesame oil is darker amber."
+        },
+        "similar_to": [
+            {
+                "name": "Olive oil",
+                "how_to_differentiate": "Olive oil has a distinct fruity/peppery taste and darker color. Neutral oils (vegetable, canola) have no flavor."
+            }
+        ],
+        "confused_with": [],
+        "aroma": "Neutral (vegetable/canola), fruity (olive), nutty (sesame)",
+        "taste": "Neutral oils have no taste; flavored oils add distinct notes",
+        "common_uses": [
+            "Frying and sautéing",
+            "Baking",
+            "Salad dressings",
+            "Preventing sticking"
+        ],
+        "cuisines": ["Universal"],
+        "preparation_tips": [
+            "Use neutral oils for high-heat cooking",
+            "Save olive oil for lower heat or finishing",
+            "Oil should shimmer before adding food",
+            "Don't let oil smoke - it's burning"
+        ],
+        "storage": {
+            "method": "Cool, dark place, tightly sealed",
+            "shelf_life": "6-12 months",
+            "signs_of_spoilage": ["Rancid smell", "Off taste", "Darker color"]
+        },
+        "substitutes": [
+            {"name": "Butter", "ratio": "1:1 for sautéing", "notes": "Adds flavor but burns easier"},
+            {"name": "Ghee", "ratio": "1:1", "notes": "Higher smoke point than butter"}
+        ],
+        "nutritional_highlights": ["Source of healthy fats", "Varies by oil type"],
+        "beginner_notes": "For most cooking, use a neutral oil (vegetable, canola, sunflower). Save expensive olive oil for salads and finishing dishes. The oil is hot enough when it shimmers and flows easily in the pan.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Check expiration date. Canola and vegetable oils are most versatile for beginners.",
+        "featured": True,
+        "popularity": 100
     }
 ]
 
