@@ -1217,6 +1217,13 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               ingredients={parsedRecipe?.ingredients || []}
               recipeName={displayTitle}
             />
+            
+            {/* Ingredient Info Popup */}
+            <IngredientInfoPopup
+              ingredientName={selectedIngredientName}
+              isOpen={showIngredientPopup}
+              onClose={() => setShowIngredientPopup(false)}
+            />
           </>
         )}
       </DialogContent>
