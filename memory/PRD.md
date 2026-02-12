@@ -174,7 +174,43 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
-### Order Now Delivery Options Fix ✅ NEW
+### Visual Ingredient Identification System ✅ NEW
+Implemented a visual guide system that helps beginner cooks identify ingredients they don't recognize:
+
+**Problem Solved:** Beginner cooks see "cumin seeds" in a recipe and don't know what they look like. They leave the app to Google, get confused by similar-looking spices, or buy the wrong ingredient.
+
+**Solution:**
+- ✅ Tap any ingredient name in recipe → see high-quality image + details popup
+- ✅ Visual description (color, shape, size, texture)
+- ✅ "Don't confuse with" warnings (e.g., curry powder vs turmeric)
+- ✅ Similar ingredients comparison (cumin vs caraway vs fennel)
+- ✅ Preparation tips and substitutes with ratios
+- ✅ Storage info and shelf life
+- ✅ Beginner-friendly notes
+
+**Backend API Endpoints:**
+- `GET /api/ingredients/name/{name}` - Get ingredient by name (handles normalized names)
+- `GET /api/ingredients/search?q={query}` - Search ingredients
+- `GET /api/ingredients/featured` - Get featured ingredients
+- `GET /api/ingredients/category/{category}` - Get by category
+- `GET /api/ingredients/categories` - Get all category counts
+
+**Seeded Ingredients (14 common spices & pulses):**
+- Cumin seeds, Mustard seeds, Coriander seeds, Cardamom pods
+- Turmeric powder, Garam masala, Red chili powder
+- Red lentils, Moong dal, Chana dal, Toor dal
+- Bay leaves, Cinnamon sticks, Cloves
+
+**Files Created:**
+- `/app/backend/routes/ingredient_guide.py` - API routes
+- `/app/backend/scripts/seed_ingredient_guide.py` - Seed data
+- `/app/frontend/src/components/IngredientInfoPopup.jsx` - Popup component
+
+**Testing:** 22/22 backend tests passed, frontend integration verified
+
+---
+
+### Order Now Delivery Options Fix ✅
 Fixed bug where clicking "Order Now" in the Buy Ingredients sheet went directly to a single delivery app instead of showing user a list of delivery service options:
 
 **Root Cause:** The "Order Now" button was calling `handleOrderNow(deliveryApps[0])` directly, bypassing user selection.
