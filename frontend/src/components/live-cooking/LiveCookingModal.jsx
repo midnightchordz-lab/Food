@@ -388,8 +388,6 @@ export default function LiveCookingModal() {
                 <DialogPrimitive.Title>Live Cooking Mode</DialogPrimitive.Title>
               </VisuallyHidden>
           
-          <AnimatePresence>
-            {open && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
