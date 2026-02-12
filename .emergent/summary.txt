@@ -1,127 +1,158 @@
 <analysis>**original_problem_statement**:
-1.  The image for Spicy Prawn Curry incorrectly shows raw prawns. The image search logic needs to be fixed.
-2.  Redesign the Buy Ingredients bottom sheet to match a cleaner, more user-friendly design provided in a screenshot.
-3.  The step-by-step instructions are missing from the recipe details modal.
-4.  The redesigned Buy Ingredients sheet is missing the region/country selector for ordering.
-5.  After re-adding the region selector, clicking Order Now goes to a single, direct action (blanket) instead of showing the user a list of delivery service options based on the selected region, which was the previous behavior. This functionality needs to be restored.
+The initial request involved fixing several UI/UX bugs, including an incorrect image search, redesigning an ingredients sheet, and restoring a lost feature for choosing delivery providers.
+
+The project then expanded significantly with two major feature requests from the user:
+1.  **Visual Ingredient Identification System:** A comprehensive feature to help users visually identify cooking ingredients. This includes a new database schema, backend services, API endpoints, and a frontend popup that displays detailed information (images, descriptions, common uses, substitutes) when a user clicks an ingredient within a recipe. The user also requested a full Ingredient Encyclopedia page to browse all items, which is yet to be built.
+2.  **Live Cooking Modal:** A premium, full-screen, cinematic UI for a guided cooking experience. This involved creating a new React component, integrating it with the existing step-by-step cooking logic, refactoring it to use a global state (Zustand) for a true full-screen experience, and adding support for background videos and automatic voice narration via ElevenLabs.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The project is a web application for recipe generation. It has a React frontend and a Python (FastAPI) backend. The application uses SerpAPI for image searching and has a PostgreSQL database for storing user and recipe data.
+The application is a full-stack recipe platform with a React/TypeScript frontend and a Python/FastAPI backend. It now utilizes a hybrid database setup: PostgreSQL for core user and recipe data, and MongoDB for the new ingredient encyclopedia.
 
-The agent has successfully addressed several issues in this session:
-1.  Fixed the backend image search logic in  to generate correct search queries for dishes like Spicy Prawn Curry.
-2.  Redesigned the frontend  component to match the user's new layout specifications.
-3.  Fixed a regex parsing issue in  to correctly display step-by-step instructions.
-4.  Re-integrated the country/region selector into the redesigned .
-
-The current state of the  is that it has the new design and the region selector, but the Order Now button does not present the user with delivery provider choices.
+Key features implemented:
+-   A redesigned Buy Ingredients sheet with a working region selector for choosing delivery providers.
+-   A Visual Ingredient Identification system where clicking an ingredient in a recipe opens a detailed popup with images and information, powered by a new backend service and MongoDB collection. The system includes an intelligent matching algorithm to handle variations in ingredient names.
+-   A new Live Cooking Mode featuring a cinematic, full-screen modal with a video background. This is managed by a global Zustand store and is rendered at the app's root level to ensure a true full-screen overlay. The initial logic to trigger voice narration upon opening the modal has been added but is not yet fully functional.
 
 **Last working item**:
--   **Last item agent was working:** The user pointed out that after selecting a region in the , clicking the Order Now button triggers a direct, single action, whereas the previous implementation used to display a list of delivery provider options for the user to choose from. The agent acknowledged this and was about to restore this functionality.
--   **Status:** NOT STARTED
+-   **Last item agent was working:** The agent was integrating the existing ElevenLabs voice narration system into the new . The goal was for the voice guide to start automatically when the modal opens. An  hook was added to  to call the audio generation API. However, this implementation is incomplete as the modal, now managed by a global store, lacks the necessary recipe context (like the current step's text) to make the correct API call.
+-   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Frontend testing agent (to verify the UI change) and/or screenshot tool. The test should involve selecting a region and clicking Order Now to confirm that a list of delivery options is displayed.
+-   **Which testing method agent to use?** Frontend testing agent. The test should involve opening the Live Cooking Modal and verifying that voice narration for the correct, current recipe step starts automatically and that navigation controls (Next/Prev) work as expected.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   Issue 1: Order Now button in Buy Ingredients sheet does not show delivery provider options (P0)
+-   **Issue 1:** Voice Narration in Live Cooking Modal is not connected to recipe data (P0)
 
 **Issues Detail**:
--   **Issue 1:** The Order Now button in the  component should present the user with a list of available delivery services based on the selected country, instead of triggering a single, direct action.
-    -   **Attempted fixes:** The agent successfully re-added the country selector dropdown and the logic to fetch delivery apps for that country (). However, the UI part that displays these fetched apps as choices for the user is missing.
+-   **Issue 1:** Voice Narration in Live Cooking Modal is not connected to recipe data.
+    -   **Attempted fixes:** An  hook was added to  to fetch audio. However, when the modal was refactored to use a global Zustand store, it lost access to recipe-specific props like . The current implementation cannot fetch the correct audio because it doesn't know which recipe or step is active.
     -   **Next debug checklist**:
-        1.  Inspect .
-        2.  Locate the  function (or the  handler for the Order Now button).
-        3.  The  state is fetched but not rendered for user selection. Implement UI logic (e.g., a modal, a new view, or an inline list) to display the  as selectable options when Order Now is clicked.
-        4.  Ensure that selecting a provider from this list triggers the final ordering action.
-    -   **Why fix this issue and what will be achieved with the fix?** To restore a critical feature that gives users choice over their preferred delivery service, improving the user experience.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** Y (This feature was lost during a redesign and is now being re-implemented).
+        1.  Update the  Zustand store () to hold the active recipe's state: the full  array and the .
+        2.  Modify the  function in the store so that it accepts the recipe context (e.g., ).
+        3.  Update the  handler in  to pass the required recipe data when calling .
+        4.  Refactor  to read the recipe steps and current step index from the Zustand store.
+        5.  Implement the  and  handlers within  to update the  in the Zustand store, making the navigation controls functional.
+        6.  Ensure the  hook for audio fetching uses the text from the current step (retrieved from the store) to make the correct API call to .
+    -   **Why fix this issue and what will be achieved with the fix?** This will make the Live Cooking Modal fully functional, enabling users to navigate through recipe steps with corresponding voice guidance in the new cinematic UI.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 
 **In progress Task List**:
-There are no partially completed tasks. The focus is on the pending issue above.
+-   **Task 1:** Complete Live Cooking Modal Functionality (P0)
+    -   **Where to resume:** Enhance the  Zustand store to manage the active recipe's state (steps, current step index, image/video URLs).
+    -   **What will be achieved with this?** A fully functional, interactive, and voice-guided live cooking experience that is decoupled from the component that opens it.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
-There are no other upcoming tasks mentioned by the user or planned by the agent.
+-   **Upcoming Tasks:**
+    -   **(P1) Implement Ingredient Encyclopedia Page:** Create the  page. This page should allow users to browse, search, and filter all ingredients from the database, as originally requested by the user.
+    -   **(P2) Implement Ingredient Detail Page:** Create a dynamic route and page () that displays the full details for a single ingredient when selected from the encyclopedia.
 
 **Completed work in this session**
--   **Backend Image Search Fix (DONE):** Corrected the search query logic in  to handle composite dish names with proteins and confusing terms like curry correctly. The search for Spicy Prawn Curry now correctly yields images of a cooked curry dish.
--   **Frontend Buy Ingredients Redesign (DONE):** Completely refactored the  component to include category grouping for ingredients (e.g., Seafood, Dairy), new item card styling, and action buttons (Copy List, Download, Save to Grocery List).
--   **Frontend Recipe Instruction Parsing Fix (DONE):** Updated the regex in  to correctly parse and display step-by-step instructions from recipe markdown, accommodating a format variation where the cooking time was inside the bolded step title (e.g., ).
--   **Frontend Region Selector Re-implementation (DONE):** Added the country selector dropdown back into the  component.
+-   **Order Now Button Fix:** Restored the choice of delivery providers in the .
+-   **Region Selector Fix:** Replaced  with  in  to fix z-index issues.
+-   **Region-based Delivery App Fix:** Prioritized the user's explicit region selection over their saved preference in the backend.
+-   **Ingredient Identification System (Phase 1):**
+    -   Created backend API () and MongoDB schema for the ingredient guide.
+    -   Seeded the database with over 50 common ingredients.
+    -   Implemented the  and integrated it into the recipe view.
+-   **Ingredient Identification Bug Fixes:** Improved the fuzzy matching algorithm and added more ingredients (e.g., green chili, black pepper) to resolve incorrect matches.
+-   **Live Cooking Modal Implementation:** Created the , refactored it to be a true full-screen component using a global Zustand store, and added support for video backgrounds and initial voice narration logic.
 
 **Earlier issues found/mentioned but not fixed**
-None. The agent addressed all issues raised by the user in this session, with the latest one pending.
+None.
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork:** No previous fork summary was provided.
--   **Recurrence count:** N/A
--   **Status:** N/A
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Frontend:** React, TypeScript, Vite, Tailwind CSS
--   **Backend:** Python, FastAPI
--   **Database:** PostgreSQL
--   **APIs:** SerpAPI for Google Images search
+-   **Frontend:** React, TypeScript, Vite, Tailwind CSS, **Zustand**, **Framer Motion**, Shadcn/UI
+-   **Backend:** Python, FastAPI, Motor
+-   **Database:** **MongoDB** (for ingredients), PostgreSQL (for users/recipes)
+-   **APIs:** SerpAPI, **ElevenLabs**
 
 **key DB schema**
--   **users**: {id, email, hashed_password, created_at}
--   **recipes**: {id, user_id, recipe_name, ingredients, detailed_content, created_at} (Note:  stores the recipe markdown)
+-   **ingredientguides (MongoDB Collection):** 
 
 **changes in tech stack**
-None.
+-   **Database:** Added **MongoDB** for the ingredient encyclopedia, making the application a hybrid SQL/NoSQL system.
+-   **Frontend State Management:** Introduced **Zustand** for global state management.
+-   **Frontend Animation:** Added **Framer Motion**.
 
 **All files of reference**
--   : Edited to redesign the UI, add a region selector, and now needs further changes for the Order Now functionality.
--   : Edited to fix the image search logic.
--   : Edited to fix the recipe instruction parsing logic.
--   : Updated to document the completed features and fixes.
--   : Viewed to understand recipe data flow.
+-   **New:**
+    -   
+    -   
+    -   
+    -   
+    -   
+    -   
+    -   
+-   **Modified:**
+    -   
+    -   
+    -   
+    -   
+    -   
 
 **Areas that need refactoring**:
-The UI testing process is very brittle. The agent repeatedly failed to log in via the frontend UI, even after creating/resetting user credentials that worked via API calls. This suggests a potential issue in the frontend authentication state management or environment setup that hinders testing. This flow should be investigated and stabilized.
+-   The 's connection to the  store needs to be completed. The store should be the single source of truth for the cooking session's state (steps, timers, etc.), which will simplify the modal component itself.
 
 **key api endpoints**
--   : Fetches a single image for a recipe name.
--   : Fetches images for multiple recipe names.
--   : Retrieves the full markdown content for a recipe.
--   : Fetches a list of delivery apps for a given country.
--   : User login endpoint.
--   : User registration endpoint.
+-   : Fetches a single ingredient for the popup.
+-   : Searches for ingredients.
+-   : Generates voice narration for a recipe step text.
 
 **Critical Info for New Agent**
--   **UI Testing is Unreliable:** Be aware that logging in and navigating the app through the frontend UI is problematic. The agent consistently got stuck on the login page or was blocked by daily recipe limits. Backend/API testing has been a more reliable verification method. If you need to test the UI, you may need to first debug the login flow or find a way to reset user state (like recipe limits) in the database.
--   **Focus on the Order Now Logic:** The immediate task is purely on the frontend, within . You need to implement the UI that displays the  state as a list of choices for the user after they click Order Now.
+-   **Dual Database:** Remember the app uses both PostgreSQL and MongoDB. The new ingredient feature uses MongoDB.
+-   **Global State for Live Cooking:** The  is controlled by the  Zustand store. All state and actions for the live cooking session must be managed through this store.
+-   **Current Task is Blocked on State:** The immediate task is to fix the voice narration, which requires enhancing the Zustand store to manage the active recipe's state (steps, current index, etc.). This is the primary blocker for completing the Live Cooking feature.
 
 **documents and test reports created in this job**
+-    (updated with recent features)
 -   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.   - **PENDING**. This is the current task.
-2.   - **COMPLETED**. The region selector was added.
-3.   - **COMPLETED**. The agent fixed the parsing logic for recipe instructions.
-4.   - **COMPLETED**. The agent redesigned the  component.
-5.   - User's initial instruction to start working.
+1.  User requested integration of ElevenLabs voice into . (IN PROGRESS)
+2.  User requested adding a video element to . (DONE)
+3.  User provided CSS fixes to ensure the modal is true full-screen. (DONE)
+4.  User requested a DevTools screenshot to prove the modal rendered at the root. (ADDRESSED, NO SCREENSHOT)
+5.  User instructed to refactor  to use a global Zustand store. (DONE)
+6.  User instructed to use  to fix fullscreen issues. (DONE)
+7.  User provided more CSS fixes for the modal. (DONE)
+8.  User supplied a new premium design for . (DONE)
+9.  User provided the initial  component and integration instructions. (DONE)
+10. User asked about camera overlay logic. (ADDRESSED)
 
 **Project Health Check:**
--   **Broken:** The frontend login/authentication flow appears to be broken or unreliable in the testing environment, preventing effective UI testing.
--   **Mocked:** No major components are mocked, but the  relies on a third-party API.
+-   **Broken:** The  is not fully functional; its navigation and voice features are disconnected from the recipe data.
+-   **Mocked:**  (image search) and the ElevenLabs integration (voice narration).
 
 **3rd Party Integrations**
 -   **SerpAPI** (Google Images Search) — Requires a User API Key.
+-   **ElevenLabs** (Text-to-Speech) — Integrated via a backend endpoint.
+-   **Framer Motion** (Animation Library) — Frontend dependency.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES. Backend testing agent was used successfully to verify the image search fix and the recipe instruction parsing fix. A frontend testing agent was also used to perform a code review of the  redesign.
--   **Troubleshoot agent used after agent stuck in loop:** NO.
--   **Test files created:** None.
--   **Known regressions:** The Order Now button lost its show provider choice functionality during a redesign. This is the current issue to be fixed.
+-   **Testing agent used after significant changes:** YES
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None
+-   **Known regressions:** None
 
 **Credentials to test flow:**
-The agent created a user  with password . The agent also used an existing user  and reset their password to . However, UI login was unsuccessful with these credentials. Direct API testing may be more reliable.</analysis>
+-   **User:** 
+-   **Password:** 
+-   **Note:** UI login has been historically unreliable; API-based testing is recommended if issues arise.
+
+**What agent forgot to execute**
+-   The agent did not implement the **Ingredient Encyclopedia Page** or the **Ingredient Detail Page**, which were part of the user's original feature request for the visual ingredient system.
+-   When refactoring the  to use Zustand, the agent missed updating the logic for passing the  and . These should be passed to the store via the  function, not accessed via props.</analysis>

@@ -20,7 +20,7 @@ import time
 import uuid
 
 # Get API URL from environment
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://delivery-options-ui.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://cinematic-cook-mode.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_EMAIL = "shopper@test.com"
