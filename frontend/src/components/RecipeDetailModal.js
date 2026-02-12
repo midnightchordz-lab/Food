@@ -792,7 +792,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                       variant="outline"
                       size="sm"
                       className="w-full flex items-center justify-center gap-2"
-                      onClick={() => setShowCookingMode(true)}
+                      onClick={() => setLiveOpen(true)}
                       data-testid="start-cooking-mode-btn"
                     >
                       <Volume2 className="w-4 h-4" />
