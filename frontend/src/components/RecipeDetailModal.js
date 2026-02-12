@@ -856,18 +856,19 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                     Step-by-Step Instructions
                   </h3>
                   
-                  {/* Mobile-optimized instruction cards */}
-                  <div className="space-y-3 sm:space-y-4">
+                  {/* Mobile-optimized instruction cards - Full width, no clipping */}
+                  <div className="space-y-3 sm:space-y-4 w-full">
                     {parsedRecipe?.instructions?.map((inst, idx) => (
                       <div 
                         key={idx}
-                        className={`p-3 sm:p-4 rounded-xl border transition-all ${
+                        className={`w-full p-3 sm:p-4 rounded-xl border transition-all ${
                           checkedSteps[inst.step] 
                             ? 'bg-green-50 border-green-200' 
                             : 'bg-card border-border hover:border-primary/30'
                         }`}
+                        style={{ maxWidth: '100%' }}
                       >
-                        <div className="flex items-start gap-2.5 sm:gap-4">
+                        <div className="flex items-start gap-2.5 sm:gap-4 w-full">
                           {/* Step number circle - smaller on mobile */}
                           <button
                             onClick={() => handleStepCheck(inst.step)}
@@ -880,7 +881,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             {checkedSteps[inst.step] ? <Check size={14} /> : inst.step}
                           </button>
                           
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 overflow-hidden">
                             {/* Step header with time badge */}
                             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                               <span className="font-semibold text-sm sm:text-base text-foreground">
@@ -893,16 +894,16 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                               )}
                             </div>
                             
-                            {/* Instruction text - Mobile optimized */}
-                            <p className={`text-sm sm:text-base text-foreground leading-relaxed ${checkedSteps[inst.step] ? 'line-through text-muted-foreground' : ''}`}
-                               style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                            {/* Instruction text - Mobile optimized with proper wrapping */}
+                            <p className={`text-sm sm:text-base text-foreground leading-relaxed break-words ${checkedSteps[inst.step] ? 'line-through text-muted-foreground' : ''}`}
+                               style={{ wordBreak: 'break-word', overflowWrap: 'anywhere', hyphens: 'auto' }}>
                               {inst.text}
                             </p>
                             
                             {/* Visual Cue - Compact on mobile */}
                             {inst.visualCue && (
                               <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                <p className="text-xs sm:text-sm text-blue-700">
+                                <p className="text-xs sm:text-sm text-blue-700 break-words">
                                   <strong>👁 Visual Cue:</strong> {inst.visualCue}
                                 </p>
                               </div>
@@ -911,7 +912,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             {/* Important note - Compact on mobile */}
                             {inst.important && (
                               <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-amber-50 rounded-lg border border-amber-100">
-                                <p className="text-xs sm:text-sm text-amber-700">
+                                <p className="text-xs sm:text-sm text-amber-700 break-words">
                                   <strong>⚠️ Important:</strong> {inst.important}
                                 </p>
                               </div>
@@ -920,7 +921,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             {/* Technique note */}
                             {inst.technique && (
                               <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-purple-50 rounded-lg border border-purple-100">
-                                <p className="text-xs sm:text-sm text-purple-700">
+                                <p className="text-xs sm:text-sm text-purple-700 break-words">
                                   <strong>📝 Technique:</strong> {inst.technique}
                                 </p>
                               </div>
@@ -929,7 +930,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                             {/* Serving suggestion */}
                             {inst.servingSuggestion && (
                               <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-green-50 rounded-lg border border-green-100">
-                                <p className="text-xs sm:text-sm text-green-700">
+                                <p className="text-xs sm:text-sm text-green-700 break-words">
                                   <strong>🍽 Serving:</strong> {inst.servingSuggestion}
                                 </p>
                               </div>
