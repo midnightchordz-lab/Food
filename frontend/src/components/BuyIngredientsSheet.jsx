@@ -318,8 +318,26 @@ const BuyIngredientsSheet = ({
     hapticFeedback('success');
   };
 
+  // Open delivery options panel
+  const handleOrderNowClick = () => {
+    const unchecked = getUncheckedIngredients();
+    if (unchecked.length === 0) {
+      toast.error('No items to order');
+      return;
+    }
+    
+    if (deliveryApps.length === 0) {
+      toast.error('No delivery apps available for your region');
+      return;
+    }
+    
+    // Show delivery options for user to choose
+    setShowDeliveryOptions(true);
+    hapticFeedback('medium');
+  };
+
   // Handle delivery app click - build URL and open
-  const handleOrderNow = async (app) => {
+  const handleSelectDeliveryApp = async (app) => {
     const unchecked = getUncheckedIngredients();
     if (unchecked.length === 0) {
       toast.error('No items to order');
@@ -339,6 +357,7 @@ const BuyIngredientsSheet = ({
       if (response.data.success && response.data.url) {
         window.open(response.data.url, '_blank');
         toast.success(`Opening ${app?.name || 'delivery app'}...`);
+        setShowDeliveryOptions(false);
         onClose();
       }
     } catch (error) {
