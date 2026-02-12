@@ -282,7 +282,8 @@ export default function LiveCookingModal({
             </motion.div>
           )}
         </AnimatePresence>
-      </DialogContent>
+        </DialogContent>
+      </DialogPortal>
     </Dialog>
   );
 }
