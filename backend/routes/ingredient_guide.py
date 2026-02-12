@@ -130,7 +130,13 @@ def normalize_ingredient_name(name: str) -> str:
     # Remove descriptors like "finely chopped", "minced", etc.
     normalized = re.sub(r',.*$', '', normalized).strip()
     normalized = re.sub(r'\(.*?\)', '', normalized).strip()
-    normalized = re.sub(r'\s+(finely|roughly|coarsely|thinly|freshly|chopped|minced|diced|sliced|grated|crushed|ground|whole|dried|fresh|frozen|canned|optional).*$', '', normalized, flags=re.IGNORECASE).strip()
+    normalized = re.sub(r'\s+(finely|roughly|coarsely|thinly|freshly|chopped|minced|diced|sliced|grated|crushed|ground|whole|dried|fresh|frozen|canned|optional|for garnish|to taste).*$', '', normalized, flags=re.IGNORECASE).strip()
+    # Handle common plurals
+    normalized = re.sub(r'ies$', 'i', normalized)  # chilies -> chili
+    normalized = re.sub(r'ves$', 'f', normalized)  # leaves -> leaf (but we want leaves to stay)
+    # Actually, let's be more specific about plurals
+    normalized = re.sub(r'chilies$', 'chili', normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r'chillies$', 'chili', normalized, flags=re.IGNORECASE)
     return normalized.lower()
 
 # ═══════════════════════════════════════════════════════════════
