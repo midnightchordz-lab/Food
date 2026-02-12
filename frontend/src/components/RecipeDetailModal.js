@@ -442,34 +442,10 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   const [selectedIngredientName, setSelectedIngredientName] = useState(null);
   const [showIngredientPopup, setShowIngredientPopup] = useState(false);
   
-  // Live Cooking Modal state
-  const [liveOpen, setLiveOpen] = useState(false);
-  const [liveCurrentStep, setLiveCurrentStep] = useState(0);
-  const [liveIsPlaying, setLiveIsPlaying] = useState(false);
+  // Live Cooking Modal - use global store
+  const openLiveCooking = useLiveCooking((s) => s.openModal);
   
   const shoppingCart = useShoppingCart();
-  
-  // Live Cooking handlers
-  const handleLivePrevStep = () => {
-    setLiveCurrentStep(prev => Math.max(0, prev - 1));
-  };
-  
-  const handleLiveNextStep = () => {
-    const steps = parsedRecipe?.instructions || [];
-    setLiveCurrentStep(prev => Math.min(steps.length - 1, prev + 1));
-  };
-  
-  const handleLiveTogglePlay = () => {
-    setLiveIsPlaying(prev => !prev);
-  };
-  
-  // Get current step text for live cooking
-  const getLiveCurrentStepText = () => {
-    const steps = parsedRecipe?.instructions || [];
-    if (steps.length === 0) return "No instructions available";
-    const step = steps[liveCurrentStep];
-    return step?.text || step?.instruction || step || "Preparing...";
-  };
   
   // Handle ingredient click to show info popup
   const handleIngredientInfoClick = (ingredientItem) => {
