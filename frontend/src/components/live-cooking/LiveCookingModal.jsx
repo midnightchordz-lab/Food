@@ -31,18 +31,6 @@ export default function LiveCookingModal() {
   const videoRef = useRef(null);
   const audioRef = useRef(null);
 
-  // Handle play/pause button click - sync with video
-  const handleTogglePlay = () => {
-    togglePlay();
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play().catch(() => {});
-      }
-    }
-  };
-
   // Get current step text
   const currentStepText = instructions[currentStep]?.text || 
                           instructions[currentStep]?.instruction || 
@@ -89,12 +77,47 @@ export default function LiveCookingModal() {
     }
   };
 
-  // Trigger voice narration when modal opens
+  // Handle play/pause button click - sync video AND audio
+  const handleTogglePlay = () => {
+    const newIsPlaying = !isPlaying;
+    togglePlay();
+    
+    // Sync video
+    if (videoRef.current) {
+      if (newIsPlaying) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
+    }
+    
+    // Sync audio
+    if (audioRef.current) {
+      if (newIsPlaying) {
+        audioRef.current.play().catch(() => {});
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  };
+
+  // Trigger voice narration and video when modal opens
   useEffect(() => {
     if (!open) return;
     
     // Start voice narration for current step
     readCurrentStep();
+    
+    // Start video playback
+    if (videoRef.current && recipeVideo) {
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.muted = false;
+          videoRef.current.volume = 1;
+          videoRef.current.play().catch(() => {});
+        }
+      }, 100);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -106,33 +129,28 @@ export default function LiveCookingModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
-  // Trigger video playback when modal opens
-  useEffect(() => {
-    if (open && videoRef.current && recipeVideo) {
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.muted = false;
-          videoRef.current.volume = 1;
-          videoRef.current.play().catch(() => {});
-        }
-      }, 100);
-    }
-  }, [open, recipeVideo]);
-
-  // Sync video play/pause events with modal state
+  // Sync video play/pause events with modal state and audio
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleVideoPause = () => {
-      // Only toggle if modal thinks it's playing
+      // Pause audio when video pauses
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+      }
+      // Update state if needed
       if (isPlaying) {
         togglePlay();
       }
     };
 
     const handleVideoPlay = () => {
-      // Only toggle if modal thinks it's paused
+      // Resume audio when video plays
+      if (audioRef.current && audioRef.current.paused && audioRef.current.src) {
+        audioRef.current.play().catch(() => {});
+      }
+      // Update state if needed
       if (!isPlaying) {
         togglePlay();
       }
@@ -144,6 +162,42 @@ export default function LiveCookingModal() {
     return () => {
       video.removeEventListener("pause", handleVideoPause);
       video.removeEventListener("play", handleVideoPlay);
+    };
+  }, [isPlaying, togglePlay]);
+
+  // Sync audio play/pause events with modal state and video
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleAudioPause = () => {
+      // Pause video when audio pauses (if not already paused)
+      if (videoRef.current && !videoRef.current.paused) {
+        videoRef.current.pause();
+      }
+      // Update state if needed
+      if (isPlaying) {
+        togglePlay();
+      }
+    };
+
+    const handleAudioPlay = () => {
+      // Resume video when audio plays
+      if (videoRef.current && videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
+      }
+      // Update state if needed
+      if (!isPlaying) {
+        togglePlay();
+      }
+    };
+
+    audio.addEventListener("pause", handleAudioPause);
+    audio.addEventListener("play", handleAudioPlay);
+
+    return () => {
+      audio.removeEventListener("pause", handleAudioPause);
+      audio.removeEventListener("play", handleAudioPlay);
     };
   }, [isPlaying, togglePlay]);
 
