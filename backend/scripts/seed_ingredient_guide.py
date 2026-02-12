@@ -1447,6 +1447,1390 @@ INGREDIENT_DATA = [
         "what_to_look_for": "Check expiration date. Canola and vegetable oils are most versatile for beginners.",
         "featured": True,
         "popularity": 100
+    },
+    
+    # ════════════════════════════════════════════════════════
+    # DAIRY & EGGS
+    # ════════════════════════════════════════════════════════
+    
+    {
+        "name": "yogurt",
+        "display_name": "Yogurt",
+        "alternate_names": ["dahi", "curd", "plain yogurt", "greek yogurt"],
+        "category": "dairy",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White to cream",
+            "shape": "Thick creamy liquid",
+            "size": "N/A",
+            "texture": "Smooth, creamy, can be thick or thin",
+            "visual_description": "White, creamy dairy product. Greek yogurt is thicker. Indian dahi is slightly thinner. Should be smooth without lumps."
+        },
+        "similar_to": [
+            {"name": "Sour cream", "how_to_differentiate": "Sour cream is thicker and tangier. Yogurt is more fluid and milder."}
+        ],
+        "confused_with": [],
+        "aroma": "Slightly tangy, fresh dairy smell",
+        "taste": "Tangy, creamy, slightly sour",
+        "common_uses": ["Indian raita", "Marinades (tenderizes meat)", "Smoothies", "Baking", "Sauces"],
+        "cuisines": ["Indian", "Middle Eastern", "Greek", "Mediterranean"],
+        "preparation_tips": [
+            "Bring to room temperature before adding to hot dishes",
+            "Add slowly to hot curries to prevent curdling",
+            "Whisking before adding prevents curdling",
+            "Full-fat yogurt works best for cooking"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "2-3 weeks", "signs_of_spoilage": ["Mold", "Separation", "Sour smell", "Pink/green tinge"]},
+        "substitutes": [
+            {"name": "Sour cream", "ratio": "1:1", "notes": "Thicker and tangier"},
+            {"name": "Buttermilk", "ratio": "3/4 cup buttermilk = 1 cup yogurt", "notes": "Thinner"}
+        ],
+        "nutritional_highlights": ["High in protein", "Probiotics for gut health", "Calcium"],
+        "beginner_notes": "To prevent yogurt from curdling in hot dishes: temper it first by adding a spoonful of hot liquid to the yogurt, mix well, then add to the dish. Never boil yogurt directly!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store dairy section",
+        "what_to_look_for": "Plain, unsweetened yogurt for cooking. Full-fat for best results.",
+        "featured": True,
+        "popularity": 90
+    },
+    
+    {
+        "name": "butter",
+        "display_name": "Butter",
+        "alternate_names": ["makhan", "unsalted butter", "salted butter"],
+        "category": "dairy",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Pale yellow to golden yellow",
+            "shape": "Solid block or sticks",
+            "size": "Typically 100g-500g blocks",
+            "texture": "Solid when cold, soft at room temp, melts when heated",
+            "visual_description": "Pale yellow solid fat. Deeper yellow usually indicates grass-fed cows. Should be smooth without cracks."
+        },
+        "similar_to": [
+            {"name": "Ghee", "how_to_differentiate": "Ghee is clarified butter - golden liquid with no milk solids. Has higher smoke point."},
+            {"name": "Margarine", "how_to_differentiate": "Margarine is plant-based, softer, and has different flavor."}
+        ],
+        "confused_with": [],
+        "aroma": "Rich, creamy, slightly sweet",
+        "taste": "Rich, creamy, slightly sweet, salty if salted",
+        "common_uses": ["Baking", "Sautéing", "Finishing dishes", "Toast", "Sauces"],
+        "cuisines": ["French", "European", "American", "Indian"],
+        "preparation_tips": [
+            "Use unsalted for baking (control salt level)",
+            "Room temperature for creaming in baking",
+            "Burns easily - use medium heat",
+            "Brown butter adds nutty flavor"
+        ],
+        "storage": {"method": "Refrigerator or freezer", "shelf_life": "1 month fridge, 6 months freezer", "signs_of_spoilage": ["Rancid smell", "Discoloration", "Mold"]},
+        "substitutes": [
+            {"name": "Ghee", "ratio": "1:1", "notes": "For cooking, not baking"},
+            {"name": "Oil", "ratio": "3/4 cup oil = 1 cup butter", "notes": "Different texture in baking"}
+        ],
+        "nutritional_highlights": ["Fat-soluble vitamins A, D, E", "Saturated fat"],
+        "beginner_notes": "For baking, always use UNSALTED butter so you can control the salt. For cooking, either works. Butter burns easily, so use medium heat. If it starts smoking, it's burning!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Check expiration date. Unsalted for baking, salted for everyday cooking.",
+        "featured": True,
+        "popularity": 95
+    },
+    
+    {
+        "name": "ghee",
+        "display_name": "Ghee (Clarified Butter)",
+        "alternate_names": ["clarified butter", "desi ghee", "pure ghee"],
+        "category": "dairy",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Golden yellow to amber",
+            "shape": "Liquid when warm, solid when cold",
+            "size": "N/A",
+            "texture": "Smooth, grainy texture when solid",
+            "visual_description": "Clear golden liquid when melted. Sets to grainy solid when cold. Much darker than regular butter."
+        },
+        "similar_to": [
+            {"name": "Butter", "how_to_differentiate": "Ghee has milk solids removed, higher smoke point, nuttier flavor."}
+        ],
+        "confused_with": [],
+        "aroma": "Nutty, rich, toasted",
+        "taste": "Nutty, rich, deeper than butter",
+        "common_uses": ["Indian cooking", "High-heat frying", "Drizzling on rice/roti", "Ayurvedic uses"],
+        "cuisines": ["Indian", "Middle Eastern", "South Asian"],
+        "preparation_tips": [
+            "Can be heated to high temperatures without burning",
+            "A little goes a long way - very rich",
+            "No need to refrigerate if kept clean",
+            "Use for tempering spices"
+        ],
+        "storage": {"method": "Room temperature or refrigerator", "shelf_life": "3 months room temp, 1 year fridge", "signs_of_spoilage": ["Rancid smell", "Mold", "Off taste"]},
+        "substitutes": [
+            {"name": "Butter", "ratio": "1:1", "notes": "Lower smoke point"},
+            {"name": "Coconut oil", "ratio": "1:1", "notes": "Different flavor"}
+        ],
+        "nutritional_highlights": ["Lactose-free", "High smoke point", "Contains butyrate"],
+        "beginner_notes": "Ghee is butter with the milk solids removed, so it doesn't burn as easily and is often tolerated by lactose-intolerant people. It has an amazing nutty flavor - try it on rice or roti!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Indian grocery stores, health food stores, regular grocery stores",
+        "what_to_look_for": "Should be golden, clear, and have a nutty smell. Avoid if cloudy or smells off.",
+        "featured": True,
+        "popularity": 85
+    },
+    
+    {
+        "name": "cream",
+        "display_name": "Heavy Cream",
+        "alternate_names": ["heavy cream", "whipping cream", "fresh cream", "malai"],
+        "category": "dairy",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1587657249780-c27b2c1e6790?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White to off-white",
+            "shape": "Thick liquid",
+            "size": "N/A",
+            "texture": "Thick, pourable liquid that can be whipped",
+            "visual_description": "Thick white liquid, much thicker than milk. Heavy cream is thickest, light cream is thinner."
+        },
+        "similar_to": [
+            {"name": "Half and half", "how_to_differentiate": "Half and half is thinner (half milk, half cream). Won't whip."}
+        ],
+        "confused_with": [],
+        "aroma": "Rich, milky, slightly sweet",
+        "taste": "Rich, creamy, slightly sweet",
+        "common_uses": ["Curries and gravies", "Whipped cream", "Pasta sauces", "Soups", "Desserts"],
+        "cuisines": ["Indian", "Italian", "French", "Universal"],
+        "preparation_tips": [
+            "Can be boiled without curdling (unlike milk)",
+            "Chill bowl and beaters for whipping",
+            "Add at end of cooking for richness",
+            "Heavy cream = 36%+ fat for whipping"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "1-2 weeks", "signs_of_spoilage": ["Sour smell", "Curdling", "Mold"]},
+        "substitutes": [
+            {"name": "Coconut cream", "ratio": "1:1", "notes": "Dairy-free, adds coconut flavor"},
+            {"name": "Milk + butter", "ratio": "3/4 cup milk + 1/4 cup butter = 1 cup cream", "notes": "For cooking only"}
+        ],
+        "nutritional_highlights": ["High in fat", "Source of vitamin A"],
+        "beginner_notes": "Unlike yogurt, cream can be boiled without curdling, making it great for rich gravies. For Indian restaurant-style curries, cream is the secret to that silky, rich texture!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store dairy section",
+        "what_to_look_for": "Heavy cream or whipping cream for cooking. Check fat percentage - higher is richer.",
+        "featured": True,
+        "popularity": 80
+    },
+    
+    {
+        "name": "paneer",
+        "display_name": "Paneer (Indian Cottage Cheese)",
+        "alternate_names": ["cottage cheese", "indian cheese", "panir"],
+        "category": "dairy",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White to cream",
+            "shape": "Firm block that can be cubed",
+            "size": "Sold in 200g-400g blocks",
+            "texture": "Firm, slightly crumbly, doesn't melt",
+            "visual_description": "White, firm cheese that can be cut into cubes. Does NOT melt like other cheeses. Has a mild, milky appearance."
+        },
+        "similar_to": [
+            {"name": "Tofu", "how_to_differentiate": "Tofu is soy-based, softer, and more bland. Paneer is dairy-based and richer."},
+            {"name": "Halloumi", "how_to_differentiate": "Halloumi is saltier and squeakier. Can substitute in some dishes."}
+        ],
+        "confused_with": [
+            {"name": "Feta", "warning": "Feta is salty and crumbly. Paneer is mild and firm. They're not interchangeable!"}
+        ],
+        "aroma": "Mild, fresh milk smell",
+        "taste": "Mild, milky, slightly sweet, absorbs flavors well",
+        "common_uses": ["Palak paneer", "Paneer tikka", "Matar paneer", "Kadai paneer", "Grilled/fried as snack"],
+        "cuisines": ["Indian", "South Asian"],
+        "preparation_tips": [
+            "Fry cubes until golden for better texture",
+            "Soak in warm water to soften if too firm",
+            "Doesn't melt - holds shape in curries",
+            "Can be made at home with milk and lemon"
+        ],
+        "storage": {"method": "Refrigerator, submerged in water", "shelf_life": "1 week (change water daily)", "signs_of_spoilage": ["Sour smell", "Slimy texture", "Yellow color"]},
+        "substitutes": [
+            {"name": "Halloumi", "ratio": "1:1", "notes": "Saltier, good for grilling"},
+            {"name": "Extra-firm tofu", "ratio": "1:1", "notes": "Vegan option, press well first"}
+        ],
+        "nutritional_highlights": ["High protein", "Good calcium source", "Complete protein"],
+        "beginner_notes": "Paneer doesn't melt - that's the whole point! It holds its shape in hot curries. For best results, fry the cubes in oil until golden before adding to curry. This gives them a nice outer texture.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Indian grocery stores, some regular grocery stores",
+        "what_to_look_for": "Fresh, white color, firm texture. Avoid if yellowing or slimy.",
+        "featured": True,
+        "popularity": 85
+    },
+    
+    {
+        "name": "milk",
+        "display_name": "Milk",
+        "alternate_names": ["doodh", "whole milk", "full cream milk"],
+        "category": "dairy",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White, opaque",
+            "shape": "Liquid",
+            "size": "N/A",
+            "texture": "Thin, pourable liquid",
+            "visual_description": "White, opaque liquid. Whole milk is slightly more opaque than skim milk."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Fresh, slightly sweet",
+        "taste": "Mild, slightly sweet, creamy",
+        "common_uses": ["Chai", "Baking", "Curries", "Desserts", "Drinking"],
+        "cuisines": ["Universal"],
+        "preparation_tips": [
+            "Don't boil directly in curries - can curdle",
+            "Whole milk gives richest results",
+            "Warm milk before adding to hot dishes",
+            "Scald milk for bread recipes"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "5-7 days after opening", "signs_of_spoilage": ["Sour smell", "Curdling", "Off taste"]},
+        "substitutes": [
+            {"name": "Plant milk", "ratio": "1:1", "notes": "Oat milk is creamiest"},
+            {"name": "Cream + water", "ratio": "1/2 cup cream + 1/2 cup water = 1 cup milk", "notes": "For cooking"}
+        ],
+        "nutritional_highlights": ["Calcium", "Vitamin D", "Protein"],
+        "beginner_notes": "For Indian cooking, whole milk (full cream) gives best results. When adding milk to hot dishes, warm it first and add slowly to prevent curdling.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Check expiration date. Whole milk for cooking, any type for drinking.",
+        "featured": True,
+        "popularity": 95
+    },
+    
+    {
+        "name": "egg",
+        "display_name": "Eggs",
+        "alternate_names": ["anda", "eggs", "chicken egg"],
+        "category": "other",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1491524062933-cb0289261700?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White or brown shell, yellow yolk, clear white",
+            "shape": "Oval",
+            "size": "About 5cm long",
+            "texture": "Hard shell, liquid inside that sets when cooked",
+            "visual_description": "Oval with hard outer shell. Inside has yellow yolk and clear white (albumen) that turns opaque white when cooked."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Mild when fresh, sulfurous when old",
+        "taste": "Mild, rich yolk, neutral white",
+        "common_uses": ["Scrambled/fried/boiled", "Baking", "Binding agent", "Egg curry", "Coating for frying"],
+        "cuisines": ["Universal"],
+        "preparation_tips": [
+            "Room temperature eggs beat better for baking",
+            "Fresh eggs sink in water, old eggs float",
+            "Crack into separate bowl first to check freshness",
+            "Add salt after cooking scrambled eggs (not before)"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "3-5 weeks", "signs_of_spoilage": ["Float in water", "Bad smell when cracked", "Runny/watery white"]},
+        "substitutes": [
+            {"name": "Flax egg", "ratio": "1 tbsp ground flax + 3 tbsp water = 1 egg", "notes": "For baking only"},
+            {"name": "Banana", "ratio": "1/4 mashed banana = 1 egg", "notes": "For baking, adds sweetness"}
+        ],
+        "nutritional_highlights": ["Complete protein", "Vitamin B12", "Choline"],
+        "beginner_notes": "The freshness test: Put egg in water. If it sinks flat, it's very fresh. If it stands upright, use soon. If it floats, throw it away! Brown and white eggs taste the same - color depends on the hen breed.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Check for cracks. Large eggs are standard in recipes.",
+        "featured": True,
+        "popularity": 95
+    },
+    
+    # ════════════════════════════════════════════════════════
+    # MORE VEGETABLES
+    # ════════════════════════════════════════════════════════
+    
+    {
+        "name": "potato",
+        "display_name": "Potato",
+        "alternate_names": ["aloo", "potatoes", "russet potato", "yukon gold"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1518977676601-b53f82ber633?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Brown/tan skin, white/yellow flesh",
+            "shape": "Round to oval, irregular",
+            "size": "5-10cm",
+            "texture": "Firm, starchy flesh",
+            "visual_description": "Round to oval tubers with thin brown skin. Flesh is white to yellow depending on variety. Should be firm without sprouts."
+        },
+        "similar_to": [
+            {"name": "Sweet potato", "how_to_differentiate": "Sweet potatoes are orange inside, sweeter, and have different texture when cooked."}
+        ],
+        "confused_with": [],
+        "aroma": "Earthy",
+        "taste": "Mild, starchy, earthy",
+        "common_uses": ["Aloo curry", "Fries", "Mashed", "Roasted", "In stews"],
+        "cuisines": ["Indian", "Universal"],
+        "preparation_tips": [
+            "Store in cool, dark place (not fridge)",
+            "Green parts are toxic - cut them off",
+            "Soak cut potatoes in water to prevent browning",
+            "Waxy potatoes hold shape, starchy potatoes mash well"
+        ],
+        "storage": {"method": "Cool, dark, dry place (not fridge)", "shelf_life": "2-3 weeks", "signs_of_spoilage": ["Sprouts", "Green color", "Soft spots", "Wrinkled skin"]},
+        "substitutes": [
+            {"name": "Sweet potato", "ratio": "1:1", "notes": "Different flavor and texture"},
+            {"name": "Cauliflower", "ratio": "1:1", "notes": "Low-carb substitute for mashed"}
+        ],
+        "nutritional_highlights": ["Good source of potassium", "Vitamin C", "Fiber when eaten with skin"],
+        "beginner_notes": "Green potatoes contain solanine (toxic) - don't eat the green parts! Sprouted potatoes are safe if you remove the sprouts, but very sprouted ones should be discarded. Store away from onions - they make each other spoil faster.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Firm, no sprouts, no green patches, no soft spots.",
+        "featured": True,
+        "popularity": 100
+    },
+    
+    {
+        "name": "carrot",
+        "display_name": "Carrot",
+        "alternate_names": ["gajar", "carrots"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Orange (also purple, yellow, white varieties)",
+            "shape": "Long, tapered root",
+            "size": "15-20cm long",
+            "texture": "Crisp, firm when raw; soft when cooked",
+            "visual_description": "Long, tapered orange root vegetable. Should be firm and bright in color. Green tops indicate freshness."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Sweet, earthy",
+        "taste": "Sweet, earthy, becomes sweeter when cooked",
+        "common_uses": ["Gajar halwa", "Salads", "Stir-fries", "Soups", "Juicing"],
+        "cuisines": ["Indian", "Universal"],
+        "preparation_tips": [
+            "Peel or scrub well before using",
+            "Thin end cooks faster than thick end",
+            "Cut uniformly for even cooking",
+            "Roasting caramelizes natural sugars"
+        ],
+        "storage": {"method": "Refrigerator in plastic bag", "shelf_life": "2-3 weeks", "signs_of_spoilage": ["Bendy/limp", "Slimy", "Black spots"]},
+        "substitutes": [
+            {"name": "Parsnip", "ratio": "1:1", "notes": "Similar texture, sweeter"},
+            {"name": "Sweet potato", "ratio": "1:1", "notes": "For soups/stews"}
+        ],
+        "nutritional_highlights": ["Very high in vitamin A (beta-carotene)", "Good for eye health", "Fiber"],
+        "beginner_notes": "Carrots are naturally sweet - they're great for adding sweetness to savory dishes without sugar. Baby carrots are just regular carrots cut small, not a different variety!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Firm, bright orange, no cracks. Avoid bendy carrots.",
+        "featured": True,
+        "popularity": 90
+    },
+    
+    {
+        "name": "spinach",
+        "display_name": "Spinach",
+        "alternate_names": ["palak", "baby spinach", "spinach leaves"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Dark green",
+            "shape": "Oval leaves with stems",
+            "size": "Varies - baby spinach smaller",
+            "texture": "Tender, wilts quickly when cooked",
+            "visual_description": "Dark green leafy vegetable with tender leaves. Baby spinach has smaller, more tender leaves. Regular spinach has larger leaves with thicker stems."
+        },
+        "similar_to": [
+            {"name": "Swiss chard", "how_to_differentiate": "Swiss chard has thicker stems (often colorful) and more bitter taste."}
+        ],
+        "confused_with": [],
+        "aroma": "Fresh, green, grassy",
+        "taste": "Mild, slightly earthy, becomes sweeter when cooked",
+        "common_uses": ["Palak paneer", "Saag", "Salads", "Smoothies", "Pasta"],
+        "cuisines": ["Indian", "Mediterranean", "Universal"],
+        "preparation_tips": [
+            "Wash very thoroughly - can be sandy",
+            "Wilts dramatically - use more than you think",
+            "Cook briefly to retain color and nutrients",
+            "Remove thick stems for smoother texture"
+        ],
+        "storage": {"method": "Refrigerator in dry paper towel", "shelf_life": "5-7 days", "signs_of_spoilage": ["Yellow leaves", "Slimy", "Bad smell"]},
+        "substitutes": [
+            {"name": "Kale", "ratio": "1:1", "notes": "Tougher, more bitter, needs longer cooking"},
+            {"name": "Swiss chard", "ratio": "1:1", "notes": "Similar but slightly bitter"}
+        ],
+        "nutritional_highlights": ["Iron", "Vitamin K", "Folate", "Very low calorie"],
+        "beginner_notes": "Spinach shrinks A LOT when cooked - a huge bag will become a tiny amount! For palak paneer, you need way more spinach than you'd think. Always wash thoroughly - spinach can hide a lot of sand in the leaves.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Bright green, crisp leaves. Avoid yellow or slimy leaves.",
+        "featured": True,
+        "popularity": 85
+    },
+    
+    {
+        "name": "cauliflower",
+        "display_name": "Cauliflower",
+        "alternate_names": ["gobhi", "phool gobhi"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White (also purple, orange, green varieties)",
+            "shape": "Round head made of tight florets",
+            "size": "15-20cm diameter",
+            "texture": "Firm, dense florets",
+            "visual_description": "White, compact head made of many small florets. Surrounded by green leaves. Should be firm and bright white without brown spots."
+        },
+        "similar_to": [
+            {"name": "Broccoli", "how_to_differentiate": "Broccoli is green with looser florets on long stems. Cauliflower is white and more compact."}
+        ],
+        "confused_with": [],
+        "aroma": "Mild, slightly sulfurous when cooked",
+        "taste": "Mild, slightly nutty, absorbs flavors well",
+        "common_uses": ["Gobhi curry", "Aloo gobhi", "Roasted", "Cauliflower rice", "Paratha stuffing"],
+        "cuisines": ["Indian", "Universal"],
+        "preparation_tips": [
+            "Cut into similar-sized florets for even cooking",
+            "Don't overcook - becomes mushy",
+            "Roasting brings out sweetness",
+            "Core is edible - don't waste it"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "1 week", "signs_of_spoilage": ["Brown spots", "Soft", "Bad smell"]},
+        "substitutes": [
+            {"name": "Broccoli", "ratio": "1:1", "notes": "Different flavor but similar texture"},
+            {"name": "Romanesco", "ratio": "1:1", "notes": "Similar but more nutty"}
+        ],
+        "nutritional_highlights": ["Vitamin C", "Vitamin K", "Low carb alternative to rice/potato"],
+        "beginner_notes": "Cauliflower is incredibly versatile - you can rice it, mash it, roast it, or use it in curries. It absorbs flavors really well, which is why it's great in spiced dishes like aloo gobhi.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Firm, white, compact head. Avoid brown spots or soft areas.",
+        "featured": True,
+        "popularity": 80
+    },
+    
+    {
+        "name": "peas",
+        "display_name": "Green Peas",
+        "alternate_names": ["matar", "green peas", "frozen peas", "garden peas"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1587735243475-46f39636076a?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Bright green",
+            "shape": "Small round spheres",
+            "size": "5-8mm diameter",
+            "texture": "Firm, slightly starchy",
+            "visual_description": "Small, bright green spheres. Fresh peas come in pods. Frozen peas are loose and slightly darker green."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Fresh, sweet, grassy",
+        "taste": "Sweet, slightly starchy, fresh",
+        "common_uses": ["Matar paneer", "Pulao", "Samosas", "Mixed vegetables", "Soups"],
+        "cuisines": ["Indian", "Universal"],
+        "preparation_tips": [
+            "Frozen peas are often better than 'fresh' (frozen at peak)",
+            "Don't overcook - they turn mushy and grey",
+            "Add at end of cooking to keep color",
+            "Fresh peas need shelling from pods"
+        ],
+        "storage": {"method": "Freezer (frozen), Refrigerator (fresh)", "shelf_life": "6 months frozen, 3-4 days fresh", "signs_of_spoilage": ["Yellowing", "Wrinkled", "Slimy"]},
+        "substitutes": [
+            {"name": "Edamame", "ratio": "1:1", "notes": "Firmer, more protein"},
+            {"name": "Green beans", "ratio": "1:1", "notes": "Different texture"}
+        ],
+        "nutritional_highlights": ["Good protein for a vegetable", "Fiber", "Vitamin C"],
+        "beginner_notes": "Frozen peas are actually better than fresh for most uses - they're frozen right after picking so they retain more sweetness and nutrients. No need to thaw before using, just add directly to your dish!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store (frozen section for best quality)",
+        "what_to_look_for": "Frozen: no ice crystals (sign of thawing). Fresh: bright green, firm pods.",
+        "featured": True,
+        "popularity": 85
+    },
+    
+    {
+        "name": "bell pepper",
+        "display_name": "Bell Pepper (Capsicum)",
+        "alternate_names": ["capsicum", "shimla mirch", "sweet pepper", "green pepper", "red pepper"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Green, red, yellow, orange",
+            "shape": "Blocky, hollow with seeds inside",
+            "size": "8-12cm",
+            "texture": "Crisp, crunchy flesh",
+            "visual_description": "Large, blocky peppers with glossy skin. Green is unripe (slightly bitter), red/yellow/orange are ripe and sweeter. Hollow inside with white membrane and seeds."
+        },
+        "similar_to": [],
+        "confused_with": [
+            {"name": "Hot peppers", "warning": "Bell peppers are NOT spicy at all! Don't confuse with hot peppers that might look similar."}
+        ],
+        "aroma": "Fresh, slightly sweet",
+        "taste": "Sweet (red/yellow), slightly bitter (green), crisp",
+        "common_uses": ["Stir-fries", "Salads", "Stuffed peppers", "Fajitas", "Kadai dishes"],
+        "cuisines": ["Indian", "Mexican", "Chinese", "Mediterranean"],
+        "preparation_tips": [
+            "Remove seeds and white membrane",
+            "Red/yellow are sweeter than green",
+            "Cut against the grain for crispier texture",
+            "Roast to remove skin and sweeten"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "1-2 weeks", "signs_of_spoilage": ["Soft spots", "Wrinkled skin", "Mold"]},
+        "substitutes": [
+            {"name": "Poblano pepper", "ratio": "1:1", "notes": "Slightly spicy, good for roasting"}
+        ],
+        "nutritional_highlights": ["Very high in vitamin C", "Vitamin A (red peppers)", "Low calorie"],
+        "beginner_notes": "Bell peppers are NOT spicy - they're sweet! Green ones are just unripe red peppers, which is why they're slightly bitter. Red and yellow peppers cost more because they take longer to grow.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Firm, glossy skin, no wrinkles or soft spots.",
+        "featured": True,
+        "popularity": 80
+    },
+    
+    {
+        "name": "cabbage",
+        "display_name": "Cabbage",
+        "alternate_names": ["patta gobhi", "band gobhi", "green cabbage"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Green or purple",
+            "shape": "Round, compact head of layered leaves",
+            "size": "15-25cm diameter",
+            "texture": "Crisp, crunchy, densely layered",
+            "visual_description": "Tight, round head made of many layered leaves. Green cabbage is most common. Red/purple cabbage is sweeter. Should feel heavy for its size."
+        },
+        "similar_to": [
+            {"name": "Lettuce", "how_to_differentiate": "Lettuce is much looser and more delicate. Cabbage is dense and crunchy."}
+        ],
+        "confused_with": [],
+        "aroma": "Mild, slightly sulfurous when cooked",
+        "taste": "Mild, slightly sweet, peppery when raw",
+        "common_uses": ["Coleslaw", "Stir-fries", "Stuffed cabbage", "Soups", "Fermented (sauerkraut, kimchi)"],
+        "cuisines": ["Indian", "Chinese", "German", "Korean", "Universal"],
+        "preparation_tips": [
+            "Remove outer leaves if damaged",
+            "Cut in half, remove core, then slice",
+            "Massage raw cabbage with salt for salads",
+            "Don't overcook - becomes smelly and mushy"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "2-3 weeks", "signs_of_spoilage": ["Outer leaves wilted", "Slimy", "Bad smell"]},
+        "substitutes": [
+            {"name": "Napa cabbage", "ratio": "1:1", "notes": "More delicate, better for Asian dishes"},
+            {"name": "Brussels sprouts (shredded)", "ratio": "1:1", "notes": "Similar flavor"}
+        ],
+        "nutritional_highlights": ["Vitamin C", "Vitamin K", "Very low calorie"],
+        "beginner_notes": "Cabbage lasts forever in the fridge - it's a great economical vegetable. Shred it for quick stir-fries, or cut into wedges and roast for a different texture. The outer leaves protect the inner ones, so just peel and discard damaged ones.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Heavy for size, tight leaves, no brown spots.",
+        "featured": True,
+        "popularity": 75
+    },
+    
+    {
+        "name": "eggplant",
+        "display_name": "Eggplant (Brinjal/Aubergine)",
+        "alternate_names": ["brinjal", "baingan", "aubergine"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1528826007177-f38517ce9a8a?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Deep purple (also white, striped varieties)",
+            "shape": "Oval to elongated",
+            "size": "10-25cm long",
+            "texture": "Firm, spongy flesh",
+            "visual_description": "Glossy, deep purple skin with green stem cap. Flesh is white/cream with small seeds. Should be firm but give slightly when pressed."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Mild, earthy",
+        "taste": "Mild, slightly bitter when raw, creamy when cooked",
+        "common_uses": ["Baingan bharta", "Baba ganoush", "Grilled", "Curries", "Stir-fries"],
+        "cuisines": ["Indian", "Mediterranean", "Middle Eastern", "Italian"],
+        "preparation_tips": [
+            "Salt and rest to remove bitterness (optional for fresh ones)",
+            "Absorbs oil like a sponge - use less than you think",
+            "Roasting over flame adds smoky flavor",
+            "Skin is edible but can be tough"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "1 week", "signs_of_spoilage": ["Soft spots", "Brown flesh", "Wrinkled skin"]},
+        "substitutes": [
+            {"name": "Zucchini", "ratio": "1:1", "notes": "Different flavor, similar texture when cooked"},
+            {"name": "Portobello mushroom", "ratio": "1:1", "notes": "For grilling/roasting"}
+        ],
+        "nutritional_highlights": ["Low calorie", "Fiber", "Antioxidants in skin"],
+        "beginner_notes": "Eggplant acts like a sponge with oil - it will absorb a lot! Either use very little oil, or salt and press the eggplant first to reduce absorption. For baingan bharta, roast directly over a flame for smoky flavor.",
+        "difficulty_level": "intermediate",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Firm, glossy skin, no soft spots. Light ones are younger and less bitter.",
+        "featured": True,
+        "popularity": 75
+    },
+    
+    {
+        "name": "cucumber",
+        "display_name": "Cucumber",
+        "alternate_names": ["kheera", "kakdi"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Green skin, pale green flesh",
+            "shape": "Long, cylindrical",
+            "size": "15-25cm long",
+            "texture": "Crisp, watery",
+            "visual_description": "Long, green vegetable with watery, crunchy flesh. English cucumbers are longer with thin skin. Persian cucumbers are smaller. Regular cucumbers have thicker, waxy skin."
+        },
+        "similar_to": [
+            {"name": "Zucchini", "how_to_differentiate": "Zucchini is a squash, darker green, and must be cooked. Cucumber is eaten raw."}
+        ],
+        "confused_with": [],
+        "aroma": "Fresh, light, watery",
+        "taste": "Mild, refreshing, slightly sweet",
+        "common_uses": ["Raita", "Salads", "Pickles", "Sandwiches", "Cooling side dish"],
+        "cuisines": ["Indian", "Universal"],
+        "preparation_tips": [
+            "Peel if skin is thick/waxy",
+            "Salt to draw out water for salads",
+            "Seeds can be scooped out if watery",
+            "English cucumbers don't need peeling"
+        ],
+        "storage": {"method": "Refrigerator", "shelf_life": "1 week", "signs_of_spoilage": ["Soft spots", "Slimy", "Yellow color"]},
+        "substitutes": [
+            {"name": "Zucchini (raw)", "ratio": "1:1", "notes": "Firmer, less watery"}
+        ],
+        "nutritional_highlights": ["Very hydrating", "Low calorie", "Vitamin K"],
+        "beginner_notes": "Cucumbers are mostly water, making them super refreshing. For raita, salt the cucumber and squeeze out water first, or your raita will become watery. English (seedless) cucumbers are less watery.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Firm all over, no soft spots or yellowing.",
+        "featured": True,
+        "popularity": 80
+    },
+    
+    {
+        "name": "lemon",
+        "display_name": "Lemon",
+        "alternate_names": ["nimbu", "lime", "lemon juice"],
+        "category": "fruit",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1582087463261-ddea03f80e5d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Bright yellow (lemon) or green (lime)",
+            "shape": "Oval with pointed ends",
+            "size": "5-8cm",
+            "texture": "Firm, thick skin, juicy interior",
+            "visual_description": "Yellow citrus fruit with thick, dimpled skin. Limes are smaller and green. In India, 'nimbu' often refers to small limes/key limes."
+        },
+        "similar_to": [
+            {"name": "Lime", "how_to_differentiate": "Limes are smaller, green, and more tart. Lemons are yellow and slightly sweeter."}
+        ],
+        "confused_with": [],
+        "aroma": "Bright, citrusy, fresh",
+        "taste": "Sour, tangy, bright",
+        "common_uses": ["Finishing dishes", "Marinades", "Lemonade", "Salad dressings", "Preserving color"],
+        "cuisines": ["Universal"],
+        "preparation_tips": [
+            "Room temperature lemons yield more juice",
+            "Roll on counter before juicing",
+            "Zest before juicing",
+            "Add lemon juice at end of cooking to preserve flavor"
+        ],
+        "storage": {"method": "Room temperature or refrigerator", "shelf_life": "1 week room temp, 3-4 weeks fridge", "signs_of_spoilage": ["Soft spots", "Mold", "Dried out"]},
+        "substitutes": [
+            {"name": "Lime", "ratio": "1:1", "notes": "Slightly more tart"},
+            {"name": "Vinegar", "ratio": "1/2 amount", "notes": "For acidity only, different flavor"}
+        ],
+        "nutritional_highlights": ["Very high in vitamin C", "Citric acid aids digestion"],
+        "beginner_notes": "Always add lemon/lime juice at the END of cooking - heat destroys the fresh flavor. A squeeze of lemon can brighten up almost any savory dish. In India, the small limes (nimbu) are interchangeable with lemons.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Heavy for size (more juice), firm, bright color.",
+        "featured": True,
+        "popularity": 90
+    },
+    
+    # ════════════════════════════════════════════════════════
+    # MORE SPICES
+    # ════════════════════════════════════════════════════════
+    
+    {
+        "name": "fennel seeds",
+        "display_name": "Fennel Seeds",
+        "alternate_names": ["saunf", "anise seeds"],
+        "category": "spice_whole",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1599909533601-fc71c5c8c8b9?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Greenish-yellow to pale green",
+            "shape": "Elongated oval, ridged",
+            "size": "4-8mm long",
+            "texture": "Smooth with ridges",
+            "visual_description": "Pale green, elongated seeds with visible ridges. Larger and lighter colored than cumin. Often served after Indian meals as a mouth freshener."
+        },
+        "similar_to": [
+            {"name": "Cumin seeds", "how_to_differentiate": "Cumin is darker brown and smaller. Fennel is greenish and larger. Fennel tastes like licorice, cumin is earthy."},
+            {"name": "Anise seeds", "how_to_differentiate": "Anise seeds are smaller and star-shaped. Similar licorice flavor but more intense."}
+        ],
+        "confused_with": [],
+        "aroma": "Sweet, licorice-like, aromatic",
+        "taste": "Sweet, licorice/anise flavor, slightly cooling",
+        "common_uses": ["Indian sweets", "Mouth freshener after meals", "Bengali five-spice (panch phoron)", "Sausages", "Fish dishes"],
+        "cuisines": ["Indian", "Italian", "Mediterranean"],
+        "preparation_tips": [
+            "Dry roast to bring out flavor",
+            "Can be chewed raw after meals",
+            "Use sparingly - strong flavor",
+            "Pairs well with fish"
+        ],
+        "storage": {"method": "Airtight container", "shelf_life": "1-2 years", "signs_of_spoilage": ["Loss of aroma", "Faded color"]},
+        "substitutes": [
+            {"name": "Anise seeds", "ratio": "Use less - more intense", "notes": "Similar licorice flavor"},
+            {"name": "Caraway seeds", "ratio": "1:1", "notes": "Different but similar family"}
+        ],
+        "nutritional_highlights": ["Aids digestion", "Freshens breath naturally"],
+        "beginner_notes": "Fennel has a distinctive licorice flavor that's polarizing - people either love it or hate it. In Indian restaurants, you'll often find a bowl of saunf (sometimes sugar-coated) at the exit as a digestive and breath freshener.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store, Indian markets",
+        "what_to_look_for": "Pale green color, strong sweet aroma.",
+        "featured": True,
+        "popularity": 70
+    },
+    
+    {
+        "name": "fenugreek seeds",
+        "display_name": "Fenugreek Seeds",
+        "alternate_names": ["methi seeds", "methi dana"],
+        "category": "spice_whole",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Yellow-brown to tan",
+            "shape": "Small, hard, angular stones",
+            "size": "3-4mm",
+            "texture": "Very hard, stone-like",
+            "visual_description": "Small, hard, yellowish-brown seeds that look like tiny stones. Very angular/irregular shape. Extremely hard - can break teeth if bitten!"
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Strong, maple-like, slightly bitter",
+        "taste": "Bitter when raw, maple-like when cooked, potent",
+        "common_uses": ["Indian pickles", "Curry powders", "South Indian sambar", "Tempering"],
+        "cuisines": ["Indian", "Ethiopian", "Middle Eastern"],
+        "preparation_tips": [
+            "Use VERY sparingly - extremely potent",
+            "Add to hot oil at start (temper)",
+            "Don't burn - becomes very bitter",
+            "Soak overnight to soften"
+        ],
+        "storage": {"method": "Airtight container", "shelf_life": "2-3 years", "signs_of_spoilage": ["Loss of aroma"]},
+        "substitutes": [
+            {"name": "Maple syrup + mustard", "ratio": "Tiny amount for flavor approximation", "notes": "Not exact but captures essence"}
+        ],
+        "nutritional_highlights": ["May help blood sugar control", "High in fiber"],
+        "beginner_notes": "Fenugreek is EXTREMELY potent and bitter - use only a tiny amount (like 5-10 seeds). Too much will make your dish taste medicinal and bitter. It smells like maple syrup, which is actually used to detect fenugreek!",
+        "difficulty_level": "intermediate",
+        "where_to_find": "Indian grocery stores",
+        "what_to_look_for": "Hard, intact seeds. Should smell like maple syrup.",
+        "featured": True,
+        "popularity": 65
+    },
+    
+    {
+        "name": "fenugreek leaves",
+        "display_name": "Fenugreek Leaves (Kasuri Methi)",
+        "alternate_names": ["kasuri methi", "dried fenugreek", "methi leaves"],
+        "category": "herb_dried",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Dried green, olive-brown",
+            "shape": "Small, crumbled dried leaves",
+            "size": "Crumbled pieces",
+            "texture": "Dry, crumbly, papery",
+            "visual_description": "Dried, crumbled green-brown leaves. Much milder than fenugreek seeds. Has a distinctive sweet, hay-like aroma."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Sweet, hay-like, aromatic, slightly bitter",
+        "taste": "Slightly bitter, aromatic, mellows when cooked",
+        "common_uses": ["Indian curries (butter chicken!)", "Naan bread", "Finishing spice", "Parathas"],
+        "cuisines": ["Indian", "Pakistani"],
+        "preparation_tips": [
+            "Crush between palms before adding to release aroma",
+            "Add at end of cooking or just before serving",
+            "A little goes a long way",
+            "Essential for authentic butter chicken flavor"
+        ],
+        "storage": {"method": "Airtight container away from light", "shelf_life": "6 months - 1 year", "signs_of_spoilage": ["Loss of aroma", "Dusty smell"]},
+        "substitutes": [
+            {"name": "Fresh fenugreek leaves", "ratio": "1 tbsp dried = 3 tbsp fresh", "notes": "If available"}
+        ],
+        "nutritional_highlights": ["Iron", "Fiber", "Vitamins"],
+        "beginner_notes": "Kasuri methi is the SECRET ingredient in restaurant-style butter chicken and many Indian curries! It adds that distinctive flavor you can't quite place. Always crush it between your palms before adding to release the aroma.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Indian grocery stores",
+        "what_to_look_for": "Strong aroma when crushed. Avoid if smells dusty or stale.",
+        "featured": True,
+        "popularity": 80
+    },
+    
+    {
+        "name": "asafoetida",
+        "display_name": "Asafoetida (Hing)",
+        "alternate_names": ["hing", "heeng", "devil's dung"],
+        "category": "spice_ground",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Yellow powder (compounded), brown resin (pure)",
+            "shape": "Fine powder",
+            "size": "N/A",
+            "texture": "Fine powder, sticky resin in pure form",
+            "visual_description": "Yellow powder (mixed with flour for stability). Pure form is brown-yellow resin. Has an extremely pungent smell raw that transforms when cooked."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "EXTREMELY pungent raw (sulfurous), onion-garlic-like when cooked",
+        "taste": "Pungent raw, savory/umami when cooked, onion-garlic flavor",
+        "common_uses": ["South Indian cooking", "Dals and lentils", "Vegetarian cooking (replaces onion/garlic)", "Tempering"],
+        "cuisines": ["Indian", "South Indian"],
+        "preparation_tips": [
+            "Use TINY amount - a pinch is enough",
+            "Must be cooked in oil/fat to transform flavor",
+            "Add to hot oil at start of tempering",
+            "Store in airtight container - smell spreads!"
+        ],
+        "storage": {"method": "Airtight container (double bagged!)", "shelf_life": "Years if sealed", "signs_of_spoilage": ["Loss of pungency"]},
+        "substitutes": [
+            {"name": "Onion + garlic powder", "ratio": "1/4 tsp each per pinch hing", "notes": "For similar savory depth"}
+        ],
+        "nutritional_highlights": ["Aids digestion", "Anti-bloating", "Traditional Ayurvedic medicine"],
+        "beginner_notes": "Hing smells TERRIBLE raw - like sulfur and rotten garlic. Don't panic! When cooked in hot oil, it transforms into a wonderful savory flavor. Use just a tiny pinch. Store it sealed or your whole kitchen will smell!",
+        "difficulty_level": "intermediate",
+        "where_to_find": "Indian grocery stores only",
+        "what_to_look_for": "Yellow compounded powder is easier to use. Keep sealed tightly!",
+        "featured": True,
+        "popularity": 70
+    },
+    
+    {
+        "name": "curry leaves",
+        "display_name": "Curry Leaves",
+        "alternate_names": ["kadi patta", "meetha neem", "karivepaku"],
+        "category": "herb_fresh",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Dark green, glossy",
+            "shape": "Small, pointed oval leaves on a stem",
+            "size": "2-4cm each leaf",
+            "texture": "Glossy, slightly thick leaves",
+            "visual_description": "Small, dark green, glossy leaves attached to thin stems. Look similar to small bay leaves but are shiny and more delicate. Highly aromatic."
+        },
+        "similar_to": [
+            {"name": "Bay leaves", "how_to_differentiate": "Bay leaves are much larger, stiffer, and pale green. Curry leaves are small, dark, glossy, and on stems. Completely different flavor!"}
+        ],
+        "confused_with": [
+            {"name": "Curry powder", "warning": "Curry LEAVES are a fresh herb. Curry POWDER is a spice blend. They're completely different things and not interchangeable!"}
+        ],
+        "aroma": "Distinctive, aromatic, citrusy, unique",
+        "taste": "Unique aromatic flavor, slightly citrusy, essential to South Indian food",
+        "common_uses": ["South Indian curries", "Tempering/tadka", "Rasam and sambar", "Upma"],
+        "cuisines": ["South Indian", "Sri Lankan", "Malaysian"],
+        "preparation_tips": [
+            "Add to hot oil until they crackle",
+            "Can be eaten or removed (edible)",
+            "Fresh is MUCH better than dried",
+            "Freeze fresh leaves to preserve"
+        ],
+        "storage": {"method": "Refrigerator (paper towel lined) or freezer", "shelf_life": "1-2 weeks fresh, months frozen", "signs_of_spoilage": ["Yellow leaves", "Dry and brittle", "Loss of aroma"]},
+        "substitutes": [
+            {"name": "None", "ratio": "N/A", "notes": "Unique flavor - no real substitute. Skip if unavailable rather than substituting."}
+        ],
+        "nutritional_highlights": ["Iron", "Antioxidants", "Traditional hair growth remedy"],
+        "beginner_notes": "Curry leaves have NO substitute - their flavor is unique. If you can't find them, it's better to skip them than substitute. Freeze fresh curry leaves - they last for months and work almost as well as fresh!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Indian grocery stores, some Asian markets",
+        "what_to_look_for": "Fresh, glossy, dark green leaves. Avoid yellow or dried out leaves.",
+        "featured": True,
+        "popularity": 80
+    },
+    
+    {
+        "name": "cumin powder",
+        "display_name": "Cumin Powder (Ground Cumin)",
+        "alternate_names": ["jeera powder", "ground cumin"],
+        "category": "spice_ground",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Brown to tan",
+            "shape": "Fine powder",
+            "size": "N/A",
+            "texture": "Fine, slightly gritty powder",
+            "visual_description": "Brown to tan fine powder. Slightly darker than coriander powder. Should smell strongly aromatic."
+        },
+        "similar_to": [
+            {"name": "Cumin seeds", "how_to_differentiate": "Powder is ground form. Use 3/4 tsp powder for 1 tsp seeds."}
+        ],
+        "confused_with": [],
+        "aroma": "Warm, earthy, distinctive cumin smell",
+        "taste": "Earthy, warm, slightly bitter",
+        "common_uses": ["Curries", "Raita", "Chaat masala", "Spice rubs"],
+        "cuisines": ["Indian", "Mexican", "Middle Eastern"],
+        "preparation_tips": [
+            "Can be added during or after cooking",
+            "Fresh ground has much more flavor",
+            "Loses potency quickly once ground",
+            "Toast whole seeds before grinding"
+        ],
+        "storage": {"method": "Airtight container", "shelf_life": "6 months", "signs_of_spoilage": ["Loss of aroma", "Faded color"]},
+        "substitutes": [
+            {"name": "Cumin seeds (freshly ground)", "ratio": "3/4 tsp powder = 1 tsp seeds", "notes": "Much better flavor"}
+        ],
+        "nutritional_highlights": ["Iron", "Aids digestion"],
+        "beginner_notes": "Ground cumin loses flavor fast - buy small quantities. Even better: buy whole cumin seeds, toast them, and grind fresh in a spice grinder. The flavor difference is dramatic!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Check date, buy small quantities. Should smell strongly of cumin.",
+        "featured": True,
+        "popularity": 90
+    },
+    
+    {
+        "name": "coriander powder",
+        "display_name": "Coriander Powder (Ground Coriander)",
+        "alternate_names": ["dhania powder", "ground coriander"],
+        "category": "spice_ground",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Light brown to tan",
+            "shape": "Fine powder",
+            "size": "N/A",
+            "texture": "Fine powder",
+            "visual_description": "Light brown, fine powder. Lighter than cumin powder. Should have a citrusy, slightly sweet aroma."
+        },
+        "similar_to": [
+            {"name": "Coriander seeds", "how_to_differentiate": "Powder is ground form. Seeds are whole."}
+        ],
+        "confused_with": [],
+        "aroma": "Citrusy, sweet, floral",
+        "taste": "Mild, citrusy, slightly sweet and nutty",
+        "common_uses": ["Indian curries", "Spice blends", "Marinades", "Almost always paired with cumin"],
+        "cuisines": ["Indian", "Middle Eastern", "Thai"],
+        "preparation_tips": [
+            "Almost always used with cumin powder",
+            "Add during cooking, not at end",
+            "Toast seeds before grinding for better flavor",
+            "Common ratio: 2 parts coriander to 1 part cumin"
+        ],
+        "storage": {"method": "Airtight container", "shelf_life": "6 months", "signs_of_spoilage": ["Loss of citrus aroma", "Musty smell"]},
+        "substitutes": [
+            {"name": "Coriander seeds (freshly ground)", "ratio": "1 tbsp seeds = 1 tsp powder", "notes": "Fresher flavor"}
+        ],
+        "nutritional_highlights": ["Aids digestion", "Iron", "Vitamin C"],
+        "beginner_notes": "Coriander powder and cumin powder are the dynamic duo of Indian cooking - they're almost always used together! A classic ratio is 2:1 (coriander to cumin). They complement each other perfectly.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Fresh citrusy smell. Avoid if it smells dusty.",
+        "featured": True,
+        "popularity": 85
+    },
+    
+    # ════════════════════════════════════════════════════════
+    # GRAINS & FLOUR
+    # ════════════════════════════════════════════════════════
+    
+    {
+        "name": "rice",
+        "display_name": "Rice",
+        "alternate_names": ["chawal", "basmati", "white rice", "long grain rice"],
+        "category": "grain",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White (polished), brown (whole grain)",
+            "shape": "Long grains (basmati) or short grains",
+            "size": "4-8mm depending on variety",
+            "texture": "Hard when dry, fluffy when cooked",
+            "visual_description": "Small grains that are hard when dry. Basmati is long and slender. Short grain is rounder. Should be clean without debris."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Mild, slightly nutty (basmati has distinctive aroma)",
+        "taste": "Mild, slightly sweet, neutral base for dishes",
+        "common_uses": ["Biryani", "Plain rice", "Pulao", "Khichdi", "Fried rice"],
+        "cuisines": ["Indian", "Asian", "Universal"],
+        "preparation_tips": [
+            "Rinse until water runs clear",
+            "Soak basmati 30 min for fluffier grains",
+            "1:1.5 rice to water ratio for most types",
+            "Don't stir while cooking"
+        ],
+        "storage": {"method": "Cool, dry place", "shelf_life": "Indefinite if dry", "signs_of_spoilage": ["Bugs", "Musty smell", "Discoloration"]},
+        "substitutes": [
+            {"name": "Quinoa", "ratio": "1:1", "notes": "More protein, nuttier taste"},
+            {"name": "Cauliflower rice", "ratio": "1:1", "notes": "Low carb alternative"}
+        ],
+        "nutritional_highlights": ["Carbohydrates for energy", "Some B vitamins", "Gluten-free"],
+        "beginner_notes": "The key to perfect rice: RINSE until water is clear (removes excess starch), soak if using basmati, and don't lift the lid while cooking! Let it rest 5 minutes after cooking before fluffing.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "For Indian cooking, basmati is best. Look for long, unbroken grains.",
+        "featured": True,
+        "popularity": 100
+    },
+    
+    {
+        "name": "wheat flour",
+        "display_name": "Wheat Flour (Atta)",
+        "alternate_names": ["atta", "whole wheat flour", "chapati flour", "roti flour"],
+        "category": "flour",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Off-white to light brown",
+            "shape": "Fine powder",
+            "size": "N/A",
+            "texture": "Fine, soft powder",
+            "visual_description": "Fine powder, slightly darker than all-purpose flour. Indian atta is whole wheat and has more texture than refined flour."
+        },
+        "similar_to": [
+            {"name": "All-purpose flour", "how_to_differentiate": "All-purpose is white and refined. Atta is whole wheat and slightly darker/coarser."}
+        ],
+        "confused_with": [],
+        "aroma": "Mild, wheaty",
+        "taste": "Mild, slightly nutty",
+        "common_uses": ["Roti/chapati", "Paratha", "Puri", "Naan (with maida)"],
+        "cuisines": ["Indian"],
+        "preparation_tips": [
+            "Knead well for soft rotis",
+            "Rest dough for 30 min",
+            "Add water gradually when kneading",
+            "Dough should be soft, not sticky or stiff"
+        ],
+        "storage": {"method": "Airtight container, cool place", "shelf_life": "3-6 months", "signs_of_spoilage": ["Bugs", "Rancid smell", "Lumps"]},
+        "substitutes": [
+            {"name": "All-purpose flour", "ratio": "1:1", "notes": "Softer but less nutritious"},
+            {"name": "White whole wheat flour", "ratio": "1:1", "notes": "Milder whole wheat flavor"}
+        ],
+        "nutritional_highlights": ["Fiber", "B vitamins", "Iron"],
+        "beginner_notes": "Indian atta (chapati flour) is finely ground whole wheat - it's different from regular whole wheat flour which can be coarser. For soft rotis, knead the dough well and let it rest!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Indian grocery stores for atta, any store for whole wheat flour",
+        "what_to_look_for": "Look for 'chakki atta' or 'chapati flour' at Indian stores.",
+        "featured": True,
+        "popularity": 85
+    },
+    
+    {
+        "name": "chickpea flour",
+        "display_name": "Chickpea Flour (Besan)",
+        "alternate_names": ["besan", "gram flour", "garbanzo flour"],
+        "category": "flour",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Pale yellow",
+            "shape": "Fine powder",
+            "size": "N/A",
+            "texture": "Fine, slightly gritty powder",
+            "visual_description": "Pale yellow, fine powder made from ground chickpeas. Has a distinctive nutty smell."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Nutty, earthy, distinctive",
+        "taste": "Slightly nutty, earthy, can be bitter if raw",
+        "common_uses": ["Pakoras (fritters)", "Kadhi", "Besan ladoo", "Binding agent", "Thickener"],
+        "cuisines": ["Indian"],
+        "preparation_tips": [
+            "Must be cooked - raw besan is bitter",
+            "Mix with water gradually to avoid lumps",
+            "Toast dry in pan to remove raw taste",
+            "Makes crispy batters"
+        ],
+        "storage": {"method": "Airtight container", "shelf_life": "6 months", "signs_of_spoilage": ["Bugs", "Rancid smell", "Clumping"]},
+        "substitutes": [
+            {"name": "Rice flour + regular flour", "ratio": "Mix 50:50", "notes": "For pakora batter"}
+        ],
+        "nutritional_highlights": ["High protein", "High fiber", "Gluten-free"],
+        "beginner_notes": "Besan has a distinctive raw taste that must be cooked out. For pakoras, make sure your batter isn't too thick or too thin. For kadhi, toast the besan first in a dry pan to remove the raw taste.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Indian grocery stores, health food stores",
+        "what_to_look_for": "Pale yellow color, nutty smell, no lumps.",
+        "featured": True,
+        "popularity": 75
+    },
+    
+    # ════════════════════════════════════════════════════════
+    # NUTS & SEEDS
+    # ════════════════════════════════════════════════════════
+    
+    {
+        "name": "cashews",
+        "display_name": "Cashews",
+        "alternate_names": ["kaju", "cashew nuts"],
+        "category": "nut",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Cream to pale yellow",
+            "shape": "Kidney/crescent shaped",
+            "size": "2-3cm",
+            "texture": "Smooth, slightly soft",
+            "visual_description": "Cream-colored, kidney-shaped nuts. Should be uniform in color without dark spots. Pieces are cheaper but whole look better in dishes."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Mild, slightly sweet",
+        "taste": "Creamy, sweet, buttery",
+        "common_uses": ["Korma curries (cashew paste)", "Indian sweets", "Garnish", "Snacking"],
+        "cuisines": ["Indian", "Thai", "Chinese"],
+        "preparation_tips": [
+            "Soak 2 hours and blend for creamy curry paste",
+            "Fry in ghee for garnish until golden",
+            "Raw cashews work best for pastes",
+            "Don't over-roast - they burn easily"
+        ],
+        "storage": {"method": "Refrigerator or freezer", "shelf_life": "6 months fridge, 1 year freezer", "signs_of_spoilage": ["Rancid smell", "Soft texture", "Dark spots"]},
+        "substitutes": [
+            {"name": "Almonds", "ratio": "1:1", "notes": "Different texture but works"},
+            {"name": "Sunflower seeds", "ratio": "1:1", "notes": "Budget-friendly, nut-free"}
+        ],
+        "nutritional_highlights": ["Healthy fats", "Protein", "Magnesium"],
+        "beginner_notes": "Soaked and blended cashews make the creamiest curry sauces - this is the secret to restaurant-style korma! Use RAW cashews, not roasted or salted. Soak for at least 2 hours (or boil for 15 min) before blending.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Raw, unsalted for cooking. Uniform cream color.",
+        "featured": True,
+        "popularity": 80
+    },
+    
+    {
+        "name": "almonds",
+        "display_name": "Almonds",
+        "alternate_names": ["badam", "almond nuts"],
+        "category": "nut",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Tan/brown skin, white inside",
+            "shape": "Oval with pointed end",
+            "size": "2-3cm",
+            "texture": "Hard, crunchy",
+            "visual_description": "Oval nuts with tan skin and white flesh. Blanched almonds have no skin. Sliced/slivered varieties also available."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Mild, slightly sweet",
+        "taste": "Mildly sweet, nutty, crunchy",
+        "common_uses": ["Indian sweets (kheer, barfi)", "Garnish", "Almond milk", "Badam milk drink"],
+        "cuisines": ["Indian", "Middle Eastern", "Mediterranean"],
+        "preparation_tips": [
+            "Soak and peel for white garnish (blanching)",
+            "Sliver for garnishing",
+            "Toast for more flavor",
+            "Grind for almond meal/flour"
+        ],
+        "storage": {"method": "Refrigerator or freezer", "shelf_life": "6 months fridge, 1 year freezer", "signs_of_spoilage": ["Rancid smell", "Shriveled", "Bitter taste"]},
+        "substitutes": [
+            {"name": "Cashews", "ratio": "1:1", "notes": "Softer, creamier"},
+            {"name": "Pistachios", "ratio": "1:1", "notes": "Different but complementary"}
+        ],
+        "nutritional_highlights": ["Vitamin E", "Healthy fats", "Protein", "Fiber"],
+        "beginner_notes": "To blanch (remove skin): soak in boiling water for 1 minute, drain, and squeeze each almond - the skin slips right off! This gives you pretty white almonds for garnishing Indian sweets.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Uniform size, no discoloration or mold.",
+        "featured": True,
+        "popularity": 80
+    },
+    
+    {
+        "name": "coconut",
+        "display_name": "Coconut",
+        "alternate_names": ["nariyal", "coconut milk", "desiccated coconut", "shredded coconut"],
+        "category": "nut",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1580984969071-a8da8c93faa0?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Brown husk, white flesh",
+            "shape": "Round (whole), shredded or flaked (processed)",
+            "size": "Whole: 10-15cm diameter",
+            "texture": "Hard shell, firm white flesh",
+            "visual_description": "Whole coconuts have brown, hairy shells. Inside is white flesh. Available as fresh, desiccated (dried), flaked, or as coconut milk/cream in cans."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Sweet, tropical",
+        "taste": "Sweet, rich, creamy (milk/cream), nutty (dried)",
+        "common_uses": ["South Indian curries", "Chutneys", "Sweets", "Rice dishes"],
+        "cuisines": ["South Indian", "Thai", "Caribbean", "Southeast Asian"],
+        "preparation_tips": [
+            "Fresh: grate flesh for cooking",
+            "Coconut milk: shake can well before opening",
+            "Cream rises to top - mix or use separately",
+            "Toast desiccated coconut for more flavor"
+        ],
+        "storage": {"method": "Fresh: refrigerator. Canned: pantry", "shelf_life": "Fresh flesh: 1 week. Canned: years", "signs_of_spoilage": ["Mold", "Sour smell", "Slimy texture"]},
+        "substitutes": [
+            {"name": "Coconut cream", "ratio": "Use as is", "notes": "For richness"},
+            {"name": "Heavy cream", "ratio": "1:1", "notes": "Different flavor but similar richness"}
+        ],
+        "nutritional_highlights": ["Healthy fats (MCTs)", "Manganese", "Copper"],
+        "beginner_notes": "Canned coconut milk has two parts: thick cream on top and thin water below. For curries, use both. For whipping, use only the solid cream (refrigerate can overnight first). Shake well if you want it mixed!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store (canned), Indian stores (fresh)",
+        "what_to_look_for": "Canned: full-fat, no additives. Fresh: heavy with sloshing water inside.",
+        "featured": True,
+        "popularity": 85
+    },
+    
+    {
+        "name": "sesame seeds",
+        "display_name": "Sesame Seeds",
+        "alternate_names": ["til", "gingelly seeds", "white sesame", "black sesame"],
+        "category": "seed",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400",
+            "comparison": [],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White, cream, or black",
+            "shape": "Tiny, flat, teardrop",
+            "size": "2-3mm",
+            "texture": "Tiny, crunchy",
+            "visual_description": "Tiny, flat, teardrop-shaped seeds. White sesame is most common. Black sesame has a slightly stronger flavor. Should be dry and separate, not clumped."
+        },
+        "similar_to": [],
+        "confused_with": [],
+        "aroma": "Nutty, especially when toasted",
+        "taste": "Mild nutty, sweet when toasted",
+        "common_uses": ["Til ladoo", "Garnishing", "Tahini (sesame paste)", "Bread toppings"],
+        "cuisines": ["Indian", "Middle Eastern", "Asian"],
+        "preparation_tips": [
+            "Toast in dry pan to bring out flavor",
+            "Stir constantly when toasting - burn easily",
+            "Use raw for grinding into paste",
+            "Black sesame for visual contrast"
+        ],
+        "storage": {"method": "Airtight container, refrigerator", "shelf_life": "6 months", "signs_of_spoilage": ["Rancid smell", "Bitter taste"]},
+        "substitutes": [
+            {"name": "Poppy seeds", "ratio": "1:1", "notes": "For texture/garnish"}
+        ],
+        "nutritional_highlights": ["Calcium", "Iron", "Healthy fats"],
+        "beginner_notes": "Sesame seeds go from perfectly toasted to burnt in seconds - watch them carefully! They're ready when golden and fragrant. The nutty flavor only comes out when they're toasted.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Dry, separate seeds. No clumping or off smell.",
+        "featured": True,
+        "popularity": 70
     }
 ]
 
