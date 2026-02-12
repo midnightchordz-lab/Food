@@ -201,11 +201,11 @@ const BuyIngredientsSheet = ({
   };
 
   // Fetch delivery apps based on user's region
-  const fetchDeliveryApps = async () => {
+  const fetchDeliveryApps = async (countryCode = null) => {
     setIsLoadingApps(true);
     try {
       const token = localStorage.getItem('token');
-      const countryHint = getBrowserCountryHint();
+      const countryHint = countryCode || getBrowserCountryHint();
       const params = new URLSearchParams();
       if (countryHint) params.append('country_hint', countryHint);
       
@@ -231,6 +231,23 @@ const BuyIngredientsSheet = ({
       setCountryInfo({ country: 'Global', countryCode: 'DEFAULT' });
     } finally {
       setIsLoadingApps(false);
+    }
+  };
+
+  // Handle country/region change
+  const handleCountryChange = (countryCode) => {
+    hapticFeedback('medium');
+    const country = AVAILABLE_COUNTRIES.find(c => c.code === countryCode);
+    if (country) {
+      // Optimistically update UI
+      setCountryInfo({
+        country: country.name,
+        countryCode: country.code,
+        currencySymbol: CURRENCY_SYMBOLS[country.code === 'IN' ? 'INR' : country.code === 'GB' ? 'GBP' : country.code === 'AE' ? 'AED' : country.code === 'AU' ? 'AUD' : country.code === 'SG' ? 'SGD' : country.code === 'CA' ? 'CAD' : 'USD']
+      });
+      // Fetch delivery apps for the new country
+      fetchDeliveryApps(countryCode);
+      toast.success(`Region changed to ${country.flag} ${country.name}`);
     }
   };
 
