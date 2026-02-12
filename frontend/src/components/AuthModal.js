@@ -200,6 +200,8 @@ const AuthModal = ({ open, onClose }) => {
         toast.success('Welcome back!');
         onClose();
         resetForm();
+        // Navigate to chat after successful phone login
+        navigate('/chat');
       }
     } catch (error) {
       console.error('Verify OTP error:', error);
