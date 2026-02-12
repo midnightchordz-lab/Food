@@ -367,12 +367,12 @@ export default function LiveCookingModal() {
   if (!open) return null;
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={() => {}} modal={false}>
-      <DialogPrimitive.Portal forceMount>
-        <AnimatePresence>
+    <DialogPrimitive.Root open={open} onOpenChange={(isOpen) => { if (!isOpen) closeModal(); }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[99] bg-black/50" />
+        <AnimatePresence mode="wait">
           {open && (
             <DialogPrimitive.Content
-              forceMount
               className="fixed inset-0 z-[100] w-screen h-screen m-0 p-0 border-0 rounded-none bg-black overflow-hidden outline-none"
               onEscapeKeyDown={(e) => {
                 e.preventDefault();
