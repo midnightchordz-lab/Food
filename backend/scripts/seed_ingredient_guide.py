@@ -406,7 +406,7 @@ INGREDIENT_DATA = [
         "alternate_names": ["masoor dal", "red dal", "pink lentils", "masur dal"],
         "category": "pulse_lentil",
         "images": {
-            "primary": "https://images.unsplash.com/photo-1515543904823-77c6b6c6ed42?w=400",
+            "primary": "https://images.unsplash.com/photo-1764573464925-da17a9f796d4?w=400",
             "comparison": [
                 {"url": "", "caption": "Dry red lentils"},
                 {"url": "", "caption": "Cooked (turns golden yellow)"}
