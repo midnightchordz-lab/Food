@@ -792,7 +792,14 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                       variant="outline"
                       size="sm"
                       className="w-full flex items-center justify-center gap-2"
-                      onClick={() => openLiveCooking(aiImageUrl || recipe?.image, parsedRecipe?.instructions)}
+                      onClick={() => {
+                        // Close RecipeDetailModal first, then open LiveCooking
+                        onClose();
+                        // Small delay to ensure modal is closed before opening LiveCooking
+                        setTimeout(() => {
+                          openLiveCooking(aiImageUrl || recipe?.image, parsedRecipe?.instructions);
+                        }, 100);
+                      }}
                       data-testid="start-cooking-mode-btn"
                     >
                       <Volume2 className="w-4 h-4" />
