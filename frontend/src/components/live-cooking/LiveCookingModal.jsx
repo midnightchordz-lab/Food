@@ -355,7 +355,7 @@ export default function LiveCookingModal() {
                       whileTap={{ scale: 0.95 }}
                     >
                       <Button
-                        onClick={togglePlay}
+                        onClick={handleTogglePlay}
                         className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 text-white shadow-2xl shadow-violet-500/30 border-0"
                         data-testid="live-cooking-play-btn"
                       >
