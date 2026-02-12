@@ -1217,8 +1217,8 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               )}
             </div>
             
-            {/* Rating & Actions Section */}
-            <div className="px-6 py-4 border-t bg-muted/20">
+            {/* Rating & Actions Section - Safe bottom spacing for mobile */}
+            <div className="px-4 sm:px-6 py-4 sm:py-4 border-t bg-muted/20 pb-safe" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
               <div className="flex flex-col gap-4">
                 {/* Rating */}
                 <div className="flex items-center justify-between">
