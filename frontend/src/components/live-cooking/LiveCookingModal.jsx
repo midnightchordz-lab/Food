@@ -120,6 +120,9 @@ export default function LiveCookingModal() {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraVideoReady, setCameraVideoReady] = useState(false);
   
+  // Hands-free mode - DEFAULT OFF to prevent mobile crashes from permission requests
+  const [handsFreeEnabled, setHandsFreeEnabled] = useState(false);
+  
   // AI Observer visual states (presentation only)
   const [aiState, setAiState] = useState('idle'); // idle, active, completion
   const [whisperText, setWhisperText] = useState('');
