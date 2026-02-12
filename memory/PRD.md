@@ -450,7 +450,7 @@ Completely redesigned the BuyIngredientsSheet component to match the clean "My S
 
 ## Recent Changes (Feb 11, 2026)
 
-### Recipe Detail Modal Mobile Fix ✅ NEW
+### Recipe Detail Modal Mobile Fix ✅ (Feb 11, 2026)
 Fixed the issue where step-by-step cooking instructions didn't fit properly on mobile screens:
 1. ✅ Text wrapping with `wordBreak: 'break-word'` and `overflowWrap: 'anywhere'`
 2. ✅ Smaller step number circles on mobile (7x7 vs 10x10)
