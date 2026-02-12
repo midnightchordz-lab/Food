@@ -780,10 +780,10 @@ export default function LiveCookingModal() {
                   />
                 )}
               </motion.div>
-            )}
-          </AnimatePresence>
-        </DialogContent>
-      </DialogPortal>
-    </Dialog>
+            </DialogPrimitive.Content>
+          )}
+        </AnimatePresence>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
