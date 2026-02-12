@@ -459,7 +459,7 @@ export default function LiveCookingModal() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={prevStep}
+                        onClick={handlePrevWithVoice}
                         className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-white/20 hover:text-white"
                         data-testid="live-cooking-prev-btn"
                       >
@@ -473,7 +473,7 @@ export default function LiveCookingModal() {
                       whileTap={{ scale: 0.95 }}
                     >
                       <Button
-                        onClick={handleTogglePlay}
+                        onClick={handleTogglePlayWithVoice}
                         className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 hover:from-violet-400 hover:to-fuchsia-500 text-white shadow-2xl shadow-violet-500/30 border-0"
                         data-testid="live-cooking-play-btn"
                       >
@@ -497,7 +497,7 @@ export default function LiveCookingModal() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={nextStep}
+                        onClick={handleNextWithVoice}
                         className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-white/20 hover:text-white"
                         data-testid="live-cooking-next-btn"
                       >
