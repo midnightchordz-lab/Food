@@ -1,10 +1,12 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import { Dialog, DialogContent, DialogPortal } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, ChevronLeft, ChevronRight, Pause, Play, Mic } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, Camera, CameraOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLiveCooking } from "@/stores/useLiveCooking";
 import { useHandsFreeControls } from "@/hooks/useHandsFreeControls";
+import { useCameraPreview } from "@/hooks/useCameraPreview";
+import { useAIObserver } from "@/hooks/useAIObserver";
 import axios from "axios";
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -14,6 +16,7 @@ const API = process.env.REACT_APP_BACKEND_URL;
  * Root-mounted for true fullscreen experience
  * Uses Zustand store for global state management
  * Supports hands-free control via voice commands and double-clap
+ * Includes camera preview and AI observer layer (passive, future-ready)
  */
 
 export default function LiveCookingModal() {
@@ -32,7 +35,12 @@ export default function LiveCookingModal() {
 
   const videoRef = useRef(null);
   const audioRef = useRef(null);
+  const cameraVideoRef = useRef(null);
   const hasUserStartedRef = useRef(false);
+  
+  // Camera preview state
+  const [showCamera, setShowCamera] = useState(true);
+  const [cameraVideoElement, setCameraVideoElement] = useState(null);
 
   // Get current step text
   const currentStepText = instructions[currentStep]?.text || 
