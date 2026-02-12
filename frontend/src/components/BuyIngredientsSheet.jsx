@@ -741,6 +741,81 @@ const BuyIngredientsSheet = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delivery App Selector Dialog */}
+      <Dialog open={showDeliveryOptions} onOpenChange={setShowDeliveryOptions}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Store size={20} className="text-[#5D7A5D]" />
+              Choose Delivery Service
+            </DialogTitle>
+            <DialogDescription>
+              {countryInfo?.country 
+                ? `Available delivery apps in ${countryInfo.country}`
+                : 'Select your preferred delivery service'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-3">
+            {deliveryApps.map((app) => (
+              <button
+                key={app.id}
+                onClick={() => handleSelectDeliveryApp(app)}
+                className="w-full flex items-center gap-4 p-4 rounded-xl border hover:bg-secondary/50 hover:border-[#5D7A5D]/30 transition-all text-left group"
+                data-testid={`delivery-app-${app.id}`}
+              >
+                {/* App Logo */}
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                  style={{ backgroundColor: app.color ? `${app.color}15` : '#f3f4f6' }}
+                >
+                  {app.logo ? (
+                    <img 
+                      src={app.logo} 
+                      alt={app.name} 
+                      className="w-8 h-8 object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <Store 
+                    className="w-6 h-6" 
+                    style={{ color: app.color || '#5D7A5D', display: app.logo ? 'none' : 'block' }} 
+                  />
+                </div>
+                
+                {/* App Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-800 group-hover:text-[#5D7A5D] transition-colors">
+                    {app.name}
+                  </p>
+                  {app.delivery_time && (
+                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3 h-3" />
+                      {app.delivery_time}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Arrow */}
+                <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#5D7A5D] transition-colors" />
+              </button>
+            ))}
+            
+            {deliveryApps.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <Store className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>No delivery apps available</p>
+                <p className="text-sm mt-1">Try selecting a different region</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 };
