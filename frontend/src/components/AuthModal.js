@@ -44,6 +44,8 @@ const CUISINE_OPTIONS = [
 ];
 
 const AuthModal = ({ open, onClose }) => {
+  const navigate = useNavigate();
+  
   // Auth method: 'email' or 'phone'
   const [authMethod, setAuthMethod] = useState('email');
   
