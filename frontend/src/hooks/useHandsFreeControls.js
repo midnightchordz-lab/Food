@@ -218,54 +218,73 @@ export function useHandsFreeControls({
     if (enabled) {
       isListeningRef.current = true;
 
-      // Initialize speech recognition
-      if (SpeechRecognition && !recognitionRef.current) {
-        try {
-          const recognition = new SpeechRecognition();
-          recognition.continuous = true;
-          recognition.interimResults = false;
-          recognition.lang = 'en-US';
-          recognition.maxAlternatives = 1;
+      // Wrap all initialization in try-catch to prevent mobile crashes
+      try {
+        // Initialize speech recognition
+        if (SpeechRecognition && !recognitionRef.current) {
+          try {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            recognition.maxAlternatives = 1;
 
-          recognition.onresult = (event) => {
-            const last = event.results.length - 1;
-            const command = event.results[last][0].transcript;
-            handleVoiceCommand(command);
-          };
-
-          recognition.onerror = (event) => {
-            if (event.error === 'no-speech' || event.error === 'aborted') {
-              return;
-            }
-            console.log('[HandsFree] Speech recognition error:', event.error);
-          };
-
-          recognition.onend = () => {
-            // Restart if still enabled
-            if (isListeningRef.current && recognitionRef.current) {
+            recognition.onresult = (event) => {
               try {
-                setTimeout(() => {
-                  if (isListeningRef.current && recognitionRef.current) {
-                    recognitionRef.current.start();
-                  }
-                }, 100);
+                const last = event.results.length - 1;
+                const command = event.results[last][0].transcript;
+                handleVoiceCommand(command);
               } catch (e) {
-                // Already started or other error
+                // Ignore result processing errors
               }
-            }
-          };
+            };
 
-          recognitionRef.current = recognition;
-          recognition.start();
-          console.log('[HandsFree] Voice commands active');
-        } catch (e) {
-          console.log('[HandsFree] Could not start speech recognition:', e.message);
+            recognition.onerror = (event) => {
+              if (event.error === 'no-speech' || event.error === 'aborted') {
+                return;
+              }
+              console.log('[HandsFree] Speech recognition error:', event.error);
+            };
+
+            recognition.onend = () => {
+              // Restart if still enabled
+              if (isListeningRef.current && recognitionRef.current) {
+                try {
+                  setTimeout(() => {
+                    if (isListeningRef.current && recognitionRef.current) {
+                      recognitionRef.current.start();
+                    }
+                  }, 100);
+                } catch (e) {
+                  // Already started or other error
+                }
+              }
+            };
+
+            recognitionRef.current = recognition;
+            recognition.start();
+            console.log('[HandsFree] Voice commands active');
+          } catch (e) {
+            console.log('[HandsFree] Could not start speech recognition:', e?.message);
+          }
         }
+
+        // Initialize clap detection with delay (non-blocking)
+        const clapTimeout = setTimeout(() => {
+          if (isListeningRef.current) {
+            initClapDetection().catch((e) => {
+              console.log('[HandsFree] Clap init error (safe):', e?.message);
+            });
+          }
+        }, 500);
+
+        return () => {
+          clearTimeout(clapTimeout);
+          cleanup();
+        };
+      } catch (e) {
+        console.log('[HandsFree] Init error (safe):', e?.message);
       }
-
-      // Initialize clap detection
-      initClapDetection();
-
     } else {
       cleanup();
     }
