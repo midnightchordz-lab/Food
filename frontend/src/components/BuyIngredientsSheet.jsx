@@ -656,8 +656,9 @@ const BuyIngredientsSheet = ({
               </Button>
               <Button
                 className="flex-1 rounded-xl bg-[#5D7A5D] hover:bg-[#4D6A4D] text-white"
-                onClick={() => handleOrderNow(deliveryApps[0])}
+                onClick={handleOrderNowClick}
                 disabled={checkedCount === totalCount || isLoadingApps}
+                data-testid="order-now-btn"
               >
                 {isLoadingApps ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
