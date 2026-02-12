@@ -182,6 +182,41 @@ export default function LiveCookingModal() {
     isPlaying,
   });
 
+  // Camera preview (passive, fails silently if unavailable)
+  const { 
+    isActive: isCameraActive, 
+    hasPermission: hasCameraPermission,
+    attachToVideo: attachCameraToVideo,
+  } = useCameraPreview({
+    enabled: open && showCamera,
+    preferRearCamera: true,
+  });
+
+  // Attach camera stream to video element when ready
+  useEffect(() => {
+    if (cameraVideoRef.current && isCameraActive) {
+      attachCameraToVideo(cameraVideoRef.current);
+      setCameraVideoElement(cameraVideoRef.current);
+    }
+  }, [isCameraActive, attachCameraToVideo]);
+
+  // AI Observer layer (passive sensor, no decision-making)
+  // Events are logged but do NOT trigger any cooking actions in this phase
+  useAIObserver({
+    enabled: open && isCameraActive,
+    videoElement: cameraVideoElement,
+    // Future: these callbacks can be connected to cooking handlers
+    // For now, they just log events (handled inside the hook)
+    onMotionDetected: null,
+    onMotionStopped: null,
+    onPossibleStepCompletion: null,
+  });
+
+  // Toggle camera visibility
+  const toggleCamera = useCallback(() => {
+    setShowCamera(prev => !prev);
+  }, []);
+
   // Sync video play/pause events with modal state and audio
   useEffect(() => {
     const video = videoRef.current;
