@@ -265,12 +265,13 @@ export default function LiveCookingModal() {
       hasUserStartedRef.current = false;
       setAiState('idle');
       setShowWhisper(false);
+      setHandsFreeEnabled(false); // Reset hands-free when modal closes
     }
   }, [open]);
 
-  // Hands-free controls (voice commands + double clap)
+  // Hands-free controls (voice commands + double clap) - ONLY when user enables it
   useHandsFreeControls({
-    enabled: open,
+    enabled: open && handsFreeEnabled,
     onNext: handleNextWithVoice,
     onPrev: handlePrevWithVoice,
     onTogglePlay: handleTogglePlayWithVoice,
