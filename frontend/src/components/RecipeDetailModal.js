@@ -437,7 +437,19 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   const [selectedVoiceLanguage, setSelectedVoiceLanguage] = useState('en');
   const [isBuySheetOpen, setIsBuySheetOpen] = useState(false);
   
+  // Ingredient Info Popup state
+  const [selectedIngredientName, setSelectedIngredientName] = useState(null);
+  const [showIngredientPopup, setShowIngredientPopup] = useState(false);
+  
   const shoppingCart = useShoppingCart();
+  
+  // Handle ingredient click to show info popup
+  const handleIngredientInfoClick = (ingredientItem) => {
+    // Extract the ingredient name (without amount)
+    const name = ingredientItem.item || ingredientItem.name || ingredientItem;
+    setSelectedIngredientName(name);
+    setShowIngredientPopup(true);
+  };
   
   // Generate AI image for recipe
   const generateAIImage = async (title, cuisine) => {
