@@ -367,23 +367,26 @@ export default function LiveCookingModal() {
   if (!open) return null;
 
   return (
-    <Dialog open={open} onOpenChange={() => {}} modal={true}>
-      <DialogPortal>
-        <DialogContent 
-          className="fixed inset-0 w-screen h-screen max-w-none max-h-none m-0 p-0 border-0 rounded-none bg-black overflow-hidden"
-          onEscapeKeyDown={(e) => {
-            e.preventDefault();
-            closeModal();
-          }}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onCloseAutoFocus={(e) => e.preventDefault()}
-        >
-          {/* Accessibility: Hidden title for screen readers */}
-          <VisuallyHidden>
-            <DialogTitle>Live Cooking Mode</DialogTitle>
-          </VisuallyHidden>
+    <DialogPrimitive.Root open={open} onOpenChange={() => {}} modal={false}>
+      <DialogPrimitive.Portal forceMount>
+        <AnimatePresence>
+          {open && (
+            <DialogPrimitive.Content
+              forceMount
+              className="fixed inset-0 z-[100] w-screen h-screen m-0 p-0 border-0 rounded-none bg-black overflow-hidden outline-none"
+              onEscapeKeyDown={(e) => {
+                e.preventDefault();
+                closeModal();
+              }}
+              onPointerDownOutside={(e) => e.preventDefault()}
+              onInteractOutside={(e) => e.preventDefault()}
+              onOpenAutoFocus={(e) => e.preventDefault()}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              {/* Accessibility: Hidden title for screen readers */}
+              <VisuallyHidden>
+                <DialogPrimitive.Title>Live Cooking Mode</DialogPrimitive.Title>
+              </VisuallyHidden>
           
           <AnimatePresence>
             {open && (
