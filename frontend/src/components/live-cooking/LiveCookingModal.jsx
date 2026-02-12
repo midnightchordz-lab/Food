@@ -186,7 +186,7 @@ export default function LiveCookingModal() {
   const { 
     isActive: isCameraActive, 
     hasPermission: hasCameraPermission,
-    attachToVideo: attachCameraToVideo,
+    stream: cameraStream,
   } = useCameraPreview({
     enabled: open && showCamera,
     preferRearCamera: true,
@@ -194,17 +194,22 @@ export default function LiveCookingModal() {
 
   // Attach camera stream to video element when ready
   useEffect(() => {
-    if (cameraVideoRef.current && isCameraActive) {
-      attachCameraToVideo(cameraVideoRef.current);
-      setCameraVideoElement(cameraVideoRef.current);
+    const videoEl = cameraVideoRef.current;
+    if (videoEl && cameraStream) {
+      videoEl.srcObject = cameraStream;
     }
-  }, [isCameraActive, attachCameraToVideo]);
+    return () => {
+      if (videoEl) {
+        videoEl.srcObject = null;
+      }
+    };
+  }, [cameraStream]);
 
   // AI Observer layer (passive sensor, no decision-making)
   // Events are logged but do NOT trigger any cooking actions in this phase
   useAIObserver({
-    enabled: open && isCameraActive,
-    videoElement: cameraVideoElement,
+    enabled: open && isCameraActive && showCamera,
+    videoElement: cameraVideoRef.current,
     // Future: these callbacks can be connected to cooking handlers
     // For now, they just log events (handled inside the hook)
     onMotionDetected: null,
