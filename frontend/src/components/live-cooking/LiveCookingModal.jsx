@@ -127,7 +127,7 @@ export default function LiveCookingModal() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={onClose}
+                      onClick={closeModal}
                       className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-white/20 hover:text-white"
                       data-testid="live-cooking-close-btn"
                     >
