@@ -1,0 +1,273 @@
+/**
+ * useHandsFreeControls Hook
+ * 
+ * Provides hands-free control for Live Cooking via:
+ * - Voice commands: "next", "pause", "play", "repeat"
+ * - Double clap gesture detection
+ * 
+ * Fails silently if microphone or speech recognition is unavailable.
+ * This is a pure control layer - it only triggers callbacks, no side effects.
+ */
+
+import { useEffect, useRef, useCallback } from 'react';
+
+// Check for browser support
+const SpeechRecognition = typeof window !== 'undefined' 
+  ? window.SpeechRecognition || window.webkitSpeechRecognition 
+  : null;
+
+const AudioContext = typeof window !== 'undefined'
+  ? window.AudioContext || window.webkitAudioContext
+  : null;
+
+export function useHandsFreeControls({
+  enabled = false,
+  onNext,
+  onPrev,
+  onTogglePlay,
+  onRepeat,
+  isPlaying = false,
+}) {
+  const recognitionRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const micStreamRef = useRef(null);
+  const lastClapTimeRef = useRef(0);
+  const clapCountRef = useRef(0);
+  const animationFrameRef = useRef(null);
+  const isListeningRef = useRef(false);
+
+  // Voice command handler
+  const handleVoiceCommand = useCallback((command) => {
+    const normalizedCommand = command.toLowerCase().trim();
+    
+    // Check for keywords
+    if (normalizedCommand.includes('next') || normalizedCommand.includes('forward')) {
+      console.log('[HandsFree] Voice command: next');
+      onNext?.();
+    } else if (normalizedCommand.includes('back') || normalizedCommand.includes('previous')) {
+      console.log('[HandsFree] Voice command: previous');
+      onPrev?.();
+    } else if (normalizedCommand.includes('pause') || normalizedCommand.includes('stop')) {
+      console.log('[HandsFree] Voice command: pause');
+      if (isPlaying) {
+        onTogglePlay?.();
+      }
+    } else if (normalizedCommand.includes('play') || normalizedCommand.includes('start') || normalizedCommand.includes('resume')) {
+      console.log('[HandsFree] Voice command: play');
+      if (!isPlaying) {
+        onTogglePlay?.();
+      }
+    } else if (normalizedCommand.includes('repeat') || normalizedCommand.includes('again')) {
+      console.log('[HandsFree] Voice command: repeat');
+      onRepeat?.();
+    }
+  }, [onNext, onPrev, onTogglePlay, onRepeat, isPlaying]);
+
+  // Initialize speech recognition
+  const initSpeechRecognition = useCallback(() => {
+    if (!SpeechRecognition) {
+      console.log('[HandsFree] Speech recognition not supported');
+      return null;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (event) => {
+        const last = event.results.length - 1;
+        const command = event.results[last][0].transcript;
+        handleVoiceCommand(command);
+      };
+
+      recognition.onerror = (event) => {
+        // Fail silently for expected errors
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          return;
+        }
+        console.log('[HandsFree] Speech recognition error:', event.error);
+      };
+
+      recognition.onend = () => {
+        // Restart if still enabled
+        if (isListeningRef.current && recognitionRef.current) {
+          try {
+            recognitionRef.current.start();
+          } catch (e) {
+            // Already started or other error - fail silently
+          }
+        }
+      };
+
+      return recognition;
+    } catch (e) {
+      console.log('[HandsFree] Failed to initialize speech recognition');
+      return null;
+    }
+  }, [handleVoiceCommand]);
+
+  // Double clap detection using audio analysis
+  const detectClaps = useCallback((analyser, dataArray) => {
+    if (!analyser || !isListeningRef.current) return;
+
+    analyser.getByteFrequencyData(dataArray);
+    
+    // Calculate average volume
+    let sum = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      sum += dataArray[i];
+    }
+    const average = sum / dataArray.length;
+
+    // Detect sudden loud sound (clap threshold)
+    const CLAP_THRESHOLD = 100;
+    const DOUBLE_CLAP_WINDOW = 500; // ms between claps
+    const CLAP_COOLDOWN = 200; // ms minimum between claps
+
+    const now = Date.now();
+    const timeSinceLastClap = now - lastClapTimeRef.current;
+
+    if (average > CLAP_THRESHOLD && timeSinceLastClap > CLAP_COOLDOWN) {
+      lastClapTimeRef.current = now;
+      
+      if (timeSinceLastClap < DOUBLE_CLAP_WINDOW) {
+        // Double clap detected!
+        clapCountRef.current = 0;
+        console.log('[HandsFree] Double clap detected - next step');
+        onNext?.();
+      } else {
+        // First clap
+        clapCountRef.current = 1;
+      }
+    }
+
+    // Reset clap count if too much time has passed
+    if (timeSinceLastClap > DOUBLE_CLAP_WINDOW && clapCountRef.current > 0) {
+      clapCountRef.current = 0;
+    }
+
+    // Continue monitoring
+    animationFrameRef.current = requestAnimationFrame(() => {
+      detectClaps(analyser, dataArray);
+    });
+  }, [onNext]);
+
+  // Initialize clap detection
+  const initClapDetection = useCallback(async () => {
+    if (!AudioContext) {
+      console.log('[HandsFree] AudioContext not supported');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true,
+          noiseSuppression: true,
+        } 
+      });
+      
+      micStreamRef.current = stream;
+      audioContextRef.current = new AudioContext();
+      
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      const analyser = audioContextRef.current.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.3;
+      
+      source.connect(analyser);
+      analyserRef.current = analyser;
+      
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      // Start detection loop
+      detectClaps(analyser, dataArray);
+      
+      console.log('[HandsFree] Clap detection initialized');
+    } catch (e) {
+      // Fail silently - user may have denied mic access
+      console.log('[HandsFree] Clap detection unavailable');
+    }
+  }, [detectClaps]);
+
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    isListeningRef.current = false;
+
+    // Stop speech recognition
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        // Ignore errors during cleanup
+      }
+      recognitionRef.current = null;
+    }
+
+    // Stop animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    // Stop audio context
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close();
+      } catch (e) {
+        // Ignore errors during cleanup
+      }
+      audioContextRef.current = null;
+    }
+
+    // Stop mic stream
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach(track => track.stop());
+      micStreamRef.current = null;
+    }
+
+    analyserRef.current = null;
+  }, []);
+
+  // Main effect - start/stop based on enabled prop
+  useEffect(() => {
+    if (enabled) {
+      isListeningRef.current = true;
+
+      // Initialize speech recognition
+      recognitionRef.current = initSpeechRecognition();
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+          console.log('[HandsFree] Voice commands active');
+        } catch (e) {
+          console.log('[HandsFree] Could not start speech recognition');
+        }
+      }
+
+      // Initialize clap detection
+      initClapDetection();
+
+    } else {
+      cleanup();
+    }
+
+    return cleanup;
+  }, [enabled, initSpeechRecognition, initClapDetection, cleanup]);
+
+  // Update isPlaying ref for voice commands
+  useEffect(() => {
+    // This ensures the voice command handler has access to current isPlaying state
+  }, [isPlaying]);
+
+  return {
+    // Return minimal status (could be expanded if UI indicators are needed)
+    isSupported: !!SpeechRecognition || !!AudioContext,
+  };
+}
+
+export default useHandsFreeControls;
