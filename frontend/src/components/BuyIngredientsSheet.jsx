@@ -118,6 +118,9 @@ const BuyIngredientsSheet = ({
   const [showListSelector, setShowListSelector] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [isCreatingList, setIsCreatingList] = useState(false);
+  
+  // State for delivery app selection
+  const [showDeliveryOptions, setShowDeliveryOptions] = useState(false);
 
   // Categorized ingredients
   const categorizedIngredients = useMemo(() => {
