@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
-import { Dialog, DialogContent, DialogPortal, DialogTitle } from "@/components/ui/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, Camera, CameraOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
