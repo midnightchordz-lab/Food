@@ -9,6 +9,7 @@ import { Suspense, lazy, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import ShoppingCartModal from "@/components/ShoppingCartModal";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import LiveCookingModal from "@/components/live-cooking/LiveCookingModal";
 import { initializeCapacitor, isNative } from "@/capacitor";
 import "@/App.css";
 
