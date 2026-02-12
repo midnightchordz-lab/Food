@@ -127,7 +127,7 @@ Configured in `capacitor.config.json`:
 ### API URL
 The app connects to the backend at:
 - **Production**: Set in `.env` file
-- **Current**: `https://image-accuracy-debug.preview.emergentagent.com`
+- **Current**: `https://delivery-options-ui.preview.emergentagent.com`
 
 For production, update `frontend/.env`:
 ```
