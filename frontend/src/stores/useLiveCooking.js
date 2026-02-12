@@ -3,13 +3,15 @@ import { create } from "zustand";
 export const useLiveCooking = create((set) => ({
   open: false,
   recipeImage: null,
+  recipeVideo: null,
   instructions: [],
   currentStep: 0,
   isPlaying: false,
   
-  openModal: (recipeImage, instructions) => set({ 
+  openModal: (recipeImage, instructions, recipeVideo = null) => set({ 
     open: true, 
     recipeImage,
+    recipeVideo,
     instructions: instructions || [],
     currentStep: 0,
     isPlaying: false
