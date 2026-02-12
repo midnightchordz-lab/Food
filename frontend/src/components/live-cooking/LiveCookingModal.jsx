@@ -415,19 +415,94 @@ export default function LiveCookingModal() {
                     </motion.div>
                   </div>
 
-                  {/* Close button */}
-                  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={closeModal}
-                      className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-white/20 hover:text-white"
-                      data-testid="live-cooking-close-btn"
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </motion.div>
+                  {/* Right side controls */}
+                  <div className="flex items-center gap-2">
+                    {/* Camera toggle button */}
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleCamera}
+                        className={`w-10 h-10 rounded-full backdrop-blur-md border border-white/10 text-white hover:bg-white/20 hover:text-white ${
+                          showCamera && isCameraActive ? 'bg-emerald-500/20' : 'bg-white/10'
+                        }`}
+                        data-testid="live-cooking-camera-btn"
+                        title={showCamera ? 'Hide camera preview' : 'Show camera preview'}
+                      >
+                        {showCamera && isCameraActive ? (
+                          <Camera className="h-5 w-5 text-emerald-400" />
+                        ) : (
+                          <CameraOff className="h-5 w-5 text-white/60" />
+                        )}
+                      </Button>
+                    </motion.div>
+
+                    {/* Close button */}
+                    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={closeModal}
+                        className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-white/20 hover:text-white"
+                        data-testid="live-cooking-close-btn"
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </motion.div>
+                  </div>
                 </motion.div>
+
+                {/* Camera Preview PiP (Picture-in-Picture style) */}
+                <AnimatePresence>
+                  {showCamera && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                      transition={{ duration: 0.3 }}
+                      className="absolute top-20 right-4 md:top-24 md:right-6 z-30"
+                    >
+                      <div className="relative overflow-hidden rounded-2xl border border-white/20 shadow-2xl shadow-black/50">
+                        {/* Camera video feed */}
+                        <video
+                          ref={cameraVideoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-32 h-24 md:w-40 md:h-30 object-cover bg-black/50"
+                          style={{ transform: 'scaleX(-1)' }} // Mirror for natural feel
+                        />
+                        
+                        {/* Camera status overlay */}
+                        {!isCameraActive && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                            <div className="text-center">
+                              <CameraOff className="w-6 h-6 text-white/40 mx-auto mb-1" />
+                              <span className="text-xs text-white/40">
+                                {hasCameraPermission === false ? 'No access' : 'Loading...'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* AI Observer indicator (subtle) */}
+                        {isCameraActive && (
+                          <motion.div
+                            className="absolute bottom-1 left-1 flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/40 backdrop-blur-sm"
+                            animate={{ opacity: [0.5, 1, 0.5] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                            <span className="text-[10px] text-white/70">AI</span>
+                          </motion.div>
+                        )}
+                        
+                        {/* Decorative frame */}
+                        <div className="absolute inset-0 border border-white/10 rounded-2xl pointer-events-none" />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Center Content - Step Display */}
                 <div className="flex flex-1 items-center justify-center px-6 md:px-12">
