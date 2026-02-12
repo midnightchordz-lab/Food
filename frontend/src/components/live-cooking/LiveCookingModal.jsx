@@ -77,42 +77,6 @@ export default function LiveCookingModal() {
     }
   };
 
-  // Handle play/pause button click - sync video AND audio
-  const handleTogglePlay = () => {
-    const newIsPlaying = !isPlaying;
-    togglePlay();
-    
-    // Sync video
-    if (videoRef.current) {
-      if (newIsPlaying) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-      }
-    }
-    
-    // Sync audio
-    if (audioRef.current) {
-      if (newIsPlaying) {
-        audioRef.current.play().catch(() => {});
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  };
-
-  // Handle next step - trigger voice narration
-  const handleNextStep = () => {
-    nextStep();
-    // Voice will be triggered by the currentStep change effect below
-  };
-
-  // Handle prev step - trigger voice narration  
-  const handlePrevStep = () => {
-    prevStep();
-    // Voice will be triggered by the currentStep change effect below
-  };
-
   // Video playback when modal opens (no voice auto-play)
   useEffect(() => {
     if (!open) return;
