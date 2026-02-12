@@ -20,6 +20,7 @@ import BuyIngredientsSheet from './BuyIngredientsSheet';
 import RecipeVoicePlayer from './RecipeVoicePlayer';
 import CookingModePlayer from './CookingModePlayer';
 import IngredientInfoPopup from './IngredientInfoPopup';
+import LiveCookingModal from './live-cooking/LiveCookingModal';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
