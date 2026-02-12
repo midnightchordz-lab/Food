@@ -862,7 +862,15 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   
                   {/* Mobile-optimized instruction cards - Full width, no clipping */}
                   <div className="space-y-3 sm:space-y-4 w-full">
-                    {parsedRecipe?.instructions?.map((inst, idx) => (
+                    {(!parsedRecipe?.instructions || parsedRecipe.instructions.length === 0) ? (
+                      <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <p className="text-sm text-amber-800">
+                          <strong>Note:</strong> Detailed cooking instructions are being prepared. 
+                          Please check the Ingredients tab and use the Voice Cooking Guide for step-by-step guidance.
+                        </p>
+                      </div>
+                    ) : (
+                    parsedRecipe.instructions.map((inst, idx) => (
                       <div 
                         key={idx}
                         className={`w-full p-3 sm:p-4 rounded-xl border transition-all ${
