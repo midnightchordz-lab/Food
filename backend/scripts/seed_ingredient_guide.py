@@ -29,12 +29,12 @@ INGREDIENT_DATA = [
         "alternate_names": ["jeera", "cumin", "cuminum cyminum", "zeera"],
         "category": "spice_whole",
         "images": {
-            "primary": "https://images.unsplash.com/photo-1599909533601-fc71c5c8c8b9?w=400",
+            "primary": "https://images.unsplash.com/photo-1600791102844-208e695205f6?w=400",
             "comparison": [
                 {"url": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400", "caption": "Whole seeds"},
                 {"url": "https://images.unsplash.com/photo-1607672632458-9eb56696346b?w=400", "caption": "Ground powder"}
             ],
-            "closeup": ""
+            "closeup": "https://images.unsplash.com/photo-1600791102844-208e695205f6?w=800"
         },
         "appearance": {
             "color": "Light to medium brown",
