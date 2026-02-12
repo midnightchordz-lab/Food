@@ -172,6 +172,39 @@ AUDIO_CACHE_HOURS=168
 - `/app/frontend/src/components/UpgradeModal.jsx`
 - `/app/frontend/src/components/UsageLimitBanner.jsx`
 
+## Recent Changes (Feb 12, 2026)
+
+### Buy Ingredients Sheet Redesign ✅ NEW
+Completely redesigned the BuyIngredientsSheet component to match the clean "My Shopping Cart" design:
+
+**New Features:**
+1. ✅ **Categorized Ingredients** with emoji icons:
+   - 🦐 SEAFOOD (salmon, fish, shrimp, prawn, etc.)
+   - 🍗 MEAT & POULTRY (chicken, beef, pork, lamb)
+   - 🥛 DAIRY & EGGS (milk, cheese, yogurt, butter, eggs)
+   - 🥬 VEGETABLES (onion, tomato, garlic, spinach)
+   - 🍎 FRUITS (apple, banana, mango, etc.)
+   - 🍚 GRAINS & PASTA (rice, pasta, bread, flour)
+   - 🌿 SPICES & HERBS (salt, pepper, cumin, basil)
+   - 🫒 OILS & SAUCES (olive oil, soy sauce, vinegar)
+   - 🥜 LEGUMES & NUTS (lentils, chickpeas, almonds)
+   - 📦 OTHER (uncategorized items)
+2. ✅ **Clean item cards** showing:
+   - Ingredient name (without quantity)
+   - "From: Recipe Name" subtitle
+   - Circle checkbox (check = already have)
+   - Plus (+) and Trash action buttons
+3. ✅ **Footer actions:**
+   - "X of Y items checked" counter with "Clear All"
+   - Copy List button (copies to clipboard)
+   - Download button (downloads .txt file)
+   - "Save to Grocery List" button
+   - "Order Now" green button
+
+**File:** `/app/frontend/src/components/BuyIngredientsSheet.jsx` (663 lines)
+
+---
+
 ## Recent Changes (Feb 11, 2026)
 
 ### Recipe Detail Modal Mobile Fix ✅ NEW
