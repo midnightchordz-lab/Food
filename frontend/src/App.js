@@ -103,6 +103,7 @@ function App() {
                 </Suspense>
                 <ShoppingCartModal />
                 <UpgradeModal />
+                <LiveCookingModal />
                 {!isNative && <PWAInstallPrompt />}
               </BrowserRouter>
             <Toaster />
