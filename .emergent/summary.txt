@@ -1,72 +1,71 @@
 <analysis>**original_problem_statement**:
-The initial request involved fixing several UI/UX bugs, including an incorrect image search, redesigning an ingredients sheet, and restoring a lost feature for choosing delivery providers.
+The initial request involved fixing UI/UX bugs. The scope then expanded to several major features for the Live Cooking experience:
+1.  **Visual Ingredient Identification System:** Built with a MongoDB backend, allowing users to click ingredients for more info.
+2.  **Live Cooking Modal:** An immersive cooking UI.
+3.  **Voice & Gesture Control:** Added hands-free voice commands (next, pause) and clap detection to navigate cooking steps.
+4.  **AI Camera Layer:** Integrated a non-functional, passive camera preview and an AI observer layer as infrastructure for future AI features.
+5.  **Futuristic UI Redesign:** Completely overhauled the Live Cooking screen to be a mood-adaptive, full-screen cinematic experience with a floating glassmorphism UI.
+6.  **Bug Fixes:** Numerous bugs were addressed, including broken drink pairing logic, mobile layout issues, app crashes on mobile when starting Live Cooking, and broken voice commands.
 
-The project then expanded significantly with two major feature requests from the user:
-1.  **Visual Ingredient Identification System:** A comprehensive feature to help users visually identify cooking ingredients. This includes a new database schema, backend services, API endpoints, and a frontend popup that displays detailed information (images, descriptions, common uses, substitutes) when a user clicks an ingredient within a recipe. The user also requested a full Ingredient Encyclopedia page to browse all items, which is yet to be built.
-2.  **Live Cooking Modal:** A premium, full-screen, cinematic UI for a guided cooking experience. This involved creating a new React component, integrating it with the existing step-by-step cooking logic, refactoring it to use a global state (Zustand) for a true full-screen experience, and adding support for background videos and automatic voice narration via ElevenLabs.
+The current task is to fix a new bug where the recipe steps are not displaying correctly on mobile devices.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack recipe platform with a React/TypeScript frontend and a Python/FastAPI backend. It now utilizes a hybrid database setup: PostgreSQL for core user and recipe data, and MongoDB for the new ingredient encyclopedia.
+The application is a full-stack recipe platform (React/FastAPI) using PostgreSQL and MongoDB.
 
-Key features implemented:
--   A redesigned Buy Ingredients sheet with a working region selector for choosing delivery providers.
--   A Visual Ingredient Identification system where clicking an ingredient in a recipe opens a detailed popup with images and information, powered by a new backend service and MongoDB collection. The system includes an intelligent matching algorithm to handle variations in ingredient names.
--   A new Live Cooking Mode featuring a cinematic, full-screen modal with a video background. This is managed by a global Zustand store and is rendered at the app's root level to ensure a true full-screen overlay. The initial logic to trigger voice narration upon opening the modal has been added but is not yet fully functional.
+The main feature is a highly advanced Live Cooking mode. It is a full-screen, cinematic experience with a live camera feed as the background. The UI is mood-adaptive, changing its color scheme based on user selection. It supports hands-free control via voice commands and clap gestures. This is all managed by a global Zustand store and isolated custom hooks.
+
+Several critical mobile-specific bugs related to layout and functionality have recently been fixed.
 
 **Last working item**:
--   **Last item agent was working:** The agent was integrating the existing ElevenLabs voice narration system into the new . The goal was for the voice guide to start automatically when the modal opens. An  hook was added to  to call the audio generation API. However, this implementation is incomplete as the modal, now managed by a global store, lacks the necessary recipe context (like the current step's text) to make the correct API call.
--   **Status:** IN PROGRESS
+-   **Last item agent was working:** The user reported a new bug where the recipe step display is broken on mobile phones, providing a screenshot for reference. This is a UI layout regression.
+-   **Status:** NOT STARTED
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Frontend testing agent. The test should involve opening the Live Cooking Modal and verifying that voice narration for the correct, current recipe step starts automatically and that navigation controls (Next/Prev) work as expected.
+-   **Which testing method agent to use?** screenshot tool. The agent should use the screenshot tool with mobile device dimensions to reproduce the visual bug shown in the user's screenshot and then to verify the fix.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** Voice Narration in Live Cooking Modal is not connected to recipe data (P0)
+-   **Issue 1:** Mobile recipe step display is broken (P0)
 
 **Issues Detail**:
--   **Issue 1:** Voice Narration in Live Cooking Modal is not connected to recipe data.
-    -   **Attempted fixes:** An  hook was added to  to fetch audio. However, when the modal was refactored to use a global Zustand store, it lost access to recipe-specific props like . The current implementation cannot fetch the correct audio because it doesn't know which recipe or step is active.
+-   **Issue 1:** Mobile recipe step display is broken.
+    -   **Attempted fixes:** None. This is a new issue reported by the user.
     -   **Next debug checklist**:
-        1.  Update the  Zustand store () to hold the active recipe's state: the full  array and the .
-        2.  Modify the  function in the store so that it accepts the recipe context (e.g., ).
-        3.  Update the  handler in  to pass the required recipe data when calling .
-        4.  Refactor  to read the recipe steps and current step index from the Zustand store.
-        5.  Implement the  and  handlers within  to update the  in the Zustand store, making the navigation controls functional.
-        6.  Ensure the  hook for audio fetching uses the text from the current step (retrieved from the store) to make the correct API call to .
-    -   **Why fix this issue and what will be achieved with the fix?** This will make the Live Cooking Modal fully functional, enabling users to navigate through recipe steps with corresponding voice guidance in the new cinematic UI.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
+        1.  Carefully analyze the user-provided screenshot from message #402 to understand the specific layout problem.
+        2.  Inspect , as this is where recipe steps are rendered.
+        3.  Review the recent CSS and layout changes made to fix previous mobile visibility issues (messages #299-332), as they are the likely cause of this regression.
+        4.  Use the  tool with mobile dimensions (e.g., 390x844) to reproduce the exact issue.
+        5.  Apply targeted CSS fixes to correct the layout without re-introducing old bugs.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical bug as it makes reading recipes on mobile impossible, breaking the core user experience.
+    -   **Status:** NOT STARTED
+    -   **Is recurring issue?** Y (This is a regression related to recently fixed mobile layout issues).
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 
 **In progress Task List**:
--   **Task 1:** Complete Live Cooking Modal Functionality (P0)
-    -   **Where to resume:** Enhance the  Zustand store to manage the active recipe's state (steps, current step index, image/video URLs).
-    -   **What will be achieved with this?** A fully functional, interactive, and voice-guided live cooking experience that is decoupled from the component that opens it.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Frontend.
-    -   **Blocked on something:** None.
+- None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P1) Implement Ingredient Encyclopedia Page:** Create the  page. This page should allow users to browse, search, and filter all ingredients from the database, as originally requested by the user.
-    -   **(P2) Implement Ingredient Detail Page:** Create a dynamic route and page () that displays the full details for a single ingredient when selected from the encyclopedia.
+    -   **(P1) Implement Ingredient Encyclopedia Page:** Create the  page to allow users to browse and search all ingredients.
+    -   **(P2) Implement Ingredient Detail Page:** Create a dynamic route () for viewing a single ingredient's details.
+-   **Future Tasks:**
+    -   **(P2) Activate AI Observer:** Connect the passive AI observer layer's events (, ) to the existing control handlers (, etc.) to enable true AI-assisted cooking.
 
 **Completed work in this session**
--   **Order Now Button Fix:** Restored the choice of delivery providers in the .
--   **Region Selector Fix:** Replaced  with  in  to fix z-index issues.
--   **Region-based Delivery App Fix:** Prioritized the user's explicit region selection over their saved preference in the backend.
--   **Ingredient Identification System (Phase 1):**
-    -   Created backend API () and MongoDB schema for the ingredient guide.
-    -   Seeded the database with over 50 common ingredients.
-    -   Implemented the  and integrated it into the recipe view.
--   **Ingredient Identification Bug Fixes:** Improved the fuzzy matching algorithm and added more ingredients (e.g., green chili, black pepper) to resolve incorrect matches.
--   **Live Cooking Modal Implementation:** Created the , refactored it to be a true full-screen component using a global Zustand store, and added support for video backgrounds and initial voice narration logic.
+-   **Live Cooking Modal Feature Complete:** Verified that the initial voice narration feature was working, correcting the handoff summary.
+-   **Feature - Hands-Free Controls:** Implemented voice and double-clap controls for the Live Cooking modal using .
+-   **Feature - AI Camera & Observer Layer:** Added a passive camera preview and an AI observer infrastructure using  and .
+-   **Feature - Futuristic UI Redesign:** Completely rewrote  to create a mood-adaptive, cinematic UI with a full-screen camera background and glassmorphism elements.
+-   **Bug Fix - Drink Pairings:** Fixed the frontend parser in  to handle the API's format.
+-   **Bug Fix - Camera Infinite Loop:** Resolved an infinite re-render loop in the camera and AI observer hooks.
+-   **Bug Fix - Mobile Live Cooking Crash:** Stabilized the Live Cooking modal on mobile by switching to  and preventing the camera from initializing on open.
+-   **Bug Fix - Broken Voice Commands:** Fixed a stale closure issue in  by using  to store callbacks.
+-   **Bug Fix - Mobile Recipe Visibility:** Corrected the layout in  to ensure recipe steps are fully visible and scrollable on mobile.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+-   None.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -75,67 +74,57 @@ None.
 
 
 **Key Technical Concepts**
--   **Frontend:** React, TypeScript, Vite, Tailwind CSS, **Zustand**, **Framer Motion**, Shadcn/UI
+-   **Frontend:** React, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion, Shadcn/UI
+-   **State Management:** Zustand for global state (),  for passing the  from  to .
+-   **Browser APIs:** Web Speech API (for voice commands), Web Audio API (for clap detection),  (for camera).
 -   **Backend:** Python, FastAPI, Motor
--   **Database:** **MongoDB** (for ingredients), PostgreSQL (for users/recipes)
--   **APIs:** SerpAPI, **ElevenLabs**
+-   **Database:** MongoDB (ingredients), PostgreSQL (users/recipes)
 
 **key DB schema**
 -   **ingredientguides (MongoDB Collection):** 
 
 **changes in tech stack**
--   **Database:** Added **MongoDB** for the ingredient encyclopedia, making the application a hybrid SQL/NoSQL system.
--   **Frontend State Management:** Introduced **Zustand** for global state management.
--   **Frontend Animation:** Added **Framer Motion**.
+-   No new technologies added, but advanced usage of browser APIs (Web Speech, Web Audio, ).
+-   Introduced  as a mechanism for passing non-critical state () between unrelated components.
 
 **All files of reference**
+-   **Heavily Modified:**
+    -   : Rewritten entirely to implement the new futuristic, mood-adaptive UI. It integrates all new hooks.
+    -   : Modified multiple times to fix layout issues. **This is the primary file to investigate for the current bug.**
 -   **New:**
     -   
     -   
     -   
-    -   
-    -   
-    -   
-    -   
 -   **Modified:**
-    -   
-    -   
-    -   
-    -   
-    -   
+    -   : Updated to save the selected mood to .
+    -   : Updated to accept  state.
 
 **Areas that need refactoring**:
--   The 's connection to the  store needs to be completed. The store should be the single source of truth for the cooking session's state (steps, timers, etc.), which will simplify the modal component itself.
+-   The use of  to pass the  from  to  is a temporary solution. A more robust approach would be to manage the selected mood within a global context or the existing Zustand store to avoid reliance on browser storage for UI state.
 
 **key api endpoints**
--   : Fetches a single ingredient for the popup.
--   : Searches for ingredients.
--   : Generates voice narration for a recipe step text.
+-   : Generates voice narration for a recipe step.
+-   : Generates a recipe, including drink pairings.
 
 **Critical Info for New Agent**
--   **Dual Database:** Remember the app uses both PostgreSQL and MongoDB. The new ingredient feature uses MongoDB.
--   **Global State for Live Cooking:** The  is controlled by the  Zustand store. All state and actions for the live cooking session must be managed through this store.
--   **Current Task is Blocked on State:** The immediate task is to fix the voice narration, which requires enhancing the Zustand store to manage the active recipe's state (steps, current index, etc.). This is the primary blocker for completing the Live Cooking feature.
+-   The immediate priority is the **mobile UI bug** in the recipe detail view, as it's a critical blocker for users.
+-   The  is a very complex, presentation-only component. All its logic (state, navigation, etc.) is handled by the  Zustand store and various custom hooks.
+-   Be mindful of regressions. The recent fixes to mobile layouts in  are the most likely source of the current bug.
 
 **documents and test reports created in this job**
--    (updated with recent features)
 -   
+-    (and several others)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  User requested integration of ElevenLabs voice into . (IN PROGRESS)
-2.  User requested adding a video element to . (DONE)
-3.  User provided CSS fixes to ensure the modal is true full-screen. (DONE)
-4.  User requested a DevTools screenshot to prove the modal rendered at the root. (ADDRESSED, NO SCREENSHOT)
-5.  User instructed to refactor  to use a global Zustand store. (DONE)
-6.  User instructed to use  to fix fullscreen issues. (DONE)
-7.  User provided more CSS fixes for the modal. (DONE)
-8.  User supplied a new premium design for . (DONE)
-9.  User provided the initial  component and integration instructions. (DONE)
-10. User asked about camera overlay logic. (ADDRESSED)
+1.  **User:** Start step-by-step cooking is failing on mobile. (IN PROGRESS)
+2.  **Agent:** Fixed the mobile crash by changing to  and setting the camera off by default. (DONE)
+3.  **User:** The voice commands are not working properly now. (IN PROGRESS)
+4.  **Agent:** Fixed voice commands by resolving a stale closure issue in the  hook. (DONE)
+5.  **User:** Look at the screenshot, the recipe display is broken on my phone. Fix it. (PENDING - CURRENT TASK)
 
 **Project Health Check:**
--   **Broken:** The  is not fully functional; its navigation and voice features are disconnected from the recipe data.
--   **Mocked:**  (image search) and the ElevenLabs integration (voice narration).
+-   **Broken:** The display of recipe steps on mobile devices inside .
+-   **Mocked:**  (for image search), ElevenLabs integration.
 
 **3rd Party Integrations**
 -   **SerpAPI** (Google Images Search) — Requires a User API Key.
@@ -146,13 +135,12 @@ None.
 -   **Testing agent used after significant changes:** YES
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None
--   **Known regressions:** None
+-   **Known regressions:** The current mobile recipe display bug is a regression from previous layout fixes.
 
 **Credentials to test flow:**
 -   **User:** 
 -   **Password:** 
--   **Note:** UI login has been historically unreliable; API-based testing is recommended if issues arise.
+-   **Note:** If login fails, a new user was registered during this session:  / .
 
 **What agent forgot to execute**
--   The agent did not implement the **Ingredient Encyclopedia Page** or the **Ingredient Detail Page**, which were part of the user's original feature request for the visual ingredient system.
--   When refactoring the  to use Zustand, the agent missed updating the logic for passing the  and . These should be passed to the store via the  function, not accessed via props.</analysis>
+-   The agent has not started work on the **Ingredient Encyclopedia Page** or the **Ingredient Detail Page**, which were part of an earlier user request. These remain in the upcoming task list.</analysis>
