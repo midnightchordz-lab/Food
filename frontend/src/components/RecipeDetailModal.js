@@ -806,9 +806,9 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               )}
             </div>
             
-            {/* Main Content Tabs - Scrollable on mobile */}
-            <div className="px-2 sm:px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm">
-              <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1">
+            {/* Main Content Tabs - Scrollable on mobile with full width */}
+            <div className="px-2 sm:px-6 py-2 border-b bg-background sticky top-0 z-20 shadow-sm w-full">
+              <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1 -mx-2 px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {['instructions', 'ingredients', 'drinks', 'tips', 'nutrition', 'storage'].map((tab) => (
                   <Button
                     key={tab}
