@@ -1088,7 +1088,7 @@ INGREDIENT_DATA = [
         "alternate_names": ["lahsun", "garlic cloves", "fresh garlic"],
         "category": "vegetable",
         "images": {
-            "primary": "https://images.unsplash.com/photo-1540148426945-6cf22a6b2f85?w=400",
+            "primary": "https://images.unsplash.com/photo-1665858060923-4fbb69587507?w=400",
             "comparison": [
                 {"url": "", "caption": "Whole garlic bulb"},
                 {"url": "", "caption": "Individual cloves"}
