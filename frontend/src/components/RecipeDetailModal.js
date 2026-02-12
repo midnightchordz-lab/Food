@@ -829,11 +829,11 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               </div>
             </div>
             
-            {/* Content Sections - Mobile optimized padding */}
-            <div className="p-3 sm:p-6">
+            {/* Content Sections - Mobile optimized padding with safe scrolling */}
+            <div className="px-3 sm:px-6 py-4 sm:py-6 pb-6 sm:pb-8 w-full overflow-x-hidden">
               {/* Instructions Section */}
               {activeSection === 'instructions' && (
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 w-full">
                   {/* Equipment */}
                   {parsedRecipe?.equipment?.length > 0 && (
                     <div className="mb-4 sm:mb-6">
