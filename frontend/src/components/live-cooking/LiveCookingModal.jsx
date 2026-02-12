@@ -29,7 +29,19 @@ export default function LiveCookingModal({
 }) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose?.()}>
-      <DialogContent className="fixed inset-0 h-screen w-screen max-w-none border-0 bg-black p-0 overflow-hidden">
+      <DialogContent 
+        className="
+          fixed inset-0
+          !top-0 !left-0 !right-0 !bottom-0
+          h-[100dvh] w-[100vw]
+          max-w-none
+          rounded-none
+          border-0
+          bg-black
+          p-0
+          m-0
+        "
+      >
         <AnimatePresence mode="wait">
           {open && (
             <motion.div
