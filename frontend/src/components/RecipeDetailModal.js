@@ -442,6 +442,9 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   const [selectedIngredientName, setSelectedIngredientName] = useState(null);
   const [showIngredientPopup, setShowIngredientPopup] = useState(false);
   
+  // Live Cooking Modal state
+  const [liveOpen, setLiveOpen] = useState(false);
+  
   const shoppingCart = useShoppingCart();
   
   // Handle ingredient click to show info popup
