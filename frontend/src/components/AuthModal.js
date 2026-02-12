@@ -239,6 +239,8 @@ const AuthModal = ({ open, onClose }) => {
         toast.success(`Welcome to MOOD FOOD, ${name}!`);
         onClose();
         resetForm();
+        // Navigate to chat after successful phone registration
+        navigate('/chat');
       } else {
         toast.error('Session expired. Please try again.');
         resetForm();
