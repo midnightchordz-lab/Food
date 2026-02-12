@@ -374,6 +374,11 @@ export default function LiveCookingModal() {
           onEscapeKeyDown={closeModal}
           onPointerDownOutside={(e) => e.preventDefault()}
         >
+          {/* Accessibility: Hidden title for screen readers */}
+          <VisuallyHidden>
+            <DialogTitle>Live Cooking Mode</DialogTitle>
+          </VisuallyHidden>
+          
           <AnimatePresence>
             {open && (
               <motion.div
