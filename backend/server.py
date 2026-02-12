@@ -78,6 +78,7 @@ app.include_router(fridge_scanner_router)
 app.include_router(usage_router, prefix="/api")
 app.include_router(audio_router, prefix="/api")
 app.include_router(shopping_router, prefix="/api")
+app.include_router(ingredient_guide_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(
