@@ -174,6 +174,40 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
+### Mobile Recipe Detail Modal Content Fix ✅ NEW (Feb 12, 2026)
+Fixed critical bug where recipe modal content was being truncated/clipped on mobile devices.
+
+**Problem:**
+- User-reported bug with screenshot showing:
+  - Description text cut off mid-sentence
+  - Timer display showing "-:- / -:-"
+  - "Easy-Step Cooking Mode" button partially hidden/obscured
+- This was a regression from previous mobile layout fixes
+
+**Root Cause:**
+The Radix DialogPrimitive uses `grid` display by default, which conflicted with the mobile full-screen scrolling requirements. Combined with incorrect height settings.
+
+**Fix Applied (RecipeDetailModal.js line 621):**
+```jsx
+className="!block fixed inset-0 z-50 ... h-[100dvh] sm:h-auto ... overflow-y-auto ... [&>*]:max-w-full"
+```
+- `!block` - Overrides Radix's default `grid` display to enable proper scrolling
+- `h-[100dvh]` - Uses dynamic viewport height for correct mobile height (handles browser chrome)
+- `overflow-y-auto` - Enables vertical scrolling within modal
+- `[&>*]:max-w-full` - Prevents child content from overflowing/clipping
+- `w-screen` - Full screen width on mobile
+
+**Testing Verification (iteration_63.json - 100% pass rate):**
+- ✅ Modal displays fully on mobile (390x844 viewport)
+- ✅ Modal content scrollable (scrollHeight: 2557 > clientHeight: 844)
+- ✅ Description section fully visible - NOT truncated
+- ✅ Voice player timer displays correctly
+- ✅ "Start Step-by-Step Cooking Mode" button fully visible at y=269.25
+- ✅ All tab navigation works (Instructions, Ingredients, Drinks, Tips, Nutrition, Storage)
+- ✅ Recipe instructions scrollable
+
+---
+
 ### Futuristic Mood-Adaptive AI Live Cooking Interface ✅ NEW (Feb 12, 2026)
 Complete UI transformation of Live Cooking to a cinematic, mood-aware experience.
 
