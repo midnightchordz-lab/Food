@@ -31,6 +31,18 @@ export default function LiveCookingModal() {
   const videoRef = useRef(null);
   const audioRef = useRef(null);
 
+  // Handle play/pause button click - sync with video
+  const handleTogglePlay = () => {
+    togglePlay();
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  };
+
   // Get current step text
   const currentStepText = instructions[currentStep]?.text || 
                           instructions[currentStep]?.instruction || 
