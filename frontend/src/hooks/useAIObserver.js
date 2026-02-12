@@ -17,7 +17,7 @@
  * In this phase, event callbacks are optional and do nothing by default.
  */
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 // Observer event types (for future AI integration)
 export const ObserverEvents = {
@@ -30,6 +30,15 @@ export const ObserverEvents = {
   IDLE_DETECTED: 'idleDetected',
 };
 
+// Configuration for motion detection
+const CONFIG = {
+  MOTION_THRESHOLD: 30,        // Pixel difference threshold
+  MOTION_PERCENTAGE: 0.5,      // % of pixels that need to change
+  IDLE_FRAME_THRESHOLD: 90,    // ~3 seconds at 30fps
+  ANALYSIS_INTERVAL: 100,      // Analyze every 100ms (not every frame)
+  SAMPLE_SIZE: 100,            // Sample grid size for performance
+};
+
 export function useAIObserver({
   enabled = false,
   videoElement = null,
@@ -39,23 +48,31 @@ export function useAIObserver({
   onPossibleStepCompletion = null,
   onEvent = null, // Generic event handler
 }) {
-  const [isObserving, setIsObserving] = useState(false);
-  const [lastEvent, setLastEvent] = useState(null);
-  
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   const previousFrameRef = useRef(null);
   const animationFrameRef = useRef(null);
   const motionStateRef = useRef({ isMoving: false, idleFrames: 0 });
+  const isObservingRef = useRef(false);
+  const lastEventRef = useRef(null);
 
-  // Configuration for motion detection
-  const CONFIG = {
-    MOTION_THRESHOLD: 30,        // Pixel difference threshold
-    MOTION_PERCENTAGE: 0.5,      // % of pixels that need to change
-    IDLE_FRAME_THRESHOLD: 90,    // ~3 seconds at 30fps
-    ANALYSIS_INTERVAL: 100,      // Analyze every 100ms (not every frame)
-    SAMPLE_SIZE: 100,            // Sample grid size for performance
-  };
+  // Store callbacks in refs to avoid dependency issues
+  const callbacksRef = useRef({
+    onMotionDetected,
+    onMotionStopped,
+    onPossibleStepCompletion,
+    onEvent,
+  });
+
+  // Update callbacks ref when they change
+  useEffect(() => {
+    callbacksRef.current = {
+      onMotionDetected,
+      onMotionStopped,
+      onPossibleStepCompletion,
+      onEvent,
+    };
+  }, [onMotionDetected, onMotionStopped, onPossibleStepCompletion, onEvent]);
 
   // Emit an observer event (passive, non-invasive)
   const emitEvent = useCallback((eventType, data = {}) => {
@@ -65,25 +82,27 @@ export function useAIObserver({
       data,
     };
     
-    setLastEvent(event);
+    lastEventRef.current = event;
     
     // Log for debugging (can be removed in production)
     console.log(`[AIObserver] Event: ${eventType}`, data);
 
+    const callbacks = callbacksRef.current;
+
     // Call specific handlers if provided
-    if (eventType === ObserverEvents.MOTION_DETECTED && onMotionDetected) {
-      onMotionDetected(event);
-    } else if (eventType === ObserverEvents.MOTION_STOPPED && onMotionStopped) {
-      onMotionStopped(event);
-    } else if (eventType === ObserverEvents.POSSIBLE_STEP_COMPLETION && onPossibleStepCompletion) {
-      onPossibleStepCompletion(event);
+    if (eventType === ObserverEvents.MOTION_DETECTED && callbacks.onMotionDetected) {
+      callbacks.onMotionDetected(event);
+    } else if (eventType === ObserverEvents.MOTION_STOPPED && callbacks.onMotionStopped) {
+      callbacks.onMotionStopped(event);
+    } else if (eventType === ObserverEvents.POSSIBLE_STEP_COMPLETION && callbacks.onPossibleStepCompletion) {
+      callbacks.onPossibleStepCompletion(event);
     }
 
     // Call generic handler if provided
-    if (onEvent) {
-      onEvent(event);
+    if (callbacks.onEvent) {
+      callbacks.onEvent(event);
     }
-  }, [onMotionDetected, onMotionStopped, onPossibleStepCompletion, onEvent]);
+  }, []);
 
   // Simple motion detection using frame differencing
   const detectMotion = useCallback((currentImageData) => {
@@ -117,95 +136,7 @@ export function useAIObserver({
 
     const motionPercentage = (changedPixels / CONFIG.SAMPLE_SIZE) * 100;
     return motionPercentage > CONFIG.MOTION_PERCENTAGE;
-  }, [CONFIG.MOTION_THRESHOLD, CONFIG.MOTION_PERCENTAGE, CONFIG.SAMPLE_SIZE]);
-
-  // Main frame analysis loop
-  const analyzeFrame = useCallback(() => {
-    if (!canvasRef.current || !contextRef.current || !videoElement) {
-      return;
-    }
-
-    try {
-      // Draw current video frame to canvas
-      contextRef.current.drawImage(
-        videoElement,
-        0, 0,
-        canvasRef.current.width,
-        canvasRef.current.height
-      );
-
-      // Get image data for analysis
-      const imageData = contextRef.current.getImageData(
-        0, 0,
-        canvasRef.current.width,
-        canvasRef.current.height
-      );
-
-      // Detect motion
-      const hasMotion = detectMotion(imageData);
-      const motionState = motionStateRef.current;
-
-      if (hasMotion) {
-        motionState.idleFrames = 0;
-        
-        if (!motionState.isMoving) {
-          motionState.isMoving = true;
-          emitEvent(ObserverEvents.MOTION_DETECTED, {
-            confidence: 'low', // Basic detection, low confidence
-          });
-        }
-      } else {
-        motionState.idleFrames++;
-        
-        if (motionState.isMoving && motionState.idleFrames > 10) {
-          motionState.isMoving = false;
-          emitEvent(ObserverEvents.MOTION_STOPPED, {
-            idleDuration: motionState.idleFrames * CONFIG.ANALYSIS_INTERVAL,
-          });
-        }
-
-        // Possible step completion after extended idle
-        if (motionState.idleFrames === CONFIG.IDLE_FRAME_THRESHOLD) {
-          emitEvent(ObserverEvents.POSSIBLE_STEP_COMPLETION, {
-            reason: 'extended_idle',
-            idleDuration: motionState.idleFrames * CONFIG.ANALYSIS_INTERVAL,
-            confidence: 'very_low', // Just a hint, not actionable
-          });
-        }
-      }
-    } catch (err) {
-      // Fail silently - frame analysis errors shouldn't affect cooking
-      console.log('[AIObserver] Frame analysis error:', err.message);
-    }
-  }, [videoElement, detectMotion, emitEvent, CONFIG.ANALYSIS_INTERVAL, CONFIG.IDLE_FRAME_THRESHOLD]);
-
-  // Start observation loop
-  const startObserving = useCallback(() => {
-    if (!videoElement || isObserving) return;
-
-    // Create offscreen canvas for analysis
-    canvasRef.current = document.createElement('canvas');
-    canvasRef.current.width = 160;  // Low res for performance
-    canvasRef.current.height = 120;
-    contextRef.current = canvasRef.current.getContext('2d', {
-      willReadFrequently: true,
-    });
-
-    setIsObserving(true);
-    console.log('[AIObserver] Started observing');
-
-    // Analysis loop with interval (not every frame)
-    let lastAnalysis = 0;
-    const loop = (timestamp) => {
-      if (timestamp - lastAnalysis >= CONFIG.ANALYSIS_INTERVAL) {
-        analyzeFrame();
-        lastAnalysis = timestamp;
-      }
-      animationFrameRef.current = requestAnimationFrame(loop);
-    };
-    
-    animationFrameRef.current = requestAnimationFrame(loop);
-  }, [videoElement, isObserving, analyzeFrame, CONFIG.ANALYSIS_INTERVAL]);
+  }, []);
 
   // Stop observation
   const stopObserving = useCallback(() => {
@@ -218,37 +149,135 @@ export function useAIObserver({
     motionStateRef.current = { isMoving: false, idleFrames: 0 };
     canvasRef.current = null;
     contextRef.current = null;
+    isObservingRef.current = false;
     
-    setIsObserving(false);
-    setLastEvent(null);
     console.log('[AIObserver] Stopped observing');
   }, []);
 
   // Main effect - start/stop based on enabled and video element
   useEffect(() => {
-    if (enabled && videoElement) {
-      // Wait for video to be ready
-      const checkReady = () => {
-        if (videoElement.readyState >= 2) {
-          startObserving();
-        } else {
-          videoElement.addEventListener('loadeddata', startObserving, { once: true });
+    if (!enabled || !videoElement) {
+      stopObserving();
+      return;
+    }
+
+    // Already observing
+    if (isObservingRef.current) {
+      return;
+    }
+
+    const startObserving = () => {
+      if (isObservingRef.current) return;
+
+      // Create offscreen canvas for analysis
+      canvasRef.current = document.createElement('canvas');
+      canvasRef.current.width = 160;  // Low res for performance
+      canvasRef.current.height = 120;
+      contextRef.current = canvasRef.current.getContext('2d', {
+        willReadFrequently: true,
+      });
+
+      isObservingRef.current = true;
+      console.log('[AIObserver] Started observing');
+
+      // Frame analysis function
+      const analyzeFrame = () => {
+        if (!canvasRef.current || !contextRef.current || !videoElement) {
+          return;
+        }
+
+        try {
+          // Draw current video frame to canvas
+          contextRef.current.drawImage(
+            videoElement,
+            0, 0,
+            canvasRef.current.width,
+            canvasRef.current.height
+          );
+
+          // Get image data for analysis
+          const imageData = contextRef.current.getImageData(
+            0, 0,
+            canvasRef.current.width,
+            canvasRef.current.height
+          );
+
+          // Detect motion
+          const hasMotion = detectMotion(imageData);
+          const motionState = motionStateRef.current;
+
+          if (hasMotion) {
+            motionState.idleFrames = 0;
+            
+            if (!motionState.isMoving) {
+              motionState.isMoving = true;
+              emitEvent(ObserverEvents.MOTION_DETECTED, {
+                confidence: 'low',
+              });
+            }
+          } else {
+            motionState.idleFrames++;
+            
+            if (motionState.isMoving && motionState.idleFrames > 10) {
+              motionState.isMoving = false;
+              emitEvent(ObserverEvents.MOTION_STOPPED, {
+                idleDuration: motionState.idleFrames * CONFIG.ANALYSIS_INTERVAL,
+              });
+            }
+
+            // Possible step completion after extended idle
+            if (motionState.idleFrames === CONFIG.IDLE_FRAME_THRESHOLD) {
+              emitEvent(ObserverEvents.POSSIBLE_STEP_COMPLETION, {
+                reason: 'extended_idle',
+                idleDuration: motionState.idleFrames * CONFIG.ANALYSIS_INTERVAL,
+                confidence: 'very_low',
+              });
+            }
+          }
+        } catch (err) {
+          // Fail silently
+          console.log('[AIObserver] Frame analysis error:', err.message);
         }
       };
-      checkReady();
+
+      // Analysis loop with interval
+      let lastAnalysis = 0;
+      const loop = (timestamp) => {
+        if (!isObservingRef.current) return;
+        
+        if (timestamp - lastAnalysis >= CONFIG.ANALYSIS_INTERVAL) {
+          analyzeFrame();
+          lastAnalysis = timestamp;
+        }
+        animationFrameRef.current = requestAnimationFrame(loop);
+      };
+      
+      animationFrameRef.current = requestAnimationFrame(loop);
+    };
+
+    // Wait for video to be ready
+    if (videoElement.readyState >= 2) {
+      startObserving();
     } else {
-      stopObserving();
+      const handleLoadedData = () => {
+        startObserving();
+      };
+      videoElement.addEventListener('loadeddata', handleLoadedData, { once: true });
+      
+      return () => {
+        videoElement.removeEventListener('loadeddata', handleLoadedData);
+        stopObserving();
+      };
     }
 
     return () => {
       stopObserving();
     };
-  }, [enabled, videoElement, startObserving, stopObserving]);
+  }, [enabled, videoElement, detectMotion, emitEvent, stopObserving]);
 
   return {
-    isObserving,
-    lastEvent,
-    // Expose event types for external use
+    isObserving: isObservingRef.current,
+    lastEvent: lastEventRef.current,
     events: ObserverEvents,
   };
 }
