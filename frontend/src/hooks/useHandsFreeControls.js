@@ -36,10 +36,33 @@ export function useHandsFreeControls({
   const clapCountRef = useRef(0);
   const animationFrameRef = useRef(null);
   const isListeningRef = useRef(false);
+  
+  // Store callbacks in refs to avoid stale closures
+  const callbacksRef = useRef({
+    onNext,
+    onPrev,
+    onTogglePlay,
+    onRepeat,
+    isPlaying,
+  });
 
-  // Voice command handler
+  // Update callbacks ref whenever they change
+  useEffect(() => {
+    callbacksRef.current = {
+      onNext,
+      onPrev,
+      onTogglePlay,
+      onRepeat,
+      isPlaying,
+    };
+  }, [onNext, onPrev, onTogglePlay, onRepeat, isPlaying]);
+
+  // Voice command handler - uses ref to get latest callbacks
   const handleVoiceCommand = useCallback((command) => {
     const normalizedCommand = command.toLowerCase().trim();
+    const { onNext, onPrev, onTogglePlay, onRepeat, isPlaying } = callbacksRef.current;
+    
+    console.log('[HandsFree] Heard:', normalizedCommand);
     
     // Check for keywords
     if (normalizedCommand.includes('next') || normalizedCommand.includes('forward')) {
@@ -62,53 +85,7 @@ export function useHandsFreeControls({
       console.log('[HandsFree] Voice command: repeat');
       onRepeat?.();
     }
-  }, [onNext, onPrev, onTogglePlay, onRepeat, isPlaying]);
-
-  // Initialize speech recognition
-  const initSpeechRecognition = useCallback(() => {
-    if (!SpeechRecognition) {
-      console.log('[HandsFree] Speech recognition not supported');
-      return null;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      recognition.maxAlternatives = 1;
-
-      recognition.onresult = (event) => {
-        const last = event.results.length - 1;
-        const command = event.results[last][0].transcript;
-        handleVoiceCommand(command);
-      };
-
-      recognition.onerror = (event) => {
-        // Fail silently for expected errors
-        if (event.error === 'no-speech' || event.error === 'aborted') {
-          return;
-        }
-        console.log('[HandsFree] Speech recognition error:', event.error);
-      };
-
-      recognition.onend = () => {
-        // Restart if still enabled
-        if (isListeningRef.current && recognitionRef.current) {
-          try {
-            recognitionRef.current.start();
-          } catch (e) {
-            // Already started or other error - fail silently
-          }
-        }
-      };
-
-      return recognition;
-    } catch (e) {
-      console.log('[HandsFree] Failed to initialize speech recognition');
-      return null;
-    }
-  }, [handleVoiceCommand]);
+  }, []);
 
   // Double clap detection using audio analysis
   const detectClaps = useCallback((analyser, dataArray) => {
@@ -138,7 +115,7 @@ export function useHandsFreeControls({
         // Double clap detected!
         clapCountRef.current = 0;
         console.log('[HandsFree] Double clap detected - next step');
-        onNext?.();
+        callbacksRef.current.onNext?.();
       } else {
         // First clap
         clapCountRef.current = 1;
@@ -154,7 +131,7 @@ export function useHandsFreeControls({
     animationFrameRef.current = requestAnimationFrame(() => {
       detectClaps(analyser, dataArray);
     });
-  }, [onNext]);
+  }, []);
 
   // Initialize clap detection
   const initClapDetection = useCallback(async () => {
@@ -190,7 +167,7 @@ export function useHandsFreeControls({
       console.log('[HandsFree] Clap detection initialized');
     } catch (e) {
       // Fail silently - user may have denied mic access
-      console.log('[HandsFree] Clap detection unavailable');
+      console.log('[HandsFree] Clap detection unavailable:', e.message);
     }
   }, [detectClaps]);
 
@@ -202,6 +179,9 @@ export function useHandsFreeControls({
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onend = null;
       } catch (e) {
         // Ignore errors during cleanup
       }
@@ -239,13 +219,47 @@ export function useHandsFreeControls({
       isListeningRef.current = true;
 
       // Initialize speech recognition
-      recognitionRef.current = initSpeechRecognition();
-      if (recognitionRef.current) {
+      if (SpeechRecognition && !recognitionRef.current) {
         try {
-          recognitionRef.current.start();
+          const recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = false;
+          recognition.lang = 'en-US';
+          recognition.maxAlternatives = 1;
+
+          recognition.onresult = (event) => {
+            const last = event.results.length - 1;
+            const command = event.results[last][0].transcript;
+            handleVoiceCommand(command);
+          };
+
+          recognition.onerror = (event) => {
+            if (event.error === 'no-speech' || event.error === 'aborted') {
+              return;
+            }
+            console.log('[HandsFree] Speech recognition error:', event.error);
+          };
+
+          recognition.onend = () => {
+            // Restart if still enabled
+            if (isListeningRef.current && recognitionRef.current) {
+              try {
+                setTimeout(() => {
+                  if (isListeningRef.current && recognitionRef.current) {
+                    recognitionRef.current.start();
+                  }
+                }, 100);
+              } catch (e) {
+                // Already started or other error
+              }
+            }
+          };
+
+          recognitionRef.current = recognition;
+          recognition.start();
           console.log('[HandsFree] Voice commands active');
         } catch (e) {
-          console.log('[HandsFree] Could not start speech recognition');
+          console.log('[HandsFree] Could not start speech recognition:', e.message);
         }
       }
 
@@ -257,15 +271,9 @@ export function useHandsFreeControls({
     }
 
     return cleanup;
-  }, [enabled, initSpeechRecognition, initClapDetection, cleanup]);
-
-  // Update isPlaying ref for voice commands
-  useEffect(() => {
-    // This ensures the voice command handler has access to current isPlaying state
-  }, [isPlaying]);
+  }, [enabled, handleVoiceCommand, initClapDetection, cleanup]);
 
   return {
-    // Return minimal status (could be expanded if UI indicators are needed)
     isSupported: !!SpeechRecognition || !!AudioContext,
   };
 }
