@@ -174,6 +174,46 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
+### AI Camera Preview & Observer Layer ✅ NEW (Feb 12, 2026)
+Added live camera preview and AI observer infrastructure to Live Cooking Modal.
+
+**Camera Preview Features:**
+- Live rear camera feed in Picture-in-Picture style (top-right corner)
+- Camera toggle button in top bar
+- Mirror effect for natural feel
+- "No access" fallback state when camera unavailable
+- Silent failure - doesn't affect cooking experience
+
+**AI Observer Layer (Passive Infrastructure):**
+- Motion detection using frame differencing
+- Emits events: `motionDetected`, `motionStopped`, `possibleStepCompletion`
+- Events are LOGGED ONLY - do NOT trigger cooking actions
+- Foundation for future AI-assisted cooking detection
+
+**Technical Implementation:**
+- `frontend/src/hooks/useCameraPreview.js` - Camera stream with getUserMedia
+- `frontend/src/hooks/useAIObserver.js` - Passive vision analysis
+- Uses Canvas API for lightweight frame processing
+- Proper cleanup on unmount
+
+**UI Elements:**
+- Camera toggle button: `data-testid="live-cooking-camera-btn"`
+- PiP preview: 128x96px mobile, 160x120px desktop
+- AI indicator: Pulsing cyan dot with "AI" text when camera active
+
+**Protection Rules Met:**
+- ✅ No changes to existing cooking logic
+- ✅ No changes to voice narration or timers
+- ✅ No backend APIs or cloud services
+- ✅ Silent failure if camera unavailable
+
+**Testing Status:** Code review passed (iteration_61.json)
+- All existing controls preserved: ✅
+- No JavaScript errors: ✅
+- Camera fails silently in headless browser: ✅
+
+---
+
 ### Hands-Free Cooking Control ✅ NEW (Feb 12, 2026)
 Added hands-free control to Live Cooking Modal for convenience while cooking with messy hands.
 
