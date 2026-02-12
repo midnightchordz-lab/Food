@@ -219,11 +219,15 @@ const BuyIngredientsSheet = ({
       
       if (response.data.success) {
         setDeliveryApps(response.data.apps || []);
-        setCountryInfo({
-          country: response.data.country,
-          countryCode: response.data.country_code,
-          currencySymbol: response.data.currency_symbol,
-        });
+        // Only update countryInfo if we didn't explicitly pass a countryCode
+        // (i.e., this is initial load, not a user-initiated change)
+        if (!countryCode) {
+          setCountryInfo({
+            country: response.data.country,
+            countryCode: response.data.country_code,
+            currencySymbol: response.data.currency_symbol,
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to fetch delivery apps:', error);
@@ -232,7 +236,9 @@ const BuyIngredientsSheet = ({
         logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/1200px-Amazon_logo.svg.png',
         color: '#FF9900', delivery_time: '2 days'
       }]);
-      setCountryInfo({ country: 'Global', countryCode: 'DEFAULT' });
+      if (!countryCode) {
+        setCountryInfo({ country: 'Global', countryCode: 'DEFAULT' });
+      }
     } finally {
       setIsLoadingApps(false);
     }
