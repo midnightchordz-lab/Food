@@ -1155,7 +1155,7 @@ INGREDIENT_DATA = [
         "alternate_names": ["pyaz", "pyaaz", "yellow onion", "white onion", "red onion"],
         "category": "vegetable",
         "images": {
-            "primary": "https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=400",
+            "primary": "https://images.unsplash.com/photo-1668295037389-292efc20dafe?w=400",
             "comparison": [
                 {"url": "", "caption": "Yellow onion"},
                 {"url": "", "caption": "Red onion"}
