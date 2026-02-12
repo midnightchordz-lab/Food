@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLiveCooking } from "@/stores/useLiveCooking";
+import axios from "axios";
+
+const API = process.env.REACT_APP_BACKEND_URL;
 
 /**
  * LiveCookingModal - Premium Cinematic Design
@@ -26,6 +29,7 @@ export default function LiveCookingModal() {
   } = useLiveCooking();
 
   const videoRef = useRef(null);
+  const audioRef = useRef(null);
 
   // Get current step text
   const currentStepText = instructions[currentStep]?.text || 
@@ -36,6 +40,57 @@ export default function LiveCookingModal() {
   const helperText = instructions.length > 0 
     ? `Step ${currentStep + 1} of ${instructions.length}` 
     : null;
+
+  // Voice narration for current step
+  const readCurrentStep = async () => {
+    if (!instructions.length || currentStep >= instructions.length) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const stepText = typeof instructions[currentStep] === 'string' 
+        ? instructions[currentStep] 
+        : instructions[currentStep]?.text || instructions[currentStep]?.instruction;
+      
+      if (!stepText) return;
+      
+      const response = await axios.post(
+        `${API}/api/audio/step`,
+        {
+          stepText: stepText,
+          stepNumber: currentStep + 1,
+          totalSteps: instructions.length,
+          language: 'en'
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success && audioRef.current) {
+        const fullUrl = response.data.audioUrl.startsWith('http')
+          ? response.data.audioUrl
+          : `${API}${response.data.audioUrl}`;
+        
+        audioRef.current.src = fullUrl;
+        audioRef.current.play().catch(e => console.error('Play failed:', e));
+      }
+    } catch (error) {
+      console.error('Voice narration error:', error);
+    }
+  };
+
+  // Trigger voice narration when modal opens
+  useEffect(() => {
+    if (!open) return;
+    
+    // Start voice narration for current step
+    readCurrentStep();
+  }, [open]);
+
+  // Read step when step changes
+  useEffect(() => {
+    if (!open) return;
+    
+    readCurrentStep();
+  }, [currentStep]);
 
   // Trigger video playback when modal opens
   useEffect(() => {
