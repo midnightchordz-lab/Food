@@ -112,6 +112,9 @@ export default function LiveCookingModal() {
           className="fixed inset-0 left-0 top-0 w-screen h-screen max-w-none max-h-none rounded-none border-0 p-0 m-0 translate-x-0 translate-y-0 bg-black z-[9999]"
           hideCloseButton={true}
         >
+        {/* Hidden audio element for voice narration */}
+        <audio ref={audioRef} className="hidden" />
+        
         <AnimatePresence mode="wait">
           {open && (
             <motion.div
