@@ -210,6 +210,9 @@ const ChatPage = () => {
     setSelectedMood(moodId);
     setIsInitialLoad(false); // User has interacted, enable scroll to bottom
     
+    // Store mood in localStorage for Live Cooking UI
+    localStorage.setItem('selectedMood', moodId);
+    
     // Add user's mood as a message
     const userMsg = {
       role: 'user',
