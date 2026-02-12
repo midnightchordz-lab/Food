@@ -174,6 +174,39 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
+### Live Cooking Mode Crash Fix ✅ VERIFIED WORKING (Feb 12, 2026)
+Fixed critical bug where clicking "Start Step-by-Step Cooking Mode" button crashed the app on mobile.
+
+**Problem:**
+- Clicking the button caused the app to shut down completely
+- Root cause: Two Radix DialogPrimitive dialogs open simultaneously (RecipeDetailModal + LiveCookingModal)
+- This caused a portal conflict that crashed React on mobile
+
+**Solution Applied:**
+1. Modified RecipeDetailModal.js (line 790-808):
+```jsx
+onClick={() => {
+  onClose(); // Close RecipeDetailModal FIRST
+  setTimeout(() => {
+    openLiveCooking(aiImageUrl || recipe?.image, parsedRecipe?.instructions);
+  }, 100); // Delay to ensure modal is closed
+}}
+```
+
+2. Fixed LiveCookingModal.jsx (line 370):
+- Added proper `onOpenChange` handler: `onOpenChange={(isOpen) => { if (!isOpen) closeModal(); }}`
+- Removed `forceMount` flags that could cause issues
+- Added proper overlay for accessibility
+
+**Testing Verification (iteration_65.json - 100% pass):**
+- ✅ Button click NO LONGER CRASHES the app
+- ✅ RecipeDetailModal closes before LiveCookingModal opens
+- ✅ Step text displays correctly: "Step 1 of 10 - 5 minutes - 'Marinate the fish...'"
+- ✅ Navigation works (next/prev buttons)
+- ✅ Close button works correctly
+
+---
+
 ### Mobile Recipe Detail Modal Content Fix ✅ VERIFIED WORKING (Feb 12, 2026)
 Fixed critical bug where recipe modal content was being truncated/clipped on mobile devices.
 
