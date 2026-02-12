@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogPortal } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
@@ -15,7 +15,8 @@ export default function LiveCookingModal() {
   const { 
     open, 
     closeModal, 
-    recipeImage, 
+    recipeImage,
+    recipeVideo,
     instructions, 
     currentStep, 
     isPlaying,
@@ -23,6 +24,8 @@ export default function LiveCookingModal() {
     prevStep,
     togglePlay
   } = useLiveCooking();
+
+  const videoRef = useRef(null);
 
   // Get current step text
   const currentStepText = instructions[currentStep]?.text || 
@@ -33,6 +36,19 @@ export default function LiveCookingModal() {
   const helperText = instructions.length > 0 
     ? `Step ${currentStep + 1} of ${instructions.length}` 
     : null;
+
+  // Trigger video playback when modal opens
+  useEffect(() => {
+    if (open && videoRef.current && recipeVideo) {
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.muted = false;
+          videoRef.current.volume = 1;
+          videoRef.current.play().catch(() => {});
+        }
+      }, 100);
+    }
+  }, [open, recipeVideo]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && closeModal()}>
