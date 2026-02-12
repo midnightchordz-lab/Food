@@ -870,6 +870,346 @@ INGREDIENT_DATA = [
         "what_to_look_for": "Plump buds with strong aroma. Press the stem - oil should release if fresh.",
         "featured": True,
         "popularity": 75
+    },
+    
+    # ════════════════════════════════════════════════════════
+    # FRESH HERBS & VEGETABLES
+    # ════════════════════════════════════════════════════════
+    
+    {
+        "name": "fresh coriander",
+        "display_name": "Fresh Coriander (Cilantro)",
+        "alternate_names": ["cilantro", "coriander leaves", "fresh cilantro", "dhania", "hara dhania", "chinese parsley"],
+        "category": "herb_fresh",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1592861956120-e524fc739f7d?w=400",
+            "comparison": [
+                {"url": "", "caption": "Fresh bunch"},
+                {"url": "", "caption": "Chopped for garnish"}
+            ],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Bright green leaves with thin pale green stems",
+            "shape": "Delicate, fan-shaped leaves with serrated edges",
+            "size": "Leaves 1-3cm, stems up to 20cm long",
+            "texture": "Soft, delicate, slightly feathery leaves",
+            "visual_description": "Bright green herb with delicate, feathery leaves. Looks similar to flat-leaf parsley but has more delicate, lacy leaves. The stems are thinner and more tender than parsley."
+        },
+        "similar_to": [
+            {
+                "name": "Flat-leaf parsley",
+                "how_to_differentiate": "Coriander has more delicate, lacy leaves and a distinctive pungent smell. Parsley leaves are more pointed and have a fresh, grassy smell."
+            }
+        ],
+        "confused_with": [
+            {
+                "name": "Parsley",
+                "warning": "They look similar! Smell them - cilantro has a strong, distinctive aroma (some say soapy). Parsley smells fresh and grassy. Using the wrong one will completely change your dish."
+            }
+        ],
+        "aroma": "Strong, distinctive, citrusy, some say soapy (genetic)",
+        "taste": "Bright, citrusy, slightly peppery, polarizing (love it or hate it)",
+        "common_uses": [
+            "Indian curries as garnish",
+            "Mexican salsas and guacamole",
+            "Thai and Vietnamese dishes",
+            "Chutneys and sauces"
+        ],
+        "cuisines": ["Indian", "Mexican", "Thai", "Vietnamese", "Middle Eastern"],
+        "preparation_tips": [
+            "Wash thoroughly - can be sandy",
+            "Add at the END of cooking or as garnish",
+            "Heat destroys the flavor quickly",
+            "Stems are edible and very flavorful - don't throw them away!",
+            "Chop just before using for best flavor"
+        ],
+        "storage": {
+            "method": "Wrap in damp paper towel, store in plastic bag in fridge OR stand stems in water like flowers",
+            "shelf_life": "5-7 days in fridge",
+            "signs_of_spoilage": ["Yellow leaves", "Slimy stems", "Wilted appearance", "Bad smell"]
+        },
+        "substitutes": [
+            {"name": "Parsley + lime zest", "ratio": "Equal parsley + pinch of lime zest", "notes": "Approximates the brightness"},
+            {"name": "Thai basil", "ratio": "1:1", "notes": "Different but works in Asian dishes"},
+            {"name": "Culantro (if available)", "ratio": "Use less - stronger flavor", "notes": "Same flavor, more intense"}
+        ],
+        "nutritional_highlights": ["High in vitamin K", "Good source of vitamin C", "Contains antioxidants"],
+        "beginner_notes": "Fun fact: Whether you love or hate cilantro is partly genetic! About 4-14% of people have a gene that makes it taste soapy. If you hate it, you're not crazy - it's your genes. Always add fresh cilantro at the END or as garnish, never cook it.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store produce section, Asian/Mexican markets",
+        "what_to_look_for": "Bright green leaves, no yellow or wilting. Stems should be firm, not slimy.",
+        "featured": True,
+        "popularity": 95
+    },
+    
+    {
+        "name": "green chili",
+        "display_name": "Green Chili (Fresh)",
+        "alternate_names": ["green chilli", "hari mirch", "fresh green pepper", "serrano", "thai chili", "finger chili"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=400",
+            "comparison": [
+                {"url": "", "caption": "Whole green chilies"},
+                {"url": "", "caption": "Sliced green chili"}
+            ],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Bright green (can vary from light to dark green)",
+            "shape": "Long, slender, pointed pods",
+            "size": "5-10cm long depending on variety",
+            "texture": "Smooth, shiny skin, firm flesh",
+            "visual_description": "Bright green, elongated peppers with pointed tips. The skin is smooth and shiny. Indian green chilies are typically thinner and longer than jalapeños."
+        },
+        "similar_to": [
+            {
+                "name": "Jalapeño",
+                "how_to_differentiate": "Jalapeños are thicker, shorter, and have a blunter tip. Indian green chilies are thinner, longer, and more pointed. Jalapeños are milder."
+            },
+            {
+                "name": "Serrano pepper",
+                "how_to_differentiate": "Serranos are similar heat level but slightly smaller and more cylindrical. Good substitute for Indian green chilies."
+            }
+        ],
+        "confused_with": [
+            {
+                "name": "Bell pepper (green)",
+                "warning": "Bell peppers are NOT spicy at all! They're much larger with thick walls. If recipe says 'green chili', it means the small hot pepper, not bell pepper."
+            }
+        ],
+        "aroma": "Fresh, slightly grassy, with a hint of heat",
+        "taste": "Fresh, bright heat that hits quickly, grassy undertones",
+        "common_uses": [
+            "Indian curries and dals",
+            "Salsas and Mexican dishes",
+            "Thai stir-fries",
+            "Tempering (tadka) in oil",
+            "Fresh in salads and raitas"
+        ],
+        "cuisines": ["Indian", "Mexican", "Thai", "Vietnamese"],
+        "preparation_tips": [
+            "Remove seeds and white membrane for less heat",
+            "Wear gloves when handling - oils can burn skin",
+            "Slit lengthwise to release flavor without too much heat",
+            "Don't touch eyes after handling!",
+            "Add whole for mild heat, chopped for more heat"
+        ],
+        "storage": {
+            "method": "Refrigerate in paper bag or wrap loosely",
+            "shelf_life": "1-2 weeks in fridge",
+            "signs_of_spoilage": ["Wrinkled skin", "Soft spots", "Discoloration"]
+        },
+        "substitutes": [
+            {"name": "Serrano pepper", "ratio": "1:1", "notes": "Similar heat level"},
+            {"name": "Jalapeño", "ratio": "2 jalapeños = 1 green chili", "notes": "Jalapeños are milder"},
+            {"name": "Red chili flakes", "ratio": "1/4 tsp per chili", "notes": "Different flavor but adds heat"}
+        ],
+        "nutritional_highlights": ["Very high in vitamin C", "Contains capsaicin", "Low calories"],
+        "beginner_notes": "The heat is in the seeds and white membrane inside. For mild heat, remove them. For more heat, keep them. ALWAYS wash hands after handling, and never touch your eyes! If you find them too hot, dairy (yogurt, milk) helps neutralize the burn, not water.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store, Indian/Asian markets have more varieties",
+        "what_to_look_for": "Firm, shiny, bright green. Avoid soft, wrinkled, or discolored ones.",
+        "featured": True,
+        "popularity": 90
+    },
+    
+    {
+        "name": "ginger",
+        "display_name": "Fresh Ginger",
+        "alternate_names": ["adrak", "ginger root", "fresh ginger root"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1615485500834-bc10199bc727?w=400",
+            "comparison": [
+                {"url": "", "caption": "Whole ginger root"},
+                {"url": "", "caption": "Sliced/grated ginger"}
+            ],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Tan/beige skin, pale yellow flesh inside",
+            "shape": "Knobby, irregular root with finger-like branches",
+            "size": "Varies - typically 5-15cm pieces",
+            "texture": "Thin papery skin, fibrous flesh",
+            "visual_description": "Knobby, irregularly shaped root with tan skin. When cut, the inside is pale yellow and fibrous. Young ginger has thinner skin and is less fibrous."
+        },
+        "similar_to": [
+            {
+                "name": "Galangal",
+                "how_to_differentiate": "Galangal is harder, has pink tinge to skin, and tastes more piney/citrusy. Ginger is softer with tan skin and a sharper, spicier taste."
+            }
+        ],
+        "confused_with": [
+            {
+                "name": "Galangal",
+                "warning": "They're both roots but taste very different! Galangal has harder flesh and piney flavor. They're not interchangeable in recipes."
+            }
+        ],
+        "aroma": "Sharp, warm, slightly sweet, peppery",
+        "taste": "Warm, spicy, slightly sweet, with a bite",
+        "common_uses": [
+            "Indian curries and chai",
+            "Stir-fries",
+            "Marinades",
+            "Ginger tea",
+            "Baking (gingerbread)"
+        ],
+        "cuisines": ["Indian", "Chinese", "Japanese", "Thai", "Caribbean"],
+        "preparation_tips": [
+            "Peel with a spoon (easier than a knife)",
+            "Grate on a microplane for fine texture",
+            "Mince for curries, slice for stir-fries",
+            "Fresh ginger is MUCH more flavorful than dried",
+            "1 inch fresh = 1/4 tsp ground ginger (NOT a good substitute)"
+        ],
+        "storage": {
+            "method": "Unpeeled in fridge, or freeze for longer storage",
+            "shelf_life": "3-4 weeks in fridge, months frozen",
+            "signs_of_spoilage": ["Moldy spots", "Wrinkled/soft skin", "Gray or mushy flesh"]
+        },
+        "substitutes": [
+            {"name": "Ground ginger", "ratio": "1 inch fresh = 1/4 tsp ground", "notes": "Dried is much less flavorful, use as last resort"},
+            {"name": "Ginger paste", "ratio": "1 inch fresh = 1 tsp paste", "notes": "Good substitute, keeps longer"}
+        ],
+        "nutritional_highlights": ["Anti-inflammatory", "Aids digestion", "Helps with nausea"],
+        "beginner_notes": "Peeling tip: Use the edge of a spoon to scrape off the skin - it's way easier than using a knife and wastes less ginger! You can also freeze ginger and grate it directly from frozen - it actually grates easier when frozen.",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store produce section",
+        "what_to_look_for": "Firm, smooth skin, heavy for its size. Avoid soft, wrinkled, or moldy pieces.",
+        "featured": True,
+        "popularity": 95
+    },
+    
+    {
+        "name": "garlic",
+        "display_name": "Garlic",
+        "alternate_names": ["lahsun", "garlic cloves", "fresh garlic"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1540148426945-6cf22a6b2f85?w=400",
+            "comparison": [
+                {"url": "", "caption": "Whole garlic bulb"},
+                {"url": "", "caption": "Individual cloves"}
+            ],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "White papery skin, pale cream/white cloves inside",
+            "shape": "Bulb made of individual cloves wrapped in papery skin",
+            "size": "Bulb 4-6cm, individual cloves 2-4cm",
+            "texture": "Papery outer skin, firm flesh inside cloves",
+            "visual_description": "A bulb made up of multiple cloves, each wrapped in papery skin. When you break open a bulb, you'll find 8-12 individual cloves arranged around a central stem."
+        },
+        "similar_to": [
+            {
+                "name": "Elephant garlic",
+                "how_to_differentiate": "Elephant garlic is MUCH larger (size of an onion) and milder. Regular garlic is smaller and more pungent."
+            },
+            {
+                "name": "Shallots",
+                "how_to_differentiate": "Shallots are longer/oval shaped with purple-brown skin. Garlic is rounder with white papery skin."
+            }
+        ],
+        "confused_with": [],
+        "aroma": "Pungent, sharp, sulfurous (stronger when crushed)",
+        "taste": "Sharp, pungent when raw; sweet, nutty when roasted",
+        "common_uses": [
+            "Base for almost all savory cooking worldwide",
+            "Garlic bread",
+            "Roasted garlic spread",
+            "Marinades and sauces",
+            "Stir-fries and curries"
+        ],
+        "cuisines": ["Italian", "Indian", "Chinese", "French", "Mediterranean", "Korean"],
+        "preparation_tips": [
+            "Crush cloves with flat side of knife to loosen skin",
+            "Mincing releases more flavor than slicing",
+            "Don't burn garlic - it becomes bitter (add after onions)",
+            "Roast whole bulbs for sweet, spreadable garlic",
+            "Let crushed garlic sit 10 minutes before cooking for health benefits"
+        ],
+        "storage": {
+            "method": "Cool, dry, dark place with ventilation (not fridge!)",
+            "shelf_life": "3-5 months whole, 1 week once broken",
+            "signs_of_spoilage": ["Green sprouts", "Soft/mushy cloves", "Mold", "Dried out"]
+        },
+        "substitutes": [
+            {"name": "Garlic powder", "ratio": "1 clove = 1/8 tsp powder", "notes": "Convenient but less flavorful"},
+            {"name": "Garlic paste", "ratio": "1 clove = 1/2 tsp paste", "notes": "Good substitute, keeps longer"},
+            {"name": "Shallots", "ratio": "Not a real substitute", "notes": "Can add similar depth but different flavor"}
+        ],
+        "nutritional_highlights": ["Immune boosting", "Contains allicin (antimicrobial)", "Heart healthy"],
+        "beginner_notes": "Garlic burns easily and becomes bitter, so add it AFTER your onions have started cooking, not at the same time. The green sprout in the center of old garlic is bitter - remove it. Crushing garlic releases more flavor than slicing!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store produce section",
+        "what_to_look_for": "Firm bulbs, tight skin, no soft spots or sprouting. Heavier bulbs are usually fresher.",
+        "featured": True,
+        "popularity": 100
+    },
+    
+    {
+        "name": "onion",
+        "display_name": "Onion",
+        "alternate_names": ["pyaz", "pyaaz", "yellow onion", "white onion", "red onion"],
+        "category": "vegetable",
+        "images": {
+            "primary": "https://images.unsplash.com/photo-1518977956812-cd3dbadaaf31?w=400",
+            "comparison": [
+                {"url": "", "caption": "Yellow onion"},
+                {"url": "", "caption": "Red onion"}
+            ],
+            "closeup": ""
+        },
+        "appearance": {
+            "color": "Yellow/brown skin (yellow onion), purple skin (red), white skin (white)",
+            "shape": "Round to oval bulb",
+            "size": "5-10cm diameter",
+            "texture": "Papery outer skin, layers of firm flesh",
+            "visual_description": "Round bulbs with papery outer skin. Yellow onions have golden-brown skin and pale yellow layers. Red onions have purple skin and pink-white layers. White onions have white skin throughout."
+        },
+        "similar_to": [
+            {
+                "name": "Shallots",
+                "how_to_differentiate": "Shallots are smaller, elongated, with milder flavor. Onions are larger and rounder with stronger flavor."
+            }
+        ],
+        "confused_with": [],
+        "aroma": "Sharp, pungent (makes you cry!), sulfurous",
+        "taste": "Sharp when raw, sweet when cooked, varies by type",
+        "common_uses": [
+            "Base for almost all savory cooking",
+            "Salads (raw)",
+            "Caramelized onions",
+            "Soups and stews",
+            "Curries and stir-fries"
+        ],
+        "cuisines": ["Universal - used in almost all cuisines"],
+        "preparation_tips": [
+            "Chill onion before cutting to reduce tears",
+            "Cut near running water or ventilation",
+            "Yellow onions are best for cooking (caramelize well)",
+            "Red onions are best raw in salads",
+            "White onions are milder, good for Mexican food"
+        ],
+        "storage": {
+            "method": "Cool, dry, dark place with ventilation (not with potatoes!)",
+            "shelf_life": "2-3 months whole",
+            "signs_of_spoilage": ["Soft spots", "Mold", "Sprouting", "Strong off-smell"]
+        },
+        "substitutes": [
+            {"name": "Shallots", "ratio": "3 shallots = 1 medium onion", "notes": "Milder, sweeter flavor"},
+            {"name": "Leeks", "ratio": "1 leek = 1 onion", "notes": "Milder, good in soups"},
+            {"name": "Green onions", "ratio": "6 green onions = 1 small onion", "notes": "More delicate"}
+        ],
+        "nutritional_highlights": ["Contains quercetin (antioxidant)", "Prebiotic fiber", "Vitamin C"],
+        "beginner_notes": "Crying while cutting onions? Try: chilling the onion first, cutting near a vent/fan, or cutting underwater. The tears are caused by sulfur compounds released when you cut through the cells. Cooking breaks these down, which is why cooked onions don't make you cry!",
+        "difficulty_level": "beginner",
+        "where_to_find": "Any grocery store",
+        "what_to_look_for": "Firm, dry skin, no soft spots or sprouting. Heavy for size means more moisture inside.",
+        "featured": True,
+        "popularity": 100
     }
 ]
 
