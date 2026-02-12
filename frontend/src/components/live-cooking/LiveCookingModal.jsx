@@ -270,7 +270,7 @@ export default function LiveCookingModal() {
 
                   {/* Exit hint */}
                   <motion.button
-                    onClick={onClose}
+                    onClick={closeModal}
                     className="flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors"
                     whileHover={{ y: -2 }}
                     data-testid="live-cooking-exit-btn"
