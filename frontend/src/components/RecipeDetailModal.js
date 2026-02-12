@@ -256,19 +256,24 @@ const parseDetailedRecipe = (markdown) => {
       }
     }
     
-    // Parse Final Step if exists
-    const finalMatch = instructionText.match(/\*\*Final Step\*\*\s*\(([^)]+)\)\s*([\s\S]*?)$/i);
+    // Parse Final Step if exists - handle both formats
+    const finalMatch = instructionText.match(/\*\*Final Step\*\*\s*\(([^)]+)\)\s*([\s\S]*?)$/i) ||
+                       instructionText.match(/\*\*Final Step\s*\(([^)]+)\)\*\*\s*([\s\S]*?)$/i);
     if (finalMatch) {
       const time = finalMatch[1].trim();
       let text = finalMatch[2].trim();
       const servingSuggestion = text.match(/\*Serving Suggestion:\*\s*([^\n*]+)/i)?.[1]?.trim() || '';
-      text = text.replace(/\*Serving Suggestion:\*[^\n]*/gi, '').trim();
+      const visualCue = text.match(/\*Visual Cue:\*\s*([^\n*]+)/i)?.[1]?.trim() || '';
+      text = text
+        .replace(/\*Serving Suggestion:\*[^\n]*/gi, '')
+        .replace(/\*Visual Cue:\*[^\n]*/gi, '')
+        .trim();
       
       sections.instructions.push({
         step: sections.instructions.length + 1,
         time,
         text,
-        visualCue: '',
+        visualCue,
         important: '',
         technique: '',
         servingSuggestion,
