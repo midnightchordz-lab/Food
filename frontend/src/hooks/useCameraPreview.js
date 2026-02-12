@@ -15,8 +15,8 @@ export function useCameraPreview({ enabled = false, preferRearCamera = true }) {
   const [isActive, setIsActive] = useState(false);
   const [hasPermission, setHasPermission] = useState(null);
   const [error, setError] = useState(null);
+  const [stream, setStream] = useState(null);
   const streamRef = useRef(null);
-  const videoRef = useRef(null);
 
   // Get camera constraints
   const getCameraConstraints = useCallback(() => {
@@ -37,34 +37,6 @@ export function useCameraPreview({ enabled = false, preferRearCamera = true }) {
     return constraints;
   }, [preferRearCamera]);
 
-  // Initialize camera stream
-  const initCamera = useCallback(async () => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      console.log('[CameraPreview] getUserMedia not supported');
-      setError('Camera not supported');
-      return null;
-    }
-
-    try {
-      const constraints = getCameraConstraints();
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      streamRef.current = stream;
-      setHasPermission(true);
-      setIsActive(true);
-      setError(null);
-      
-      console.log('[CameraPreview] Camera stream initialized');
-      return stream;
-    } catch (err) {
-      // Fail silently - log but don't throw
-      console.log('[CameraPreview] Camera access denied or unavailable:', err.name);
-      setHasPermission(false);
-      setError(err.name);
-      return null;
-    }
-  }, [getCameraConstraints]);
-
   // Stop camera stream
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -74,18 +46,41 @@ export function useCameraPreview({ enabled = false, preferRearCamera = true }) {
       streamRef.current = null;
       console.log('[CameraPreview] Camera stream stopped');
     }
+    setStream(null);
     setIsActive(false);
   }, []);
 
-  // Attach stream to video element
-  const attachToVideo = useCallback((videoElement) => {
-    if (videoElement && streamRef.current) {
-      videoElement.srcObject = streamRef.current;
-      videoRef.current = videoElement;
-      return true;
+  // Initialize camera stream
+  const initCamera = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      console.log('[CameraPreview] getUserMedia not supported');
+      setError('Camera not supported');
+      return;
     }
-    return false;
-  }, []);
+
+    // Already have a stream
+    if (streamRef.current) {
+      return;
+    }
+
+    try {
+      const constraints = getCameraConstraints();
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      streamRef.current = newStream;
+      setStream(newStream);
+      setHasPermission(true);
+      setIsActive(true);
+      setError(null);
+      
+      console.log('[CameraPreview] Camera stream initialized');
+    } catch (err) {
+      // Fail silently - log but don't throw
+      console.log('[CameraPreview] Camera access denied or unavailable:', err.name);
+      setHasPermission(false);
+      setError(err.name);
+    }
+  }, [getCameraConstraints]);
 
   // Main effect - start/stop camera based on enabled prop
   useEffect(() => {
@@ -104,9 +99,7 @@ export function useCameraPreview({ enabled = false, preferRearCamera = true }) {
     isActive,
     hasPermission,
     error,
-    stream: streamRef.current,
-    attachToVideo,
-    videoRef,
+    stream,
   };
 }
 
