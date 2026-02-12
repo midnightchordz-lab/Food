@@ -278,9 +278,9 @@ INGREDIENT_DATA = [
         "alternate_names": ["haldi", "turmeric", "ground turmeric", "curcuma"],
         "category": "spice_ground",
         "images": {
-            "primary": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400",
+            "primary": "https://images.unsplash.com/photo-1615485500834-bc10199bc727?w=400",
             "comparison": [
-                {"url": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400", "caption": "Ground powder"},
+                {"url": "https://images.unsplash.com/photo-1768729340164-7d83fe18384d?w=400", "caption": "Ground powder"},
                 {"url": "", "caption": "Fresh turmeric root"}
             ],
             "closeup": ""
