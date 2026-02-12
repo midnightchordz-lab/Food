@@ -300,16 +300,19 @@ async def get_by_name(ingredient_name: str):
                 })
         
         # Final fallback: extract main ingredient word (avoiding generic words)
+        # But be more strict - only match if it's really a good match
         if not ingredient:
             generic_words = ['and', 'or', 'the', 'a', 'an', 'of', 'for', 'to', 'fresh', 'dried', 
                            'chopped', 'minced', 'sliced', 'whole', 'ground', 'powder', 'leaves', 
-                           'seeds', 'pods', 'pieces', 'cloves', 'finely', 'roughly']
+                           'seeds', 'pods', 'pieces', 'cloves', 'finely', 'roughly', 'black', 'white',
+                           'red', 'green', 'yellow']  # Added color words to avoid false matches
             words = [w for w in normalized.split() if w not in generic_words and len(w) > 2]
             
             if words:
                 # Try first significant word with word boundary
+                # But require it to be at the START of the name (not just anywhere)
                 main_word = words[0]
-                search_regex = {"$regex": f"\\b{re.escape(main_word)}\\b", "$options": "i"}
+                search_regex = {"$regex": f"^{re.escape(main_word)}", "$options": "i"}
                 ingredient = await db.ingredient_guide.find_one({
                     "$or": [
                         {"name": search_regex},
