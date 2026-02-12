@@ -9,6 +9,20 @@ html, body, #root {
   height: 100%;
 }
 
+/* Ensure fixed positioning works for fullscreen modals */
+[data-radix-portal] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+}
+
+/* Override any transforms that might affect fixed positioning */
+html, body {
+  transform: none !important;
+  filter: none !important;
+  perspective: none !important;
+}
+
 body {
     margin: 0;
     font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
