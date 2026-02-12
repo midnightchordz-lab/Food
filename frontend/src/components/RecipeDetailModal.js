@@ -125,15 +125,18 @@ const parseDetailedRecipe = (markdown) => {
   if (instructionsSection) {
     const instructionText = instructionsSection[1];
     
-    // Parse step format: **Step X** (Y minutes)
-    const stepMatches = instructionText.matchAll(/\*\*(?:Step\s*)?(\d+)\*\*\s*\(([^)]+)\)\s*([\s\S]*?)(?=\*\*(?:Step|Final)|$)/gi);
+    // Parse step format: **Step X** (Y minutes) OR **Step X (Y minutes)**
+    // Format 1: **Step 1** (10 minutes) - step number outside parens
+    // Format 2: **Step 1 (10 minutes)** - time inside bold
+    const stepMatches = instructionText.matchAll(/\*\*(?:Step\s*)?(\d+)(?:\*\*\s*\(([^)]+)\)|\s*\(([^)]+)\)\*\*)\s*([\s\S]*?)(?=\*\*(?:Step|Final)|$)/gi);
     for (const match of stepMatches) {
       const stepNum = parseInt(match[1]);
-      const time = match[2].trim();
-      let text = match[3].trim();
+      const time = (match[2] || match[3] || '').trim();
+      let text = (match[4] || '').trim();
       
-      // Extract visual cue
+      // Extract visual cue and audio cue
       const visualCue = text.match(/\*Visual Cue:\*\s*([^\n*]+)/i)?.[1]?.trim() || '';
+      const audioCue = text.match(/\*Audio Cue:\*\s*([^\n*]+)/i)?.[1]?.trim() || '';
       const important = text.match(/\*Important:\*\s*([^\n*]+)/i)?.[1]?.trim() || '';
       const technique = text.match(/\*Technique[^:]*:\*\s*([^\n*]+)/i)?.[1]?.trim() || '';
       const servingSuggestion = text.match(/\*Serving Suggestion:\*\s*([^\n*]+)/i)?.[1]?.trim() || '';
@@ -141,6 +144,7 @@ const parseDetailedRecipe = (markdown) => {
       // Clean main text
       text = text
         .replace(/\*Visual Cue:\*[^\n]*/gi, '')
+        .replace(/\*Audio Cue:\*[^\n]*/gi, '')
         .replace(/\*Important:\*[^\n]*/gi, '')
         .replace(/\*Technique[^:]*:\*[^\n]*/gi, '')
         .replace(/\*Serving Suggestion:\*[^\n]*/gi, '')
@@ -150,7 +154,7 @@ const parseDetailedRecipe = (markdown) => {
         step: stepNum,
         time,
         text,
-        visualCue,
+        visualCue: visualCue || audioCue, // Use audio cue as fallback for visual
         important,
         technique,
         servingSuggestion
