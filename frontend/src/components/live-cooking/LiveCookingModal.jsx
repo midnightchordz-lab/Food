@@ -168,27 +168,8 @@ export default function LiveCookingModal() {
                         textShadow: "0 4px 30px rgba(0,0,0,0.5)",
                       }}
                     >
-                      {currentStepText || "Preparing your next step..."}
+                      {currentStepText}
                     </motion.h1>
-
-                    {/* Timer display */}
-                    {timerLabel && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.4 }}
-                        className="mt-8 inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10"
-                      >
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                        />
-                        <span className="text-2xl font-mono font-bold text-white">
-                          {timerLabel}
-                        </span>
-                      </motion.div>
-                    )}
                   </motion.div>
                 </div>
 
