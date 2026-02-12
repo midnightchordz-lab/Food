@@ -68,8 +68,30 @@ export default function LiveCookingModal() {
             >
               {/* Cinematic Background */}
               <div className="absolute inset-0">
-                {/* Animated background image */}
-                {recipeImage && (
+                {/* Video background (if available) */}
+                {recipeVideo && (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    controls={false}
+                    loop
+                    className="w-full h-full object-cover absolute inset-0"
+                    style={{ opacity: 0.5 }}
+                    onLoadedMetadata={() => {
+                      if (videoRef.current) {
+                        videoRef.current.muted = false;
+                        videoRef.current.volume = 1;
+                        videoRef.current.play().catch(() => {});
+                      }
+                    }}
+                  >
+                    <source src={recipeVideo} type="video/mp4" />
+                  </video>
+                )}
+                
+                {/* Animated background image (fallback if no video) */}
+                {!recipeVideo && recipeImage && (
                   <motion.img
                     src={recipeImage}
                     alt="Recipe"
