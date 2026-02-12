@@ -603,42 +603,40 @@ const BuyIngredientsSheet = ({
             
             {/* Region Selector */}
             <div className="mb-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full rounded-xl border-gray-200 justify-between"
-                    data-testid="region-selector"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-[#5D7A5D]" />
-                      <span>
-                        {countryInfo?.country 
-                          ? `${AVAILABLE_COUNTRIES.find(c => c.code === countryInfo.countryCode)?.flag || '🌍'} ${countryInfo.country}`
-                          : 'Select Region'
-                        }
-                      </span>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
+              <Select
+                value={countryInfo?.countryCode || ''}
+                onValueChange={handleCountryChange}
+              >
+                <SelectTrigger 
+                  className="w-full rounded-xl border-gray-200"
+                  data-testid="region-selector"
+                >
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-[#5D7A5D]" />
+                    <SelectValue placeholder="Select Region">
+                      {countryInfo?.country 
+                        ? `${AVAILABLE_COUNTRIES.find(c => c.code === countryInfo.countryCode)?.flag || '🌍'} ${countryInfo.country}`
+                        : 'Select Region'
+                      }
+                    </SelectValue>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="z-[100]">
                   {AVAILABLE_COUNTRIES.map((country) => (
-                    <DropdownMenuItem
+                    <SelectItem
                       key={country.code}
-                      onClick={() => handleCountryChange(country.code)}
+                      value={country.code}
                       className="cursor-pointer"
                       data-testid={`region-option-${country.code}`}
                     >
-                      <span className="mr-2">{country.flag}</span>
-                      {country.name}
-                      {countryInfo?.countryCode === country.code && (
-                        <Check className="w-4 h-4 ml-auto text-[#5D7A5D]" />
-                      )}
-                    </DropdownMenuItem>
+                      <span className="flex items-center gap-2">
+                        <span>{country.flag}</span>
+                        {country.name}
+                      </span>
+                    </SelectItem>
                   ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </SelectContent>
+              </Select>
               {deliveryApps.length > 0 && (
                 <p className="text-xs text-gray-400 mt-1 px-1">
                   {deliveryApps.length} delivery app{deliveryApps.length > 1 ? 's' : ''} available in {countryInfo?.country || 'your region'}
