@@ -101,19 +101,27 @@ export default function LiveCookingModal() {
     }
   };
 
-  // Trigger voice narration and video when modal opens
+  // Handle next step - trigger voice narration
+  const handleNextStep = () => {
+    nextStep();
+    // Voice will be triggered by the currentStep change effect below
+  };
+
+  // Handle prev step - trigger voice narration  
+  const handlePrevStep = () => {
+    prevStep();
+    // Voice will be triggered by the currentStep change effect below
+  };
+
+  // Video playback when modal opens (no voice auto-play)
   useEffect(() => {
     if (!open) return;
     
-    // Start voice narration for current step
-    readCurrentStep();
-    
-    // Start video playback
+    // Only start video playback, NOT voice
     if (videoRef.current && recipeVideo) {
       setTimeout(() => {
         if (videoRef.current) {
-          videoRef.current.muted = false;
-          videoRef.current.volume = 1;
+          videoRef.current.muted = true; // Start muted until user clicks play
           videoRef.current.play().catch(() => {});
         }
       }, 100);
@@ -121,13 +129,69 @@ export default function LiveCookingModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Read step when step changes
+  // Track if user has started playback (clicked play or navigated)
+  const hasUserStarted = useRef(false);
+
+  // Read step when step changes (only if user has started)
   useEffect(() => {
     if (!open) return;
+    if (!hasUserStarted.current) return; // Don't auto-play on open
     
     readCurrentStep();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
+
+  // Modified play handler - start voice on first play
+  const handleTogglePlayWithVoice = () => {
+    const newIsPlaying = !isPlaying;
+    togglePlay();
+    
+    // Mark that user has started
+    if (newIsPlaying && !hasUserStarted.current) {
+      hasUserStarted.current = true;
+      readCurrentStep(); // Start voice on first play
+    }
+    
+    // Sync video
+    if (videoRef.current) {
+      if (newIsPlaying) {
+        videoRef.current.muted = false;
+        videoRef.current.volume = 1;
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
+    }
+    
+    // Sync audio
+    if (audioRef.current && audioRef.current.src) {
+      if (newIsPlaying) {
+        audioRef.current.play().catch(() => {});
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  };
+
+  // Handle next/prev with voice trigger
+  const handleNextWithVoice = () => {
+    hasUserStarted.current = true;
+    nextStep();
+    readCurrentStep();
+  };
+
+  const handlePrevWithVoice = () => {
+    hasUserStarted.current = true;
+    prevStep();
+    readCurrentStep();
+  };
+
+  // Reset hasUserStarted when modal closes
+  useEffect(() => {
+    if (!open) {
+      hasUserStarted.current = false;
+    }
+  }, [open]);
 
   // Sync video play/pause events with modal state and audio
   useEffect(() => {
