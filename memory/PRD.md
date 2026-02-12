@@ -174,6 +174,35 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
+### Live Cooking Modal with Voice Narration ✅ VERIFIED WORKING (Feb 12, 2026)
+A premium cinematic full-screen cooking experience that guides users step-by-step through recipes with voice narration.
+
+**Features Verified by Testing:**
+- ✅ True full-screen modal with cinematic video/image background
+- ✅ Voice narration auto-plays when modal opens
+- ✅ Voice narration triggers when navigating steps (Next/Prev)
+- ✅ Step counter shows "Step X of Y" format
+- ✅ Progress bar with animated gradient
+- ✅ Play/Pause, Next, Prev buttons all functional
+- ✅ Close button and ESC key work
+- ✅ Uses Zustand global store for state management
+
+**Technical Implementation:**
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Main modal component
+- `frontend/src/stores/useLiveCooking.js` - Zustand store with openModal, nextStep, prevStep, togglePlay
+- `backend/routes/audio.py` - `/api/audio/step` endpoint returns audio URLs
+
+**Integration Point:**
+- RecipeDetailModal.js line 771 - "Start Step-by-Step Cooking Mode" button calls `openLiveCooking()`
+
+**Testing Status:** All tests passed (iteration_59.json)
+- Modal opens: ✅
+- Voice auto-plays: ✅
+- Navigation works: ✅
+- Audio API returns 200: ✅
+
+---
+
 ### Visual Ingredient Identification System ✅ NEW
 Implemented a visual guide system that helps beginner cooks identify ingredients they don't recognize:
 
