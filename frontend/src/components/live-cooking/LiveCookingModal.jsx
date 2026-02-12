@@ -1,34 +1,41 @@
 import React from "react";
 import { Dialog, DialogContent, DialogPortal } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, ChevronLeft, ChevronRight, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLiveCooking } from "@/stores/useLiveCooking";
 
 /**
  * LiveCookingModal - Premium Cinematic Design
- *
- * STRICT RULES FOLLOWED:
- * - Purely presentational UI layer
- * - Receives ALL state + handlers via props
- * - Does NOT create cooking logic
- * - Does NOT modify global state
- * - Visual-only upgrade with Framer Motion animations
+ * Root-mounted for true fullscreen experience
+ * Uses Zustand store for global state management
  */
 
-export default function LiveCookingModal({
-  open,
-  onClose,
-  recipeImage,
-  currentStepText,
-  helperText,
-  isPlaying,
-  onPrev,
-  onNext,
-  onTogglePlay,
-  timerLabel,
-}) {
+export default function LiveCookingModal() {
+  const { 
+    open, 
+    closeModal, 
+    recipeImage, 
+    instructions, 
+    currentStep, 
+    isPlaying,
+    nextStep,
+    prevStep,
+    togglePlay
+  } = useLiveCooking();
+
+  // Get current step text
+  const currentStepText = instructions[currentStep]?.text || 
+                          instructions[currentStep]?.instruction || 
+                          instructions[currentStep] || 
+                          "Preparing your next step...";
+  
+  const helperText = instructions.length > 0 
+    ? `Step ${currentStep + 1} of ${instructions.length}` 
+    : null;
+
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose?.()}>
+    <Dialog open={open} onOpenChange={(v) => !v && closeModal()}>
       <DialogPortal>
         <DialogContent 
           className="fixed inset-0 h-[100dvh] w-[100vw] max-w-none rounded-none border-0 bg-black p-0 m-0"
