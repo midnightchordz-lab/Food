@@ -358,6 +358,18 @@ export default function LiveCookingModal() {
                         Live Cooking
                       </span>
                     </motion.div>
+                    
+                    {/* Hands-free indicator */}
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10"
+                      title="Voice commands active: say 'next', 'pause', 'play', or 'repeat'"
+                    >
+                      <Mic className="w-3 h-3 text-emerald-400" />
+                      <span className="text-xs text-white/60">Hands-free</span>
+                    </motion.div>
                   </div>
 
                   {/* Close button */}
