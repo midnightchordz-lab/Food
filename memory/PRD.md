@@ -174,6 +174,36 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
+### RecipeDetailModal UI Redesign ✅ IMPLEMENTED (Feb 12, 2026)
+Redesigned RecipeDetailModal with a clean two-column layout matching user's reference design.
+
+**New Layout (Desktop 1024px+):**
+- Left column: Title, meta info (servings, prep/cook time), action bar (Cook, Groceries, Save, Share, Print), description, voice player, instructions with step checkmarks, collapsible sections
+- Right column: AI-generated recipe image, ingredients list with checkmarks and Add All button, equipment needed
+
+**New Layout (Mobile):**
+- Hero image at top with AI badge
+- Single-column content flow
+- Ingredients section appears below instructions
+
+**Key Features Preserved:**
+- AI image generation with loading state
+- Voice Cooking Guide
+- Step-by-step instructions with visual cues and important notes
+- Ingredient checkmarks and Add to Cart
+- Collapsible sections: Chef's Tips, Drink Pairings, Nutrition, Storage
+- Star rating
+- LiveCookingModal integration
+- BuyIngredientsSheet
+- IngredientInfoPopup
+
+**Testing:**
+- Code review: 100% verified (iteration_68.json)
+- UI testing: Blocked by daily recipe limit (5/5 used)
+- Components verified: Two-column layout, collapsible sections, action buttons, ingredients list
+
+---
+
 ### Login Redirect Fix ✅ VERIFIED WORKING (Feb 12, 2026)
 Fixed bug where login modal closed after successful authentication but didn't navigate to /chat page.
 
