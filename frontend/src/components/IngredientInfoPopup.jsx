@@ -87,6 +87,12 @@ const IngredientInfoPopup = ({ ingredientName, isOpen, onClose }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[85vh] p-0 overflow-hidden" data-testid="ingredient-info-popup">
+        {/* Hidden but accessible title and description */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>Ingredient Guide: {ingredientName}</DialogTitle>
+          <DialogDescription>Visual guide and information about {ingredientName}</DialogDescription>
+        </DialogHeader>
+        
         {/* Loading State */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center p-12">
