@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   ShoppingCart, Check, MapPin, ExternalLink, Loader2, 
   BookmarkPlus, ChevronRight, Store, Clock, Globe, DollarSign,
-  TrendingDown, ChevronDown, Plus, Trash2, Copy, Download,
+  TrendingDown, Plus, Trash2, Copy, Download,
   ListPlus, FolderOpen, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
