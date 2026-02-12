@@ -1,0 +1,74 @@
+{
+  "summary": "Tested RecipeDetailModal instruction parsing fix. Backend API (/api/recipes/detailed) returns correct markdown format **Step X (Y minutes)**. All 10 pytest tests passed validating both backend response and frontend regex parsing logic. Frontend UI testing limited due to daily recipe limit (5/5 used).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Full UI testing of RecipeDetailModal",
+        "issue": "Unable to perform full UI test - daily recipe limit reached (5/5). Cannot generate new recipes to trigger RecipeDetailModal.",
+        "affected_selectors": ["[data-testid='recipe-detail-modal']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_instruction_parsing.py",
+    "/app/test_reports/pytest/pytest_instruction_parsing.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "VERIFIED: RecipeDetailModal.js regex fix on line 131 correctly handles both formats:",
+    "  - Format 1: **Step X** (Y minutes) - time outside bold tags",
+    "  - Format 2: **Step X (Y minutes)** - time inside bold tags",
+    "VERIFIED: Time extraction using (match[2] || match[3] || '').trim() on line 134",
+    "VERIFIED: Audio Cue extraction added on line 139",
+    "VERIFIED: visualCue fallback to audioCue on line 157",
+    "Backend /api/recipes/detailed returns Format 2 (time inside bold) - confirmed via API test",
+    "Backend returns Visual Cue and Audio Cue markers - confirmed 9 visual cues and 1 audio cue in Kerala Egg Curry recipe"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_instruction_parsing.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 tests passed)",
+    "frontend": "Code review verified, UI testing blocked by daily limit"
+  },
+  "test_credentials": {
+    "email": "demo@demo.com",
+    "password": "Demo1234!"
+  },
+  "seed_data_creation": "None required - used cached Kerala Egg Curry with Appam recipe",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Instruction parsing fix is verified via code review and backend tests. Frontend UI testing blocked by daily recipe limit (5/5). The fix handles both **Step X** (Y minutes) and **Step X (Y minutes)** formats. Backend confirmed to return Format 2 (**Step X (Y minutes)**). To fully test UI: wait for daily limit reset or use a different user account.",
+  "backend_test_results": {
+    "test_file": "/app/backend/tests/test_instruction_parsing.py",
+    "total_tests": 10,
+    "passed": 10,
+    "failed": 0,
+    "tests": [
+      "test_detailed_recipe_returns_step_format_1 - PASSED",
+      "test_detailed_recipe_contains_visual_cues - PASSED",
+      "test_detailed_recipe_contains_audio_cues - PASSED",
+      "test_detailed_recipe_has_step_by_step_section - PASSED",
+      "test_detailed_recipe_steps_have_instruction_text - PASSED",
+      "test_regex_parses_format_1_time_inside_bold - PASSED",
+      "test_regex_parses_format_2_time_outside_bold - PASSED",
+      "test_regex_extracts_visual_cue - PASSED",
+      "test_regex_extracts_audio_cue - PASSED",
+      "test_full_instruction_parsing_simulation - PASSED"
+    ]
+  },
+  "verified_fix_details": {
+    "issue": "Step-by-Step Instructions not displaying in RecipeDetailModal",
+    "cause": "Regex only handled **Step X** (Y minutes) format but backend returns **Step X (Y minutes)** format",
+    "fix_location": "/app/frontend/src/components/RecipeDetailModal.js line 131",
+    "old_regex": "/\\*\\*(?:Step\\s*)?(\\d+)\\*\\*\\s*\\(([^)]+)\\)/",
+    "new_regex": "/\\*\\*(?:Step\\s*)?(\\d+)(?:\\*\\*\\s*\\(([^)]+)\\)|\\s*\\(([^)]+)\\)\\*\\*)/",
+    "fix_verified": true
+  }
+}
