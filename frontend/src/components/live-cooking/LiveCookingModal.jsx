@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
-import { Dialog, DialogContent, DialogPortal } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogPortal, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, Camera, CameraOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,6 +7,7 @@ import { useLiveCooking } from "@/stores/useLiveCooking";
 import { useHandsFreeControls } from "@/hooks/useHandsFreeControls";
 import { useCameraPreview } from "@/hooks/useCameraPreview";
 import { useAIObserver, ObserverEvents } from "@/hooks/useAIObserver";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
 
 const API = process.env.REACT_APP_BACKEND_URL;
