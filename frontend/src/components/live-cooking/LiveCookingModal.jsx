@@ -96,26 +96,23 @@ export default function LiveCookingModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Track if user has started playback (clicked play or navigated)
-  const hasUserStarted = useRef(false);
-
   // Read step when step changes (only if user has started)
   useEffect(() => {
     if (!open) return;
-    if (!hasUserStarted.current) return; // Don't auto-play on open
+    if (!hasUserStartedRef.current) return; // Don't auto-play on open
     
     readCurrentStep();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
   // Modified play handler - start voice on first play
-  const handleTogglePlayWithVoice = () => {
+  const handleTogglePlayWithVoice = useCallback(() => {
     const newIsPlaying = !isPlaying;
     togglePlay();
     
     // Mark that user has started
-    if (newIsPlaying && !hasUserStarted.current) {
-      hasUserStarted.current = true;
+    if (newIsPlaying && !hasUserStartedRef.current) {
+      hasUserStartedRef.current = true;
       readCurrentStep(); // Start voice on first play
     }
     
@@ -138,27 +135,44 @@ export default function LiveCookingModal() {
         audioRef.current.pause();
       }
     }
-  };
+  }, [isPlaying, togglePlay]);
 
-  // Handle next/prev with voice trigger
-  const handleNextWithVoice = () => {
-    hasUserStarted.current = true;
+  // Handle next with voice trigger
+  const handleNextWithVoice = useCallback(() => {
+    hasUserStartedRef.current = true;
     nextStep();
     readCurrentStep();
-  };
+  }, [nextStep]);
 
-  const handlePrevWithVoice = () => {
-    hasUserStarted.current = true;
+  // Handle prev with voice trigger
+  const handlePrevWithVoice = useCallback(() => {
+    hasUserStartedRef.current = true;
     prevStep();
     readCurrentStep();
-  };
+  }, [prevStep]);
+
+  // Handle repeat - replay current step narration
+  const handleRepeat = useCallback(() => {
+    hasUserStartedRef.current = true;
+    readCurrentStep();
+  }, []);
 
   // Reset hasUserStarted when modal closes
   useEffect(() => {
     if (!open) {
-      hasUserStarted.current = false;
+      hasUserStartedRef.current = false;
     }
   }, [open]);
+
+  // Hands-free controls (voice commands + double clap)
+  useHandsFreeControls({
+    enabled: open,
+    onNext: handleNextWithVoice,
+    onPrev: handlePrevWithVoice,
+    onTogglePlay: handleTogglePlayWithVoice,
+    onRepeat: handleRepeat,
+    isPlaying,
+  });
 
   // Sync video play/pause events with modal state and audio
   useEffect(() => {
