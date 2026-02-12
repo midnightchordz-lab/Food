@@ -468,6 +468,12 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
       
       setDetailedContent(response.data.recipe);
       const parsed = parseDetailedRecipe(response.data.recipe);
+      console.log('[RecipeDetailModal] Parsed recipe:', {
+        title: parsed?.title,
+        instructionsCount: parsed?.instructions?.length || 0,
+        ingredientsCount: parsed?.ingredients?.length || 0,
+        equipmentCount: parsed?.equipment?.length || 0
+      });
       setParsedRecipe(parsed);
       
       // Generate AI image for accurate representation
