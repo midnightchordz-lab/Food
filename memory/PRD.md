@@ -174,32 +174,67 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
+### Hands-Free Cooking Control ✅ NEW (Feb 12, 2026)
+Added hands-free control to Live Cooking Modal for convenience while cooking with messy hands.
+
+**Voice Commands Supported:**
+- "next" / "forward" → Move to next step
+- "back" / "previous" → Move to previous step  
+- "pause" / "stop" → Pause playback
+- "play" / "start" / "resume" → Resume playback
+- "repeat" / "again" → Replay current step narration
+
+**Gesture Support:**
+- Double clap → Move to next step
+
+**Technical Implementation:**
+- `frontend/src/hooks/useHandsFreeControls.js` - Custom hook with Web Speech API + Web Audio API
+- Uses SpeechRecognition for voice commands (continuous listening)
+- Uses AudioContext + frequency analysis for clap detection
+- Silent failure if browser APIs unavailable
+- Proper cleanup on unmount
+
+**UI Indicator:**
+- Subtle "Hands-free" badge with mic icon in top bar
+- Non-intrusive, matches existing design
+
+**Testing Status:** All tests passed (iteration_60.json)
+- Voice commands initialized: ✅
+- Existing controls no regressions: ✅
+- Silent failure in unsupported browsers: ✅
+
+---
+
 ### Live Cooking Modal with Voice Narration ✅ VERIFIED WORKING (Feb 12, 2026)
 A premium cinematic full-screen cooking experience that guides users step-by-step through recipes with voice narration.
 
 **Features Verified by Testing:**
 - ✅ True full-screen modal with cinematic video/image background
-- ✅ Voice narration auto-plays when modal opens
+- ✅ Voice narration starts when user clicks Play or Next (not auto-play)
 - ✅ Voice narration triggers when navigating steps (Next/Prev)
 - ✅ Step counter shows "Step X of Y" format
 - ✅ Progress bar with animated gradient
 - ✅ Play/Pause, Next, Prev buttons all functional
+- ✅ Video/Audio synced with Play/Pause button
 - ✅ Close button and ESC key work
 - ✅ Uses Zustand global store for state management
+- ✅ Hands-free voice commands and double-clap gesture
 
 **Technical Implementation:**
 - `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Main modal component
 - `frontend/src/stores/useLiveCooking.js` - Zustand store with openModal, nextStep, prevStep, togglePlay
+- `frontend/src/hooks/useHandsFreeControls.js` - Voice commands and clap detection
 - `backend/routes/audio.py` - `/api/audio/step` endpoint returns audio URLs
 
 **Integration Point:**
 - RecipeDetailModal.js line 771 - "Start Step-by-Step Cooking Mode" button calls `openLiveCooking()`
 
-**Testing Status:** All tests passed (iteration_59.json)
+**Testing Status:** All tests passed (iteration_59.json, iteration_60.json)
 - Modal opens: ✅
-- Voice auto-plays: ✅
+- Voice on user action: ✅
 - Navigation works: ✅
 - Audio API returns 200: ✅
+- Hands-free controls: ✅
 
 ---
 
