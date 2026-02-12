@@ -128,6 +128,8 @@ const AuthModal = ({ open, onClose }) => {
     if (success) {
       onClose();
       resetForm();
+      // Navigate to chat after successful registration
+      navigate('/chat');
     }
   };
   
