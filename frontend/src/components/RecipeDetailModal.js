@@ -204,6 +204,54 @@ const parseDetailedRecipe = (markdown) => {
       }
     }
     
+    // FALLBACK 3: Simple dash/bullet list format "- Step text" or paragraph format
+    if (sections.instructions.length === 0) {
+      // Try bullet points first
+      const bulletSteps = instructionText.split('\n')
+        .filter(line => line.trim().startsWith('-') || line.trim().startsWith('•'))
+        .map(line => line.replace(/^[-•]\s*/, '').trim())
+        .filter(text => text.length > 10);
+      
+      if (bulletSteps.length > 0) {
+        bulletSteps.forEach((text, idx) => {
+          sections.instructions.push({
+            step: idx + 1,
+            time: '2-3 min',
+            text,
+            visualCue: '',
+            important: '',
+            technique: '',
+            servingSuggestion: ''
+          });
+        });
+      }
+    }
+    
+    // FALLBACK 4: Try to parse any meaningful paragraphs as steps
+    if (sections.instructions.length === 0) {
+      const paragraphs = instructionText
+        .split(/\n\n+/)
+        .map(p => p.trim())
+        .filter(p => p.length > 20 && !p.startsWith('*') && !p.startsWith('#'));
+      
+      if (paragraphs.length > 0) {
+        paragraphs.forEach((text, idx) => {
+          // Skip if it looks like a header or metadata
+          if (/^(step|visual|important|technique|tip|note):/i.test(text)) return;
+          
+          sections.instructions.push({
+            step: idx + 1,
+            time: '2-3 min',
+            text: text.replace(/\n/g, ' ').trim(),
+            visualCue: '',
+            important: '',
+            technique: '',
+            servingSuggestion: ''
+          });
+        });
+      }
+    }
+    
     // Parse Final Step if exists
     const finalMatch = instructionText.match(/\*\*Final Step\*\*\s*\(([^)]+)\)\s*([\s\S]*?)$/i);
     if (finalMatch) {
