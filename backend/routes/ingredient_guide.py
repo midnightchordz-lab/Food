@@ -124,17 +124,17 @@ def serialize_ingredient(doc: dict) -> dict:
 
 def normalize_ingredient_name(name: str) -> str:
     """Normalize ingredient name for matching"""
-    # Remove quantities and units
-    normalized = re.sub(r'^[\d\s\/½¼¾⅓⅔⅛⅜⅝⅞]+', '', name).strip()
-    normalized = re.sub(r'^(cup|cups|tbsp|tablespoon|tablespoons|tsp|teaspoon|teaspoons|oz|ounce|ounces|lb|pound|pounds|g|gram|grams|kg|ml|liter|liters|pinch|dash|bunch|clove|cloves|piece|pieces|slice|slices|can|cans|package|packages|head|heads|stalk|stalks|large|medium|small)\s*', '', normalized, flags=re.IGNORECASE).strip()
-    # Remove descriptors like "finely chopped", "minced", etc.
+    # Remove leading quantities (numbers and fractions only, be careful not to eat letters)
+    normalized = re.sub(r'^[\d½¼¾⅓⅔⅛⅜⅝⅞/]+\s*', '', name).strip()
+    # Remove units at the beginning (only if followed by space + word)
+    normalized = re.sub(r'^(cup|cups|tbsp|tablespoon|tablespoons|tsp|teaspoon|teaspoons|oz|ounce|ounces|lb|pound|pounds|gram|grams|kg|ml|liter|liters|pinch|dash|bunch|cloves?|pieces?|slices?|cans?|packages?|heads?|stalks?|large|medium|small)\s+', '', normalized, flags=re.IGNORECASE).strip()
+    # Remove descriptors after comma
     normalized = re.sub(r',.*$', '', normalized).strip()
+    # Remove parenthetical notes
     normalized = re.sub(r'\(.*?\)', '', normalized).strip()
+    # Remove trailing descriptors
     normalized = re.sub(r'\s+(finely|roughly|coarsely|thinly|freshly|chopped|minced|diced|sliced|grated|crushed|ground|whole|dried|fresh|frozen|canned|optional|for garnish|to taste).*$', '', normalized, flags=re.IGNORECASE).strip()
     # Handle common plurals
-    normalized = re.sub(r'ies$', 'i', normalized)  # chilies -> chili
-    normalized = re.sub(r'ves$', 'f', normalized)  # leaves -> leaf (but we want leaves to stay)
-    # Actually, let's be more specific about plurals
     normalized = re.sub(r'chilies$', 'chili', normalized, flags=re.IGNORECASE)
     normalized = re.sub(r'chillies$', 'chili', normalized, flags=re.IGNORECASE)
     return normalized.lower()
