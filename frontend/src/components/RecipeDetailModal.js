@@ -311,14 +311,26 @@ const parseDetailedRecipe = (markdown) => {
                        markdown.match(/## Drink Pairings([\s\S]*?)(?=##|$)/i);
   if (drinkSection) {
     const drinkText = drinkSection[1];
-    // Parse non-alcoholic section - handles both bullet format (- **Name:**) and inline format (**Name:**)
+    sections.drinkPairings = { nonAlcoholic: [], alcoholic: [] };
+    
+    // Try to match "**Non-Alcoholic:** drink1, drink2" format (inline list)
+    const nonAlcInlineMatch = drinkText.match(/\*\*Non-Alcoholic:\*\*\s*([^\n*]+)/i);
+    if (nonAlcInlineMatch) {
+      const drinks = nonAlcInlineMatch[1].split(/,\s*/).filter(d => d.trim());
+      drinks.forEach(drink => {
+        sections.drinkPairings.nonAlcoholic.push({
+          name: drink.trim(),
+          description: 'A refreshing complement to this dish'
+        });
+      });
+    }
+    
+    // Also try bullet format: "- **Name:** Description"
     const nonAlcSection = drinkText.match(/\*\*Non-Alcoholic:\*\*([\s\S]*?)(?=\*\*Alcoholic|$)/i);
-    if (nonAlcSection) {
-      // Match both formats: "- **Name:** Description" and "**Name:** Description"
+    if (nonAlcSection && sections.drinkPairings.nonAlcoholic.length === 0) {
       const nonAlcMatches = nonAlcSection[1].matchAll(/-?\s*\*\*([^*]+)\*\*:?\s*([^\n]+)/g);
-      sections.drinkPairings = sections.drinkPairings || { nonAlcoholic: [], alcoholic: [] };
       for (const match of nonAlcMatches) {
-        const name = match[1].trim().replace(/:$/, ''); // Remove trailing colon
+        const name = match[1].trim().replace(/:$/, '');
         const desc = match[2].trim();
         if (name && desc) {
           sections.drinkPairings.nonAlcoholic.push({
@@ -328,14 +340,25 @@ const parseDetailedRecipe = (markdown) => {
         }
       }
     }
-    // Parse alcoholic section - handles both bullet format and inline format
+    
+    // Try to match "**Alcoholic (21+):** drink1, drink2" format (inline list)
+    const alcInlineMatch = drinkText.match(/\*\*Alcoholic[^:]*:\*\*\s*([^\n*]+)/i);
+    if (alcInlineMatch) {
+      const drinks = alcInlineMatch[1].split(/,\s*/).filter(d => d.trim());
+      drinks.forEach(drink => {
+        sections.drinkPairings.alcoholic.push({
+          name: drink.trim(),
+          description: 'Pairs well with the flavors of this dish'
+        });
+      });
+    }
+    
+    // Also try bullet format for alcoholic
     const alcSection = drinkText.match(/\*\*Alcoholic[^:]*:\*\*([\s\S]*?)$/i);
-    if (alcSection) {
-      // Match both formats: "- **Name:** Description" and "**Name:** Description"
+    if (alcSection && sections.drinkPairings.alcoholic.length === 0) {
       const alcMatches = alcSection[1].matchAll(/-?\s*\*\*([^*]+)\*\*:?\s*([^\n]+)/g);
-      sections.drinkPairings = sections.drinkPairings || { nonAlcoholic: [], alcoholic: [] };
       for (const match of alcMatches) {
-        const name = match[1].trim().replace(/:$/, ''); // Remove trailing colon
+        const name = match[1].trim().replace(/:$/, '');
         const desc = match[2].trim();
         if (name && desc) {
           sections.drinkPairings.alcoholic.push({
