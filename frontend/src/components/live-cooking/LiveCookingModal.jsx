@@ -107,6 +107,34 @@ export default function LiveCookingModal() {
     }
   }, [open, recipeVideo]);
 
+  // Sync video play/pause events with modal state
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleVideoPause = () => {
+      // Only toggle if modal thinks it's playing
+      if (isPlaying) {
+        togglePlay();
+      }
+    };
+
+    const handleVideoPlay = () => {
+      // Only toggle if modal thinks it's paused
+      if (!isPlaying) {
+        togglePlay();
+      }
+    };
+
+    video.addEventListener("pause", handleVideoPause);
+    video.addEventListener("play", handleVideoPlay);
+
+    return () => {
+      video.removeEventListener("pause", handleVideoPause);
+      video.removeEventListener("play", handleVideoPlay);
+    };
+  }, [isPlaying, togglePlay]);
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && closeModal()}>
       <DialogPortal>
