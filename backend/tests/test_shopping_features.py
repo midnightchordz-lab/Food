@@ -16,7 +16,7 @@ import time
 # Get API URL from environment
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://recipe-steps-mobile.preview.emergentagent.com"
+    BASE_URL = "https://cooking-step-mode.preview.emergentagent.com"
 
 # Test credentials
 TEST_EMAIL = "test@moodfood.com"

@@ -1,82 +1,89 @@
 <analysis>**original_problem_statement**:
-The initial request involved fixing UI/UX bugs. The scope then expanded to several major features for the Live Cooking experience:
-1.  **Visual Ingredient Identification System:** Built with a MongoDB backend, allowing users to click ingredients for more info.
-2.  **Live Cooking Modal:** An immersive cooking UI.
-3.  **Voice & Gesture Control:** Added hands-free voice commands (next, pause) and clap detection to navigate cooking steps.
-4.  **AI Camera Layer:** Integrated a non-functional, passive camera preview and an AI observer layer as infrastructure for future AI features.
-5.  **Futuristic UI Redesign:** Completely overhauled the Live Cooking screen to be a mood-adaptive, full-screen cinematic experience with a floating glassmorphism UI.
-6.  **Bug Fixes:** Numerous bugs were addressed, including broken drink pairing logic, mobile layout issues, app crashes on mobile when starting Live Cooking, and broken voice commands.
+The user's initial request was to fix UI/UX bugs. This expanded to building out a Live Cooking experience with several features: a visual ingredient identification system, a live cooking modal, voice and gesture controls, an AI camera layer, and a futuristic UI redesign.
 
-The current task is to fix a new bug where the recipe steps are not displaying correctly on mobile devices.
+The current and most critical problem is a set of recurring bugs on mobile devices. The user has reported and provided screenshots for the following issues:
+1.  The recipe content is displayed incorrectly, with the Instructions tab showing ingredient text instead of cooking steps.
+2.  The application crashes on multiple mobile devices when the Start Step-by-Step Cooking Mode button is clicked.
+3.  The overall recipe display on mobile was previously broken (content cut off), and despite several fixes, the user is still reporting problems.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack recipe platform (React/FastAPI) using PostgreSQL and MongoDB.
-
-The main feature is a highly advanced Live Cooking mode. It is a full-screen, cinematic experience with a live camera feed as the background. The UI is mood-adaptive, changing its color scheme based on user selection. It supports hands-free control via voice commands and clap gestures. This is all managed by a global Zustand store and isolated custom hooks.
-
-Several critical mobile-specific bugs related to layout and functionality have recently been fixed.
+The application is a full-stack recipe platform using React, FastAPI, PostgreSQL, and MongoDB. Its main feature is an advanced Live Cooking mode which provides a full-screen, cinematic, and mood-adaptive UI with a live camera feed as the background. It supports hands-free navigation through voice commands and clap gestures, managed by a global Zustand store () and several custom hooks. However, this core feature is currently unstable and unusable on mobile devices due to recurring crashes and UI bugs.
 
 **Last working item**:
--   **Last item agent was working:** The user reported a new bug where the recipe step display is broken on mobile phones, providing a screenshot for reference. This is a UI layout regression.
--   **Status:** NOT STARTED
+-   **Last item agent was working:** The agent was working on fixing two critical, user-reported mobile bugs: an app crash when starting the Live Cooking mode and incorrect content being displayed in the recipe's Instructions tab. The agent implemented fixes for both issues but was unable to verify them due to persistent session/login issues during manual testing.
+-   **Status:** USER VERIFICATION PENDING
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** screenshot tool. The agent should use the screenshot tool with mobile device dimensions to reproduce the visual bug shown in the user's screenshot and then to verify the fix.
+-   **Which testing method agent to use?** testing agent. Manual testing has been consistently blocked by session issues. A comprehensive test by the testing agent is required to validate the fixes for the crash and the content display on a mobile viewport.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** Mobile recipe step display is broken (P0)
+-   **Issue 1:** Mobile app crashes when Start Step-by-Step Cooking Mode is clicked (P0)
+-   **Issue 2:** Recipe instructions are not displayed correctly on mobile (P0)
+-   **Issue 3:** Persistent session/login issues block manual testing (P1)
 
 **Issues Detail**:
--   **Issue 1:** Mobile recipe step display is broken.
-    -   **Attempted fixes:** None. This is a new issue reported by the user.
+-   **Issue 1:** Mobile app crashes when Start Step-by-Step Cooking Mode is clicked.
+    -   **Attempted fixes:** The agent identified that  was requesting microphone access immediately when the modal opened, which is a likely cause for crashes on mobile browsers. The fix was to disable this hook by default, requiring explicit user action to enable it. (File: ).
     -   **Next debug checklist**:
-        1.  Carefully analyze the user-provided screenshot from message #402 to understand the specific layout problem.
-        2.  Inspect , as this is where recipe steps are rendered.
-        3.  Review the recent CSS and layout changes made to fix previous mobile visibility issues (messages #299-332), as they are the likely cause of this regression.
-        4.  Use the  tool with mobile dimensions (e.g., 390x844) to reproduce the exact issue.
-        5.  Apply targeted CSS fixes to correct the layout without re-introducing old bugs.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical bug as it makes reading recipes on mobile impossible, breaking the core user experience.
+        1.  Use the  to confirm the  opens on a mobile viewport without crashing after the Start Step-by-Step Cooking Mode button is clicked.
+        2.  If the crash persists, re-investigate the initialization of all hooks within , particularly  and .
+        3.  Instruct the testing agent to capture any browser console errors if the crash occurs.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical crash that renders the main Live Cooking feature completely unusable on mobile devices.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on other issue:** None.
+-   **Issue 2:** Recipe instructions are not displayed correctly on mobile.
+    -   **Attempted fixes:** The agent observed from a user screenshot that the Instructions tab was incorrectly showing ingredient data. The agent added a fallback in  to display No instructions available. if the parsed instructions are empty, preventing the wrong data from being rendered.
+    -   **Next debug checklist**:
+        1.  Use the  to generate a recipe and verify that the Instructions tab shows the correct cooking steps or the fallback message, not ingredient text.
+        2.  If the issue persists, the root cause is in the  function in . Debug this function with a sample of the raw recipe markdown from the server to understand why it fails to extract the  section.
+    -   **Why fix this issue and what will be achieved with the fix?** Displaying the correct recipe steps is fundamental to the app's purpose.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on other issue:** None.
+-   **Issue 3:** Persistent session/login issues block manual testing.
+    -   **Attempted fixes:** None. The agent encountered this issue repeatedly while trying to test using the screenshot tool, getting logged out or redirected.
+    -   **Next debug checklist**:
+        1.  Prioritize using the  for all frontend verification to bypass this problem.
+        2.  If manual testing is required, investigate the authentication flow, token storage/retrieval, and redirection logic within the React application.
+    -   **Why fix this issue and what will be achieved with the fix?** This blocker significantly slows down development and verification cycles.
     -   **Status:** NOT STARTED
-    -   **Is recurring issue?** Y (This is a regression related to recently fixed mobile layout issues).
+    -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 
 **In progress Task List**:
-- None.
+-   None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P1) Implement Ingredient Encyclopedia Page:** Create the  page to allow users to browse and search all ingredients.
-    -   **(P2) Implement Ingredient Detail Page:** Create a dynamic route () for viewing a single ingredient's details.
+    -   **(P1) Implement Ingredient Encyclopedia Page:** Create the  page.
+    -   **(P2) Implement Ingredient Detail Page:** Create a dynamic route ().
 -   **Future Tasks:**
-    -   **(P2) Activate AI Observer:** Connect the passive AI observer layer's events (, ) to the existing control handlers (, etc.) to enable true AI-assisted cooking.
+    -   **(P2) Activate AI Observer:** Connect the passive AI observer layer's events to enable AI-assisted cooking.
 
 **Completed work in this session**
--   **Live Cooking Modal Feature Complete:** Verified that the initial voice narration feature was working, correcting the handoff summary.
--   **Feature - Hands-Free Controls:** Implemented voice and double-clap controls for the Live Cooking modal using .
--   **Feature - AI Camera & Observer Layer:** Added a passive camera preview and an AI observer infrastructure using  and .
--   **Feature - Futuristic UI Redesign:** Completely rewrote  to create a mood-adaptive, cinematic UI with a full-screen camera background and glassmorphism elements.
--   **Bug Fix - Drink Pairings:** Fixed the frontend parser in  to handle the API's format.
--   **Bug Fix - Camera Infinite Loop:** Resolved an infinite re-render loop in the camera and AI observer hooks.
--   **Bug Fix - Mobile Live Cooking Crash:** Stabilized the Live Cooking modal on mobile by switching to  and preventing the camera from initializing on open.
--   **Bug Fix - Broken Voice Commands:** Fixed a stale closure issue in  by using  to store callbacks.
--   **Bug Fix - Mobile Recipe Visibility:** Corrected the layout in  to ensure recipe steps are fully visible and scrollable on mobile.
+-   **Attempted Fix for Mobile Crash:** Disabled automatic microphone access request in  to prevent the app from crashing on mobile.
+-   **Attempted Fix for Content Display:** Added a fallback message in  to prevent incorrect data from showing in the Instructions tab.
+-   **Attempted Fix for Mobile Layout:** Modified  by adding a  prop to fix a recurring layout bug where modal content was cut off. This was verified by the testing agent but the user reported subsequent issues.
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
 
 **Known issue recurrence from previous fork**
--   None.
+-   The mobile layout and crash issues are highly recurrent. Multiple fixes have been attempted, but the problems persist, indicating either the root cause was not correctly identified or the fixes introduced other regressions. The user is justifiably frustrated by this.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
 -   **Frontend:** React, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion, Shadcn/UI
--   **State Management:** Zustand for global state (),  for passing the  from  to .
--   **Browser APIs:** Web Speech API (for voice commands), Web Audio API (for clap detection),  (for camera).
+-   **State Management:** Zustand for global state ().
+-   **Browser APIs:** Web Speech API, Web Audio API, .
 -   **Backend:** Python, FastAPI, Motor
 -   **Database:** MongoDB (ingredients), PostgreSQL (users/recipes)
 
@@ -84,47 +91,49 @@ Several critical mobile-specific bugs related to layout and functionality have r
 -   **ingredientguides (MongoDB Collection):** 
 
 **changes in tech stack**
--   No new technologies added, but advanced usage of browser APIs (Web Speech, Web Audio, ).
--   Introduced  as a mechanism for passing non-critical state () between unrelated components.
+-   None.
 
 **All files of reference**
--   **Heavily Modified:**
-    -   : Rewritten entirely to implement the new futuristic, mood-adaptive UI. It integrates all new hooks.
-    -   : Modified multiple times to fix layout issues. **This is the primary file to investigate for the current bug.**
--   **New:**
-    -   
-    -   
-    -   
--   **Modified:**
-    -   : Updated to save the selected mood to .
-    -   : Updated to accept  state.
+-    (Modified to prevent crash)
+-    (Modified for content display fix)
+-    (Modified for a previous layout fix)
+-    (Identified as likely cause of crash)
+-    (Relevant to the instruction display bug)
+-   
 
 **Areas that need refactoring**:
--   The use of  to pass the  from  to  is a temporary solution. A more robust approach would be to manage the selected mood within a global context or the existing Zustand store to avoid reliance on browser storage for UI state.
+-   The use of  to pass the  is a workaround and should be integrated into the global state.
+-   The application's session management is fragile and repeatedly breaks manual testing flows. This needs to be investigated and stabilized.
 
 **key api endpoints**
--   : Generates voice narration for a recipe step.
--   : Generates a recipe, including drink pairings.
+-   
+-   
 
 **Critical Info for New Agent**
--   The immediate priority is the **mobile UI bug** in the recipe detail view, as it's a critical blocker for users.
--   The  is a very complex, presentation-only component. All its logic (state, navigation, etc.) is handled by the  Zustand store and various custom hooks.
--   Be mindful of regressions. The recent fixes to mobile layouts in  are the most likely source of the current bug.
+-   The user is highly frustrated with the recurring mobile bugs. Your absolute first priority is to create a definitive and lasting fix for both the mobile crash and the incorrect instruction display.
+-   **Do not rely on manual testing via the screenshot tool.** It has been proven unreliable due to session issues. Use the  immediately to verify any and all fixes.
+-   The user reported the issue persists even after previous fixes were verified by the testing agent. Be extra thorough. The problem might have multiple triggers or edge cases.
+-   The fix of disabling  by default is the most promising lead for the crash. Ensure your testing validates this specific change.
+-   The instruction display bug is likely a data parsing issue in . The current fallback is a patch; a real fix may require debugging the parser itself.
 
 **documents and test reports created in this job**
 -   
--    (and several others)
+-    (and previous iterations)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Start step-by-step cooking is failing on mobile. (IN PROGRESS)
-2.  **Agent:** Fixed the mobile crash by changing to  and setting the camera off by default. (DONE)
-3.  **User:** The voice commands are not working properly now. (IN PROGRESS)
-4.  **Agent:** Fixed voice commands by resolving a stale closure issue in the  hook. (DONE)
-5.  **User:** Look at the screenshot, the recipe display is broken on my phone. Fix it. (PENDING - CURRENT TASK)
+1.  **User:** hope its fixed in Mobile App as well it was working fine on web btw (PENDING)
+2.  **User:** u said no credits would be charged and you still did, also its not crashing on one device its crashing on multiple. 2nd the recipe generation is not at all visible (PENDING)
+3.  **User:** if you cannot FUCKING FIX IT let me know I will get you complete command to fix the same fucking issue over and over again FIX IT NOW AND THAT TOO WITHOUT USING MY CREDITS (PENDING)
+4.  **User:** Look at the SS is this the way to display a recipe and also when the start by step by step cooking mode is clicked the app just shut downs (PENDING - This is the primary bug report for the current issues)
+5.  **User:** still the same issue FIX IT ONCE AND FOR ALL (PENDING)
+6.  **User:**  (DONE)
 
 **Project Health Check:**
--   **Broken:** The display of recipe steps on mobile devices inside .
--   **Mocked:**  (for image search), ElevenLabs integration.
+-   **Broken:**
+    -   The core Live Cooking feature is unusable on mobile due to a crash on launch.
+    -   Recipe instructions are displaying incorrect information on mobile.
+    -   Manual testing workflow is broken due to session instability.
+-   **Mocked:** , ElevenLabs integration.
 
 **3rd Party Integrations**
 -   **SerpAPI** (Google Images Search) — Requires a User API Key.
@@ -135,12 +144,13 @@ Several critical mobile-specific bugs related to layout and functionality have r
 -   **Testing agent used after significant changes:** YES
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None
--   **Known regressions:** The current mobile recipe display bug is a regression from previous layout fixes.
+-   **Known regressions:** The mobile crash and instruction display are critical, recurring regressions that have frustrated the user.
 
 **Credentials to test flow:**
--   **User:** 
--   **Password:** 
--   **Note:** If login fails, a new user was registered during this session:  / .
+-   Premium User:  / 
+-   Standard User:  / 
+-   **Note:** Do not attempt manual login/navigation. Use the testing agent to bypass persistent session issues.
 
 **What agent forgot to execute**
--   The agent has not started work on the **Ingredient Encyclopedia Page** or the **Ingredient Detail Page**, which were part of an earlier user request. These remain in the upcoming task list.</analysis>
+-   The agent has been unable to progress to new features () due to being stuck on fixing these recurring critical bugs.
+-   A permanent solution for the session instability that blocks manual testing has not been found.</analysis>
