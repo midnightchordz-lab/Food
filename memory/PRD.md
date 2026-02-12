@@ -174,7 +174,28 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
-### Step-by-Step Instructions Fix ✅ NEW
+### Order Now Delivery Options Fix ✅ NEW
+Fixed bug where clicking "Order Now" in the Buy Ingredients sheet went directly to a single delivery app instead of showing user a list of delivery service options:
+
+**Root Cause:** The "Order Now" button was calling `handleOrderNow(deliveryApps[0])` directly, bypassing user selection.
+
+**Fix Applied (BuyIngredientsSheet.jsx):**
+1. ✅ Added `showDeliveryOptions` state to control delivery app selector dialog
+2. ✅ Created `handleOrderNowClick` function that opens a dialog with available delivery apps
+3. ✅ Created `handleSelectDeliveryApp` function to handle user's app selection
+4. ✅ Added "Choose Delivery Service" dialog showing region-specific delivery options
+5. ✅ Dialog shows app logo, name, delivery time, and arrow for each option
+
+**Verified by Testing Agent:**
+- India region → BigBasket, Blinkit, Zepto, Swiggy Instamart, JioMart
+- USA region → Instacart, Amazon Fresh, Walmart, Kroger, DoorDash
+- UK region → Ocado, Tesco, Sainsbury's, Getir
+
+**File:** `/app/frontend/src/components/BuyIngredientsSheet.jsx`
+
+---
+
+### Step-by-Step Instructions Fix ✅
 Fixed bug where recipe instructions were not displaying in the RecipeDetailModal:
 
 **Root Cause:** The frontend regex parser expected format `**Step 1** (10 minutes)` but the backend was returning format `**Step 1 (10 minutes)**` (time inside bold tags).
