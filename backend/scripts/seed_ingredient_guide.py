@@ -882,7 +882,7 @@ INGREDIENT_DATA = [
         "alternate_names": ["cilantro", "coriander leaves", "fresh cilantro", "dhania", "hara dhania", "chinese parsley"],
         "category": "herb_fresh",
         "images": {
-            "primary": "https://images.unsplash.com/photo-1592861956120-e524fc739f7d?w=400",
+            "primary": "https://images.unsplash.com/photo-1767156969831-0beee76fa958?w=400",
             "comparison": [
                 {"url": "", "caption": "Fresh bunch"},
                 {"url": "", "caption": "Chopped for garnish"}
