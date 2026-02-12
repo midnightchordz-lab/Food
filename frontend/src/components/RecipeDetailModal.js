@@ -1252,6 +1252,20 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               isOpen={showIngredientPopup}
               onClose={() => setShowIngredientPopup(false)}
             />
+            
+            {/* Live Cooking Modal */}
+            <LiveCookingModal
+              open={liveOpen}
+              onClose={() => setLiveOpen(false)}
+              recipeImage={aiImageUrl || recipe?.image}
+              currentStepText={getLiveCurrentStepText()}
+              helperText={`Step ${liveCurrentStep + 1} of ${parsedRecipe?.instructions?.length || 0}`}
+              isPlaying={liveIsPlaying}
+              onPrev={handleLivePrevStep}
+              onNext={handleLiveNextStep}
+              onTogglePlay={handleLiveTogglePlay}
+              timerLabel={null}
+            />
           </>
         )}
       </DialogContent>
