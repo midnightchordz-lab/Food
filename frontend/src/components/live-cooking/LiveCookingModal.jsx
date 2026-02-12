@@ -38,7 +38,8 @@ export default function LiveCookingModal() {
     <Dialog open={open} onOpenChange={(v) => !v && closeModal()}>
       <DialogPortal>
         <DialogContent 
-          className="fixed inset-0 w-screen h-screen max-w-none max-h-none rounded-none border-0 p-0 m-0"
+          className="fixed inset-0 left-0 top-0 w-screen h-screen max-w-none max-h-none rounded-none border-0 p-0 m-0 translate-x-0 translate-y-0 bg-black z-[9999]"
+          hideCloseButton={true}
         >
         <AnimatePresence mode="wait">
           {open && (
