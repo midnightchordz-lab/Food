@@ -87,6 +87,8 @@ const AuthModal = ({ open, onClose }) => {
       if (success) {
         onClose();
         resetForm();
+        // Navigate to chat after successful login
+        navigate('/chat');
       }
     } else {
       // For registration, move to exclusions step first
