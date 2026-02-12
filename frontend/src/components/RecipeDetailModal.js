@@ -988,10 +988,24 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                                 >
                                   {checkedIngredients[ing.originalIdx] && <Check size={12} />}
                                 </button>
-                                <span className={`break-words ${checkedIngredients[ing.originalIdx] ? 'line-through text-muted-foreground' : ''}`}>
+                                <span className={`break-words flex-1 ${checkedIngredients[ing.originalIdx] ? 'line-through text-muted-foreground' : ''}`}>
                                   {ing.amount && <span className="font-medium text-primary mr-2">{ing.amount}</span>}
-                                  {ing.item}
+                                  <button
+                                    onClick={() => handleIngredientInfoClick(ing)}
+                                    className="text-left hover:text-[#5D7A5D] hover:underline underline-offset-2 transition-colors inline"
+                                    title="Tap to see what this looks like"
+                                    data-testid={`ingredient-info-${ing.originalIdx}`}
+                                  >
+                                    {ing.item}
+                                  </button>
                                 </span>
+                                <button
+                                  onClick={() => handleIngredientInfoClick(ing)}
+                                  className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-[#5D7A5D] hover:bg-[#5D7A5D]/10 transition-all flex-shrink-0"
+                                  title="What does this look like?"
+                                >
+                                  <HelpCircle size={14} />
+                                </button>
                               </div>
                               <Button
                                 variant="ghost"
