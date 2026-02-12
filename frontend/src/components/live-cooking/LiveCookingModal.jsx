@@ -1,9 +1,10 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogPortal } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Pause, Play, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLiveCooking } from "@/stores/useLiveCooking";
+import { useHandsFreeControls } from "@/hooks/useHandsFreeControls";
 import axios from "axios";
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -12,6 +13,7 @@ const API = process.env.REACT_APP_BACKEND_URL;
  * LiveCookingModal - Premium Cinematic Design
  * Root-mounted for true fullscreen experience
  * Uses Zustand store for global state management
+ * Supports hands-free control via voice commands and double-clap
  */
 
 export default function LiveCookingModal() {
@@ -30,6 +32,7 @@ export default function LiveCookingModal() {
 
   const videoRef = useRef(null);
   const audioRef = useRef(null);
+  const hasUserStartedRef = useRef(false);
 
   // Get current step text
   const currentStepText = instructions[currentStep]?.text || 
