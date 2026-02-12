@@ -618,7 +618,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-4xl w-full max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 bg-background sm:rounded-lg"
+        className="fixed inset-0 sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] max-w-4xl w-full h-full sm:h-auto sm:max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 bg-background rounded-none sm:rounded-lg border-0 sm:border"
         data-testid="recipe-detail-modal"
         hideCloseButton={true}
         style={{ 
