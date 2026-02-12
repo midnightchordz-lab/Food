@@ -174,7 +174,21 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
-### Buy Ingredients Sheet Redesign ✅ NEW
+### Step-by-Step Instructions Fix ✅ NEW
+Fixed bug where recipe instructions were not displaying in the RecipeDetailModal:
+
+**Root Cause:** The frontend regex parser expected format `**Step 1** (10 minutes)` but the backend was returning format `**Step 1 (10 minutes)**` (time inside bold tags).
+
+**Fix Applied (RecipeDetailModal.js line 131):**
+- Updated regex to handle both formats: `**Step X** (time)` AND `**Step X (time)**`
+- Added Audio Cue extraction alongside Visual Cue
+- 10/10 backend tests passed verifying the fix
+
+**File:** `/app/frontend/src/components/RecipeDetailModal.js`
+
+---
+
+### Buy Ingredients Sheet Redesign ✅
 Completely redesigned the BuyIngredientsSheet component to match the clean "My Shopping Cart" design:
 
 **New Features:**
