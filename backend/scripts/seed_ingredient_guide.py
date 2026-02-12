@@ -1021,7 +1021,7 @@ INGREDIENT_DATA = [
         "alternate_names": ["adrak", "ginger root", "fresh ginger root"],
         "category": "vegetable",
         "images": {
-            "primary": "https://images.unsplash.com/photo-1615485500834-bc10199bc727?w=400",
+            "primary": "https://images.unsplash.com/photo-1666425324466-ff6d57a59370?w=400",
             "comparison": [
                 {"url": "", "caption": "Whole ginger root"},
                 {"url": "", "caption": "Sliced/grated ginger"}
