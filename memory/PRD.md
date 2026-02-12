@@ -174,6 +174,29 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
+### Login Redirect Fix ✅ VERIFIED WORKING (Feb 12, 2026)
+Fixed bug where login modal closed after successful authentication but didn't navigate to /chat page.
+
+**Problem:**
+- User successfully logs in (API returns token)
+- Modal closes but user stays on landing page
+- Had to click "Start Cooking" again to navigate
+
+**Solution Applied:**
+Modified `/app/frontend/src/components/AuthModal.js`:
+1. Added `useNavigate` import from react-router-dom
+2. Added `navigate('/chat')` after successful email login (line 91)
+3. Added `navigate('/chat')` after successful registration (lines 132-133)
+4. Added `navigate('/chat')` after successful phone login (lines 203-205)
+5. Added `navigate('/chat')` after phone registration (line 243)
+
+**Testing Verification (iteration_67.json):**
+- ✅ After email login, user redirected to /chat
+- ✅ After registration, user redirected to /chat
+- ✅ All authentication flows now properly navigate
+
+---
+
 ### Live Cooking Mode Crash Fix ✅ VERIFIED WORKING (Feb 12, 2026)
 Fixed critical bug where clicking "Start Step-by-Step Cooking Mode" button crashed the app on mobile.
 
