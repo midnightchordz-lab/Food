@@ -174,7 +174,7 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
-### Mobile Recipe Detail Modal Content Fix ✅ NEW (Feb 12, 2026)
+### Mobile Recipe Detail Modal Content Fix ✅ VERIFIED WORKING (Feb 12, 2026)
 Fixed critical bug where recipe modal content was being truncated/clipped on mobile devices.
 
 **Problem:**
@@ -182,29 +182,39 @@ Fixed critical bug where recipe modal content was being truncated/clipped on mob
   - Description text cut off mid-sentence
   - Timer display showing "-:- / -:-"
   - "Easy-Step Cooking Mode" button partially hidden/obscured
-- This was a regression from previous mobile layout fixes
+- Root cause: Radix DialogPrimitive uses `grid` display and `translate` positioning that conflicts with mobile full-screen scrolling
 
-**Root Cause:**
-The Radix DialogPrimitive uses `grid` display by default, which conflicted with the mobile full-screen scrolling requirements. Combined with incorrect height settings.
-
-**Fix Applied (RecipeDetailModal.js line 621):**
+**Solution - Added `fullScreenMobile` prop to DialogContent:**
 ```jsx
-className="!block fixed inset-0 z-50 ... h-[100dvh] sm:h-auto ... overflow-y-auto ... [&>*]:max-w-full"
-```
-- `!block` - Overrides Radix's default `grid` display to enable proper scrolling
-- `h-[100dvh]` - Uses dynamic viewport height for correct mobile height (handles browser chrome)
-- `overflow-y-auto` - Enables vertical scrolling within modal
-- `[&>*]:max-w-full` - Prevents child content from overflowing/clipping
-- `w-screen` - Full screen width on mobile
+// dialog.jsx - NEW fullScreenMobile mode
+fullScreenMobile 
+  ? "fixed inset-0 z-50 flex flex-col w-full h-full bg-background overflow-y-auto overflow-x-hidden sm:inset-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:h-auto sm:max-h-[95vh] sm:max-w-4xl sm:rounded-lg sm:border sm:shadow-lg"
+  : // default centered layout
 
-**Testing Verification (iteration_63.json - 100% pass rate):**
-- ✅ Modal displays fully on mobile (390x844 viewport)
-- ✅ Modal content scrollable (scrollHeight: 2557 > clientHeight: 844)
-- ✅ Description section fully visible - NOT truncated
-- ✅ Voice player timer displays correctly
-- ✅ "Start Step-by-Step Cooking Mode" button fully visible at y=269.25
-- ✅ All tab navigation works (Instructions, Ingredients, Drinks, Tips, Nutrition, Storage)
-- ✅ Recipe instructions scrollable
+// RecipeDetailModal.js - uses fullScreenMobile
+<DialogContent fullScreenMobile={true} className="p-0 border-0">
+```
+
+**Key CSS Properties for Mobile:**
+- `fixed inset-0` - Full viewport coverage (top/right/bottom/left = 0)
+- `flex flex-col` - Vertical flex layout (replaces problematic `grid`)
+- `w-full h-full` - 100% width and height
+- `overflow-y-auto` - Enables vertical scrolling
+
+**Testing Verification (iteration_64.json - 100% pass):**
+- ✅ Modal width: 390px (full viewport)
+- ✅ Modal height: 844px (full viewport)  
+- ✅ Position: top=0, left=0, position=fixed
+- ✅ Display: flex (not grid)
+- ✅ Overflow: auto (scrollable)
+- ✅ Description: "Chicken Biryani is a classic Indian dish..." - FULLY VISIBLE
+- ✅ Timer: Shows "Total: 1 hour 30 minutes" - CORRECT
+- ✅ "Start Cooking Mode" button at Y=522 - FULLY VISIBLE
+- ✅ All 6 tabs accessible and working
+
+**Files Modified:**
+- `/app/frontend/src/components/ui/dialog.jsx` - Added fullScreenMobile prop
+- `/app/frontend/src/components/RecipeDetailModal.js` - Uses fullScreenMobile={true}
 
 ---
 
