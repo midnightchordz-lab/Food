@@ -83,6 +83,7 @@ export default function LiveCookingModal() {
     
     // Start voice narration for current step
     readCurrentStep();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Read step when step changes
@@ -90,6 +91,7 @@ export default function LiveCookingModal() {
     if (!open) return;
     
     readCurrentStep();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
   // Trigger video playback when modal opens
