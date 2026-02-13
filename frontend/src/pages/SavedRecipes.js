@@ -2,19 +2,11 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Heart, Clock, ChefHat, ShoppingCart, Star, Download, Loader2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { useAuth } from '@/context/AuthContext';
 import { useShoppingCart } from '@/context/ShoppingCartContext';
 import { toast } from 'sonner';
 import RecipeSearchFilter from '@/components/RecipeSearchFilter';
-import RecipeRating from '@/components/RecipeRating';
-import RecipeVoicePlayer from '@/components/RecipeVoicePlayer';
-import CookingModePlayer from '@/components/CookingModePlayer';
+import RecipeDetailModal from '@/components/RecipeDetailModal';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
