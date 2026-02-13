@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, MicOff, Camera, CameraOff, Hand } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, MicOff, Camera, CameraOff, Hand, Volume2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLiveCooking } from "@/stores/useLiveCooking";
 import { useHandsFreeControls } from "@/hooks/useHandsFreeControls";
@@ -11,6 +11,7 @@ import { useAIObserver, ObserverEvents } from "@/hooks/useAIObserver";
 import { useEmotionalVoiceOrchestrator } from "@/hooks/useEmotionalVoiceOrchestrator";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
+import { narrateStep, stopSpeaking, isSpeechSupported, speakText } from "@/lib/browserSpeech";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
