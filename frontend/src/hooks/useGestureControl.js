@@ -306,7 +306,13 @@ export function useGestureControl({
       canvasRef.current = null;
       contextRef.current = null;
       prevFrameRef.current = null;
-      motionStartRef.current = null;
+      lastFrameTimeRef.current = 0;
+      stableDetectionRef.current = {
+        direction: null,
+        startTime: null,
+        consecutiveFrames: 0,
+        isConfirmed: false,
+      };
       setGestureStatus('disabled');
     };
     
@@ -334,13 +340,19 @@ export function useGestureControl({
     isActiveRef.current = true;
     videoReadyRef.current = false;
     prevFrameRef.current = null;
-    motionStartRef.current = null;
+    lastFrameTimeRef.current = Date.now();
+    stableDetectionRef.current = {
+      direction: null,
+      startTime: null,
+      consecutiveFrames: 0,
+      isConfirmed: false,
+    };
     setGestureStatus('initializing');
     
     // Wait for video to be playing before starting detection
     const checkVideoReady = () => {
       if (video.readyState >= 2 && video.videoWidth > 0) {
-        console.log('[Gesture] Video stream detected, starting detection');
+        console.log('[Gesture] Video stream detected, starting stable detection (500ms confirm)');
         detectGestures();
       } else {
         // Check again in 200ms
@@ -351,7 +363,7 @@ export function useGestureControl({
     // Start checking
     checkVideoReady();
     
-    console.log('[Gesture] Control initialized for web');
+    console.log('[Gesture] Control initialized - requires 500ms stable direction');
     
     return cleanup;
   }, [enabled, videoRef, detectGestures]);
