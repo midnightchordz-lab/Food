@@ -248,6 +248,36 @@ Modified `/app/frontend/src/components/AuthModal.js`:
 
 ---
 
+### Premium Features Not Unlocking After Upgrade ✅ FIXED (Feb 13, 2026)
+Fixed critical bug where features remained locked after user upgraded from free to premium plan.
+
+**Problem:**
+- User upgrades via Razorpay payment
+- Payment succeeds, subscription is created in database
+- BUT features remain locked because frontend cache wasn't refreshed
+
+**Root Cause:**
+- `CheckoutSuccessPage.js` loaded subscription data but didn't call `refreshUsage()` or `refreshSubscription()`
+- Global state in `useUsageLimit` and `SubscriptionContext` retained stale "free" tier data
+
+**Solution:**
+Updated `CheckoutSuccessPage.js` to refresh both usage limits and subscription state after payment:
+```javascript
+// After subscription is confirmed active
+await refreshUsage();        // Updates useUsageLimit hook
+refreshSubscription();       // Updates SubscriptionContext for FeatureGate
+```
+
+**Files Changed:**
+- `frontend/src/pages/CheckoutSuccessPage.js` - Added refreshUsage and refreshSubscription calls
+
+**Result:**
+- After payment verification, features unlock immediately
+- No page refresh required
+- All premium components see the updated tier instantly
+
+---
+
 ### Live Cooking Mode Bug Fixes ✅ VERIFIED WORKING (Feb 13, 2026)
 Fixed 3 critical bugs in Live Cooking Mode:
 
