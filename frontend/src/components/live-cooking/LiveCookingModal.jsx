@@ -173,9 +173,29 @@ export default function LiveCookingModal() {
   // EXISTING LOGIC - PRESERVED EXACTLY AS IS
   // ============================================
 
-  // Voice narration for current step
+  // Track current narration to prevent overlap
+  const currentNarrationRef = useRef(null);
+  const narrationAbortRef = useRef(false);
+
+  // Voice narration for current step - FIXED: Always syncs with visible step
   const readCurrentStep = async () => {
     if (!instructions.length || currentStep >= instructions.length) return;
+    
+    // SYNC FIX: Stop any currently playing audio immediately
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    // Mark any pending narration as aborted
+    narrationAbortRef.current = true;
+    
+    // Small delay to ensure abort is processed
+    await new Promise(resolve => setTimeout(resolve, 50));
+    narrationAbortRef.current = false;
+    
+    // Capture current step at start of this request
+    const stepAtStart = currentStep;
     
     try {
       const token = localStorage.getItem('token');
@@ -195,6 +215,12 @@ export default function LiveCookingModal() {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      // SYNC FIX: Only play if step hasn't changed during API call
+      if (narrationAbortRef.current || stepAtStart !== currentStep) {
+        console.log('[VoiceSync] Step changed during load, skipping playback');
+        return;
+      }
 
       if (response.data.success && audioRef.current) {
         const fullUrl = response.data.audioUrl.startsWith('http')
