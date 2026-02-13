@@ -59,34 +59,47 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - `frontend/src/hooks/useHandsFreeControls.js` - Voice commands with confidence scoring
 - `frontend/src/hooks/useGestureControl.js` - Camera-based swipe detection
 
-#### Web Gesture Fix + Voice Sync Perfection ✅ FIXED (Feb 13, 2026)
-**Fixed gesture detection on web browsers + emotional voice timing.**
+#### Step Sync + Hands-Free Stability ✅ PERFECTED (Feb 13, 2026)
+**Fixed voice sync, gesture instability, and wrong-step narration.**
 
-**Gesture Fix (Web Browser):**
-| Fix | Implementation |
-|-----|----------------|
-| Video readiness | Check `readyState >= 2` AND `videoWidth > 0` before detection |
-| Callback invocation | Direct `try/catch` function calls for web compatibility |
-| Status tracking | `gestureStatus` state: 'initializing' → 'active' |
+**Single Authoritative Step State:**
+- `stepChangeIdRef` creates unique ID per step change
+- All in-flight narration requests are invalidated on step change
+- UI display, voice narration, and gestures all read from same `currentStep`
 
-**Emotional Voice Timing (`VOICE_TIMING` config):**
+**Instant Audio Cancellation:**
+- On any step change: `audio.pause()` + `audio.currentTime = 0`
+- `narrationAbortRef` marks pending narrations as aborted
+- No queued or delayed speech from previous steps
+
+**Gesture Debounce & Confirmation:**
+| Config | Value | Purpose |
+|--------|-------|---------|
+| `STABLE_DETECTION_MS` | 500ms | Must see consistent direction for 500ms |
+| `GESTURE_COOLDOWN` | 1800ms | One step change per gesture |
+| `VOICE_PRIORITY_COOLDOWN` | 2000ms | Voice commands take priority |
+| `CONSECUTIVE_FRAMES_REQUIRED` | 3 | Need 3 consistent frames |
+
+**Web Camera Tolerance:**
+- Handles low FPS gracefully (skips frames if > 200ms apart)
+- Never auto-advances step from unstable detection
+- Motion analysis uses pixel brightness diff with configurable thresholds
+
+**Voice Smooth Pacing:**
 | Timing | Value | Purpose |
 |--------|-------|---------|
-| `WARM_START_DELAY` | 150ms | Pause before speaking (natural feel) |
-| `STEP_CHANGE_DELAY` | 120ms | Delay after step change (cinematic smooth) |
-| `POST_NARRATION_WAIT` | 1200ms | Breathing space after narration ends |
-
-**Text Processing:**
-- Added ellipsis padding: `"{label} ... {clean_step} ..."` for softer voice output
-- Time-related phrases get comma pauses (e.g., "5 minutes,")
+| `WARM_START_DELAY` | 180ms | Pause before speaking (intentional feel) |
+| `STEP_CHANGE_DELAY` | 150ms | Delay after step change (cinematic smooth) |
+| `POST_NARRATION_WAIT` | 1400ms | Breathing space after narration |
+| `FADE_IN_DURATION` | 0.3s | Smooth volume ramp (not abrupt) |
 
 **Result:**
-- Gesture works identically on web and mobile
-- Voice feels calm, warm, human (not robotic)
-- Step changes feel cinematic smooth
-- Cooking feels guided, not commanded
+- Visible step and spoken step are ALWAYS identical
+- No delayed or wrong narration
+- Gestures feel intentional and stable on web
+- Hands-free experience feels calm and premium
 
-#### Voice-Step Sync Fix ✅ FIXED (Feb 13, 2026)
+#### Previous: Web Gesture Fix + Voice Sync (Feb 13, 2026)
 **Fixed voice-to-step synchronization and improved voice naturalness.**
 
 **Problem Solved:**
