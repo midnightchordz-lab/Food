@@ -384,6 +384,7 @@ export default function LiveCookingModal() {
         audioRef.current.pause();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, togglePlay, playOpeningNarration, playStepStartGuidance]);
 
   // Handle next with voice trigger - SYNC: Only requests step change
