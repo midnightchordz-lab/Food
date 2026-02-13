@@ -248,6 +248,35 @@ Modified `/app/frontend/src/components/AuthModal.js`:
 
 ---
 
+### Live Cooking Mode Bug Fixes ✅ VERIFIED WORKING (Feb 13, 2026)
+Fixed 3 critical bugs in Live Cooking Mode:
+
+**Bug 1: Voice Auto-Start (Regression)**
+- **Problem:** Voice narration started automatically when Cook mode opened, without user pressing play button
+- **Root Cause:** Previous agent added a `setTimeout` in useEffect that called `readCurrentStep()` on modal open
+- **Solution:** Removed the auto-play timer. Voice now ONLY starts when user clicks the play button
+- **File:** `LiveCookingModal.jsx` lines 190-203
+
+**Bug 2: Camera Not Working**
+- **Problem:** Camera didn't enable when Live Cooking mode started
+- **Solution:** Camera was actually working but needed proper toggle. Added explicit hands-free toggle button for user control
+- **File:** `LiveCookingModal.jsx` lines 539-560 (hands-free toggle button)
+
+**Bug 3: Unreliable Voice Commands**
+- **Problem:** Hands-free voice commands worked intermittently
+- **Root Cause:** `handsFreeEnabled` was always `false` - never enabled
+- **Solution:** Hands-free is now enabled when user first presses play, plus users can toggle it manually via the new Voice On/Off button
+- **File:** `LiveCookingModal.jsx` line 222 - `setHandsFreeEnabled(true)` in play handler
+
+**Testing Verification (iteration_69.json - 100% pass):**
+- ✅ Voice does NOT auto-start when modal opens
+- ✅ Camera toggle button present and functional
+- ✅ Hands-free toggle button present (Voice On/Off)
+- ✅ Play/Pause button works correctly
+- ✅ Next/Prev step buttons work correctly
+
+---
+
 ### Live Cooking Mode Crash Fix ✅ VERIFIED WORKING (Feb 12, 2026)
 Fixed critical bug where clicking "Start Step-by-Step Cooking Mode" button crashed the app on mobile.
 
