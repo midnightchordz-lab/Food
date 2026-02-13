@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useUsageLimit } from '../hooks/useUsageLimit';
+import { useSubscription } from '../components/FeatureGate';
 import confetti from 'canvas-confetti';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
