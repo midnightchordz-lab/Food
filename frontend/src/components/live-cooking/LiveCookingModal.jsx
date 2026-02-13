@@ -179,17 +179,41 @@ export default function LiveCookingModal() {
   const currentNarrationRef = useRef(null);
   const narrationAbortRef = useRef(false);
   const postNarrationTimerRef = useRef(null);
+  const stepChangeIdRef = useRef(0); // SYNC FIX: Unique ID per step change
 
   // VOICE SYNC TIMING CONFIG - for natural, emotional pacing
+  // These values create "cinematic smooth" transitions
   const VOICE_TIMING = {
-    WARM_START_DELAY: 150,      // ms pause before speaking (feels natural)
-    POST_NARRATION_WAIT: 1200,  // ms breathing space after narration ends
-    STEP_CHANGE_DELAY: 120,     // ms delay after step change before new narration
+    WARM_START_DELAY: 180,      // ms pause before speaking (feels intentional)
+    POST_NARRATION_WAIT: 1400,  // ms breathing space after narration ends
+    STEP_CHANGE_DELAY: 150,     // ms delay after step change before new narration
+    FADE_IN_DURATION: 0.3,      // seconds for audio volume fade-in
   };
 
-  // Voice narration for current step - PERFECTED: Emotional timing + hard sync
+  // SYNC FIX: Smooth fade-in instead of abrupt audio start
+  const fadeInAudio = useCallback((audio, duration = VOICE_TIMING.FADE_IN_DURATION) => {
+    if (!audio) return;
+    audio.volume = 0;
+    const startTime = Date.now();
+    const fadeInterval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      if (elapsed >= duration) {
+        audio.volume = 1;
+        clearInterval(fadeInterval);
+      } else {
+        audio.volume = Math.min(1, elapsed / duration);
+      }
+    }, 30); // ~33fps for smooth fade
+    return fadeInterval;
+  }, []);
+
+  // Voice narration for current step - SYNC PERFECTED
+  // Single authoritative source: reads ONLY from currentStep at moment of playback
   const readCurrentStep = async () => {
     if (!instructions.length || currentStep >= instructions.length) return;
+    
+    // SYNC FIX: Capture step ID at start - if it changes, abort
+    const thisStepChangeId = ++stepChangeIdRef.current;
     
     // Clear any post-narration timer
     if (postNarrationTimerRef.current) {
@@ -201,6 +225,7 @@ export default function LiveCookingModal() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current.volume = 1; // Reset volume
     }
     
     // Mark any pending narration as aborted
@@ -208,9 +233,16 @@ export default function LiveCookingModal() {
     
     // EMOTIONAL TIMING: Warm start delay (makes it feel natural, not robotic)
     await new Promise(resolve => setTimeout(resolve, VOICE_TIMING.WARM_START_DELAY));
+    
+    // SYNC CHECK: Abort if step changed during warm-up
+    if (thisStepChangeId !== stepChangeIdRef.current) {
+      console.log('[VoiceSync] Step changed during warm-up, aborting');
+      return;
+    }
+    
     narrationAbortRef.current = false;
     
-    // Capture current step at start of this request
+    // Capture current step at start of this request (authoritative read)
     const stepAtStart = currentStep;
     
     try {
@@ -233,8 +265,10 @@ export default function LiveCookingModal() {
       );
 
       // SYNC CHECK: Only play if step hasn't changed during API call
-      if (narrationAbortRef.current || stepAtStart !== currentStep) {
-        console.log('[VoiceSync] Step changed during load, skipping playback');
+      if (narrationAbortRef.current || 
+          stepAtStart !== currentStep || 
+          thisStepChangeId !== stepChangeIdRef.current) {
+        console.log('[VoiceSync] Step changed during API load, skipping playback');
         return;
       }
 
@@ -249,10 +283,14 @@ export default function LiveCookingModal() {
         await new Promise(resolve => setTimeout(resolve, 50));
         
         // Final sync check before playing
-        if (narrationAbortRef.current || stepAtStart !== currentStep) {
+        if (narrationAbortRef.current || 
+            stepAtStart !== currentStep ||
+            thisStepChangeId !== stepChangeIdRef.current) {
           return;
         }
         
+        // SMOOTH FADE-IN: Volume ramps up instead of abrupt start
+        fadeInAudio(audioRef.current);
         audioRef.current.play().catch(e => console.error('Play failed:', e));
       }
     } catch (error) {
