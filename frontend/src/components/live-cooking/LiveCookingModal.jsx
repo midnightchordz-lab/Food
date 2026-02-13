@@ -519,6 +519,52 @@ export default function LiveCookingModal() {
   // HANDS-FREE ENABLE HANDLER
   // Requests all permissions together on user tap
   // ============================================
+  
+  // Engine Orchestrator - coordinates TTS, recognition, gestures
+  const {
+    cameraState,
+    ttsState,
+    recognitionState,
+    gestureState,
+    isTTSSpeaking,
+    isRecognitionActive,
+    isGestureReady,
+    initializeCamera,
+    speakWithOrchestration,
+    onTTSComplete,
+    stopTTS,
+    startRecognition,
+    pauseRecognition,
+    resumeRecognition,
+    stopRecognition,
+    setRecognitionCallbacks,
+    startGestures,
+    stopGestures,
+    handleGestureNavigation,
+    cleanup: cleanupOrchestrator,
+    reset: resetEngineOrchestrator,
+  } = useEngineOrchestrator({
+    enabled: open && handsFreeEnabled,
+    videoRef: cameraVideoRef,
+    cameraStream,
+    onSpeakStep: async (text) => {
+      // Use browser speech for narration
+      stopSpeech();
+      await new Promise(resolve => setTimeout(resolve, 150));
+      narrateCurrentStep(text, true);
+    },
+    onStopSpeaking: () => {
+      stopSpeech();
+    },
+    onStepChange: (direction) => {
+      // This is called by orchestrator after gesture/voice navigation
+      console.log('[LiveCooking] Orchestrator step change:', direction);
+    },
+  });
+  
+  // Track voice command active state for gesture priority
+  const [voiceCommandActive, setVoiceCommandActive] = useState(false);
+  
   const handleEnableHandsFree = useCallback(async () => {
     if (handsFreeEnabled) {
       // Already enabled - disable it
@@ -526,6 +572,7 @@ export default function LiveCookingModal() {
       setShowCamera(false);
       setGestureEnabled(false);
       stopCameraStream();
+      cleanupOrchestrator();
       toast.info('Hands-free controls disabled');
       return;
     }
@@ -544,27 +591,62 @@ export default function LiveCookingModal() {
       toast.error(permissionError || 'Could not enable hands-free mode. Please allow camera and microphone access.');
       console.log('[LiveCooking] Permissions denied, hands-free not enabled');
     }
-  }, [handsFreeEnabled, requestPermissions, stopCameraStream, permissionError]);
-
-  // Hands-free voice controls - ONLY when permissions granted and enabled
-  const { voiceCommandActive, isSupported: voiceSupported } = useHandsFreeControls({
-    enabled: open && handsFreeEnabled && hasMicrophoneAccess,
-    onNext: handleNextWithVoice,
-    onPrev: handlePrevWithVoice,
-    onTogglePlay: handleTogglePlayWithVoice,
-    onRepeat: handleRepeat,
-    isPlaying,
-  });
+  }, [handsFreeEnabled, requestPermissions, stopCameraStream, permissionError, cleanupOrchestrator]);
+  
+  // Setup recognition callbacks when they change
+  useEffect(() => {
+    setRecognitionCallbacks({
+      onNext: handleNextWithVoice,
+      onPrev: handlePrevWithVoice,
+      onTogglePlay: handleTogglePlayWithVoice,
+      onRepeat: handleRepeat,
+    });
+  }, [setRecognitionCallbacks, handleNextWithVoice, handlePrevWithVoice, handleTogglePlayWithVoice, handleRepeat]);
+  
+  // Initialize camera and start recognition when hands-free is enabled
+  useEffect(() => {
+    if (open && handsFreeEnabled && hasCameraAccess && cameraStream) {
+      // Initialize camera first (for gestures)
+      initializeCamera().then(cameraReady => {
+        if (cameraReady) {
+          console.log('[LiveCooking] Camera ready, starting gestures...');
+          startGestures();
+        }
+      });
+      
+      // Start voice recognition
+      if (hasMicrophoneAccess) {
+        startRecognition();
+      }
+    }
+    
+    return () => {
+      if (!open || !handsFreeEnabled) {
+        cleanupOrchestrator();
+      }
+    };
+  }, [open, handsFreeEnabled, hasCameraAccess, hasMicrophoneAccess, cameraStream, initializeCamera, startGestures, startRecognition, cleanupOrchestrator]);
 
   // Gesture control state
   const [gestureEnabled, setGestureEnabled] = useState(false);
 
   // Gesture controls (swipe left/right) - uses camera stream from permissions
+  // Now controlled by orchestrator for proper sequencing
   useGestureControl({
-    enabled: open && gestureEnabled && showCamera && cameraVideoReady && hasCameraAccess,
+    enabled: open && gestureEnabled && showCamera && cameraVideoReady && hasCameraAccess && isGestureReady,
     videoRef: cameraVideoRef,
-    onNext: handleNextWithVoice,
-    onPrev: handlePrevWithVoice,
+    onNext: async () => {
+      setVoiceCommandActive(true);
+      await handleGestureNavigation('next');
+      handleNextWithVoice();
+      setTimeout(() => setVoiceCommandActive(false), 100);
+    },
+    onPrev: async () => {
+      setVoiceCommandActive(true);
+      await handleGestureNavigation('previous');
+      handlePrevWithVoice();
+      setTimeout(() => setVoiceCommandActive(false), 100);
+    },
     voiceCommandActive, // Voice takes priority over gestures
   });
 
