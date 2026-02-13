@@ -86,20 +86,18 @@ const CheckoutSuccessPage = () => {
         return;
       }
 
-      const response = await axios.get(`${API}/subscription/current`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success) {
-        setSubscription(response.data.subscription);
-        
-        // CRITICAL: Refresh usage limits AND subscription to unlock features immediately
-        // This updates the global state so all components see the new tier
-        await refreshUsage();
-        await refreshSubscription(); // Now awaiting the Promise
-        
-        console.log('[CheckoutSuccess] Subscription refreshed:', response.data.subscription?.plan_id);
-      }
+      // CRITICAL: First refresh the global subscription state
+      // This ensures all components across the app see the new tier immediately
+      const refreshedSub = await refreshSubscription();
+      console.log('[CheckoutSuccess] Global subscription refreshed:', refreshedSub?.plan_id);
+      
+      // Update local state for display
+      setSubscription(refreshedSub);
+      
+      // Refresh usage limits to reflect new tier limits
+      await refreshUsage();
+      
+      console.log('[CheckoutSuccess] Payment success flow complete - features should be unlocked');
     } catch (err) {
       console.error('Error loading subscription:', err);
       setError('Could not load subscription details');
