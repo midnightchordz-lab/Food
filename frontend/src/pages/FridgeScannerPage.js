@@ -47,6 +47,7 @@ const FridgeScanner = () => {
   // Auth and feature access
   const { isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { refreshSubscription } = useSubscription();
   const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('fridge_scanner');
   
   // Feature lock modal state
@@ -60,7 +61,13 @@ const FridgeScanner = () => {
   useEffect(() => {
     // Check if running on native platform
     setIsNative(Capacitor.isNativePlatform());
-  }, []);
+    
+    // CRITICAL: Refresh subscription on mount to ensure we have latest data
+    // This handles case where user upgraded but state wasn't refreshed
+    if (isAuthenticated) {
+      refreshSubscription();
+    }
+  }, [isAuthenticated]);
   
   // Redirect to home if not authenticated
   useEffect(() => {
