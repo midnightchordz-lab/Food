@@ -85,6 +85,7 @@ export function useGestureControl({
   
   /**
    * Analyze frame difference to detect motion direction
+   * SYNC FIX: More tolerant of low FPS, better noise filtering
    */
   const analyzeMotion = useCallback((currentFrame, prevFrame, width, height) => {
     if (!currentFrame || !prevFrame) return null;
@@ -100,7 +101,7 @@ export function useGestureControl({
     let totalMotion = 0;
     
     // Sample pixels in detection zone
-    const step = 6; // Sample every 6 pixels for better detection
+    const step = 5; // Sample every 5 pixels for better coverage
     for (let y = startY; y < endY; y += step) {
       for (let x = startX; x < endX; x += step) {
         const i = (y * width + x) * 4;
@@ -124,17 +125,17 @@ export function useGestureControl({
       }
     }
     
-    // Need minimum motion to be considered
-    if (totalMotion < CONFIG.MIN_TOTAL_MOTION) return null;
+    // Need minimum motion to be considered (noise filter)
+    if (totalMotion < CONFIG.MIN_MOTION_PIXELS) return null;
     
-    // Determine dominant direction
+    // Determine dominant direction with higher confidence threshold
     const directionRatio = (rightMotion - leftMotion) / totalMotion;
     
-    if (Math.abs(directionRatio) > CONFIG.DIRECTION_THRESHOLD) {
+    if (Math.abs(directionRatio) > CONFIG.DIRECTION_CONFIDENCE) {
       return {
         direction: directionRatio > 0 ? 'right' : 'left',
-        intensity: totalMotion,
         confidence: Math.abs(directionRatio),
+        totalMotion,
       };
     }
     
