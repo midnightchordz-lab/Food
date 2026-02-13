@@ -476,7 +476,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
         {!isLoadingDetails && (
           <div className="flex flex-col lg:flex-row max-h-[90vh] lg:max-h-[85vh] overflow-hidden">
             
-            {/* LEFT COLUMN - Recipe Content */}
+            {/* LEFT COLUMN - Recipe Content (scrollable on both mobile and desktop) */}
             <div className="flex-1 overflow-y-auto" ref={contentRef}>
               {/* Close Button - Mobile */}
               <div className="lg:hidden absolute top-3 right-3 z-30">
@@ -486,7 +486,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
               </div>
               
               {/* Mobile: Hero Image */}
-              <div className="lg:hidden relative h-48 overflow-hidden">
+              <div className="lg:hidden relative h-56 sm:h-64 overflow-hidden flex-shrink-0">
                 {isGeneratingImage && !aiImageUrl && (
                   <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center z-10">
                     <div className="text-center text-white">
