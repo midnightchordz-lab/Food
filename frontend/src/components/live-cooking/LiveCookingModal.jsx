@@ -191,7 +191,7 @@ export default function LiveCookingModal() {
   };
 
   // SYNC FIX: Smooth fade-in instead of abrupt audio start
-  const fadeInAudio = useCallback((audio, duration = VOICE_TIMING.FADE_IN_DURATION) => {
+  const fadeInAudio = useCallback((audio, duration = 0.3) => {
     if (!audio) return;
     audio.volume = 0;
     const startTime = Date.now();
