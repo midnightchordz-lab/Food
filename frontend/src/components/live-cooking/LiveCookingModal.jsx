@@ -314,15 +314,20 @@ export default function LiveCookingModal() {
   }, [open, recipeVideo]);
 
   // Read step when step changes (only if user has started)
-  // PERFECTED SYNC: Stop audio + emotional timing delay before new narration
+  // SYNC PERFECTED: Instant audio stop + increment step change ID
   useEffect(() => {
     if (!open) return;
     if (!hasUserStartedRef.current) return;
+    
+    // SYNC FIX: Increment step change ID immediately
+    // This invalidates any in-flight narration requests
+    stepChangeIdRef.current++;
     
     // HARD SYNC: Immediately stop any playing audio when step changes
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current.volume = 1; // Reset volume for next play
     }
     
     // Abort any pending narration (both step and emotional)
