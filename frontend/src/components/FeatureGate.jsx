@@ -272,64 +272,76 @@ export const FeatureLockedModal = ({
 
 /**
  * Hook to check if a feature is accessible
- * Includes fresh subscription check on first access
+ * Automatically re-checks when subscription updates via the version counter
  */
 export const useFeatureAccess = (feature) => {
-  const { subscription, loading, refreshSubscription } = useSubscription();
-  const [localLoading, setLocalLoading] = useState(true);
-  const checkedRef = useRef(false);
+  const { subscription, loading, version } = useSubscription();
+  const [allowed, setAllowed] = useState(true); // Optimistic default
   
-  // Refresh subscription on first access to ensure fresh data
+  // Re-evaluate access whenever subscription or version changes
   useEffect(() => {
-    if (!checkedRef.current && !loading) {
-      checkedRef.current = true;
-      
-      // If subscription seems stale (no features or free plan), refresh
-      if (!subscription?.features || Object.keys(subscription.features).length === 0) {
-        refreshSubscription().finally(() => setLocalLoading(false));
-      } else {
-        setLocalLoading(false);
-      }
+    if (loading || !subscription) {
+      setAllowed(true); // Optimistic while loading
+      return;
     }
-  }, [loading, subscription, refreshSubscription]);
-  
-  if (loading || localLoading) {
-    return { allowed: true, loading: true }; // Optimistic loading
-  }
 
-  if (!subscription) {
-    return { allowed: true, loading: true }; // Still loading
-  }
-
-  const features = subscription.features || {};
+    const features = subscription.features || {};
+    
+    // Log for debugging
+    console.log(`[useFeatureAccess] Checking '${feature}' (version ${version}):`, {
+      plan: subscription.plan_id,
+      features: Object.keys(features).filter(k => features[k] === true || features[k] > 0)
+    });
+    
+    // Check specific features based on plan features from backend
+    let hasAccess = false;
+    
+    switch (feature) {
+      case 'diabetes_module':
+        hasAccess = features.diabetes_module === true;
+        break;
+      case 'recipe_import':
+        hasAccess = features.recipe_import === true;
+        break;
+      case 'video_import':
+        hasAccess = features.video_import === true;
+        break;
+      case 'ai_photo_recognition':
+      case 'fridge_scanner':
+        hasAccess = features.ai_photo_recognition_enabled === true;
+        break;
+      case 'ai_image_generation':
+        hasAccess = features.ai_image_generation_enabled === true;
+        break;
+      case 'voice_cooking':
+        hasAccess = features.voice_guided_cooking === true;
+        break;
+      case 'export_pdf':
+        hasAccess = features.export_to_pdf === true;
+        break;
+      case 'premium_recipes':
+        hasAccess = features.premium_recipes_access === true;
+        break;
+      case 'meal_planner_extended':
+        hasAccess = (features.meal_planner_weeks || 1) > 1;
+        break;
+      case 'advanced_filters':
+        hasAccess = features.advanced_filters === true;
+        break;
+      case 'priority_support':
+        hasAccess = features.priority_support === true;
+        break;
+      case 'ad_free':
+        hasAccess = features.ad_free === true;
+        break;
+      default:
+        hasAccess = true; // Unknown features default to allowed
+    }
+    
+    setAllowed(hasAccess);
+  }, [subscription, loading, feature, version]);
   
-  // Log for debugging
-  console.log(`[useFeatureAccess] Checking '${feature}':`, {
-    plan: subscription.plan_id,
-    ai_photo: features.ai_photo_recognition_enabled,
-    diabetes: features.diabetes_module
-  });
-  
-  // Check specific features
-  switch (feature) {
-    case 'diabetes_module':
-      return { allowed: features.diabetes_module === true, loading: false };
-    case 'recipe_import':
-      return { allowed: features.recipe_import === true, loading: false };
-    case 'video_import':
-      return { allowed: features.video_import === true, loading: false };
-    case 'ai_photo_recognition':
-    case 'fridge_scanner':
-      return { allowed: features.ai_photo_recognition_enabled === true, loading: false };
-    case 'voice_cooking':
-      return { allowed: features.voice_guided_cooking === true, loading: false };
-    case 'export_pdf':
-      return { allowed: features.export_to_pdf === true, loading: false };
-    case 'premium_recipes':
-      return { allowed: features.premium_recipes_access === true, loading: false };
-    default:
-      return { allowed: true, loading: false };
-  }
+  return { allowed, loading };
 };
 
 /**
