@@ -781,10 +781,16 @@ export default function LiveCookingModal() {
                       {/* Status text */}
                       <div className="flex flex-col">
                         <span className={`text-xs font-medium ${theme.text} opacity-80`}>
-                          AI Observer
+                          {useBrowserSpeech ? 'Free Voice' : 'AI Observer'}
                         </span>
                         <span className="text-[10px] text-white/50">
-                          {aiState === 'idle' ? 'Watching' : aiState === 'active' ? 'Activity detected' : 'Step ready?'}
+                          {useBrowserSpeech 
+                            ? 'Browser TTS active' 
+                            : aiState === 'idle' 
+                              ? 'Watching' 
+                              : aiState === 'active' 
+                                ? 'Activity detected' 
+                                : 'Step ready?'}
                         </span>
                       </div>
                     </div>
