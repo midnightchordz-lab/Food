@@ -722,7 +722,7 @@ export default function LiveCookingModal() {
                   )}
                   
                   {/* Fallback background when camera is off */}
-                  {(!showCamera || !isCameraActive) && (
+                  {(!showCamera || !hasCameraAccess) && (
                     <>
                       {recipeVideo ? (
                         <video
