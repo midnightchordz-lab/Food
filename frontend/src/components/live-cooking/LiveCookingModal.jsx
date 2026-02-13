@@ -577,7 +577,7 @@ export default function LiveCookingModal() {
       }
       setCameraVideoReady(false);
     };
-  }, [cameraStream]);
+  }, [cameraStream, hasCameraAccess]);
 
   // AI Observer - visual state updates only (no logic changes)
   const handleAIEvent = useCallback((event) => {
@@ -595,15 +595,17 @@ export default function LiveCookingModal() {
   }, []);
 
   useAIObserver({
-    enabled: open && isCameraActive && showCamera && cameraVideoReady,
+    enabled: open && hasCameraAccess && showCamera && cameraVideoReady,
     videoElement: cameraVideoReady ? cameraVideoRef.current : null,
     onEvent: handleAIEvent,
   });
 
-  // Toggle camera visibility
+  // Toggle camera visibility (only if permissions granted)
   const toggleCamera = useCallback(() => {
-    setShowCamera(prev => !prev);
-  }, []);
+    if (hasCameraAccess) {
+      setShowCamera(prev => !prev);
+    }
+  }, [hasCameraAccess]);
 
   // Sync video/audio with play state
   useEffect(() => {
