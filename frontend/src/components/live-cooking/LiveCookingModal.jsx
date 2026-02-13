@@ -535,16 +535,28 @@ export default function LiveCookingModal() {
 
                     {/* Right: Control buttons */}
                     <div className="flex items-center gap-2">
-                      {/* Hands-free indicator */}
+                      {/* Hands-free toggle button */}
                       <motion.div
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.6 }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10"
-                        style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        <Mic className="w-3 h-3 text-emerald-400" />
-                        <span className="text-xs text-white/60 hidden sm:inline">Voice</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setHandsFreeEnabled(prev => !prev)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
+                            handsFreeEnabled ? 'bg-emerald-500/20' : 'bg-black/30'
+                          }`}
+                          data-testid="live-cooking-handsfree-btn"
+                        >
+                          <Mic className={`w-3 h-3 ${handsFreeEnabled ? 'text-emerald-400' : 'text-white/60'}`} />
+                          <span className={`text-xs hidden sm:inline ${handsFreeEnabled ? 'text-emerald-400' : 'text-white/60'}`}>
+                            {handsFreeEnabled ? 'Voice On' : 'Voice Off'}
+                          </span>
+                        </Button>
                       </motion.div>
 
                       {/* Camera toggle */}
