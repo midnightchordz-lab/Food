@@ -5,32 +5,33 @@
  * - Swipe Right → Next Step
  * - Swipe Left → Previous Step
  * 
- * Uses the existing camera stream - no new permissions needed.
- * This is a pure control layer - only triggers callbacks, no side effects.
+ * FIXED: Proper browser camera permission handling for web.
+ * This is a pure control layer - only triggers existing button callbacks.
  * 
  * IMPORTANT: This does NOT use complex AI or object detection.
  * It simply tracks general motion direction in the center zone.
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
-// Configuration
+// Configuration - tuned for web browser reliability
 const CONFIG = {
   // Zone detection (center 60% of video)
   DETECTION_ZONE: { x: 0.2, y: 0.2, width: 0.6, height: 0.6 },
   
-  // Motion thresholds
-  MIN_SWIPE_DISTANCE: 80,      // Minimum pixels for a swipe
-  MIN_SWIPE_SPEED: 200,        // Minimum pixels/second
-  MAX_SWIPE_DURATION: 500,     // Maximum ms for a swipe gesture
+  // Motion thresholds - more lenient for web
+  MIN_SWIPE_DISTANCE: 60,       // Minimum accumulated motion for a swipe
+  MAX_SWIPE_DURATION: 600,      // Maximum ms for a swipe gesture
   
-  // Cooldowns
-  GESTURE_COOLDOWN: 1500,      // ms between gestures (prevent accidental)
+  // Cooldowns - critical for web noise filtering
+  GESTURE_COOLDOWN: 1500,       // ms between gestures (prevents accidental)
   VOICE_PRIORITY_COOLDOWN: 2000, // ms to ignore gestures after voice command
   
   // Frame analysis
-  SAMPLE_INTERVAL: 100,        // ms between motion samples
-  MOTION_THRESHOLD: 30,        // Pixel difference to detect motion
+  SAMPLE_INTERVAL: 80,          // ms between motion samples
+  MOTION_THRESHOLD: 25,         // Pixel difference to detect motion (lower for web)
+  MIN_TOTAL_MOTION: 40,         // Minimum motion pixels to consider
+  DIRECTION_THRESHOLD: 0.25,    // Minimum direction ratio to trigger
 };
 
 export function useGestureControl({
@@ -48,8 +49,11 @@ export function useGestureControl({
   const lastVoiceTimeRef = useRef(0);
   const animationFrameRef = useRef(null);
   const isActiveRef = useRef(false);
+  const videoReadyRef = useRef(false);
   
-  // Store callbacks in refs
+  const [gestureStatus, setGestureStatus] = useState('initializing');
+  
+  // Store callbacks in refs to prevent stale closures
   const callbacksRef = useRef({ onNext, onPrev });
   useEffect(() => {
     callbacksRef.current = { onNext, onPrev };
@@ -79,7 +83,7 @@ export function useGestureControl({
     let totalMotion = 0;
     
     // Sample pixels in detection zone
-    const step = 8; // Sample every 8 pixels for performance
+    const step = 6; // Sample every 6 pixels for better detection
     for (let y = startY; y < endY; y += step) {
       for (let x = startX; x < endX; x += step) {
         const i = (y * width + x) * 4;
@@ -104,12 +108,12 @@ export function useGestureControl({
     }
     
     // Need minimum motion to be considered
-    if (totalMotion < 50) return null;
+    if (totalMotion < CONFIG.MIN_TOTAL_MOTION) return null;
     
     // Determine dominant direction
     const directionRatio = (rightMotion - leftMotion) / totalMotion;
     
-    if (Math.abs(directionRatio) > 0.3) {
+    if (Math.abs(directionRatio) > CONFIG.DIRECTION_THRESHOLD) {
       return {
         direction: directionRatio > 0 ? 'right' : 'left',
         intensity: totalMotion,
@@ -121,7 +125,8 @@ export function useGestureControl({
   }, []);
   
   /**
-   * Process gesture based on motion tracking
+   * Process gesture and trigger navigation
+   * FIX: Direct callback invocation for web compatibility
    */
   const processGesture = useCallback((motion) => {
     const now = Date.now();
@@ -131,7 +136,7 @@ export function useGestureControl({
       return;
     }
     
-    // Check gesture cooldown
+    // Check gesture cooldown - critical for web noise filtering
     if (now - lastGestureTimeRef.current < CONFIG.GESTURE_COOLDOWN) {
       return;
     }
@@ -160,17 +165,28 @@ export function useGestureControl({
       if (motion.direction === motionStartRef.current.direction && 
           motionStartRef.current.totalIntensity > CONFIG.MIN_SWIPE_DISTANCE) {
         
-        // Valid swipe detected!
+        // Valid swipe detected! Trigger navigation
         const { onNext, onPrev } = callbacksRef.current;
         
-        if (motion.direction === 'right') {
-          console.log('[Gesture] Swipe RIGHT detected - Next Step');
-          onNext?.();
-        } else {
-          console.log('[Gesture] Swipe LEFT detected - Previous Step');
-          onPrev?.();
+        if (motion.direction === 'right' && onNext) {
+          console.log('[Gesture] ✓ Swipe RIGHT → Next Step');
+          // Direct function call - this is the fix for web
+          try {
+            onNext();
+          } catch (e) {
+            console.error('[Gesture] Failed to trigger next:', e);
+          }
+        } else if (motion.direction === 'left' && onPrev) {
+          console.log('[Gesture] ✓ Swipe LEFT → Previous Step');
+          // Direct function call - this is the fix for web
+          try {
+            onPrev();
+          } catch (e) {
+            console.error('[Gesture] Failed to trigger prev:', e);
+          }
         }
         
+        // Set cooldown and reset
         lastGestureTimeRef.current = now;
         motionStartRef.current = null;
       }
@@ -178,7 +194,7 @@ export function useGestureControl({
   }, []);
   
   /**
-   * Main detection loop
+   * Main detection loop - with web browser safety
    */
   const detectGestures = useCallback(() => {
     if (!isActiveRef.current) return;
@@ -187,17 +203,31 @@ export function useGestureControl({
     const canvas = canvasRef.current;
     const context = contextRef.current;
     
-    if (!video || !canvas || !context || video.readyState < 2) {
+    // Check video is ready for web browsers
+    if (!video || !canvas || !context) {
       animationFrameRef.current = setTimeout(() => detectGestures(), CONFIG.SAMPLE_INTERVAL);
       return;
     }
     
+    // Web browser video readiness check
+    if (video.readyState < 2 || video.videoWidth === 0) {
+      animationFrameRef.current = setTimeout(() => detectGestures(), CONFIG.SAMPLE_INTERVAL);
+      return;
+    }
+    
+    // Mark video as ready on first successful frame
+    if (!videoReadyRef.current) {
+      videoReadyRef.current = true;
+      setGestureStatus('active');
+      console.log('[Gesture] Video ready, detection active');
+    }
+    
     try {
-      // Draw current frame
+      // Draw current frame to canvas
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const currentFrame = context.getImageData(0, 0, canvas.width, canvas.height).data;
       
-      // Analyze motion
+      // Analyze motion if we have a previous frame
       if (prevFrameRef.current) {
         const motion = analyzeMotion(currentFrame, prevFrameRef.current, canvas.width, canvas.height);
         if (motion) {
@@ -208,10 +238,11 @@ export function useGestureControl({
         }
       }
       
-      // Store for next frame
+      // Store for next frame comparison
       prevFrameRef.current = currentFrame;
     } catch (e) {
       // Ignore frame errors (can happen during video state changes)
+      console.debug('[Gesture] Frame error:', e.message);
     }
     
     // Continue loop
@@ -219,13 +250,36 @@ export function useGestureControl({
   }, [videoRef, analyzeMotion, processGesture]);
   
   /**
-   * Initialize gesture detection
+   * Initialize gesture detection with proper web browser handling
    */
   useEffect(() => {
-    if (!enabled || !videoRef?.current) {
+    // Cleanup function
+    const cleanup = () => {
       isActiveRef.current = false;
+      videoReadyRef.current = false;
+      if (animationFrameRef.current) {
+        clearTimeout(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      canvasRef.current = null;
+      contextRef.current = null;
+      prevFrameRef.current = null;
+      motionStartRef.current = null;
+      setGestureStatus('disabled');
+    };
+    
+    if (!enabled) {
+      cleanup();
       return;
     }
+    
+    // Wait for video element
+    if (!videoRef?.current) {
+      setGestureStatus('waiting_video');
+      return;
+    }
+    
+    const video = videoRef.current;
     
     // Create offscreen canvas for frame analysis
     const canvas = document.createElement('canvas');
@@ -234,29 +288,35 @@ export function useGestureControl({
     canvasRef.current = canvas;
     contextRef.current = canvas.getContext('2d', { willReadFrequently: true });
     
+    // Reset state
     isActiveRef.current = true;
+    videoReadyRef.current = false;
     prevFrameRef.current = null;
     motionStartRef.current = null;
+    setGestureStatus('initializing');
     
-    // Start detection loop
-    detectGestures();
-    
-    console.log('[Gesture] Control initialized');
-    
-    return () => {
-      isActiveRef.current = false;
-      if (animationFrameRef.current) {
-        clearTimeout(animationFrameRef.current);
-        animationFrameRef.current = null;
+    // Wait for video to be playing before starting detection
+    const checkVideoReady = () => {
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        console.log('[Gesture] Video stream detected, starting detection');
+        detectGestures();
+      } else {
+        // Check again in 200ms
+        setTimeout(checkVideoReady, 200);
       }
-      canvasRef.current = null;
-      contextRef.current = null;
-      prevFrameRef.current = null;
     };
+    
+    // Start checking
+    checkVideoReady();
+    
+    console.log('[Gesture] Control initialized for web');
+    
+    return cleanup;
   }, [enabled, videoRef, detectGestures]);
   
   return {
-    isActive: isActiveRef.current,
+    isActive: isActiveRef.current && videoReadyRef.current,
+    status: gestureStatus,
   };
 }
 
