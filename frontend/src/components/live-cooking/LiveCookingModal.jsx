@@ -463,6 +463,7 @@ export default function LiveCookingModal() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+    stopSpeaking(); // Also stop browser speech
     narrationAbortRef.current = true;
     
     // EMOTIONAL: Play reassurance when user requests repeat
@@ -478,6 +479,8 @@ export default function LiveCookingModal() {
       setAiState('idle');
       setShowWhisper(false);
       setHandsFreeEnabled(false); // Reset hands-free when modal closes
+      setUseBrowserSpeech(false); // Reset fallback mode
+      stopSpeaking(); // Stop any browser speech
       resetOrchestrator(); // Reset emotional voice state
     }
   }, [open, resetOrchestrator]);
