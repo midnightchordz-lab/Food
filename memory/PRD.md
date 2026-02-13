@@ -71,6 +71,7 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - On any step change: `audio.pause()` + `audio.currentTime = 0`
 - `narrationAbortRef` marks pending narrations as aborted
 - No queued or delayed speech from previous steps
+- Also stops browser speech with `stopSpeaking()`
 
 **Gesture Debounce & Confirmation:**
 | Config | Value | Purpose |
@@ -93,11 +94,20 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 | `POST_NARRATION_WAIT` | 1400ms | Breathing space after narration |
 | `FADE_IN_DURATION` | 0.3s | Smooth volume ramp (not abrupt) |
 
+**FREE Browser Speech Fallback ✅ NEW:**
+When ElevenLabs quota is exhausted or API fails, automatically falls back to browser's built-in SpeechSynthesis API:
+- Zero cost (uses browser TTS)
+- Works on Chrome, Safari, Firefox (web + mobile)
+- Natural pacing: 0.95 rate, 1.0 pitch
+- UI indicator shows "Free Voice" when fallback is active
+- File: `frontend/src/lib/browserSpeech.js`
+
 **Result:**
 - Visible step and spoken step are ALWAYS identical
 - No delayed or wrong narration
 - Gestures feel intentional and stable on web
 - Hands-free experience feels calm and premium
+- Voice works even when ElevenLabs quota exhausted
 
 #### Previous: Web Gesture Fix + Voice Sync (Feb 13, 2026)
 **Fixed voice-to-step synchronization and improved voice naturalness.**
