@@ -58,26 +58,33 @@ export function useEmotionalVoiceOrchestrator({
   const hasPlayedStepGuidance = useRef(false);
   const hasPlayedEncouragement = useRef(false);
   const isNarrating = useRef(false);
-  const narrationQueue = useRef([]);
+  const abortNarration = useRef(false);
   
   /**
    * Core function to speak emotional text through existing voice system
    * Uses the same /api/audio/step endpoint as regular step narration
+   * 
+   * SYNC FIX: Non-blocking, can be aborted, never queues
    */
   const speakEmotionalText = useCallback(async (text, priority = 'normal') => {
     if (!enabled || !text || !audioRef?.current) {
       return false;
     }
     
-    // Don't interrupt high-priority narration
+    // Skip if already narrating (don't queue to prevent drift)
     if (isNarrating.current && priority !== 'high') {
-      // Queue for later if not high priority
-      narrationQueue.current.push(text);
       return false;
+    }
+    
+    // For high priority, stop current narration
+    if (priority === 'high' && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
     
     try {
       isNarrating.current = true;
+      abortNarration.current = false;
       onNarrationStart?.();
       
       const token = localStorage.getItem('token');
@@ -95,34 +102,20 @@ export function useEmotionalVoiceOrchestrator({
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
+      // Check if aborted during API call
+      if (abortNarration.current) {
+        return false;
+      }
+      
       if (response.data.success && audioRef.current) {
         const fullUrl = response.data.audioUrl.startsWith('http')
           ? response.data.audioUrl
           : `${API}${response.data.audioUrl}`;
         
-        // Wait for current audio to finish if any
-        if (!audioRef.current.paused) {
-          await new Promise(resolve => {
-            const handler = () => {
-              audioRef.current.removeEventListener('ended', handler);
-              resolve();
-            };
-            audioRef.current.addEventListener('ended', handler);
-          });
-        }
-        
         audioRef.current.src = fullUrl;
-        await audioRef.current.play();
+        audioRef.current.play().catch(() => {});
         
-        // Wait for this narration to finish
-        await new Promise(resolve => {
-          const handler = () => {
-            audioRef.current.removeEventListener('ended', handler);
-            resolve();
-          };
-          audioRef.current.addEventListener('ended', handler);
-        });
-        
+        // Don't await - let it play non-blocking
         return true;
       }
     } catch (error) {
