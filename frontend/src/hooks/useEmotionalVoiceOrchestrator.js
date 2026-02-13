@@ -289,6 +289,7 @@ export function useEmotionalVoiceOrchestrator({
     
     // Utility
     resetOrchestrator,
+    abortEmotionalNarration, // Call when step changes to prevent drift
     speakEmotionalText, // For custom emotional text if needed
     
     // State (read-only)
