@@ -841,7 +841,7 @@ export default function LiveCookingModal() {
 
                     {/* Right: Control buttons */}
                     <div className="flex items-center gap-2">
-                      {/* Hands-free voice toggle button */}
+                      {/* Enable Hands-Free button - requests ALL permissions on tap */}
                       <motion.div
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -852,24 +852,39 @@ export default function LiveCookingModal() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setHandsFreeEnabled(prev => !prev)}
+                          onClick={handleEnableHandsFree}
+                          disabled={permissionStatus === PermissionStatus.REQUESTING}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
-                            handsFreeEnabled ? 'bg-emerald-500/20' : 'bg-black/30'
+                            handsFreeEnabled && hasAllPermissions 
+                              ? 'bg-emerald-500/20' 
+                              : permissionStatus === PermissionStatus.DENIED 
+                                ? 'bg-red-500/20' 
+                                : 'bg-black/30'
                           }`}
                           data-testid="live-cooking-handsfree-btn"
                         >
-                          {handsFreeEnabled ? (
+                          {permissionStatus === PermissionStatus.REQUESTING ? (
+                            <div className="w-3 h-3 border border-white/60 border-t-transparent rounded-full animate-spin" />
+                          ) : handsFreeEnabled && hasAllPermissions ? (
                             <Mic className="w-3 h-3 text-emerald-400" />
+                          ) : permissionStatus === PermissionStatus.DENIED ? (
+                            <AlertCircle className="w-3 h-3 text-red-400" />
                           ) : (
                             <MicOff className="w-3 h-3 text-white/60" />
                           )}
-                          <span className={`text-xs hidden sm:inline ${handsFreeEnabled ? 'text-emerald-400' : 'text-white/60'}`}>
-                            {handsFreeEnabled ? 'Voice' : 'Voice'}
+                          <span className={`text-xs hidden sm:inline ${
+                            handsFreeEnabled && hasAllPermissions 
+                              ? 'text-emerald-400' 
+                              : permissionStatus === PermissionStatus.DENIED
+                                ? 'text-red-400'
+                                : 'text-white/60'
+                          }`}>
+                            {handsFreeEnabled && hasAllPermissions ? 'Voice On' : 'Voice'}
                           </span>
                         </Button>
                       </motion.div>
 
-                      {/* Gesture control toggle button */}
+                      {/* Gesture control toggle button - only works after permissions granted */}
                       <motion.div
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -881,6 +896,11 @@ export default function LiveCookingModal() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
+                            if (!hasCameraAccess) {
+                              // Need to request permissions first
+                              handleEnableHandsFree();
+                              return;
+                            }
                             // Enable camera if not already on when enabling gestures
                             if (!gestureEnabled && !showCamera) {
                               setShowCamera(true);
@@ -888,29 +908,36 @@ export default function LiveCookingModal() {
                             setGestureEnabled(prev => !prev);
                           }}
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
-                            gestureEnabled ? 'bg-blue-500/20' : 'bg-black/30'
+                            gestureEnabled && hasCameraAccess ? 'bg-blue-500/20' : 'bg-black/30'
                           }`}
                           data-testid="live-cooking-gesture-btn"
                         >
-                          <Hand className={`w-3 h-3 ${gestureEnabled ? 'text-blue-400' : 'text-white/60'}`} />
-                          <span className={`text-xs hidden sm:inline ${gestureEnabled ? 'text-blue-400' : 'text-white/60'}`}>
+                          <Hand className={`w-3 h-3 ${gestureEnabled && hasCameraAccess ? 'text-blue-400' : 'text-white/60'}`} />
+                          <span className={`text-xs hidden sm:inline ${gestureEnabled && hasCameraAccess ? 'text-blue-400' : 'text-white/60'}`}>
                             Swipe
                           </span>
                         </Button>
                       </motion.div>
 
-                      {/* Camera toggle */}
+                      {/* Camera toggle - only works after permissions granted */}
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={toggleCamera}
+                          onClick={() => {
+                            if (!hasCameraAccess) {
+                              // Need to request permissions first
+                              handleEnableHandsFree();
+                              return;
+                            }
+                            toggleCamera();
+                          }}
                           className={`w-10 h-10 rounded-full backdrop-blur-xl border border-white/10 text-white hover:bg-white/10 ${
-                            showCamera && isCameraActive ? 'bg-emerald-500/20' : 'bg-black/30'
+                            showCamera && hasCameraAccess ? 'bg-emerald-500/20' : 'bg-black/30'
                           }`}
                           data-testid="live-cooking-camera-btn"
                         >
-                          {showCamera && isCameraActive ? (
+                          {showCamera && hasCameraAccess ? (
                             <Camera className="h-4 w-4 text-emerald-400" />
                           ) : (
                             <CameraOff className="h-4 w-4 text-white/60" />
