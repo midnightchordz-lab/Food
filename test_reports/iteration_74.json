@@ -91,7 +91,7 @@
   "updated_files": [],
   
   "success_rate": {
-    "backend": "0% - /api/audio/step endpoint failing with 520",
+    "backend": "0% - ElevenLabs TTS quota exhausted (0/40000 credits)",
     "frontend": "95% - All UI controls work, sync logic implemented correctly"
   },
   
