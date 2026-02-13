@@ -386,10 +386,19 @@ export default function LiveCookingModal() {
     }
   }, [isPlaying, togglePlay, playOpeningNarration, playStepStartGuidance]);
 
-  // Handle next with voice trigger
+  // Handle next with voice trigger - SYNC: Only requests step change
   const handleNextWithVoice = useCallback(async () => {
     const isLastStep = currentStep >= instructions.length - 1;
     hasUserStartedRef.current = true;
+    
+    // SYNC FIX: Increment ID and stop audio BEFORE any async work
+    stepChangeIdRef.current++;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    narrationAbortRef.current = true;
+    abortEmotionalNarration();
     
     if (isLastStep) {
       // EMOTIONAL: Play final narration when recipe is completed
@@ -397,22 +406,27 @@ export default function LiveCookingModal() {
     } else {
       // EMOTIONAL: Play completion transition before moving to next step
       await playCompletionTransition();
-      nextStep();
-      // EMOTIONAL: Play step start guidance for new step
-      await playStepStartGuidance();
-      readCurrentStep();
+      nextStep(); // This triggers the useEffect which handles narration
     }
-  }, [nextStep, currentStep, instructions.length, playCompletionTransition, playStepStartGuidance, playFinalNarration]);
+  }, [nextStep, currentStep, instructions.length, playCompletionTransition, playFinalNarration, abortEmotionalNarration]);
 
-  // Handle prev with voice trigger
+  // Handle prev with voice trigger - SYNC: Only requests step change
   const handlePrevWithVoice = useCallback(async () => {
     hasUserStartedRef.current = true;
+    
+    // SYNC FIX: Increment ID and stop audio BEFORE any async work
+    stepChangeIdRef.current++;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    narrationAbortRef.current = true;
+    abortEmotionalNarration();
+    
     // EMOTIONAL: Play reassurance when going back
     await playReassurance('step_back');
-    prevStep();
-    await playStepStartGuidance();
-    readCurrentStep();
-  }, [prevStep, playReassurance, playStepStartGuidance]);
+    prevStep(); // This triggers the useEffect which handles narration
+  }, [prevStep, playReassurance, abortEmotionalNarration]);
 
   // Handle repeat - replay current step narration
   const handleRepeat = useCallback(async () => {
