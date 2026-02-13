@@ -313,8 +313,9 @@ export default function LiveCookingModal() {
       setAiState('idle');
       setShowWhisper(false);
       setHandsFreeEnabled(false); // Reset hands-free when modal closes
+      resetOrchestrator(); // Reset emotional voice state
     }
-  }, [open]);
+  }, [open, resetOrchestrator]);
 
   // Hands-free controls (voice commands + double clap) - ONLY when user enables it
   useHandsFreeControls({
