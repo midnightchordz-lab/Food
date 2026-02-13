@@ -2,7 +2,7 @@
  * Feature Gating Component and Utilities
  * Handles feature access checks and displays upgrade prompts for locked features
  */
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
