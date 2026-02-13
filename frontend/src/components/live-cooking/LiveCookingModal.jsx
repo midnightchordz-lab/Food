@@ -499,6 +499,52 @@ export default function LiveCookingModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playReassurance]);
 
+  // ============================================
+  // ENGINE ORCHESTRATOR - Phase 1 Synchronization
+  // Coordinates TTS, recognition, gestures
+  // MUST be declared before any effects that use its values
+  // ============================================
+  const {
+    cameraState,
+    ttsState,
+    recognitionState,
+    gestureState,
+    isTTSSpeaking,
+    isRecognitionActive,
+    isGestureReady,
+    initializeCamera,
+    speakWithOrchestration,
+    onTTSComplete,
+    stopTTS,
+    startRecognition,
+    pauseRecognition,
+    resumeRecognition,
+    stopRecognition,
+    setRecognitionCallbacks,
+    startGestures,
+    stopGestures,
+    handleGestureNavigation,
+    cleanup: cleanupOrchestrator,
+    reset: resetEngineOrchestrator,
+  } = useEngineOrchestrator({
+    enabled: open && handsFreeEnabled,
+    videoRef: cameraVideoRef,
+    cameraStream,
+    onSpeakStep: async (text) => {
+      // Use browser speech for narration
+      stopSpeech();
+      await new Promise(resolve => setTimeout(resolve, 150));
+      narrateCurrentStep(text, true);
+    },
+    onStopSpeaking: () => {
+      stopSpeech();
+    },
+    onStepChange: (direction) => {
+      // This is called by orchestrator after gesture/voice navigation
+      console.log('[LiveCooking] Orchestrator step change:', direction);
+    },
+  });
+
   // Reset state when modal closes
   useEffect(() => {
     if (!open) {
