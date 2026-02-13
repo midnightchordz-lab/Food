@@ -132,13 +132,44 @@ class RecipeTextPrepService:
                                  total_steps: int, language: str = 'en') -> str:
         """
         Prepare just one instruction step for real-time cooking mode
+        Adds natural pauses for human-like pacing
         """
         label_func = self.STEP_LABELS.get(language, self.STEP_LABELS['en'])
         label = label_func(step_number, total_steps)
         
         clean_step = self.clean_text_for_speech(step_text)
         
+        # VOICE QUALITY FIX: Add natural pauses between sentences
+        # ElevenLabs respects periods and commas for pacing
+        clean_step = self._add_natural_pauses(clean_step)
+        
         return f"{label} {clean_step}"
+    
+    def _add_natural_pauses(self, text: str) -> str:
+        """
+        Add natural pauses for human-like speech rhythm
+        Uses punctuation that ElevenLabs respects for pacing
+        """
+        if not text:
+            return text
+        
+        # Break long sentences at conjunctions for breathing room
+        # Add commas before conjunctions for slight pause
+        text = re.sub(r'\b(and then|then)\b', r', \1', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b(after that)\b', r'. \1', text, flags=re.IGNORECASE)
+        
+        # Add pause after action verbs followed by instructions
+        text = re.sub(r'(add|pour|stir|mix|heat|cook|place|put|spread|layer)\s+', 
+                     r'\1 ', text, flags=re.IGNORECASE)
+        
+        # Ensure proper spacing after periods for clear sentence breaks
+        text = re.sub(r'\.([A-Z])', r'. \1', text)
+        
+        # Clean up any double spaces or commas
+        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r',\s*,', ',', text)
+        
+        return text.strip()
     
     def clean_text_for_speech(self, text: str) -> str:
         """
