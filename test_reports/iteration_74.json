@@ -75,7 +75,7 @@
   ],
   
   "action_items": [
-    "CRITICAL: Fix backend /api/audio/step endpoint returning 520 errors - this blocks voice narration entirely",
+    "CRITICAL: ElevenLabs TTS quota exhausted (0/40000 credits). Either: (1) Upgrade ElevenLabs plan, (2) Wait for quota reset, (3) Implement fallback to browser Speech Synthesis API",
     "OPTIONAL: Add visual indicator when voice is actively playing (waveform or animation)"
   ],
   
