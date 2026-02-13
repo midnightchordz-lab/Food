@@ -1,37 +1,39 @@
 /**
- * useGestureControl Hook
+ * useGestureControl Hook - SYNC PERFECTED
  * 
  * Simple hand gesture detection for step navigation:
  * - Swipe Right → Next Step
  * - Swipe Left → Previous Step
  * 
- * FIXED: Proper browser camera permission handling for web.
- * This is a pure control layer - only triggers existing button callbacks.
+ * SYNC FIX: Proper debounce with 500ms stable detection.
+ * - Requires consistent direction for 500ms before triggering
+ * - Only one step change per gesture (no rapid repeats)
+ * - Handles low FPS gracefully (never auto-advances on unstable detection)
  * 
- * IMPORTANT: This does NOT use complex AI or object detection.
- * It simply tracks general motion direction in the center zone.
+ * This is a pure control layer - only REQUESTS changes to step state.
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 
-// Configuration - tuned for web browser reliability
+// Configuration - tuned for STABLE, INTENTIONAL gestures
 const CONFIG = {
   // Zone detection (center 60% of video)
   DETECTION_ZONE: { x: 0.2, y: 0.2, width: 0.6, height: 0.6 },
   
-  // Motion thresholds - more lenient for web
-  MIN_SWIPE_DISTANCE: 60,       // Minimum accumulated motion for a swipe
-  MAX_SWIPE_DURATION: 600,      // Maximum ms for a swipe gesture
-  
-  // Cooldowns - critical for web noise filtering
-  GESTURE_COOLDOWN: 1500,       // ms between gestures (prevents accidental)
+  // SYNC FIX: Debounce with confirmation timing
+  STABLE_DETECTION_MS: 500,      // Must see consistent direction for 500ms
+  GESTURE_COOLDOWN: 1800,        // ms between gestures (one change per gesture)
   VOICE_PRIORITY_COOLDOWN: 2000, // ms to ignore gestures after voice command
   
-  // Frame analysis
-  SAMPLE_INTERVAL: 80,          // ms between motion samples
-  MOTION_THRESHOLD: 25,         // Pixel difference to detect motion (lower for web)
-  MIN_TOTAL_MOTION: 40,         // Minimum motion pixels to consider
-  DIRECTION_THRESHOLD: 0.25,    // Minimum direction ratio to trigger
+  // Frame analysis - tolerant of low FPS
+  SAMPLE_INTERVAL: 100,          // ms between motion samples (10 FPS minimum)
+  LOW_FPS_THRESHOLD: 5,          // If FPS drops below this, skip frame
+  MOTION_THRESHOLD: 20,          // Pixel brightness diff to detect motion
+  MIN_MOTION_PIXELS: 30,         // Minimum changed pixels to register
+  DIRECTION_CONFIDENCE: 0.35,    // Direction ratio required (higher = more confident)
+  
+  // Noise filtering for web cameras
+  CONSECUTIVE_FRAMES_REQUIRED: 3, // Need 3 consistent frames to start tracking
 };
 
 export function useGestureControl({
