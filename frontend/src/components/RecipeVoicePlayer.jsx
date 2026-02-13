@@ -44,8 +44,8 @@ const RecipeVoicePlayer = ({ recipe, isPremiumUser = false }) => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const audioRef = useRef(null);
 
-  // Determine if user is premium
-  const isPremium = isPremiumUser || user?.subscriptionTier !== 'free';
+  // Determine if user is premium using unified helper
+  const isPremium = isPremiumUser || isUserPremium(user);
 
   // Clean up on unmount
   useEffect(() => {

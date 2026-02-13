@@ -26,7 +26,7 @@ const CookingModePlayer = ({ recipe, language = 'en', onClose }) => {
   // Get instructions from recipe
   const steps = recipe?.instructions || recipe?.steps || recipe?.directions || [];
   
-  const isPremium = user?.subscriptionTier !== 'free';
+  const isPremium = isUserPremium(user);
 
   const readCurrentStep = async (stepIndex) => {
     if (stepIndex >= steps.length || stepIndex < 0) return;
