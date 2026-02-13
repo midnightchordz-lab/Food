@@ -247,17 +247,35 @@ export function useHandsFreeControls({
             };
 
             recognition.onend = () => {
-              // Restart if still enabled
+              // Restart if still enabled - with better error handling
               if (isListeningRef.current && recognitionRef.current) {
-                try {
-                  setTimeout(() => {
-                    if (isListeningRef.current && recognitionRef.current) {
+                setTimeout(() => {
+                  if (isListeningRef.current && recognitionRef.current) {
+                    try {
                       recognitionRef.current.start();
+                      console.log('[HandsFree] Voice recognition restarted');
+                    } catch (e) {
+                      // If start fails, recreate recognition
+                      if (e.name === 'InvalidStateError') {
+                        console.log('[HandsFree] Recreating recognition instance');
+                        try {
+                          const newRecognition = new SpeechRecognition();
+                          newRecognition.continuous = true;
+                          newRecognition.interimResults = false;
+                          newRecognition.lang = 'en-US';
+                          newRecognition.maxAlternatives = 1;
+                          newRecognition.onresult = recognition.onresult;
+                          newRecognition.onerror = recognition.onerror;
+                          newRecognition.onend = recognition.onend;
+                          recognitionRef.current = newRecognition;
+                          newRecognition.start();
+                        } catch (recreateError) {
+                          console.log('[HandsFree] Could not recreate recognition');
+                        }
+                      }
                     }
-                  }, 100);
-                } catch (e) {
-                  // Already started or other error
-                }
+                  }
+                }, 200);
               }
             };
 
