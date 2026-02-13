@@ -45,5 +45,14 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- Camera permission for gesture detection in hands-free cooking -->
+	<key>NSCameraUsageDescription</key>
+	<string>MOOD FOOD uses your camera for hands-free gesture controls during cooking. Wave to navigate steps without touching your device.</string>
+	<!-- Microphone permission for voice commands in hands-free cooking -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MOOD FOOD uses your microphone for voice commands during cooking. Say "next step" or "repeat" to navigate hands-free.</string>
+	<!-- Speech recognition for voice command processing -->
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>MOOD FOOD uses speech recognition to understand your voice commands during hands-free cooking.</string>
 </dict>
 </plist>
