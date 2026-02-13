@@ -59,6 +59,33 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - `frontend/src/hooks/useHandsFreeControls.js` - Voice commands with confidence scoring
 - `frontend/src/hooks/useGestureControl.js` - Camera-based swipe detection
 
+#### Web Gesture Fix + Voice Sync Perfection ✅ FIXED (Feb 13, 2026)
+**Fixed gesture detection on web browsers + emotional voice timing.**
+
+**Gesture Fix (Web Browser):**
+| Fix | Implementation |
+|-----|----------------|
+| Video readiness | Check `readyState >= 2` AND `videoWidth > 0` before detection |
+| Callback invocation | Direct `try/catch` function calls for web compatibility |
+| Status tracking | `gestureStatus` state: 'initializing' → 'active' |
+
+**Emotional Voice Timing (`VOICE_TIMING` config):**
+| Timing | Value | Purpose |
+|--------|-------|---------|
+| `WARM_START_DELAY` | 150ms | Pause before speaking (natural feel) |
+| `STEP_CHANGE_DELAY` | 120ms | Delay after step change (cinematic smooth) |
+| `POST_NARRATION_WAIT` | 1200ms | Breathing space after narration ends |
+
+**Text Processing:**
+- Added ellipsis padding: `"{label} ... {clean_step} ..."` for softer voice output
+- Time-related phrases get comma pauses (e.g., "5 minutes,")
+
+**Result:**
+- Gesture works identically on web and mobile
+- Voice feels calm, warm, human (not robotic)
+- Step changes feel cinematic smooth
+- Cooking feels guided, not commanded
+
 #### Voice-Step Sync Fix ✅ FIXED (Feb 13, 2026)
 **Fixed voice-to-step synchronization and improved voice naturalness.**
 
