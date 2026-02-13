@@ -925,54 +925,6 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                 )}
               </div>
             </div>
-
-            {/* Mobile: Ingredients Section (shown below instructions) */}
-            <div className="lg:hidden border-t border-border bg-muted/20 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Utensils size={18} className="text-primary" /> Ingredients
-                </h3>
-                <Button onClick={handleAddAllIngredients} variant="outline" size="sm" className="text-xs">
-                  <Plus size={14} className="mr-1" /> Add All
-                </Button>
-              </div>
-
-              <div className="space-y-2.5">
-                {parsedRecipe?.ingredients?.map((ing, idx) => (
-                  <div 
-                    key={idx}
-                    className={`flex items-start gap-3 ${checkedIngredients[idx] ? 'opacity-50' : ''}`}
-                  >
-                    <button
-                      onClick={() => handleIngredientCheck(idx)}
-                      className={`w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        checkedIngredients[idx]
-                          ? 'bg-green-500 border-green-500 text-white'
-                          : 'border-muted-foreground/30 hover:border-primary'
-                      }`}
-                    >
-                      {checkedIngredients[idx] && <Check size={10} />}
-                    </button>
-                    <div className={`flex-1 ${checkedIngredients[idx] ? 'line-through' : ''}`}>
-                      <span className="font-semibold text-primary text-sm">{ing.amount}</span>
-                      {ing.amount && ' '}
-                      <button
-                        onClick={() => handleIngredientInfoClick(ing)}
-                        className="text-sm text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors"
-                      >
-                        {ing.item}
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => handleAddIngredient(ing, idx)}
-                      className={`${addedIngredients[idx] ? 'text-green-500' : 'text-muted-foreground'}`}
-                    >
-                      {addedIngredients[idx] ? <Check size={14} /> : <Plus size={14} />}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 
