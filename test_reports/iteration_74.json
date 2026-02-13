@@ -3,7 +3,7 @@
   
   "backend_issues": {
     "critical": [
-      {"endpoint": "/api/audio/step", "issue": "Returns 520 errors when requesting TTS audio, causing 'Voice narration error: AxiosError'", "priority": "HIGH"}
+      {"endpoint": "/api/audio/step", "issue": "ElevenLabs TTS quota EXCEEDED (0 credits remaining of 40000). Voice narration fails with: 'quota_exceeded' error. This is a service quota issue, not a code bug.", "priority": "HIGH"}
     ],
     "minor": []
   },
