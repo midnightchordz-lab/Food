@@ -132,23 +132,26 @@ class RecipeTextPrepService:
                                  total_steps: int, language: str = 'en') -> str:
         """
         Prepare just one instruction step for real-time cooking mode
-        Adds natural pauses for human-like pacing
+        Adds natural pauses for human-like pacing and emotional timing
         """
         label_func = self.STEP_LABELS.get(language, self.STEP_LABELS['en'])
         label = label_func(step_number, total_steps)
         
         clean_step = self.clean_text_for_speech(step_text)
         
-        # VOICE QUALITY FIX: Add natural pauses between sentences
+        # VOICE QUALITY: Add natural pauses between sentences
         # ElevenLabs respects periods and commas for pacing
         clean_step = self._add_natural_pauses(clean_step)
         
-        return f"{label} {clean_step}"
+        # EMOTIONAL TIMING: Add soft pause at end for breathing space
+        # The ellipsis creates a gentle fade-out feeling
+        return f"{label} ... {clean_step} ..."
     
     def _add_natural_pauses(self, text: str) -> str:
         """
         Add natural pauses for human-like speech rhythm
         Uses punctuation that ElevenLabs respects for pacing
+        Creates: Warm start → Clear instruction → Soft pause
         """
         if not text:
             return text
@@ -158,6 +161,8 @@ class RecipeTextPrepService:
         text = re.sub(r'\b(and then|then)\b', r', \1', text, flags=re.IGNORECASE)
         text = re.sub(r'\b(after that)\b', r'. \1', text, flags=re.IGNORECASE)
         
+        # Add pause after time-related phrases
+        text = re.sub(r'(\d+\s*(minutes?|mins?|seconds?|secs?|hours?))', r'\1,', text, flags=re.IGNORECASE)
         # Add pause after action verbs followed by instructions
         text = re.sub(r'(add|pour|stir|mix|heat|cook|place|put|spread|layer)\s+', 
                      r'\1 ', text, flags=re.IGNORECASE)
