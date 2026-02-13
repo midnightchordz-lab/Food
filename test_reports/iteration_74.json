@@ -115,7 +115,19 @@
   },
   
   "console_errors_observed": [
-    "Failed to load resource: the server responded with a status of 520 ()",
-    "Voice narration error: AxiosError"
-  ]
+    "ElevenLabs API error: 401 - quota_exceeded (0 credits remaining)",
+    "Voice narration error: AxiosError",
+    "Failed to load resource: the server responded with a status of 520 ()"
+  ],
+  
+  "root_cause_analysis": {
+    "issue": "Voice narration not working",
+    "root_cause": "ElevenLabs TTS service quota exhausted - 0 out of 40000 credits remaining",
+    "backend_log_evidence": "ElevenLabs API error: 401 - {\"detail\":{\"status\":\"quota_exceeded\",\"message\":\"This request exceeds your quota of 40000. You have 0 credits remaining\"}}",
+    "resolution_options": [
+      "Upgrade ElevenLabs subscription",
+      "Wait for monthly quota reset",
+      "Implement browser Web Speech API as fallback"
+    ]
+  }
 }
