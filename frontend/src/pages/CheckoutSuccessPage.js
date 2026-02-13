@@ -89,6 +89,10 @@ const CheckoutSuccessPage = () => {
 
       if (response.data.success) {
         setSubscription(response.data.subscription);
+        
+        // CRITICAL: Refresh usage limits to unlock features immediately
+        // This updates the global usage state so all components see the new tier
+        await refreshUsage();
       }
     } catch (err) {
       console.error('Error loading subscription:', err);
