@@ -113,6 +113,59 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 **Files:**
 - `frontend/src/hooks/useHandsFreeControls.js` - Voice commands with confidence scoring
 - `frontend/src/hooks/useGestureControl.js` - Camera-based swipe detection
+- `frontend/src/hooks/useEngineOrchestrator.js` - **NEW** Phase-1 engine synchronization
+
+#### Phase-1 Engine Orchestrator ✅ NEW (Feb 13, 2026)
+**Synchronizes voice narration, voice commands, and gesture detection.**
+
+**Purpose:**
+- Stabilize all hands-free controls to work together in correct order
+- NO changes to recipe logic, UI components, or navigation
+- ONLY controls: microphone ownership, camera selection, AI detection timing, engine start/stop order
+
+**Orchestration Sequence:**
+1. **Camera Engine (Gestures)**
+   - Request video-only stream (no audio conflict)
+   - Force front camera for better gesture detection
+   - Wait until `video.readyState === 4` before starting detection
+   - Load hand-tracking model AFTER video ready
+   - Silent failure: keeps recipe running if camera fails
+
+2. **TTS Engine (Voice Narration)**
+   - Stop any active speech recognition BEFORE speaking (MIC OWNERSHIP)
+   - Cancel any previous TTS instance
+   - Wait 150ms for clean audio cutover
+   - Start narration only after mic released
+
+3. **Voice Command Engine (MIC OWNERSHIP)**
+   - Start recognition ONLY when TTS is fully stopped
+   - Safe start: `cancelTTS() → wait 200ms → startSpeechRecognition()`
+   - After command: `stopRecognition() → wait 150ms → resumeTTS`
+   - Retry once after 1s if failed, then silently disable
+
+4. **Gesture → Navigation Bridge**
+   - Runs in separate loop (non-blocking)
+   - Stable gesture confirmation: 500ms consistent direction
+   - After navigation: `cancelTTS() → wait 150ms → speak new step`
+
+**Timing Configuration:**
+| Timing | Value | Purpose |
+|--------|-------|---------|
+| `TTS_CANCEL_WAIT` | 150ms | Wait after canceling TTS |
+| `RECOGNITION_START_WAIT` | 200ms | Wait before starting recognition |
+| `RECOGNITION_RESUME_WAIT` | 150ms | Wait before resuming TTS |
+| `CAMERA_READY_CHECK` | 100ms | Interval for camera ready check |
+| `CAMERA_TIMEOUT` | 10000ms | Max wait for camera |
+| `RECOGNITION_RETRY_DELAY` | 1000ms | Retry after recognition failure |
+
+**Safety Guards:**
+- If any engine fails → disable only that engine, keep others running
+- Never crash the app or close Step-by-Step mode
+- Never reload page on failure
+- Cooking flow remains unchanged
+
+**Files:**
+- `frontend/src/hooks/useEngineOrchestrator.js` - Phase-1 orchestration hook
 
 #### Step Sync + Hands-Free Stability ✅ PERFECTED (Feb 13, 2026)
 **Fixed voice sync, gesture instability, and wrong-step narration.**
