@@ -229,7 +229,7 @@ export function useGestureControl({
   }, []);
   
   /**
-   * Main detection loop - with web browser safety
+   * Main detection loop - with web browser safety and low FPS tolerance
    */
   const detectGestures = useCallback(() => {
     if (!isActiveRef.current) return;
@@ -254,7 +254,19 @@ export function useGestureControl({
     if (!videoReadyRef.current) {
       videoReadyRef.current = true;
       setGestureStatus('active');
-      console.log('[Gesture] Video ready, detection active');
+      console.log('[Gesture] Video ready, detection active (500ms debounce enabled)');
+    }
+    
+    // LOW FPS TOLERANCE: Check frame timing
+    const now = Date.now();
+    const frameDelta = now - lastFrameTimeRef.current;
+    lastFrameTimeRef.current = now;
+    
+    // If frame rate is unstable (> 200ms between frames), skip this frame
+    if (frameDelta > 200 && prevFrameRef.current) {
+      console.debug('[Gesture] Low FPS detected, skipping frame');
+      animationFrameRef.current = setTimeout(() => detectGestures(), CONFIG.SAMPLE_INTERVAL);
+      return;
     }
     
     try {
@@ -265,12 +277,7 @@ export function useGestureControl({
       // Analyze motion if we have a previous frame
       if (prevFrameRef.current) {
         const motion = analyzeMotion(currentFrame, prevFrameRef.current, canvas.width, canvas.height);
-        if (motion) {
-          processGesture(motion);
-        } else {
-          // No significant motion, reset tracking
-          motionStartRef.current = null;
-        }
+        processGesture(motion); // Handles null motion (resets tracking)
       }
       
       // Store for next frame comparison
