@@ -47,7 +47,6 @@ const FridgeScanner = () => {
   // Auth and feature access
   const { isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { refreshSubscription } = useSubscription();
   const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('fridge_scanner');
   
   // Feature lock modal state
