@@ -178,12 +178,26 @@ export default function LiveCookingModal() {
   // Track current narration to prevent overlap
   const currentNarrationRef = useRef(null);
   const narrationAbortRef = useRef(false);
+  const postNarrationTimerRef = useRef(null);
 
-  // Voice narration for current step - FIXED: Always syncs with visible step
+  // VOICE SYNC TIMING CONFIG - for natural, emotional pacing
+  const VOICE_TIMING = {
+    WARM_START_DELAY: 150,      // ms pause before speaking (feels natural)
+    POST_NARRATION_WAIT: 1200,  // ms breathing space after narration ends
+    STEP_CHANGE_DELAY: 120,     // ms delay after step change before new narration
+  };
+
+  // Voice narration for current step - PERFECTED: Emotional timing + hard sync
   const readCurrentStep = async () => {
     if (!instructions.length || currentStep >= instructions.length) return;
     
-    // SYNC FIX: Stop any currently playing audio immediately
+    // Clear any post-narration timer
+    if (postNarrationTimerRef.current) {
+      clearTimeout(postNarrationTimerRef.current);
+      postNarrationTimerRef.current = null;
+    }
+    
+    // HARD SYNC: Stop any currently playing audio INSTANTLY
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -192,8 +206,8 @@ export default function LiveCookingModal() {
     // Mark any pending narration as aborted
     narrationAbortRef.current = true;
     
-    // Small delay to ensure abort is processed
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // EMOTIONAL TIMING: Warm start delay (makes it feel natural, not robotic)
+    await new Promise(resolve => setTimeout(resolve, VOICE_TIMING.WARM_START_DELAY));
     narrationAbortRef.current = false;
     
     // Capture current step at start of this request
@@ -218,7 +232,7 @@ export default function LiveCookingModal() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // SYNC FIX: Only play if step hasn't changed during API call
+      // SYNC CHECK: Only play if step hasn't changed during API call
       if (narrationAbortRef.current || stepAtStart !== currentStep) {
         console.log('[VoiceSync] Step changed during load, skipping playback');
         return;
@@ -230,6 +244,15 @@ export default function LiveCookingModal() {
           : `${API}${response.data.audioUrl}`;
         
         audioRef.current.src = fullUrl;
+        
+        // EMOTIONAL TIMING: Small delay before play (creates cinematic feel)
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // Final sync check before playing
+        if (narrationAbortRef.current || stepAtStart !== currentStep) {
+          return;
+        }
+        
         audioRef.current.play().catch(e => console.error('Play failed:', e));
       }
     } catch (error) {
