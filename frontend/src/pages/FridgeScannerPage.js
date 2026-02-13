@@ -8,7 +8,7 @@ import axios from 'axios';
 import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '@/context/AuthContext';
-import { useFeatureAccess, FeatureLockedModal, handleFeatureLockedError } from '@/components/FeatureGate';
+import { useFeatureAccess, FeatureLockedModal, handleFeatureLockedError, useSubscription } from '@/components/FeatureGate';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
