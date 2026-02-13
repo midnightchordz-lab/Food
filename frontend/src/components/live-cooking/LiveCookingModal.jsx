@@ -361,14 +361,26 @@ export default function LiveCookingModal() {
     }
   }, [open, resetOrchestrator]);
 
-  // Hands-free controls (voice commands + double clap) - ONLY when user enables it
-  useHandsFreeControls({
+  // Hands-free voice controls - ONLY when user enables it
+  const { voiceCommandActive, isSupported: voiceSupported } = useHandsFreeControls({
     enabled: open && handsFreeEnabled,
     onNext: handleNextWithVoice,
     onPrev: handlePrevWithVoice,
     onTogglePlay: handleTogglePlayWithVoice,
     onRepeat: handleRepeat,
     isPlaying,
+  });
+
+  // Gesture control state
+  const [gestureEnabled, setGestureEnabled] = useState(false);
+
+  // Gesture controls (swipe left/right) - uses camera stream
+  useGestureControl({
+    enabled: open && gestureEnabled && showCamera && cameraVideoReady,
+    videoRef: cameraVideoRef,
+    onNext: handleNextWithVoice,
+    onPrev: handlePrevWithVoice,
+    voiceCommandActive, // Voice takes priority over gestures
   });
 
   // Camera preview
