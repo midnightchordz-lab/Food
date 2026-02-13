@@ -135,12 +135,28 @@ export default function LiveCookingModal() {
   const cameraVideoRef = useRef(null);
   const hasUserStartedRef = useRef(false);
   
-  // Camera preview state - Enable by default when modal opens
-  const [showCamera, setShowCamera] = useState(true);
-  const [cameraVideoReady, setCameraVideoReady] = useState(false);
+  // ============================================
+  // PERMISSION ORCHESTRATION LAYER
+  // Handles camera + mic + speech permissions together
+  // Only activates after explicit user interaction
+  // ============================================
+  const {
+    status: permissionStatus,
+    isFullyGranted: hasAllPermissions,
+    hasCameraAccess,
+    hasMicrophoneAccess,
+    hasSpeechRecognition,
+    cameraStream,
+    errorMessage: permissionError,
+    requestPermissions,
+    stopCameraStream,
+    reset: resetPermissions,
+  } = useHandsFreePermissions();
   
-  // Hands-free mode - starts when user presses play for the first time
+  // Hands-free mode state
   const [handsFreeEnabled, setHandsFreeEnabled] = useState(false);
+  const [showCamera, setShowCamera] = useState(false); // Start hidden, enable after permissions
+  const [cameraVideoReady, setCameraVideoReady] = useState(false);
   
   // AI Observer visual states (presentation only)
   const [aiState, setAiState] = useState('idle'); // idle, active, completion
