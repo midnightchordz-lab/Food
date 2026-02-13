@@ -116,8 +116,8 @@ export default function LiveCookingModal() {
   const cameraVideoRef = useRef(null);
   const hasUserStartedRef = useRef(false);
   
-  // Camera preview state - Default OFF to prevent permission dialogs from closing modal
-  const [showCamera, setShowCamera] = useState(false);
+  // Camera preview state - Enable by default when modal opens
+  const [showCamera, setShowCamera] = useState(true);
   const [cameraVideoReady, setCameraVideoReady] = useState(false);
   
   // Hands-free mode - DEFAULT OFF to prevent mobile crashes from permission requests
