@@ -1,8 +1,14 @@
 /**
  * Feature Gating Component and Utilities
  * Handles feature access checks and displays upgrade prompts for locked features
+ * 
+ * ARCHITECTURE:
+ * - SubscriptionContext is the SINGLE SOURCE OF TRUTH for subscription state
+ * - All feature checks go through useFeatureAccess hook
+ * - When payment succeeds, call refreshSubscription() and dispatch 'subscription-updated' event
+ * - All components listening will automatically re-check access
  */
-import { useState, useEffect, createContext, useContext, useRef } from 'react';
+import { useState, useEffect, createContext, useContext, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -11,26 +17,24 @@ import { Button } from './ui/button';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
 
+// Custom event name for subscription updates - all components listen to this
+const SUBSCRIPTION_UPDATED_EVENT = 'subscription-updated';
+
 // Context for subscription state
 const SubscriptionContext = createContext(null);
 
 export const SubscriptionProvider = ({ children }) => {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState(0);
+  const [version, setVersion] = useState(0); // Increment to force re-renders across app
 
-  const loadSubscription = async (forceRefresh = false) => {
+  const loadSubscription = useCallback(async (forceRefresh = false) => {
     const token = localStorage.getItem('token');
     if (!token) {
-      setSubscription({ plan_id: 'free', features: {} });
+      const freeSub = { plan_id: 'free', features: {}, status: 'active' };
+      setSubscription(freeSub);
       setLoading(false);
-      return { plan_id: 'free', features: {} };
-    }
-
-    // Skip if recently refreshed (within 2 seconds) unless forced
-    const now = Date.now();
-    if (!forceRefresh && lastRefresh && (now - lastRefresh) < 2000 && subscription) {
-      return subscription;
+      return freeSub;
     }
 
     try {
@@ -41,40 +45,62 @@ export const SubscriptionProvider = ({ children }) => {
       if (response.data.success) {
         const sub = response.data.subscription;
         setSubscription(sub);
-        setLastRefresh(now);
-        console.log('[FeatureGate] Subscription loaded:', sub?.plan_id, 'features:', sub?.features);
+        console.log('[FeatureGate] Subscription loaded:', sub?.plan_id, 'features:', JSON.stringify(sub?.features));
+        
+        // If force refresh, increment version to notify all listeners
+        if (forceRefresh) {
+          setVersion(v => v + 1);
+          // Dispatch custom event for any component that needs to know
+          window.dispatchEvent(new CustomEvent(SUBSCRIPTION_UPDATED_EVENT, { detail: sub }));
+        }
         return sub;
       }
     } catch (error) {
       console.error('Error loading subscription:', error);
-      setSubscription({ plan_id: 'free', features: {} });
+      const freeSub = { plan_id: 'free', features: {}, status: 'active' };
+      setSubscription(freeSub);
+      return freeSub;
     } finally {
       setLoading(false);
     }
-    return { plan_id: 'free', features: {} };
-  };
+    return { plan_id: 'free', features: {}, status: 'active' };
+  }, []);
 
-  // Load on mount and when token changes
+  // Load on mount
   useEffect(() => {
     loadSubscription();
-    
-    // Also listen for storage changes (login/logout)
+  }, [loadSubscription]);
+
+  // Listen for token changes (login/logout) and subscription update events
+  useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'token') {
         loadSubscription(true);
       }
     };
+    
+    // Listen for manual refresh triggers from other parts of the app
+    const handleSubscriptionRefresh = () => {
+      loadSubscription(true);
+    };
+    
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    window.addEventListener('trigger-subscription-refresh', handleSubscriptionRefresh);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('trigger-subscription-refresh', handleSubscriptionRefresh);
+    };
+  }, [loadSubscription]);
 
-  // Refresh function that returns a Promise
-  const refreshSubscription = async () => {
+  // Refresh function that returns a Promise and notifies all listeners
+  const refreshSubscription = useCallback(async () => {
+    console.log('[FeatureGate] Manual refresh triggered');
     return loadSubscription(true);
-  };
+  }, [loadSubscription]);
 
   return (
-    <SubscriptionContext.Provider value={{ subscription, loading, refreshSubscription }}>
+    <SubscriptionContext.Provider value={{ subscription, loading, refreshSubscription, version }}>
       {children}
     </SubscriptionContext.Provider>
   );
@@ -83,7 +109,7 @@ export const SubscriptionProvider = ({ children }) => {
 export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
   if (!context) {
-    return { subscription: null, loading: true, refreshSubscription: () => {} };
+    return { subscription: null, loading: true, refreshSubscription: async () => {}, version: 0 };
   }
   return context;
 };
