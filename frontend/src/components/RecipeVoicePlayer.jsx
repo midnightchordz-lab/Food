@@ -9,6 +9,7 @@ import { Volume2, VolumeX, Play, Pause, Loader2, Globe, Lock, Crown, ChevronDown
 import { Button } from './ui/button';
 import { useAuth } from '../context/AuthContext';
 import { isNative, platform, hapticFeedback } from '../capacitor';
+import { isUserPremium } from '../utils/auth';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
