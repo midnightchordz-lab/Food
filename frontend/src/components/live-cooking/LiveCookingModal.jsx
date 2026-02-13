@@ -431,6 +431,15 @@ export default function LiveCookingModal() {
   // Handle repeat - replay current step narration
   const handleRepeat = useCallback(async () => {
     hasUserStartedRef.current = true;
+    
+    // SYNC FIX: Increment ID and stop audio BEFORE any async work
+    stepChangeIdRef.current++;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    narrationAbortRef.current = true;
+    
     // EMOTIONAL: Play reassurance when user requests repeat
     await playReassurance('repeat_requested');
     readCurrentStep();
