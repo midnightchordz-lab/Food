@@ -332,6 +332,56 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
 
   const fetchDetailedRecipe = async () => {
     if (!recipe?.title) return;
+    
+    // Check if recipe already has detailed instructions (from saved recipes)
+    if (recipe.instructions && Array.isArray(recipe.instructions) && recipe.instructions.length > 0) {
+      // Use existing recipe data - no need to call AI
+      const existingParsed = {
+        title: recipe.title,
+        info: {
+          cuisine: recipe.cuisine || recipe.cuisineHint || '',
+          servings: recipe.servings || '4',
+          prepTime: recipe.prepTime || '15 min',
+          cookTime: recipe.cookTime || '30 min',
+          totalTime: recipe.totalTime || '45 min',
+          difficulty: recipe.difficulty || 'Medium',
+        },
+        description: recipe.description || '',
+        ingredients: (recipe.ingredients || []).map((ing, idx) => {
+          if (typeof ing === 'string') {
+            return { amount: '', item: ing, category: 'Ingredients' };
+          }
+          return { amount: ing.amount || '', item: ing.name || ing.item || ing, category: ing.category || 'Ingredients' };
+        }),
+        instructions: recipe.instructions.map((inst, idx) => ({
+          step: idx + 1,
+          time: '2-3 min',
+          text: typeof inst === 'string' ? inst : inst.text || inst,
+          visualCue: '',
+          important: '',
+          technique: '',
+          servingSuggestion: ''
+        })),
+        tips: recipe.tips || [],
+        equipment: recipe.equipment || [],
+        drinkPairings: { nonAlcoholic: [], alcoholic: [] },
+        nutrition: recipe.nutrition || {},
+        storage: {},
+        variations: [],
+        mistakes: []
+      };
+      setParsedRecipe(existingParsed);
+      setIsLoadingDetails(false);
+      // Still generate AI image if not present
+      if (!recipe.imageUrl && !recipe.image_url) {
+        generateAIImage(recipe.title, recipe.cuisineHint || recipe.cuisine);
+      } else {
+        setAiImageUrl(recipe.imageUrl || recipe.image_url);
+      }
+      return;
+    }
+    
+    // Fetch detailed recipe from AI if no existing instructions
     setIsLoadingDetails(true);
     try {
       const token = localStorage.getItem('token');
