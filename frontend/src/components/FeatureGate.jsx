@@ -246,15 +246,43 @@ export const FeatureLockedModal = ({
 
 /**
  * Hook to check if a feature is accessible
+ * Includes fresh subscription check on first access
  */
 export const useFeatureAccess = (feature) => {
-  const { subscription, loading } = useSubscription();
+  const { subscription, loading, refreshSubscription } = useSubscription();
+  const [localLoading, setLocalLoading] = useState(true);
+  const checkedRef = useRef(false);
   
-  if (loading || !subscription) {
+  // Refresh subscription on first access to ensure fresh data
+  useEffect(() => {
+    if (!checkedRef.current && !loading) {
+      checkedRef.current = true;
+      
+      // If subscription seems stale (no features or free plan), refresh
+      if (!subscription?.features || Object.keys(subscription.features).length === 0) {
+        refreshSubscription().finally(() => setLocalLoading(false));
+      } else {
+        setLocalLoading(false);
+      }
+    }
+  }, [loading, subscription, refreshSubscription]);
+  
+  if (loading || localLoading) {
     return { allowed: true, loading: true }; // Optimistic loading
   }
 
+  if (!subscription) {
+    return { allowed: true, loading: true }; // Still loading
+  }
+
   const features = subscription.features || {};
+  
+  // Log for debugging
+  console.log(`[useFeatureAccess] Checking '${feature}':`, {
+    plan: subscription.plan_id,
+    ai_photo: features.ai_photo_recognition_enabled,
+    diabetes: features.diabetes_module
+  });
   
   // Check specific features
   switch (feature) {
