@@ -190,6 +190,7 @@ export default function LiveCookingModal() {
   const narrationAbortRef = useRef(false);
   const postNarrationTimerRef = useRef(null);
   const stepChangeIdRef = useRef(0); // SYNC FIX: Unique ID per step change
+  const [useBrowserSpeech, setUseBrowserSpeech] = useState(false); // Fallback mode
 
   // SYNC FIX: Smooth fade-in instead of abrupt audio start
   const fadeInAudio = useCallback((audio, duration = 0.3) => {
@@ -210,6 +211,7 @@ export default function LiveCookingModal() {
 
   // Voice narration for current step - SYNC PERFECTED
   // Single authoritative source: reads ONLY from currentStep at moment of playback
+  // With FREE browser speech fallback when ElevenLabs fails
   const readCurrentStep = async () => {
     if (!instructions.length || currentStep >= instructions.length) return;
     
@@ -228,6 +230,8 @@ export default function LiveCookingModal() {
       audioRef.current.currentTime = 0;
       audioRef.current.volume = 1; // Reset volume
     }
+    // Also stop browser speech if active
+    stopSpeaking();
     
     // Mark any pending narration as aborted
     narrationAbortRef.current = true;
@@ -245,14 +249,22 @@ export default function LiveCookingModal() {
     
     // Capture current step at start of this request (authoritative read)
     const stepAtStart = currentStep;
+    const stepText = typeof instructions[currentStep] === 'string' 
+      ? instructions[currentStep] 
+      : instructions[currentStep]?.text || instructions[currentStep]?.instruction;
     
+    if (!stepText) return;
+    
+    // If browser speech mode is active, use FREE browser TTS
+    if (useBrowserSpeech) {
+      console.log('[VoiceSync] Using FREE browser speech');
+      await narrateStep(stepText, currentStep + 1, instructions.length);
+      return;
+    }
+    
+    // Try ElevenLabs first
     try {
       const token = localStorage.getItem('token');
-      const stepText = typeof instructions[currentStep] === 'string' 
-        ? instructions[currentStep] 
-        : instructions[currentStep]?.text || instructions[currentStep]?.instruction;
-      
-      if (!stepText) return;
       
       const response = await axios.post(
         `${API}/api/audio/step`,
@@ -295,7 +307,18 @@ export default function LiveCookingModal() {
         audioRef.current.play().catch(e => console.error('Play failed:', e));
       }
     } catch (error) {
-      console.error('Voice narration error:', error);
+      console.error('ElevenLabs error, falling back to browser speech:', error);
+      
+      // FALLBACK: Use FREE browser speech when ElevenLabs fails
+      if (isSpeechSupported()) {
+        console.log('[VoiceSync] Auto-switching to FREE browser speech');
+        setUseBrowserSpeech(true);
+        
+        // Sync check before fallback
+        if (stepAtStart === currentStep && thisStepChangeId === stepChangeIdRef.current) {
+          await narrateStep(stepText, currentStep + 1, instructions.length);
+        }
+      }
     }
   };
 
