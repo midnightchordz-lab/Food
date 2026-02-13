@@ -46,12 +46,20 @@ export function useGestureControl({
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   const prevFrameRef = useRef(null);
-  const motionStartRef = useRef(null);
   const lastGestureTimeRef = useRef(0);
   const lastVoiceTimeRef = useRef(0);
   const animationFrameRef = useRef(null);
   const isActiveRef = useRef(false);
   const videoReadyRef = useRef(false);
+  const lastFrameTimeRef = useRef(0);
+  
+  // SYNC FIX: Track stable detection over time
+  const stableDetectionRef = useRef({
+    direction: null,        // 'left' or 'right' or null
+    startTime: null,        // When we first saw this direction
+    consecutiveFrames: 0,   // How many frames in a row
+    isConfirmed: false,     // Has 500ms passed with consistent direction?
+  });
   
   const [gestureStatus, setGestureStatus] = useState('initializing');
   
@@ -65,6 +73,13 @@ export function useGestureControl({
   useEffect(() => {
     if (voiceCommandActive) {
       lastVoiceTimeRef.current = Date.now();
+      // Reset any pending gesture when voice activates
+      stableDetectionRef.current = {
+        direction: null,
+        startTime: null,
+        consecutiveFrames: 0,
+        isConfirmed: false,
+      };
     }
   }, [voiceCommandActive]);
   
