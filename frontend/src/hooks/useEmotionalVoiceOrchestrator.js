@@ -259,8 +259,14 @@ export function useEmotionalVoiceOrchestrator({
     hasPlayedStepGuidance.current = false;
     hasPlayedEncouragement.current = false;
     isNarrating.current = false;
-    narrationQueue.current = [];
+    abortNarration.current = true;
     resetSelectionTracking();
+  }, []);
+  
+  // Abort any pending emotional narration (call when step changes)
+  const abortEmotionalNarration = useCallback(() => {
+    abortNarration.current = true;
+    isNarrating.current = false;
   }, []);
   
   // Clean up on unmount
