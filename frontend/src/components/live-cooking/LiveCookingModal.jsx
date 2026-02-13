@@ -353,6 +353,7 @@ export default function LiveCookingModal() {
       audioRef.current.currentTime = 0;
       audioRef.current.volume = 1; // Reset volume for next play
     }
+    stopSpeaking(); // Also stop browser speech
     
     // Abort any pending narration (both step and emotional)
     narrationAbortRef.current = true;
