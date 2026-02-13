@@ -127,7 +127,7 @@ Configured in `capacitor.config.json`:
 ### API URL
 The app connects to the backend at:
 - **Production**: Set in `.env` file
-- **Current**: `https://recipe-sub-audit.preview.emergentagent.com`
+- **Current**: `https://premium-checker-1.preview.emergentagent.com`
 
 For production, update `frontend/.env`:
 ```

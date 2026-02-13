@@ -1,57 +1,56 @@
 <analysis>**original_problem_statement**:
-The user's initial goal was to create a premium, futuristic, and genuinely useful hands-free cooking experience by refining the Live Cooking mode. This involved fixing bugs, implementing emotional voice orchestration, improving voice/gesture synchronization, and perfecting the hands-free controls.
-
-During this session, the priority shifted dramatically due to a new, critical bug report from the user. A screenshot revealed that a user with the highest subscription tier (Chef Pro Annual) was still unable to access paid features. The user's latest and most urgent request is to perform a comprehensive audit of the entire subscription system to ensure that all features for a given tier are activated instantly upon purchase.
+The user's initial goal was to fix a critical bug where paying users could not access premium features, requiring a full audit of the subscription system. Following that, the user provided three distinct, high-priority Phase-1 tasks to be completed without altering existing business logic or UI:
+1.  **Fix Camera, Voice, and Gesture Permissions:** Create a unified permission request layer that activates on user interaction to solve issues with camera/mic access on web and mobile (Capacitor).
+2.  **Engine Orchestration:** Stabilize the Live Cooking mode by synchronizing the voice narration (TTS), voice command (speech recognition), and gesture detection engines to prevent conflicts and crashes, especially regarding microphone ownership on mobile.
+3.  **Mobile Entitlement Sync Fix:** Resolve an issue where mobile users with active premium subscriptions still see features as locked. This requires creating a single, unified helper function () to be used for all premium access checks.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack recipe platform with a Live Cooking mode that uses a camera feed, voice narration (ElevenLabs), and hands-free controls (voice/gesture).
+The agent successfully addressed the first three major tasks. The subscription system was audited and fixed by implementing a centralized state update mechanism, ensuring features unlock instantly post-purchase. This fix was verified with end-to-end tests via the testing agent. Subsequently, the agent implemented two major orchestration layers for the Live Cooking mode:
+1.  A **Permission Orchestrator** () that requests camera and microphone access upon a single user tap.
+2.  An **Engine Orchestrator** () that manages the lifecycle of the TTS, speech recognition, and gesture engines to prevent them from conflicting.
 
-In this session, the agent implemented several key changes:
--   **Synchronization Logic:** Refactored  and  to enforce a single source of truth for the current recipe step, preventing out-of-sync voice narration.
--   **Gesture Debouncing:** Added a 500ms stability check to the gesture detection logic in  to prevent accidental navigation from erratic movements.
--   **TTS Fallback:** Due to an exhausted ElevenLabs API quota, a new hook () was created to provide voice narration using the browser's built-in SpeechSynthesis API as a fallback.
--   **Subscription Fix (Attempted):** In response to the critical bug, the agent patched , , and  to force-refresh the subscription state from the backend. This was a targeted fix and not the full audit the user requested.
+The agent is now beginning the final requested task: fixing the mobile entitlement sync.
 
 **Last working item**:
--   **Last item agent was working:** The agent was working on fixing a critical bug where paying users could not access premium features. The user explicitly requested a full audit of the subscription logic, but the agent only implemented a patch targeted at the .
+-   **Last item agent was working:** The agent started working on the Phase-1 Mobile Entitlement Sync Fix. The goal is to create a unified  helper function and replace all scattered premium access checks throughout the frontend to ensure consistent feature unlocking on mobile devices. The agent began by investigating the codebase to find all current instances of premium checks.
 -   **Status:** IN PROGRESS
--   **Agent Testing Done:** N (The agent has not performed an end-to-end test of the subscription flow after the latest changes).
--   **Which testing method agent to use?** Frontend testing agent. A comprehensive test is required to simulate the full user journey for each subscription tier: log in, purchase a plan, and verify that all corresponding features are unlocked immediately without requiring a page refresh or re-login.
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** Frontend testing agent. The agent should verify that after the change, logging in as a premium user on a simulated mobile view unlocks all premium features, while a free user's access remains restricted.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** Features are not unlocking instantly after a subscription purchase. (P0 - CRITICAL BUSINESS BLOCKER)
+-   **Issue 1:** Mobile users with active premium subscriptions see features as locked. (P0 - CRITICAL)
 -   **Issue 2:** ElevenLabs TTS quota is exhausted, disabling the premium voice feature. (P1 - BLOCKED)
--   **Issue 3:** Web gesture control reliability is unverified. (P1)
--   **Issue 4:** Voice synchronization and pacing with the new browser fallback needs user validation. (P2)
 
 **Issues Detail**:
--   **Issue 1:** Features are not unlocking instantly after a subscription purchase.
-    -   **Attempted fixes:** The agent added scattered  calls to  and . This is a temporary patch, not a robust solution.
+-   **Issue 1:** Mobile users with active premium subscriptions see features as locked.
+    -   **Attempted fixes:** None yet. The task has just begun. The agent has started investigating the code.
     -   **Next debug checklist**:
-        1.  **Conduct the full audit:** Systematically review  and map every feature check to every subscription tier (, , etc.) to ensure the logic is correct.
-        2.  **Centralize State Management:** The root cause is stale frontend state. Refactor the logic to rely on a single source of truth, likely the Zustand store (). All subscription updates should go through this store.
-        3.  **Remove scattered refresh calls:** Eliminate the page-specific  calls in favor of a centralized update mechanism that triggers automatically after a successful payment transaction.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical bug that breaks the business model. Fixing it will ensure paying customers can access the features they purchased.
+        1.  Create the new utility file .
+        2.  Implement the  function inside  as specified in the user's prompt.
+        3.  Use  to find all files that check for premium status (e.g., , ).
+        4.  Use  in parallel to replace all identified checks with the new  helper function.
+        5.  Focus replacements on feature gate components and UI actions, avoiding pricing pages or backend logic as per the user's instructions.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical bug that prevents paying mobile users from accessing their purchased features, creating a disjointed experience between web and mobile.
     -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 -   **Issue 2:** ElevenLabs TTS quota is exhausted.
-    -   **Attempted fixes:** A fallback using the browser's free Web Speech API was implemented.
-    -   **Next debug checklist**: Inform the user that the premium ElevenLabs voice is unavailable because the account quota is depleted. The primary feature is blocked until the user renews their ElevenLabs subscription or provides a new API key.
-    -   **Why fix this issue and what will be achieved with the fix?** To restore the premium voice experience, which is a core part of the user's vision.
+    -   **Attempted fixes:** A fallback using the browser's free Web Speech API was implemented in a previous session.
+    -   **Next debug checklist**: This issue is blocked on the user. The next agent must inform the user that the premium ElevenLabs voice feature is unavailable until the user provides a new API key or renews their subscription.
+    -   **Why fix this issue and what will be achieved with the fix?** Restores the premium voice experience, a core part of the user's vision.
     -   **Status:** BLOCKED
     -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Frontend.
-    -   **Blocked on other issue:** Blocked on external service quota.
+    -   **Blocked on other issue:** Blocked on user providing a valid API key/quota.
 
 **In progress Task List**:
--   **Task 1:** Complete Subscription & Feature Gate Audit (P0)
-    -   **Where to resume:** .
-    -   **What will be achieved with this?** A reliable subscription system where all features unlock instantly upon purchase, resolving the critical bug reported by the user.
+-   **Task 1:** Complete Phase-1 Mobile Entitlement Sync Fix (P0)
+    -   **Where to resume:** Start by creating the  file and implementing the  helper function.
+    -   **What will be achieved with this?** A standardized, reliable way to check for premium entitlement across the entire frontend, ensuring mobile and web experiences are identical for subscribers.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on something:** None.
@@ -62,74 +61,70 @@ In this session, the agent implemented several key changes:
 -   **Future Tasks:**
     -   (P2) Implement Ingredient Detail Page: Create a dynamic route ().
     -   (P2) Activate AI Observer: Connect the passive AI observer layer's events to enable AI-assisted cooking.
+    -   (Enhancement) Add a visual indicator in the UI that shows when subscription features are being refreshed post-payment.
 
 **Completed work in this session**
--   **Voice/Gesture Synchronization:** Refactored  to use a centralized step state () and an invalidation mechanism () to prevent out-of-sync narration.
--   **Gesture Debounce:** Implemented a 500ms stability check in .
--   **TTS Fallback:** Created  and integrated it into  as a fallback for the exhausted ElevenLabs service.
+-   **Subscription Feature Gating Fix (DONE):** Audited and overhauled the subscription system. Replaced scattered API calls with a centralized state management solution using a version counter and a custom event () to ensure instant feature unlocking after purchase. Verified with the testing agent.
+-   **Camera/Voice/Gesture Permission Fix (DONE):** Created a unified permission orchestration layer () that requests camera and microphone access upon a single user tap, and updated Android/iOS configuration files.
+-   **Phase-1 Engine Orchestration (DONE):** Implemented a new hook () to manage and synchronize the TTS, speech recognition, and gesture detection engines, preventing conflicts and ensuring stable operation in the Live Cooking mode.
 
 **Known issue recurrence from previous fork**
--   **Subscription unlock failure:** This issue was marked as fixed in a previous session but has resurfaced as a critical, high-priority bug.
--   **Hands-free control instability:** Making gestures and voice commands feel reliable and premium remains a recurring challenge.
+-   **Subscription unlock failure:** This recurring issue was the first P0 task of this session. It has now been fixed with a robust, centralized state management solution and verified by the testing agent.
 
 **Code Architecture**
 
 
 **All files of reference**
--   **Subscription Issue:**
-    -   
-    -   
-    -   
--   **Live Cooking Sync & Fallback:**
-    -   
-    -   
-    -    (new file)
+-   **Mobile Entitlement Fix (Current Task):** The agent will need to  the entire  directory for premium checks.
+-   **Engine Orchestration:** , 
+-   **Permission Orchestration:** , , , 
+-   **Subscription Fix:** , , 
 
 **Areas that need refactoring**:
--   **Subscription State Management:** The current approach of adding  calls to individual pages is brittle. The feature gating logic should be refactored to rely on a centrally managed state (Zustand store) that is updated reliably after payment, eliminating the need for scattered refresh calls.
--   **:** This component's complexity continues to grow. It is a prime candidate for being broken down into smaller, more focused sub-components.
+-   : Although new hooks have encapsulated complexity, this component remains very large and orchestrates many different states and effects. It could still benefit from being broken down into smaller sub-components for better readability and maintenance.
 
 **key api endpoints**
--   : Fetches the current user's subscription details. This is the source of truth for the backend, but the frontend is failing to sync with it correctly.
+-   : Fetches the current user's subscription details. This is the source of truth for the backend.
 
 **Critical Info for New Agent**
--   **Priority #1 is the Subscription Bug:** The user is blocked by a critical issue where paid features are not unlocking. Your absolute first priority is to perform the full audit requested by the user and implement a robust, centralized fix for the stale frontend subscription state. Do not just patch one page; fix the underlying state management architecture.
--   **ElevenLabs Quota is Exhausted:** The premium TTS service is not functional. You must inform the user about this limitation and that the browser's speech is a fallback. Do not waste time debugging the ElevenLabs integration itself.
--   **Focus on Centralized State:** The subscription bug is a state management problem. The solution is to ensure the global subscription store (Zustand) is the single source of truth and is updated reliably, rather than adding more scattered API calls.
+-   **Priority #1 is the Mobile Entitlement Fix:** This is the current, user-specified P0 task. Complete it by creating the  helper and replacing all existing checks as instructed. Do not modify any other logic.
+-   **ElevenLabs is Blocked:** The premium TTS service is non-functional due to an exhausted quota. Do not attempt to debug it. The user must be informed that a new API key is required to restore this feature.
+-   **Orchestration Layers are Complete:** The complex work of creating permission and engine orchestrators for the hands-free mode is done. Do not modify these unless a new bug is found. The next step after the current task would be user validation or moving to the next backlog item.
 
 **documents and test reports created in this job**
--   
--   
+-    (updated multiple times)
+-    (from the subscription fix test)
 
 **Last 10 User Messages and any pending HUMAN messages**
--   **1. (LATEST & PENDING):** User requested a full audit of all subscription tiers to ensure features unlock instantly upon purchase. **This is the current P0 task.**
--   **2.** User sent a screenshot showing a Chef Pro Annual user seeing a Feature Locked modal.
--   **3.** User provided an improved code snippet for the browser speech fallback with better sync logic.
--   **4.** User provided an initial code snippet to create a browser-based speech synthesis fallback.
--   **5.** User provided a detailed prompt clarifying the goals for improving the hands-free cooking mode's stability and synchronization.
+1.  **(LATEST & PENDING):** User provided a detailed prompt to fix mobile entitlement sync issues by creating a unified  helper. This is the current P0 task.
+2.  User provided a detailed prompt for Phase-1 Orchestration to synchronize TTS, voice, and gesture engines. (Completed)
+3.  User was notified of a pod restart.
+4.  User provided a detailed prompt to fix camera, voice, and gesture permissions. (Completed)
+5.  User asked to be reminded of a Subscription Sync Indicator enhancement. (Added to PRD)
+6.  User confirmed to proceed with the P0 subscription bug fix.
 
 **Project Health Check:**
 -   **Broken:**
-    -   **Subscription Feature Gating:** Critically broken. Paying users are not receiving the features they purchased.
-    -   **Premium Voice Narration:** The primary ElevenLabs TTS integration is non-functional due to an exhausted API quota.
+    -   **Mobile Premium Entitlement:** Critically broken. This is the current task.
+    -   **Premium Voice Narration:** The ElevenLabs TTS integration is non-functional due to an exhausted API quota.
 -   **Mocked:**
-    -   The voice narration feature is currently mocked by the browser's less-premium  API as a fallback.
+    -   The voice narration feature is currently mocked by the browser's  API.
 
 **3rd Party Integrations**
--   **ElevenLabs:** Text-to-Speech provider. **(CURRENTLY DISABLED DUE TO EXHAUSTED QUOTA)**
+-   **ElevenLabs:** Text-to-Speech provider. **(DISABLED - QUOTA EXHAUSTED)**
 -   **@tensorflow/tfjs & @tensorflow-models/hand-pose-detection:** For frontend gesture recognition.
 -   **Razorpay:** Payment provider.
+-   **Capacitor:** For mobile app builds.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (For the voice/gesture sync fixes).
+-   **Testing agent used after significant changes:** YES (For the subscription gating fix).
+-   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None.
--   **Known regressions:** The subscription feature-unlocking mechanism, which was thought to be fixed in a prior session, has severely regressed.
+-   **Known regressions:** The mobile entitlement issue is a form of regression/discrepancy from the web functionality.
 
 **Credentials to test flow:**
 -   Premium User:  / 
 -   Standard User:  / 
 
 **What agent forgot to execute**
--   The agent did not perform the *comprehensive audit* of the subscription tiers as requested by the user. It implemented a narrow patch instead of addressing the systemic problem.
--   The agent failed to inform the user that the premium ElevenLabs voice feature is blocked by an exhausted quota, a critical piece of information for managing expectations.
--   The agent continued to add complexity by scattering state-refreshing logic across multiple components, ignoring the clear need for a centralized state management refactor.</analysis>
+-   The agent has correctly prioritized and executed the user's explicit, high-priority requests. The backlog items from the original handoff (like the Ingredient Encyclopedia) were correctly de-prioritized in favor of the critical bug fixes and orchestration tasks provided by the user during this session.</analysis>
