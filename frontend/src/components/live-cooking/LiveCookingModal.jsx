@@ -147,6 +147,7 @@ export default function LiveCookingModal() {
     playReassurance,
     playFinalNarration,
     resetOrchestrator,
+    abortEmotionalNarration,
   } = useEmotionalVoiceOrchestrator({
     enabled: open && hasUserStartedRef.current,
     mood,
