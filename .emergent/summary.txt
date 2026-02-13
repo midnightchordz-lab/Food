@@ -1,156 +1,135 @@
 <analysis>**original_problem_statement**:
-The user's initial request was to fix UI/UX bugs. This expanded to building out a Live Cooking experience with several features: a visual ingredient identification system, a live cooking modal, voice and gesture controls, an AI camera layer, and a futuristic UI redesign.
+The user's initial goal was to create a premium, futuristic, and genuinely useful hands-free cooking experience by refining the Live Cooking mode. This involved fixing bugs, implementing emotional voice orchestration, improving voice/gesture synchronization, and perfecting the hands-free controls.
 
-The current and most critical problem is a set of recurring bugs on mobile devices. The user has reported and provided screenshots for the following issues:
-1.  The recipe content is displayed incorrectly, with the Instructions tab showing ingredient text instead of cooking steps.
-2.  The application crashes on multiple mobile devices when the Start Step-by-Step Cooking Mode button is clicked.
-3.  The overall recipe display on mobile was previously broken (content cut off), and despite several fixes, the user is still reporting problems.
+During this session, the priority shifted dramatically due to a new, critical bug report from the user. A screenshot revealed that a user with the highest subscription tier (Chef Pro Annual) was still unable to access paid features. The user's latest and most urgent request is to perform a comprehensive audit of the entire subscription system to ensure that all features for a given tier are activated instantly upon purchase.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack recipe platform using React, FastAPI, PostgreSQL, and MongoDB. Its main feature is an advanced Live Cooking mode which provides a full-screen, cinematic, and mood-adaptive UI with a live camera feed as the background. It supports hands-free navigation through voice commands and clap gestures, managed by a global Zustand store () and several custom hooks. However, this core feature is currently unstable and unusable on mobile devices due to recurring crashes and UI bugs.
+The application is a full-stack recipe platform with a Live Cooking mode that uses a camera feed, voice narration (ElevenLabs), and hands-free controls (voice/gesture).
+
+In this session, the agent implemented several key changes:
+-   **Synchronization Logic:** Refactored  and  to enforce a single source of truth for the current recipe step, preventing out-of-sync voice narration.
+-   **Gesture Debouncing:** Added a 500ms stability check to the gesture detection logic in  to prevent accidental navigation from erratic movements.
+-   **TTS Fallback:** Due to an exhausted ElevenLabs API quota, a new hook () was created to provide voice narration using the browser's built-in SpeechSynthesis API as a fallback.
+-   **Subscription Fix (Attempted):** In response to the critical bug, the agent patched , , and  to force-refresh the subscription state from the backend. This was a targeted fix and not the full audit the user requested.
 
 **Last working item**:
--   **Last item agent was working:** The agent was working on fixing two critical, user-reported mobile bugs: an app crash when starting the Live Cooking mode and incorrect content being displayed in the recipe's Instructions tab. The agent implemented fixes for both issues but was unable to verify them due to persistent session/login issues during manual testing.
--   **Status:** USER VERIFICATION PENDING
--   **Agent Testing Done:** N
--   **Which testing method agent to use?** testing agent. Manual testing has been consistently blocked by session issues. A comprehensive test by the testing agent is required to validate the fixes for the crash and the content display on a mobile viewport.
+-   **Last item agent was working:** The agent was working on fixing a critical bug where paying users could not access premium features. The user explicitly requested a full audit of the subscription logic, but the agent only implemented a patch targeted at the .
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N (The agent has not performed an end-to-end test of the subscription flow after the latest changes).
+-   **Which testing method agent to use?** Frontend testing agent. A comprehensive test is required to simulate the full user journey for each subscription tier: log in, purchase a plan, and verify that all corresponding features are unlocked immediately without requiring a page refresh or re-login.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** Mobile app crashes when Start Step-by-Step Cooking Mode is clicked (P0)
--   **Issue 2:** Recipe instructions are not displayed correctly on mobile (P0)
--   **Issue 3:** Persistent session/login issues block manual testing (P1)
+-   **Issue 1:** Features are not unlocking instantly after a subscription purchase. (P0 - CRITICAL BUSINESS BLOCKER)
+-   **Issue 2:** ElevenLabs TTS quota is exhausted, disabling the premium voice feature. (P1 - BLOCKED)
+-   **Issue 3:** Web gesture control reliability is unverified. (P1)
+-   **Issue 4:** Voice synchronization and pacing with the new browser fallback needs user validation. (P2)
 
 **Issues Detail**:
--   **Issue 1:** Mobile app crashes when Start Step-by-Step Cooking Mode is clicked.
-    -   **Attempted fixes:** The agent identified that  was requesting microphone access immediately when the modal opened, which is a likely cause for crashes on mobile browsers. The fix was to disable this hook by default, requiring explicit user action to enable it. (File: ).
+-   **Issue 1:** Features are not unlocking instantly after a subscription purchase.
+    -   **Attempted fixes:** The agent added scattered  calls to  and . This is a temporary patch, not a robust solution.
     -   **Next debug checklist**:
-        1.  Use the  to confirm the  opens on a mobile viewport without crashing after the Start Step-by-Step Cooking Mode button is clicked.
-        2.  If the crash persists, re-investigate the initialization of all hooks within , particularly  and .
-        3.  Instruct the testing agent to capture any browser console errors if the crash occurs.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical crash that renders the main Live Cooking feature completely unusable on mobile devices.
+        1.  **Conduct the full audit:** Systematically review  and map every feature check to every subscription tier (, , etc.) to ensure the logic is correct.
+        2.  **Centralize State Management:** The root cause is stale frontend state. Refactor the logic to rely on a single source of truth, likely the Zustand store (). All subscription updates should go through this store.
+        3.  **Remove scattered refresh calls:** Eliminate the page-specific  calls in favor of a centralized update mechanism that triggers automatically after a successful payment transaction.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical bug that breaks the business model. Fixing it will ensure paying customers can access the features they purchased.
     -   **Status:** IN PROGRESS
     -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
--   **Issue 2:** Recipe instructions are not displayed correctly on mobile.
-    -   **Attempted fixes:** The agent observed from a user screenshot that the Instructions tab was incorrectly showing ingredient data. The agent added a fallback in  to display No instructions available. if the parsed instructions are empty, preventing the wrong data from being rendered.
-    -   **Next debug checklist**:
-        1.  Use the  to generate a recipe and verify that the Instructions tab shows the correct cooking steps or the fallback message, not ingredient text.
-        2.  If the issue persists, the root cause is in the  function in . Debug this function with a sample of the raw recipe markdown from the server to understand why it fails to extract the  section.
-    -   **Why fix this issue and what will be achieved with the fix?** Displaying the correct recipe steps is fundamental to the app's purpose.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y
+-   **Issue 2:** ElevenLabs TTS quota is exhausted.
+    -   **Attempted fixes:** A fallback using the browser's free Web Speech API was implemented.
+    -   **Next debug checklist**: Inform the user that the premium ElevenLabs voice is unavailable because the account quota is depleted. The primary feature is blocked until the user renews their ElevenLabs subscription or provides a new API key.
+    -   **Why fix this issue and what will be achieved with the fix?** To restore the premium voice experience, which is a core part of the user's vision.
+    -   **Status:** BLOCKED
+    -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Frontend.
-    -   **Blocked on other issue:** None.
--   **Issue 3:** Persistent session/login issues block manual testing.
-    -   **Attempted fixes:** None. The agent encountered this issue repeatedly while trying to test using the screenshot tool, getting logged out or redirected.
-    -   **Next debug checklist**:
-        1.  Prioritize using the  for all frontend verification to bypass this problem.
-        2.  If manual testing is required, investigate the authentication flow, token storage/retrieval, and redirection logic within the React application.
-    -   **Why fix this issue and what will be achieved with the fix?** This blocker significantly slows down development and verification cycles.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend.
-    -   **Blocked on other issue:** None.
+    -   **Blocked on other issue:** Blocked on external service quota.
 
 **In progress Task List**:
--   None.
+-   **Task 1:** Complete Subscription & Feature Gate Audit (P0)
+    -   **Where to resume:** .
+    -   **What will be achieved with this?** A reliable subscription system where all features unlock instantly upon purchase, resolving the critical bug reported by the user.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** Frontend.
+    -   **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **(P1) Implement Ingredient Encyclopedia Page:** Create the  page.
-    -   **(P2) Implement Ingredient Detail Page:** Create a dynamic route ().
+    -   (P1) Implement Ingredient Encyclopedia Page: Create the  page.
 -   **Future Tasks:**
-    -   **(P2) Activate AI Observer:** Connect the passive AI observer layer's events to enable AI-assisted cooking.
+    -   (P2) Implement Ingredient Detail Page: Create a dynamic route ().
+    -   (P2) Activate AI Observer: Connect the passive AI observer layer's events to enable AI-assisted cooking.
 
 **Completed work in this session**
--   **Attempted Fix for Mobile Crash:** Disabled automatic microphone access request in  to prevent the app from crashing on mobile.
--   **Attempted Fix for Content Display:** Added a fallback message in  to prevent incorrect data from showing in the Instructions tab.
--   **Attempted Fix for Mobile Layout:** Modified  by adding a  prop to fix a recurring layout bug where modal content was cut off. This was verified by the testing agent but the user reported subsequent issues.
-
-**Earlier issues found/mentioned but not fixed**
--   None.
+-   **Voice/Gesture Synchronization:** Refactored  to use a centralized step state () and an invalidation mechanism () to prevent out-of-sync narration.
+-   **Gesture Debounce:** Implemented a 500ms stability check in .
+-   **TTS Fallback:** Created  and integrated it into  as a fallback for the exhausted ElevenLabs service.
 
 **Known issue recurrence from previous fork**
--   The mobile layout and crash issues are highly recurrent. Multiple fixes have been attempted, but the problems persist, indicating either the root cause was not correctly identified or the fixes introduced other regressions. The user is justifiably frustrated by this.
+-   **Subscription unlock failure:** This issue was marked as fixed in a previous session but has resurfaced as a critical, high-priority bug.
+-   **Hands-free control instability:** Making gestures and voice commands feel reliable and premium remains a recurring challenge.
 
 **Code Architecture**
 
 
-**Key Technical Concepts**
--   **Frontend:** React, TypeScript, Vite, Tailwind CSS, Zustand, Framer Motion, Shadcn/UI
--   **State Management:** Zustand for global state ().
--   **Browser APIs:** Web Speech API, Web Audio API, .
--   **Backend:** Python, FastAPI, Motor
--   **Database:** MongoDB (ingredients), PostgreSQL (users/recipes)
-
-**key DB schema**
--   **ingredientguides (MongoDB Collection):** 
-
-**changes in tech stack**
--   None.
-
 **All files of reference**
--    (Modified to prevent crash)
--    (Modified for content display fix)
--    (Modified for a previous layout fix)
--    (Identified as likely cause of crash)
--    (Relevant to the instruction display bug)
--   
+-   **Subscription Issue:**
+    -   
+    -   
+    -   
+-   **Live Cooking Sync & Fallback:**
+    -   
+    -   
+    -    (new file)
 
 **Areas that need refactoring**:
--   The use of  to pass the  is a workaround and should be integrated into the global state.
--   The application's session management is fragile and repeatedly breaks manual testing flows. This needs to be investigated and stabilized.
+-   **Subscription State Management:** The current approach of adding  calls to individual pages is brittle. The feature gating logic should be refactored to rely on a centrally managed state (Zustand store) that is updated reliably after payment, eliminating the need for scattered refresh calls.
+-   **:** This component's complexity continues to grow. It is a prime candidate for being broken down into smaller, more focused sub-components.
 
 **key api endpoints**
--   
--   
+-   : Fetches the current user's subscription details. This is the source of truth for the backend, but the frontend is failing to sync with it correctly.
 
 **Critical Info for New Agent**
--   The user is highly frustrated with the recurring mobile bugs. Your absolute first priority is to create a definitive and lasting fix for both the mobile crash and the incorrect instruction display.
--   **Do not rely on manual testing via the screenshot tool.** It has been proven unreliable due to session issues. Use the  immediately to verify any and all fixes.
--   The user reported the issue persists even after previous fixes were verified by the testing agent. Be extra thorough. The problem might have multiple triggers or edge cases.
--   The fix of disabling  by default is the most promising lead for the crash. Ensure your testing validates this specific change.
--   The instruction display bug is likely a data parsing issue in . The current fallback is a patch; a real fix may require debugging the parser itself.
+-   **Priority #1 is the Subscription Bug:** The user is blocked by a critical issue where paid features are not unlocking. Your absolute first priority is to perform the full audit requested by the user and implement a robust, centralized fix for the stale frontend subscription state. Do not just patch one page; fix the underlying state management architecture.
+-   **ElevenLabs Quota is Exhausted:** The premium TTS service is not functional. You must inform the user about this limitation and that the browser's speech is a fallback. Do not waste time debugging the ElevenLabs integration itself.
+-   **Focus on Centralized State:** The subscription bug is a state management problem. The solution is to ensure the global subscription store (Zustand) is the single source of truth and is updated reliably, rather than adding more scattered API calls.
 
 **documents and test reports created in this job**
 -   
--    (and previous iterations)
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** hope its fixed in Mobile App as well it was working fine on web btw (PENDING)
-2.  **User:** u said no credits would be charged and you still did, also its not crashing on one device its crashing on multiple. 2nd the recipe generation is not at all visible (PENDING)
-3.  **User:** if you cannot FUCKING FIX IT let me know I will get you complete command to fix the same fucking issue over and over again FIX IT NOW AND THAT TOO WITHOUT USING MY CREDITS (PENDING)
-4.  **User:** Look at the SS is this the way to display a recipe and also when the start by step by step cooking mode is clicked the app just shut downs (PENDING - This is the primary bug report for the current issues)
-5.  **User:** still the same issue FIX IT ONCE AND FOR ALL (PENDING)
-6.  **User:**  (DONE)
+-   **1. (LATEST & PENDING):** User requested a full audit of all subscription tiers to ensure features unlock instantly upon purchase. **This is the current P0 task.**
+-   **2.** User sent a screenshot showing a Chef Pro Annual user seeing a Feature Locked modal.
+-   **3.** User provided an improved code snippet for the browser speech fallback with better sync logic.
+-   **4.** User provided an initial code snippet to create a browser-based speech synthesis fallback.
+-   **5.** User provided a detailed prompt clarifying the goals for improving the hands-free cooking mode's stability and synchronization.
 
 **Project Health Check:**
 -   **Broken:**
-    -   The core Live Cooking feature is unusable on mobile due to a crash on launch.
-    -   Recipe instructions are displaying incorrect information on mobile.
-    -   Manual testing workflow is broken due to session instability.
--   **Mocked:** , ElevenLabs integration.
+    -   **Subscription Feature Gating:** Critically broken. Paying users are not receiving the features they purchased.
+    -   **Premium Voice Narration:** The primary ElevenLabs TTS integration is non-functional due to an exhausted API quota.
+-   **Mocked:**
+    -   The voice narration feature is currently mocked by the browser's less-premium  API as a fallback.
 
 **3rd Party Integrations**
--   **SerpAPI** (Google Images Search) — Requires a User API Key.
--   **ElevenLabs** (Text-to-Speech) — Integrated via a backend endpoint.
--   **Framer Motion** (Animation Library) — Frontend dependency.
+-   **ElevenLabs:** Text-to-Speech provider. **(CURRENTLY DISABLED DUE TO EXHAUSTED QUOTA)**
+-   **@tensorflow/tfjs & @tensorflow-models/hand-pose-detection:** For frontend gesture recognition.
+-   **Razorpay:** Payment provider.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES
--   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** None
--   **Known regressions:** The mobile crash and instruction display are critical, recurring regressions that have frustrated the user.
+-   **Testing agent used after significant changes:** YES (For the voice/gesture sync fixes).
+-   **Test files created:** None.
+-   **Known regressions:** The subscription feature-unlocking mechanism, which was thought to be fixed in a prior session, has severely regressed.
 
 **Credentials to test flow:**
 -   Premium User:  / 
 -   Standard User:  / 
--   **Note:** Do not attempt manual login/navigation. Use the testing agent to bypass persistent session issues.
 
 **What agent forgot to execute**
--   The agent has been unable to progress to new features () due to being stuck on fixing these recurring critical bugs.
--   A permanent solution for the session instability that blocks manual testing has not been found.</analysis>
+-   The agent did not perform the *comprehensive audit* of the subscription tiers as requested by the user. It implemented a narrow patch instead of addressing the systemic problem.
+-   The agent failed to inform the user that the premium ElevenLabs voice feature is blocked by an exhausted quota, a critical piece of information for managing expectations.
+-   The agent continued to add complexity by scattering state-refreshing logic across multiple components, ignoring the clear need for a centralized state management refactor.</analysis>

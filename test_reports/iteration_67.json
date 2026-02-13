@@ -21,7 +21,7 @@
     "test_1_login_redirect": {
       "status": "PASSED",
       "description": "Login with test@example.com/test123 now redirects to /chat page",
-      "evidence": "Playwright test confirmed URL after login is https://recipe-voice-sync.preview.emergentagent.com/chat",
+      "evidence": "Playwright test confirmed URL after login is https://recipe-sub-audit.preview.emergentagent.com/chat",
       "fix_location": "frontend/src/components/AuthModal.js line 91: navigate('/chat')"
     },
     "test_2_instructions_tab": {
@@ -83,7 +83,7 @@
       "height": 844,
       "device": "Mobile (iPhone 14 Pro dimensions)"
     },
-    "url": "https://recipe-voice-sync.preview.emergentagent.com",
+    "url": "https://recipe-sub-audit.preview.emergentagent.com",
     "browser_automation": "Playwright"
   },
   
