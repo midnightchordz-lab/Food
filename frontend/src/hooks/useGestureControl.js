@@ -143,60 +143,62 @@ export function useGestureControl({
   }, []);
   
   /**
-   * Process gesture and trigger navigation
-   * FIX: Direct callback invocation for web compatibility
+   * Process gesture with STABLE DETECTION (500ms confirmation)
+   * SYNC FIX: Requires consistent direction for 500ms before triggering
+   * Only allows ONE step change per gesture cycle
    */
   const processGesture = useCallback((motion) => {
     const now = Date.now();
+    const stable = stableDetectionRef.current;
     
     // Check voice priority cooldown
     if (now - lastVoiceTimeRef.current < CONFIG.VOICE_PRIORITY_COOLDOWN) {
       return;
     }
     
-    // Check gesture cooldown - critical for web noise filtering
+    // Check gesture cooldown (one change per gesture)
     if (now - lastGestureTimeRef.current < CONFIG.GESTURE_COOLDOWN) {
       return;
     }
     
-    if (!motionStartRef.current) {
-      // Start tracking new motion
-      motionStartRef.current = {
-        time: now,
-        direction: motion.direction,
-        totalIntensity: motion.intensity,
-      };
-    } else {
-      // Continue tracking
-      const elapsed = now - motionStartRef.current.time;
-      
-      if (elapsed > CONFIG.MAX_SWIPE_DURATION) {
-        // Too slow, reset
-        motionStartRef.current = null;
-        return;
+    // SYNC FIX: Track stable detection over time
+    if (motion === null) {
+      // No motion - reset tracking
+      if (stable.direction !== null) {
+        stableDetectionRef.current = {
+          direction: null,
+          startTime: null,
+          consecutiveFrames: 0,
+          isConfirmed: false,
+        };
       }
+      return;
+    }
+    
+    // Check if direction matches what we're tracking
+    if (stable.direction === motion.direction) {
+      // Same direction - increment consecutive frames
+      stable.consecutiveFrames++;
       
-      // Accumulate intensity
-      motionStartRef.current.totalIntensity += motion.intensity;
-      
-      // Check if swipe is complete (consistent direction with enough intensity)
-      if (motion.direction === motionStartRef.current.direction && 
-          motionStartRef.current.totalIntensity > CONFIG.MIN_SWIPE_DISTANCE) {
+      // Check if we've reached 500ms of stable detection
+      const elapsed = now - stable.startTime;
+      if (elapsed >= CONFIG.STABLE_DETECTION_MS && 
+          stable.consecutiveFrames >= CONFIG.CONSECUTIVE_FRAMES_REQUIRED &&
+          !stable.isConfirmed) {
         
-        // Valid swipe detected! Trigger navigation
+        // CONFIRMED! Trigger the gesture
+        stable.isConfirmed = true;
         const { onNext, onPrev } = callbacksRef.current;
         
         if (motion.direction === 'right' && onNext) {
-          console.log('[Gesture] ✓ Swipe RIGHT → Next Step');
-          // Direct function call - this is the fix for web
+          console.log('[Gesture] ✓ STABLE Swipe RIGHT → Next Step (500ms confirmed)');
           try {
             onNext();
           } catch (e) {
             console.error('[Gesture] Failed to trigger next:', e);
           }
         } else if (motion.direction === 'left' && onPrev) {
-          console.log('[Gesture] ✓ Swipe LEFT → Previous Step');
-          // Direct function call - this is the fix for web
+          console.log('[Gesture] ✓ STABLE Swipe LEFT → Previous Step (500ms confirmed)');
           try {
             onPrev();
           } catch (e) {
@@ -204,10 +206,25 @@ export function useGestureControl({
           }
         }
         
-        // Set cooldown and reset
+        // Set cooldown - prevent rapid repeats
         lastGestureTimeRef.current = now;
-        motionStartRef.current = null;
+        
+        // Reset after trigger (require new gesture cycle)
+        stableDetectionRef.current = {
+          direction: null,
+          startTime: null,
+          consecutiveFrames: 0,
+          isConfirmed: false,
+        };
       }
+    } else {
+      // Different direction - start new tracking
+      stableDetectionRef.current = {
+        direction: motion.direction,
+        startTime: now,
+        consecutiveFrames: 1,
+        isConfirmed: false,
+      };
     }
   }, []);
   
