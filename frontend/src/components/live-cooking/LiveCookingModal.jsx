@@ -524,21 +524,27 @@ export default function LiveCookingModal() {
       // Already enabled - disable it
       setHandsFreeEnabled(false);
       setShowCamera(false);
+      setGestureEnabled(false);
       stopCameraStream();
+      toast.info('Hands-free controls disabled');
       return;
     }
     
     // Request permissions (camera + mic + speech) on explicit user action
+    console.log('[LiveCooking] Requesting hands-free permissions...');
     const granted = await requestPermissions();
     
     if (granted) {
       setHandsFreeEnabled(true);
       setShowCamera(true);
+      toast.success('Hands-free mode enabled! Say "next step" or wave to navigate.');
       console.log('[LiveCooking] Hands-free mode enabled with all permissions');
     } else {
+      // Show error toast with the specific error message
+      toast.error(permissionError || 'Could not enable hands-free mode. Please allow camera and microphone access.');
       console.log('[LiveCooking] Permissions denied, hands-free not enabled');
     }
-  }, [handsFreeEnabled, requestPermissions, stopCameraStream]);
+  }, [handsFreeEnabled, requestPermissions, stopCameraStream, permissionError]);
 
   // Hands-free voice controls - ONLY when permissions granted and enabled
   const { voiceCommandActive, isSupported: voiceSupported } = useHandsFreeControls({
