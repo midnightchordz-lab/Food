@@ -5,9 +5,9 @@ import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, MicOff, Camera, CameraO
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useLiveCooking } from "@/stores/useLiveCooking";
-import { useHandsFreeControls } from "@/hooks/useHandsFreeControls";
 import { useGestureControl } from "@/hooks/useGestureControl";
 import { useHandsFreePermissions, PermissionStatus } from "@/hooks/useHandsFreePermissions";
+import { useEngineOrchestrator, EngineState } from "@/hooks/useEngineOrchestrator";
 import { useAIObserver, ObserverEvents } from "@/hooks/useAIObserver";
 import { useEmotionalVoiceOrchestrator } from "@/hooks/useEmotionalVoiceOrchestrator";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
