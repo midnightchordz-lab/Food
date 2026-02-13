@@ -93,6 +93,15 @@ const MOOD_THEMES = {
   },
 };
 
+// VOICE SYNC TIMING CONFIG - moved outside component for stable reference
+// These values create "cinematic smooth" transitions
+const VOICE_TIMING = {
+  WARM_START_DELAY: 180,      // ms pause before speaking (feels intentional)
+  POST_NARRATION_WAIT: 1400,  // ms breathing space after narration ends
+  STEP_CHANGE_DELAY: 150,     // ms delay after step change before new narration
+  FADE_IN_DURATION: 0.3,      // seconds for audio volume fade-in
+};
+
 /**
  * LiveCookingModal - Futuristic Mood-Adaptive AI Interface
  * Full-screen cinematic camera experience with glassmorphism UI
