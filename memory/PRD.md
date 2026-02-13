@@ -174,6 +174,27 @@ AUDIO_CACHE_HOURS=168
 
 ## Recent Changes (Feb 12, 2026)
 
+### SavedRecipes Page - Unified Modal Design ✅ IMPLEMENTED (Feb 13, 2026)
+Updated SavedRecipes page to use the new RecipeDetailModal component instead of the old inline dialog.
+
+**Changes Made:**
+- Replaced custom inline Dialog with RecipeDetailModal component
+- Removed unused imports (RecipeRating, RecipeVoicePlayer, CookingModePlayer)
+- Added intelligent data handling: recipes with existing instructions load instantly (no AI regeneration)
+- Maps saved recipe data format to RecipeDetailModal expected format
+
+**Performance Optimization:**
+- Saved recipes with existing instructions now load INSTANTLY
+- Only fetches AI-generated details if recipe doesn't have instructions
+- Uses existing recipe images when available
+
+**Result:**
+- Unified look across Chat, Planner, and SavedRecipes pages
+- Two-column layout on desktop, single column on mobile
+- All features work: Cook button, Groceries, Save, Share, Print, Voice Guide
+
+---
+
 ### RecipeDetailModal UI Redesign ✅ IMPLEMENTED (Feb 12, 2026)
 Redesigned RecipeDetailModal with a clean two-column layout matching user's reference design.
 
