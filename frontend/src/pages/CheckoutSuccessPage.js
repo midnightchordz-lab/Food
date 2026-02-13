@@ -59,6 +59,8 @@ const CheckoutSuccessPage = () => {
   
   // Get refreshUsage to update global usage state after payment
   const { refreshUsage } = useUsageLimit();
+  // Get refreshSubscription to update subscription state for feature gating
+  const { refreshSubscription } = useSubscription();
 
   const planId = searchParams.get('plan') || '';
   const orderId = searchParams.get('order_id') || '';
