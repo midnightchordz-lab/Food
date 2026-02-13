@@ -25,6 +25,40 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - ElevenLabs Starter plan active and working
 - Tested and confirmed working for English and Hindi narration
 
+#### Hands-Free Step Control ✅ NEW (Feb 13, 2026)
+**True hands-free cooking with voice commands and gesture detection.**
+
+**Voice Commands (Primary):**
+| Command | Action | Min Confidence |
+|---------|--------|----------------|
+| "next step" / "next" / "forward" | Next Step | 70% |
+| "previous step" / "back" | Previous Step | 70% |
+| "repeat step" / "repeat" / "again" | Repeat Current | 70% |
+| "pause" / "stop" | Pause Voice | 75% |
+| "resume" / "play" / "continue" | Resume Voice | 75% |
+
+**Gesture Controls (Secondary):**
+| Gesture | Action |
+|---------|--------|
+| Swipe Right (in air) | Next Step |
+| Swipe Left (in air) | Previous Step |
+
+**Priority & Safety:**
+- Voice commands take priority (2s gesture cooldown after voice)
+- Command cooldown: 1.5s (prevents double triggers)
+- Confidence scoring (low confidence = ignored)
+- Only triggers existing button callbacks (no new logic)
+
+**UI Controls (Header):**
+- 🎤 **Voice** button (green when active) - `data-testid="live-cooking-handsfree-btn"`
+- 👋 **Swipe** button (blue when active) - `data-testid="live-cooking-gesture-btn"`
+- 📷 **Camera** button - `data-testid="live-cooking-camera-btn"`
+- ✖️ **Close** button - `data-testid="live-cooking-close-btn"`
+
+**Files:**
+- `frontend/src/hooks/useHandsFreeControls.js` - Voice commands with confidence scoring
+- `frontend/src/hooks/useGestureControl.js` - Camera-based swipe detection
+
 #### Voice-Step Sync Fix ✅ FIXED (Feb 13, 2026)
 **Fixed voice-to-step synchronization and improved voice naturalness.**
 
