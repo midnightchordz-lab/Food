@@ -190,15 +190,6 @@ export default function LiveCookingModal() {
   const postNarrationTimerRef = useRef(null);
   const stepChangeIdRef = useRef(0); // SYNC FIX: Unique ID per step change
 
-  // VOICE SYNC TIMING CONFIG - for natural, emotional pacing
-  // These values create "cinematic smooth" transitions
-  const VOICE_TIMING = {
-    WARM_START_DELAY: 180,      // ms pause before speaking (feels intentional)
-    POST_NARRATION_WAIT: 1400,  // ms breathing space after narration ends
-    STEP_CHANGE_DELAY: 150,     // ms delay after step change before new narration
-    FADE_IN_DURATION: 0.3,      // seconds for audio volume fade-in
-  };
-
   // SYNC FIX: Smooth fade-in instead of abrupt audio start
   const fadeInAudio = useCallback((audio, duration = 0.3) => {
     if (!audio) return;
