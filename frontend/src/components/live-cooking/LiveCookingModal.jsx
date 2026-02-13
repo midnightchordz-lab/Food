@@ -498,22 +498,50 @@ export default function LiveCookingModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playReassurance]);
 
-  // Reset hasUserStarted when modal closes
+  // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       hasUserStartedRef.current = false;
       setAiState('idle');
       setShowWhisper(false);
       setHandsFreeEnabled(false); // Reset hands-free when modal closes
+      setShowCamera(false); // Hide camera
       setUseBrowserSpeech(false); // Reset fallback mode
       stopSpeech(); // Stop any browser speech
       resetOrchestrator(); // Reset emotional voice state
+      stopCameraStream(); // Stop camera stream from permission hook
+      resetPermissions(); // Reset permission state
     }
-  }, [open, resetOrchestrator]);
+  }, [open, resetOrchestrator, stopCameraStream, resetPermissions]);
 
-  // Hands-free voice controls - ONLY when user enables it
+  // ============================================
+  // HANDS-FREE ENABLE HANDLER
+  // Requests all permissions together on user tap
+  // ============================================
+  const handleEnableHandsFree = useCallback(async () => {
+    if (handsFreeEnabled) {
+      // Already enabled - disable it
+      setHandsFreeEnabled(false);
+      setShowCamera(false);
+      stopCameraStream();
+      return;
+    }
+    
+    // Request permissions (camera + mic + speech) on explicit user action
+    const granted = await requestPermissions();
+    
+    if (granted) {
+      setHandsFreeEnabled(true);
+      setShowCamera(true);
+      console.log('[LiveCooking] Hands-free mode enabled with all permissions');
+    } else {
+      console.log('[LiveCooking] Permissions denied, hands-free not enabled');
+    }
+  }, [handsFreeEnabled, requestPermissions, stopCameraStream]);
+
+  // Hands-free voice controls - ONLY when permissions granted and enabled
   const { voiceCommandActive, isSupported: voiceSupported } = useHandsFreeControls({
-    enabled: open && handsFreeEnabled,
+    enabled: open && handsFreeEnabled && hasMicrophoneAccess,
     onNext: handleNextWithVoice,
     onPrev: handlePrevWithVoice,
     onTogglePlay: handleTogglePlayWithVoice,
@@ -524,31 +552,22 @@ export default function LiveCookingModal() {
   // Gesture control state
   const [gestureEnabled, setGestureEnabled] = useState(false);
 
-  // Gesture controls (swipe left/right) - uses camera stream
+  // Gesture controls (swipe left/right) - uses camera stream from permissions
   useGestureControl({
-    enabled: open && gestureEnabled && showCamera && cameraVideoReady,
+    enabled: open && gestureEnabled && showCamera && cameraVideoReady && hasCameraAccess,
     videoRef: cameraVideoRef,
     onNext: handleNextWithVoice,
     onPrev: handlePrevWithVoice,
     voiceCommandActive, // Voice takes priority over gestures
   });
 
-  // Camera preview
-  const { 
-    isActive: isCameraActive, 
-    hasPermission: hasCameraPermission,
-    stream: cameraStream,
-  } = useCameraPreview({
-    enabled: open && showCamera,
-    preferRearCamera: true,
-  });
-
-  // Attach camera stream to video element
+  // Attach camera stream from permission hook to video element
   useEffect(() => {
     const videoEl = cameraVideoRef.current;
-    if (videoEl && cameraStream) {
+    if (videoEl && cameraStream && hasCameraAccess) {
       videoEl.srcObject = cameraStream;
       setCameraVideoReady(true);
+      console.log('[LiveCooking] Camera stream attached to video element');
     } else {
       setCameraVideoReady(false);
     }
