@@ -568,48 +568,6 @@ export default function LiveCookingModal() {
   // Requests all permissions together on user tap
   // ============================================
   
-  // Engine Orchestrator - coordinates TTS, recognition, gestures
-  const {
-    cameraState,
-    ttsState,
-    recognitionState,
-    gestureState,
-    isTTSSpeaking,
-    isRecognitionActive,
-    isGestureReady,
-    initializeCamera,
-    speakWithOrchestration,
-    onTTSComplete,
-    stopTTS,
-    startRecognition,
-    pauseRecognition,
-    resumeRecognition,
-    stopRecognition,
-    setRecognitionCallbacks,
-    startGestures,
-    stopGestures,
-    handleGestureNavigation,
-    cleanup: cleanupOrchestrator,
-    reset: resetEngineOrchestrator,
-  } = useEngineOrchestrator({
-    enabled: open && handsFreeEnabled,
-    videoRef: cameraVideoRef,
-    cameraStream,
-    onSpeakStep: async (text) => {
-      // Use browser speech for narration
-      stopSpeech();
-      await new Promise(resolve => setTimeout(resolve, 150));
-      narrateCurrentStep(text, true);
-    },
-    onStopSpeaking: () => {
-      stopSpeech();
-    },
-    onStepChange: (direction) => {
-      // This is called by orchestrator after gesture/voice navigation
-      console.log('[LiveCooking] Orchestrator step change:', direction);
-    },
-  });
-  
   // Track voice command active state for gesture priority
   const [voiceCommandActive, setVoiceCommandActive] = useState(false);
   
