@@ -412,6 +412,27 @@ export default function LiveCookingModal() {
     };
   }, [isPlaying, togglePlay]);
 
+  // EMOTIONAL: Play encouragement after step narration finishes
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleNarrationEnded = () => {
+      // Only play encouragement if we're actively cooking
+      if (hasUserStartedRef.current && isPlaying) {
+        // Small delay to feel natural, not rushed
+        setTimeout(() => {
+          playEncouragement('gentle');
+        }, 500);
+      }
+    };
+
+    audio.addEventListener('ended', handleNarrationEnded);
+    return () => {
+      audio.removeEventListener('ended', handleNarrationEnded);
+    };
+  }, [isPlaying, playEncouragement]);
+
   // ============================================
   // END EXISTING LOGIC
   // ============================================
