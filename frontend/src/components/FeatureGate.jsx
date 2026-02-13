@@ -17,21 +17,33 @@ const SubscriptionContext = createContext(null);
 export const SubscriptionProvider = ({ children }) => {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(0);
 
-  const loadSubscription = async () => {
+  const loadSubscription = async (forceRefresh = false) => {
     const token = localStorage.getItem('token');
     if (!token) {
       setSubscription({ plan_id: 'free', features: {} });
       setLoading(false);
-      return;
+      return { plan_id: 'free', features: {} };
+    }
+
+    // Skip if recently refreshed (within 2 seconds) unless forced
+    const now = Date.now();
+    if (!forceRefresh && lastRefresh && (now - lastRefresh) < 2000 && subscription) {
+      return subscription;
     }
 
     try {
+      setLoading(true);
       const response = await axios.get(`${API}/subscription/current`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
-        setSubscription(response.data.subscription);
+        const sub = response.data.subscription;
+        setSubscription(sub);
+        setLastRefresh(now);
+        console.log('[FeatureGate] Subscription loaded:', sub?.plan_id, 'features:', sub?.features);
+        return sub;
       }
     } catch (error) {
       console.error('Error loading subscription:', error);
@@ -39,14 +51,26 @@ export const SubscriptionProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
+    return { plan_id: 'free', features: {} };
   };
 
+  // Load on mount and when token changes
   useEffect(() => {
     loadSubscription();
+    
+    // Also listen for storage changes (login/logout)
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        loadSubscription(true);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const refreshSubscription = () => {
-    loadSubscription();
+  // Refresh function that returns a Promise
+  const refreshSubscription = async () => {
+    return loadSubscription(true);
   };
 
   return (
