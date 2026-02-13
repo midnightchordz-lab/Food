@@ -5,6 +5,25 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 
 ## Core Features
 
+### 0. Subscription Feature Gating ✅ FIXED (Feb 13, 2026)
+**Fixed critical bug where Chef Pro users saw "Feature Locked" modal.**
+
+**Root Cause:**
+- Frontend `SubscriptionProvider` wasn't refreshing subscription state after payment
+- `useFeatureAccess` hook was using stale subscription data
+- No automatic refresh when navigating to protected pages
+
+**Fix:**
+1. `SubscriptionProvider` now logs subscription loads and has cache-busting
+2. `useFeatureAccess` hook refreshes subscription on first access if data seems stale
+3. `FridgeScannerPage` and other protected pages call `refreshSubscription()` on mount
+4. `CheckoutSuccessPage` now properly awaits the subscription refresh Promise
+
+**Files Changed:**
+- `frontend/src/components/FeatureGate.jsx` - Added refresh logic, logging, Promise-based refresh
+- `frontend/src/pages/FridgeScannerPage.js` - Added subscription refresh on mount
+- `frontend/src/pages/CheckoutSuccessPage.js` - Await refreshSubscription()
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
