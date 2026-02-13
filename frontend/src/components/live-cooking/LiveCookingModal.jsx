@@ -7,6 +7,7 @@ import { useLiveCooking } from "@/stores/useLiveCooking";
 import { useHandsFreeControls } from "@/hooks/useHandsFreeControls";
 import { useCameraPreview } from "@/hooks/useCameraPreview";
 import { useAIObserver, ObserverEvents } from "@/hooks/useAIObserver";
+import { useEmotionalVoiceOrchestrator } from "@/hooks/useEmotionalVoiceOrchestrator";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
 
