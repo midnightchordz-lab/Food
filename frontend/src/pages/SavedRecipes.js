@@ -208,119 +208,28 @@ const SavedRecipes = () => {
         )}
       </div>
       
-      {/* Recipe Detail Dialog */}
-      <Dialog open={!!selectedRecipe} onOpenChange={() => setSelectedRecipe(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" data-testid="recipe-detail-dialog">
-          {selectedRecipe && (
-            <>
-              <DialogHeader>
-                <div className="flex justify-between items-start">
-                  <DialogTitle className="text-3xl font-serif flex-1">{selectedRecipe.title}</DialogTitle>
-                  {recipeRatings[selectedRecipe.id]?.average_rating > 0 && (
-                    <div className="flex items-center gap-2 bg-accent/10 px-3 py-1 rounded-full">
-                      <Star size={18} className="fill-accent text-accent" />
-                      <span className="font-medium text-accent">
-                        {recipeRatings[selectedRecipe.id].average_rating} ({recipeRatings[selectedRecipe.id].total_ratings})
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </DialogHeader>
-              <div className="space-y-6 mt-4">
-                {selectedRecipe.image_url && (
-                  <div className="rounded-2xl overflow-hidden">
-                    <img 
-                      src={selectedRecipe.image_url} 
-                      alt={selectedRecipe.title}
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                )}
-                
-                <p className="text-muted-foreground">{selectedRecipe.description}</p>
-                
-                <div className="flex gap-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock size={18} />
-                    <span>Prep: {selectedRecipe.prep_time}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock size={18} />
-                    <span>Cook: {selectedRecipe.cook_time}</span>
-                  </div>
-                </div>
-                
-                {selectedRecipe.dietary_info && selectedRecipe.dietary_info.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedRecipe.dietary_info.map((info, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                        {info}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Voice Cooking Guide */}
-                <RecipeVoicePlayer
-                  recipe={{
-                    id: selectedRecipe.id || selectedRecipe._id,
-                    name: selectedRecipe.title,
-                    cuisine: selectedRecipe.cuisine,
-                    totalTime: selectedRecipe.cook_time?.replace(/\D/g, '') || '30',
-                    servings: selectedRecipe.servings || '4',
-                    ingredients: selectedRecipe.ingredients?.map(i => ({
-                      name: typeof i === 'string' ? i : i.name,
-                      amount: typeof i === 'string' ? '' : i.amount
-                    })) || [],
-                    instructions: selectedRecipe.instructions || [],
-                    tips: []
-                  }}
-                />
-                
-                <div>
-                  <h3 className="font-serif text-xl mb-3">Ingredients</h3>
-                  <ul className="space-y-2">
-                    {selectedRecipe.ingredients?.map((ingredient, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <span className="text-primary mt-1">•</span>
-                        <span>{ingredient}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="font-serif text-xl mb-3">Instructions</h3>
-                  <ol className="space-y-3">
-                    {selectedRecipe.instructions?.map((instruction, idx) => (
-                      <li key={idx} className="flex gap-3">
-                        <span className="font-medium text-primary">{idx + 1}.</span>
-                        <span>{instruction}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-                
-                <div className="bg-secondary/50 rounded-xl p-4">
-                  <h3 className="font-serif text-lg mb-2">Nutritional Highlights</h3>
-                  <p className="text-sm text-muted-foreground">{selectedRecipe.nutritional_highlights}</p>
-                </div>
-                
-                <RecipeRating recipeId={selectedRecipe.id} />
-                
-                <Button
-                  onClick={() => addToShoppingList(selectedRecipe)}
-                  className="w-full rounded-full bg-primary hover:bg-primary/90"
-                  data-testid="add-to-shopping-list-button"
-                >
-                  <ShoppingCart size={18} className="mr-2" />
-                  Add Ingredients to Shopping List
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Recipe Detail Modal - Using the unified new design */}
+      <RecipeDetailModal
+        recipe={selectedRecipe ? {
+          ...selectedRecipe,
+          title: selectedRecipe.title,
+          imageUrl: selectedRecipe.image_url,
+          cookTime: selectedRecipe.cook_time,
+          prepTime: selectedRecipe.prep_time,
+          servings: selectedRecipe.servings,
+          cuisine: selectedRecipe.cuisine_type,
+          cuisineHint: selectedRecipe.cuisine_type,
+          description: selectedRecipe.description,
+          ingredients: selectedRecipe.ingredients,
+          instructions: selectedRecipe.instructions,
+        } : null}
+        isOpen={!!selectedRecipe}
+        onClose={() => setSelectedRecipe(null)}
+        onSave={(recipe) => {
+          toast.success('Recipe already saved!');
+        }}
+        onAddToShoppingList={(recipe) => addToShoppingList(recipe)}
+      />
     </div>
   );
 };
