@@ -55,6 +55,9 @@ const CheckoutSuccessPage = () => {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
   const [error, setError] = useState(null);
+  
+  // Get refreshUsage to update global usage state after payment
+  const { refreshUsage } = useUsageLimit();
 
   const planId = searchParams.get('plan') || '';
   const orderId = searchParams.get('order_id') || '';
