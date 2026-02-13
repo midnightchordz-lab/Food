@@ -54,7 +54,33 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - ElevenLabs Starter plan active and working
 - Tested and confirmed working for English and Hindi narration
 
-#### Hands-Free Step Control ✅ NEW (Feb 13, 2026)
+#### Permission Orchestration Layer ✅ NEW (Feb 13, 2026)
+**Single initialization for camera + microphone + speech recognition.**
+
+**Problem Solved:**
+- Camera/voice/gesture controls were not working because permissions were requested on component mount (before user interaction)
+- Mobile browsers and Capacitor apps require explicit user tap before requesting permissions
+
+**Solution - `useHandsFreePermissions` Hook:**
+1. **Centralized permission requests** - All permissions (camera, mic, speech) requested together
+2. **User-initiated only** - Runs ONLY after user taps "Enable Hands-Free" button
+3. **Platform support** - Works on web (https/localhost), iOS Capacitor, Android Capacitor
+4. **Graceful failure** - Shows toast message if denied, no crashes
+
+**Platform Configuration:**
+| Platform | Config File | Permissions Added |
+|----------|-------------|-------------------|
+| Android | `AndroidManifest.xml` | CAMERA, RECORD_AUDIO, MODIFY_AUDIO_SETTINGS |
+| iOS | `Info.plist` | NSCameraUsageDescription, NSMicrophoneUsageDescription, NSSpeechRecognitionUsageDescription |
+| Web | N/A | Uses secure context check (HTTPS required) |
+
+**Files Created/Modified:**
+- `frontend/src/hooks/useHandsFreePermissions.js` - NEW: Permission orchestration hook
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Uses new permission hook
+- `frontend/android/app/src/main/AndroidManifest.xml` - Added permissions
+- `frontend/ios/App/App/Info.plist` - Added usage descriptions
+
+#### Hands-Free Step Control ✅ FIXED (Feb 13, 2026)
 **True hands-free cooking with voice commands and gesture detection.**
 
 **Voice Commands (Primary):**
