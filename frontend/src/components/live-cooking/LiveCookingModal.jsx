@@ -120,7 +120,7 @@ export default function LiveCookingModal() {
   const [showCamera, setShowCamera] = useState(true);
   const [cameraVideoReady, setCameraVideoReady] = useState(false);
   
-  // Hands-free mode - DEFAULT OFF to prevent mobile crashes from permission requests
+  // Hands-free mode - starts when user presses play for the first time
   const [handsFreeEnabled, setHandsFreeEnabled] = useState(false);
   
   // AI Observer visual states (presentation only)
@@ -187,7 +187,7 @@ export default function LiveCookingModal() {
     }
   };
 
-  // Video playback when modal opens (no voice auto-play)
+  // Video playback when modal opens (NO voice auto-play - user must press play)
   useEffect(() => {
     if (!open) return;
     
@@ -199,16 +199,7 @@ export default function LiveCookingModal() {
         }
       }, 100);
     }
-    
-    // Auto-start voice instructions when modal opens (after a brief delay for setup)
-    const voiceTimer = setTimeout(() => {
-      if (open && instructions.length > 0) {
-        hasUserStartedRef.current = true;
-        readCurrentStep();
-      }
-    }, 500);
-    
-    return () => clearTimeout(voiceTimer);
+    // Voice will only start when user explicitly presses play button
   }, [open, recipeVideo]);
 
   // Read step when step changes (only if user has started)
@@ -220,13 +211,15 @@ export default function LiveCookingModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
-  // Modified play handler - start voice on first play
+  // Modified play handler - start voice AND enable hands-free on first play
   const handleTogglePlayWithVoice = useCallback(() => {
     const newIsPlaying = !isPlaying;
     togglePlay();
     
     if (newIsPlaying && !hasUserStartedRef.current) {
       hasUserStartedRef.current = true;
+      // Enable hands-free controls when user first presses play
+      setHandsFreeEnabled(true);
       readCurrentStep();
     }
     
