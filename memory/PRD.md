@@ -34,6 +34,33 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 
 **Test Status:** ✅ VERIFIED (11/11 backend tests + E2E frontend test passed)
 
+#### Mobile Entitlement Sync Fix ✅ NEW (Feb 13, 2026)
+**Created unified `isUserPremium()` helper for consistent premium detection across web and mobile.**
+
+**Problem Solved:**
+- Mobile users with active premium subscriptions saw features as locked
+- Multiple scattered premium checks using different patterns (`subscriptionTier`, `plan_id`, etc.)
+- Inconsistent premium detection between web and Capacitor mobile builds
+
+**Solution - Unified Helper Function:**
+Created `/app/frontend/src/utils/auth.js` with `isUserPremium(user)` function that checks ALL possible subscription data structures:
+- `user.subscriptionTier !== 'free'`
+- `user.plan_id !== 'free'`
+- `user.subscription?.plan_id !== 'free'`
+- `user.plan !== 'free'`
+- `user.subscription?.status === 'active' && plan_id !== 'free'`
+
+**Files Changed:**
+- `frontend/src/utils/auth.js` - NEW: Unified premium helper function
+- `frontend/src/components/RecipeVoicePlayer.jsx` - Uses `isUserPremium(user)` (line 48)
+- `frontend/src/components/CookingModePlayer.jsx` - Uses `isUserPremium(user)` (line 29)
+
+**Test Status:** ✅ VERIFIED (iteration_76.json - 100% frontend tests passed)
+- Premium user access to Fridge Scanner: PASS
+- Free user correctly gated with Feature Locked modal: PASS
+- Subscription context loading: PASS
+- Premium badge shows for premium users: PASS
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
