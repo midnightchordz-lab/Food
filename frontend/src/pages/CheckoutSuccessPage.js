@@ -10,6 +10,7 @@ import {
   ArrowRight, Loader2, Gift, Star, Calendar
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { useUsageLimit } from '../hooks/useUsageLimit';
 import confetti from 'canvas-confetti';
 
 const API = process.env.REACT_APP_BACKEND_URL + '/api';
