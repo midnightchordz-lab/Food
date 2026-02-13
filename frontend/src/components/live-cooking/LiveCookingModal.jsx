@@ -263,8 +263,9 @@ export default function LiveCookingModal() {
       audioRef.current.currentTime = 0;
     }
     
-    // Abort any pending narration
+    // Abort any pending narration (both step and emotional)
     narrationAbortRef.current = true;
+    abortEmotionalNarration();
     
     // Small delay then read new step
     const timer = setTimeout(() => {
@@ -273,7 +274,7 @@ export default function LiveCookingModal() {
     
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep]);
+  }, [currentStep, abortEmotionalNarration]);
 
   // Modified play handler - start voice AND enable hands-free on first play
   const handleTogglePlayWithVoice = useCallback(async () => {
