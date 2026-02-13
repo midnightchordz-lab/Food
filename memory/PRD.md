@@ -872,3 +872,6 @@ The app uses **Capacitor** hybrid framework - all web features are automatically
 - Offline voice caching for mobile
 - Push notifications
 - Stripe payment integration
+
+### Enhancement Ideas (User Requested Reminders)
+- **Subscription Sync Indicator** - Add a visual indicator in the UI that shows when subscription features are being refreshed post-payment, to improve user confidence during the checkout → feature unlock flow. Could be a subtle toast or loading state on feature-gated buttons.
