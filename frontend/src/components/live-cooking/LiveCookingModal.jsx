@@ -199,6 +199,16 @@ export default function LiveCookingModal() {
         }
       }, 100);
     }
+    
+    // Auto-start voice instructions when modal opens (after a brief delay for setup)
+    const voiceTimer = setTimeout(() => {
+      if (open && instructions.length > 0) {
+        hasUserStartedRef.current = true;
+        readCurrentStep();
+      }
+    }, 500);
+    
+    return () => clearTimeout(voiceTimer);
   }, [open, recipeVideo]);
 
   // Read step when step changes (only if user has started)
