@@ -422,6 +422,7 @@ export default function LiveCookingModal() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+    stopSpeaking(); // Also stop browser speech
     narrationAbortRef.current = true;
     abortEmotionalNarration();
     
@@ -445,6 +446,7 @@ export default function LiveCookingModal() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+    stopSpeaking(); // Also stop browser speech
     narrationAbortRef.current = true;
     abortEmotionalNarration();
     
