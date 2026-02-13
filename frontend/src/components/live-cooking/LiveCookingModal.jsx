@@ -251,11 +251,26 @@ export default function LiveCookingModal() {
   }, [open, recipeVideo]);
 
   // Read step when step changes (only if user has started)
+  // SYNC FIX: Stop current audio and reset before loading new step
   useEffect(() => {
     if (!open) return;
     if (!hasUserStartedRef.current) return;
     
-    readCurrentStep();
+    // Immediately stop any playing audio when step changes
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
+    // Abort any pending narration
+    narrationAbortRef.current = true;
+    
+    // Small delay then read new step
+    const timer = setTimeout(() => {
+      readCurrentStep();
+    }, 100);
+    
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
