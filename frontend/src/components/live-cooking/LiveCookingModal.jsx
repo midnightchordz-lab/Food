@@ -135,6 +135,27 @@ export default function LiveCookingModal() {
   // Get mood theme
   const theme = MOOD_THEMES[mood] || MOOD_THEMES.calm;
 
+  // ============================================
+  // EMOTIONAL VOICE ORCHESTRATOR
+  // Pure text sequencing - no logic changes
+  // ============================================
+  const {
+    playOpeningNarration,
+    playStepStartGuidance,
+    playEncouragement,
+    playCompletionTransition,
+    playReassurance,
+    playFinalNarration,
+    resetOrchestrator,
+  } = useEmotionalVoiceOrchestrator({
+    enabled: open && hasUserStartedRef.current,
+    mood,
+    audioRef,
+    currentStep,
+    totalSteps: instructions.length,
+    isPlaying,
+  });
+
   // Get current step text
   const currentStepText = instructions[currentStep]?.text || 
                           instructions[currentStep]?.instruction || 
