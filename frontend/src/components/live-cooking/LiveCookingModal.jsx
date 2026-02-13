@@ -657,7 +657,7 @@ export default function LiveCookingModal() {
 
                     {/* Right: Control buttons */}
                     <div className="flex items-center gap-2">
-                      {/* Hands-free toggle button */}
+                      {/* Hands-free voice toggle button */}
                       <motion.div
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -674,9 +674,43 @@ export default function LiveCookingModal() {
                           }`}
                           data-testid="live-cooking-handsfree-btn"
                         >
-                          <Mic className={`w-3 h-3 ${handsFreeEnabled ? 'text-emerald-400' : 'text-white/60'}`} />
+                          {handsFreeEnabled ? (
+                            <Mic className="w-3 h-3 text-emerald-400" />
+                          ) : (
+                            <MicOff className="w-3 h-3 text-white/60" />
+                          )}
                           <span className={`text-xs hidden sm:inline ${handsFreeEnabled ? 'text-emerald-400' : 'text-white/60'}`}>
-                            {handsFreeEnabled ? 'Voice On' : 'Voice Off'}
+                            {handsFreeEnabled ? 'Voice' : 'Voice'}
+                          </span>
+                        </Button>
+                      </motion.div>
+
+                      {/* Gesture control toggle button */}
+                      <motion.div
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.7 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            // Enable camera if not already on when enabling gestures
+                            if (!gestureEnabled && !showCamera) {
+                              setShowCamera(true);
+                            }
+                            setGestureEnabled(prev => !prev);
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
+                            gestureEnabled ? 'bg-blue-500/20' : 'bg-black/30'
+                          }`}
+                          data-testid="live-cooking-gesture-btn"
+                        >
+                          <Hand className={`w-3 h-3 ${gestureEnabled ? 'text-blue-400' : 'text-white/60'}`} />
+                          <span className={`text-xs hidden sm:inline ${gestureEnabled ? 'text-blue-400' : 'text-white/60'}`}>
+                            Swipe
                           </span>
                         </Button>
                       </motion.div>
