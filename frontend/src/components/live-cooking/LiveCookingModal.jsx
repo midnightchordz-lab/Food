@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, Camera, CameraOff } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, MicOff, Camera, CameraOff, Hand } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLiveCooking } from "@/stores/useLiveCooking";
 import { useHandsFreeControls } from "@/hooks/useHandsFreeControls";
+import { useGestureControl } from "@/hooks/useGestureControl";
 import { useCameraPreview } from "@/hooks/useCameraPreview";
 import { useAIObserver, ObserverEvents } from "@/hooks/useAIObserver";
 import { useEmotionalVoiceOrchestrator } from "@/hooks/useEmotionalVoiceOrchestrator";
