@@ -1,44 +1,75 @@
 /**
- * Browser Speech API - FREE Narration Fallback
+ * Browser Speech API - FREE Narration + Hands-Free Control
  * 
- * Uses browser's built-in SpeechSynthesis for narration when ElevenLabs is unavailable.
- * Works on Chrome Android, Safari iOS, and desktop browsers.
- * 
+ * Phase 1: Hands-Free Speech Control + Free Narration (Web + Mobile)
  * STRICT RULE: Does NOT modify existing recipe logic or UI.
- * It only provides speech functions that can be called by existing handlers.
+ * It only LISTENS for commands and CALLS already-existing handlers.
  */
 
 // --------------------------------------------------
-// FREE NARRATION using browser SpeechSynthesis
-// Works on Web + Mobile (Chrome, Safari, Firefox)
+// CONFIG: map voice commands → existing app functions
+// Handlers are set via setHandlers() from LiveCookingModal
 // --------------------------------------------------
 
-let currentUtterance = null;
-let onEndCallback = null;
+let handlers = {
+  next: () => window?.moodfood?.onNextStep?.(),
+  prev: () => window?.moodfood?.onPrevStep?.(),
+  pause: () => {
+    stopSpeech();
+    window?.moodfood?.onTogglePlay?.();
+  },
+  play: () => window?.moodfood?.onTogglePlay?.(),
+  repeat: () => window?.moodfood?.onRepeatStep?.(),
+};
+
+/**
+ * Set custom handlers (called from LiveCookingModal)
+ */
+export function setHandlers(customHandlers) {
+  handlers = {
+    next: customHandlers.onNext || handlers.next,
+    prev: customHandlers.onPrev || handlers.prev,
+    pause: () => {
+      stopSpeech();
+      customHandlers.onTogglePlay?.();
+    },
+    play: customHandlers.onTogglePlay || handlers.play,
+    repeat: customHandlers.onRepeat || handlers.repeat,
+  };
+}
+
+// --------------------------------------------------
+// FREE NARRATION using browser SpeechSynthesis (Web + Mobile)
+// --------------------------------------------------
+
+/**
+ * Stop any current speech immediately
+ * CRITICAL: Always call before starting new speech
+ */
+export function stopSpeech() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+// Alias for backwards compatibility
+export const stopSpeaking = stopSpeech;
 
 /**
  * Speak text using browser's built-in TTS (FREE)
  * @param {string} text - Text to speak
- * @param {Object} options - Optional settings
- * @param {number} options.rate - Speech rate (0.5-2, default 0.95)
- * @param {number} options.pitch - Voice pitch (0-2, default 1)
- * @param {Function} options.onEnd - Callback when speech ends
- * @returns {boolean} - Whether speech started successfully
  */
-export function speakText(text, options = {}) {
-  if (!('speechSynthesis' in window) || !text) {
-    console.log('[BrowserSpeech] SpeechSynthesis not supported or no text');
-    return false;
-  }
+export function speakText(text) {
+  if (!('speechSynthesis' in window) || !text) return;
 
-  // Stop any current speech immediately (keeps sync correct)
-  stopSpeaking();
+  // Always stop previous speech first (CRITICAL FIX)
+  stopSpeech();
 
   const utterance = new SpeechSynthesisUtterance(text);
 
-  // Natural pacing settings (non-robotic but still free)
-  utterance.rate = options.rate ?? 0.95;
-  utterance.pitch = options.pitch ?? 1;
+  // Natural pacing (non-robotic but still free)
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
   utterance.volume = 1;
 
   // Try to use a natural-sounding voice if available
@@ -47,82 +78,133 @@ export function speakText(text, options = {}) {
     v.name.includes('Google') || 
     v.name.includes('Samantha') || 
     v.name.includes('Alex') ||
-    v.lang.startsWith('en')
+    (v.lang.startsWith('en') && v.localService)
   );
   if (preferredVoice) {
     utterance.voice = preferredVoice;
   }
 
-  // Handle end callback
-  if (options.onEnd) {
-    onEndCallback = options.onEnd;
-    utterance.onend = () => {
-      currentUtterance = null;
-      onEndCallback?.();
-    };
-  } else {
-    utterance.onend = () => {
-      currentUtterance = null;
-    };
-  }
+  window.speechSynthesis.speak(utterance);
+}
 
-  utterance.onerror = (e) => {
-    console.log('[BrowserSpeech] Speech error:', e.error);
-    currentUtterance = null;
+// --------------------------------------------------
+// VOICE COMMAND RECOGNITION (Web + Mobile Support)
+// --------------------------------------------------
+
+let recognition = null;
+let isListening = false;
+
+/**
+ * Start listening for voice commands
+ */
+export function startVoiceControl() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  // If not supported (some iOS browsers), silently skip
+  if (!SpeechRecognition || isListening) return;
+
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = (event) => {
+    const transcript =
+      event.results[event.results.length - 1][0].transcript
+        .trim()
+        .toLowerCase();
+
+    handleCommand(transcript);
   };
 
-  currentUtterance = utterance;
-  
+  recognition.onerror = () => {
+    stopVoiceControl();
+  };
+
+  recognition.onend = () => {
+    // Auto-restart to remain hands-free (important for mobile)
+    if (isListening) {
+      try {
+        recognition.start();
+      } catch {}
+    }
+  };
+
+  // iOS requires start inside user interaction
   try {
-    window.speechSynthesis.speak(utterance);
-    console.log('[BrowserSpeech] Speaking:', text.substring(0, 50) + '...');
-    return true;
-  } catch (e) {
-    console.error('[BrowserSpeech] Failed to speak:', e);
-    return false;
-  }
+    recognition.start();
+    isListening = true;
+    console.log('[BrowserSpeech] Voice commands active');
+  } catch {}
 }
 
 /**
- * Stop any currently playing speech
+ * Stop listening for voice commands
  */
-export function stopSpeaking() {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-  }
-  currentUtterance = null;
-}
+export function stopVoiceControl() {
+  if (!recognition) return;
 
-/**
- * Check if currently speaking
- * @returns {boolean}
- */
-export function isSpeaking() {
-  return 'speechSynthesis' in window && window.speechSynthesis.speaking;
-}
-
-/**
- * Check if browser supports SpeechSynthesis
- * @returns {boolean}
- */
-export function isSpeechSupported() {
-  return 'speechSynthesis' in window;
+  isListening = false;
+  recognition.stop();
+  recognition = null;
+  console.log('[BrowserSpeech] Voice commands stopped');
 }
 
 // --------------------------------------------------
-// STEP NARRATION HELPER
-// Adds natural timing for cooking step narration
+// COMMAND PARSING (does NOT change app logic)
 // --------------------------------------------------
 
+function handleCommand(text) {
+  if (!text) return;
+
+  console.log('[BrowserSpeech] Heard:', text);
+
+  if (text.includes('next')) return handlers.next();
+  if (text.includes('previous') || text.includes('back')) return handlers.prev();
+  if (text.includes('pause') || text.includes('stop')) return handlers.pause();
+  if (text.includes('play') || text.includes('resume')) return handlers.play();
+  if (text.includes('repeat') || text.includes('again')) return handlers.repeat();
+}
+
+// --------------------------------------------------
+// STEP NARRATION SYNC
+// --------------------------------------------------
+
+let narrationTimeout = null;
+
 /**
- * Narrate a cooking step with natural pacing
+ * Narrate current step with sync protection
+ * @param {string} stepText - The step instruction text
+ * @param {boolean} isPlaying - Whether cooking is actively playing
+ */
+export function narrateCurrentStep(stepText, isPlaying = true) {
+  // If video/recipe paused → stop narration immediately
+  if (!isPlaying) {
+    stopSpeech();
+    return;
+  }
+
+  if (!stepText) return;
+
+  // Clear any pending narration (CRITICAL for sync)
+  if (narrationTimeout) clearTimeout(narrationTimeout);
+
+  // Small delay for natural feel (no logic change)
+  narrationTimeout = setTimeout(() => {
+    speakText(stepText);
+  }, 150);
+}
+
+/**
+ * Narrate a cooking step with context
  * @param {string} stepText - The step instruction text
  * @param {number} stepNumber - Current step number (1-based)
  * @param {number} totalSteps - Total number of steps
- * @param {Function} onEnd - Optional callback when narration ends
+ * @param {Function} onEnd - Optional callback when narration ends (not reliable with browser TTS)
  */
 export function narrateStep(stepText, stepNumber, totalSteps, onEnd) {
-  if (!stepText) return false;
+  if (!stepText) return Promise.resolve(false);
 
   // Build the narration text with step context
   let narrationText = '';
@@ -135,53 +217,70 @@ export function narrateStep(stepText, stepNumber, totalSteps, onEnd) {
     narrationText = `Step ${stepNumber}. ${stepText}`;
   }
 
-  // Small warm-up delay for natural feel (like clearing throat)
+  // Clear pending and speak
+  if (narrationTimeout) clearTimeout(narrationTimeout);
+  
   return new Promise((resolve) => {
-    setTimeout(() => {
-      const success = speakText(narrationText, {
-        rate: 0.92, // Slightly slower for cooking instructions
-        onEnd: () => {
-          onEnd?.();
-          resolve(true);
-        }
-      });
-      if (!success) resolve(false);
+    narrationTimeout = setTimeout(() => {
+      speakText(narrationText);
+      // Note: Browser SpeechSynthesis doesn't reliably fire 'end' events
+      // so we resolve immediately after starting
+      resolve(true);
+      onEnd?.();
     }, 150);
   });
 }
 
 // --------------------------------------------------
-// EMOTIONAL PHRASES (simple additions for personality)
+// BASIC HAND-GESTURE FALLBACK (Web Only Safe Stub)
 // --------------------------------------------------
-
-const ENCOURAGEMENTS = [
-  "You're doing great!",
-  "Perfect, keep going.",
-  "Nicely done.",
-  "That looks wonderful.",
-];
-
-const TRANSITIONS = [
-  "Moving on.",
-  "Next up.",
-  "Alright, let's continue.",
-  "Great, now for the next step.",
-];
+// This does NOT implement AI vision.
+// It safely connects existing gesture events (if present) to handlers.
+// Prevents "gesture UI shows but nothing happens" issue.
 
 /**
- * Speak a random encouragement phrase
+ * Connect simple swipe gesture events to an element
+ * @param {HTMLElement} element - Element to attach gesture events to
  */
-export function speakEncouragement() {
-  const phrase = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
-  speakText(phrase, { rate: 1.0 });
+export function connectGestureEvents(element) {
+  if (!element) return;
+
+  let startX = 0;
+
+  element.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+  });
+
+  element.addEventListener('touchend', (e) => {
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - startX;
+
+    // Simple swipe detection with threshold
+    if (Math.abs(diff) < 50) return;
+
+    if (diff < 0) handlers.next();
+    if (diff > 0) handlers.prev();
+  });
+}
+
+// --------------------------------------------------
+// UTILITY FUNCTIONS
+// --------------------------------------------------
+
+/**
+ * Check if browser supports SpeechSynthesis
+ * @returns {boolean}
+ */
+export function isSpeechSupported() {
+  return 'speechSynthesis' in window;
 }
 
 /**
- * Speak a random transition phrase
+ * Check if currently speaking
+ * @returns {boolean}
  */
-export function speakTransition() {
-  const phrase = TRANSITIONS[Math.floor(Math.random() * TRANSITIONS.length)];
-  speakText(phrase, { rate: 1.0 });
+export function isSpeaking() {
+  return 'speechSynthesis' in window && window.speechSynthesis.speaking;
 }
 
 // Load voices on page load (needed for some browsers)
@@ -194,10 +293,14 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 
 export default {
   speakText,
+  stopSpeech,
   stopSpeaking,
-  isSpeaking,
-  isSpeechSupported,
+  startVoiceControl,
+  stopVoiceControl,
+  narrateCurrentStep,
   narrateStep,
-  speakEncouragement,
-  speakTransition,
+  connectGestureEvents,
+  setHandlers,
+  isSpeechSupported,
+  isSpeaking,
 };
