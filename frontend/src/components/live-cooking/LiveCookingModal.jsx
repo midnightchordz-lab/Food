@@ -276,12 +276,12 @@ export default function LiveCookingModal() {
   }, [open, recipeVideo]);
 
   // Read step when step changes (only if user has started)
-  // SYNC FIX: Stop current audio and reset before loading new step
+  // PERFECTED SYNC: Stop audio + emotional timing delay before new narration
   useEffect(() => {
     if (!open) return;
     if (!hasUserStartedRef.current) return;
     
-    // Immediately stop any playing audio when step changes
+    // HARD SYNC: Immediately stop any playing audio when step changes
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -291,10 +291,16 @@ export default function LiveCookingModal() {
     narrationAbortRef.current = true;
     abortEmotionalNarration();
     
-    // Small delay then read new step
+    // Clear any post-narration timer
+    if (postNarrationTimerRef.current) {
+      clearTimeout(postNarrationTimerRef.current);
+      postNarrationTimerRef.current = null;
+    }
+    
+    // EMOTIONAL TIMING: Delay before new step narration (cinematic smooth feel)
     const timer = setTimeout(() => {
       readCurrentStep();
-    }, 100);
+    }, VOICE_TIMING.STEP_CHANGE_DELAY);
     
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
