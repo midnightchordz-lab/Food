@@ -96,7 +96,9 @@ const CheckoutSuccessPage = () => {
         // CRITICAL: Refresh usage limits AND subscription to unlock features immediately
         // This updates the global state so all components see the new tier
         await refreshUsage();
-        refreshSubscription();
+        await refreshSubscription(); // Now awaiting the Promise
+        
+        console.log('[CheckoutSuccess] Subscription refreshed:', response.data.subscription?.plan_id);
       }
     } catch (err) {
       console.error('Error loading subscription:', err);
