@@ -124,12 +124,6 @@ export function useEmotionalVoiceOrchestrator({
     } finally {
       isNarrating.current = false;
       onNarrationEnd?.();
-      
-      // Process queue if any
-      if (narrationQueue.current.length > 0) {
-        const next = narrationQueue.current.shift();
-        speakEmotionalText(next);
-      }
     }
     
     return false;
