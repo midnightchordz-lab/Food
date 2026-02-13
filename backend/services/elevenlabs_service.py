@@ -183,7 +183,7 @@ class ElevenLabsService:
             raise Exception(f"Failed to generate step audio: {str(e)}")
     
     async def _call_elevenlabs_api(self, text: str, language: str, model: str) -> bytes:
-        """Core ElevenLabs API call"""
+        """Core ElevenLabs API call with human-like voice modulation"""
         voice_id = self.voice_map.get(language, self.voice_map['en'])
         
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -198,10 +198,11 @@ class ElevenLabsService:
                     'text': text,
                     'model_id': model,
                     'voice_settings': {
-                        'stability': 0.5,          # 0-1: Lower = more expressive
-                        'similarity_boost': 0.75,  # 0-1: Higher = closer to original
-                        'style': 0,                # 0-1: Style exaggeration
-                        'use_speaker_boost': True
+                        # VOICE QUALITY FIX: Settings for warm, calm, human-like voice
+                        'stability': 0.65,         # Higher = more consistent, calm delivery
+                        'similarity_boost': 0.60,  # Moderate = natural variation
+                        'style': 0.15,             # Slight style for emotional warmth
+                        'use_speaker_boost': True  # Enhanced clarity
                     },
                     'language_code': language,
                     'output_format': 'mp3_44100_128'
