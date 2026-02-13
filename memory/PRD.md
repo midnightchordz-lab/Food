@@ -25,6 +25,37 @@ MoodFood is a compassionate AI chef that understands your mood and suggests meal
 - ElevenLabs Starter plan active and working
 - Tested and confirmed working for English and Hindi narration
 
+#### Emotional Voice Orchestration ✅ NEW (Feb 13, 2026)
+**Mood-adaptive emotional narration throughout the cooking journey.**
+
+This is a pure TEXT ORCHESTRATION layer - no logic changes. It sequences emotional narration through the existing voice system.
+
+**Emotional Narration Triggers:**
+| Trigger | Event | Narration Type |
+|---------|-------|----------------|
+| Cooking Starts | User presses Play | Opening narration (mood-specific) |
+| Step Begins | Step index changes | Step start guidance |
+| Step Narration Ends | Audio 'ended' event | Gentle encouragement |
+| Moving Forward | Next button pressed | Completion transition |
+| Going Back | Prev button pressed | Reassurance |
+| Repeat Requested | Repeat button | Reassurance |
+| Recipe Completed | Final step reached | Reveal + Closing narration |
+
+**Mood-Specific Text Library:**
+- Happy, Calm, Stressed, Tired, Excited, Cozy, Romantic moods
+- Random variation selection (no consecutive repeats)
+- Silent fallback if text unavailable
+
+**Files:**
+- `frontend/src/lib/emotionalNarrationLibrary.js` - Text variations for all moods
+- `frontend/src/hooks/useEmotionalVoiceOrchestrator.js` - Orchestration hook
+
+**Protection Rules:**
+- Does NOT change UI, logic, timers, or navigation
+- Uses existing `/api/audio/step` endpoint only
+- All narration is optional - missing text skips silently
+- Fully backward compatible
+
 #### Supported Languages (14+)
 🇺🇸 English | 🇮🇳 Hindi | 🇪🇸 Spanish | 🇫🇷 French | 🇩🇪 German | 🇮🇹 Italian
 🇯🇵 Japanese | 🇨🇳 Chinese | 🇸🇦 Arabic | 🇧🇷 Portuguese | 🇰🇷 Korean
