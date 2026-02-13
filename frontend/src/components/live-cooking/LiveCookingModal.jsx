@@ -234,7 +234,7 @@ export default function LiveCookingModal() {
   }, [currentStep]);
 
   // Modified play handler - start voice AND enable hands-free on first play
-  const handleTogglePlayWithVoice = useCallback(() => {
+  const handleTogglePlayWithVoice = useCallback(async () => {
     const newIsPlaying = !isPlaying;
     togglePlay();
     
@@ -242,6 +242,12 @@ export default function LiveCookingModal() {
       hasUserStartedRef.current = true;
       // Enable hands-free controls when user first presses play
       setHandsFreeEnabled(true);
+      
+      // EMOTIONAL: Play opening narration when cooking starts
+      await playOpeningNarration();
+      
+      // Then play step guidance and regular step narration
+      await playStepStartGuidance();
       readCurrentStep();
     }
     
@@ -262,27 +268,43 @@ export default function LiveCookingModal() {
         audioRef.current.pause();
       }
     }
-  }, [isPlaying, togglePlay]);
+  }, [isPlaying, togglePlay, playOpeningNarration, playStepStartGuidance]);
 
   // Handle next with voice trigger
-  const handleNextWithVoice = useCallback(() => {
+  const handleNextWithVoice = useCallback(async () => {
+    const isLastStep = currentStep >= instructions.length - 1;
     hasUserStartedRef.current = true;
-    nextStep();
-    readCurrentStep();
-  }, [nextStep]);
+    
+    if (isLastStep) {
+      // EMOTIONAL: Play final narration when recipe is completed
+      await playFinalNarration();
+    } else {
+      // EMOTIONAL: Play completion transition before moving to next step
+      await playCompletionTransition();
+      nextStep();
+      // EMOTIONAL: Play step start guidance for new step
+      await playStepStartGuidance();
+      readCurrentStep();
+    }
+  }, [nextStep, currentStep, instructions.length, playCompletionTransition, playStepStartGuidance, playFinalNarration]);
 
   // Handle prev with voice trigger
-  const handlePrevWithVoice = useCallback(() => {
+  const handlePrevWithVoice = useCallback(async () => {
     hasUserStartedRef.current = true;
+    // EMOTIONAL: Play reassurance when going back
+    await playReassurance('step_back');
     prevStep();
+    await playStepStartGuidance();
     readCurrentStep();
-  }, [prevStep]);
+  }, [prevStep, playReassurance, playStepStartGuidance]);
 
   // Handle repeat - replay current step narration
-  const handleRepeat = useCallback(() => {
+  const handleRepeat = useCallback(async () => {
     hasUserStartedRef.current = true;
+    // EMOTIONAL: Play reassurance when user requests repeat
+    await playReassurance('repeat_requested');
     readCurrentStep();
-  }, []);
+  }, [playReassurance]);
 
   // Reset hasUserStarted when modal closes
   useEffect(() => {
