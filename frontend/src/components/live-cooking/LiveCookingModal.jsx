@@ -443,6 +443,7 @@ export default function LiveCookingModal() {
     // EMOTIONAL: Play reassurance when user requests repeat
     await playReassurance('repeat_requested');
     readCurrentStep();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playReassurance]);
 
   // Reset hasUserStarted when modal closes
