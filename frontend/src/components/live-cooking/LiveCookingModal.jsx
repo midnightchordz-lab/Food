@@ -498,23 +498,30 @@ export default function LiveCookingModal() {
   }, [isPlaying, togglePlay]);
 
   // EMOTIONAL: Play encouragement after step narration finishes
+  // + Add breathing space for natural rhythm
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
     const handleNarrationEnded = () => {
-      // Only play encouragement if we're actively cooking
-      if (hasUserStartedRef.current && isPlaying) {
-        // Small delay to feel natural, not rushed
-        setTimeout(() => {
-          playEncouragement('gentle');
-        }, 500);
-      }
+      // Only process if we're actively cooking
+      if (!hasUserStartedRef.current || !isPlaying) return;
+      
+      // EMOTIONAL TIMING: Post-narration breathing space
+      // This creates human rhythm and prevents rushed feeling
+      postNarrationTimerRef.current = setTimeout(() => {
+        // Play gentle encouragement after the breathing space
+        playEncouragement('gentle');
+      }, VOICE_TIMING.POST_NARRATION_WAIT);
     };
 
     audio.addEventListener('ended', handleNarrationEnded);
     return () => {
       audio.removeEventListener('ended', handleNarrationEnded);
+      // Clean up timer on unmount
+      if (postNarrationTimerRef.current) {
+        clearTimeout(postNarrationTimerRef.current);
+      }
     };
   }, [isPlaying, playEncouragement]);
 
