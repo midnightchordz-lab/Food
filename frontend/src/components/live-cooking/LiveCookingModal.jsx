@@ -734,8 +734,13 @@ export default function LiveCookingModal() {
     };
   }, [cameraStream, hasCameraAccess]);
 
-  // AI Observer - visual state updates only (no logic changes)
+  // AI Observer - DORMANT in PHASE-1
+  // Visual state updates only (no logic changes)
+  // Code exists but behind feature gate
   const handleAIEvent = useCallback((event) => {
+    // PHASE-1: Skip AI event handling
+    if (PHASE_1_MODE) return;
+    
     if (event.type === ObserverEvents.MOTION_DETECTED) {
       setAiState('active');
     } else if (event.type === ObserverEvents.MOTION_STOPPED) {
@@ -750,7 +755,8 @@ export default function LiveCookingModal() {
   }, []);
 
   useAIObserver({
-    enabled: open && hasCameraAccess && showCamera && cameraVideoReady,
+    // PHASE-1: Feature gate disables AI observer
+    enabled: !PHASE_1_MODE && open && hasCameraAccess && showCamera && cameraVideoReady,
     videoElement: cameraVideoReady ? cameraVideoRef.current : null,
     onEvent: handleAIEvent,
   });
