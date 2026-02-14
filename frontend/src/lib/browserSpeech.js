@@ -532,22 +532,27 @@ let narrationTimeout = null;
  * Narrate current step with sync protection
  * @param {string} stepText - The step instruction text
  * @param {boolean} isPlaying - Whether cooking is actively playing
+ * @param {Function} onEnd - Optional callback when narration ends
  */
-export function narrateCurrentStep(stepText, isPlaying = true) {
+export function narrateCurrentStep(stepText, isPlaying = true, onEnd = null) {
   // If video/recipe paused → stop narration immediately
   if (!isPlaying) {
     stopSpeech();
+    onEnd?.();
     return;
   }
 
-  if (!stepText) return;
+  if (!stepText) {
+    onEnd?.();
+    return;
+  }
 
   // Clear any pending narration (CRITICAL for sync)
   if (narrationTimeout) clearTimeout(narrationTimeout);
 
   // Small delay for natural feel (no logic change)
   narrationTimeout = setTimeout(() => {
-    speakText(stepText);
+    speakText(stepText, onEnd);
   }, 150);
 }
 
