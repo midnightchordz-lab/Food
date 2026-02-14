@@ -721,12 +721,15 @@ async def get_user_subscription_safe(
                 plan = get_plan_by_id_func(subscription["plan_id"])
                 subscription["features"] = plan["features"] if plan else {}
                 subscription["plan"] = plan
+                subscription["entitlement_tier"] = plan_id
+                subscription["trial_active"] = has_trial
                 return subscription
         except Exception as e:
             logging.error(f"[ENTITLEMENT_GUARD] Account age check error: {e}")
     
     # ============================================================
-    # STEP 4: All checks failed - NOW we can safely downgrade
+    # STEP 4: All checks failed - DOWNGRADE TO FREE
+    # This is the ONLY path where we return FREE for a premium subscription
     # ============================================================
     logging.warning(
         f"[ENTITLEMENT_GUARD] BLOCKED premium for user {user_id}: {reason}. "
@@ -740,7 +743,7 @@ async def get_user_subscription_safe(
         source=subscription.get("source", "unknown"),
         plan_id=plan_id,
         details={
-            "decision_reason": "ALL_VALIDATION_FAILED",
+            "decision_reason": "ALL_VALIDATION_FAILED_DOWNGRADE_TO_FREE",
             "initial_reason": reason,
             "source_of_truth_reason": verify_reason,
             "subscription_id": subscription.get("id")
@@ -751,8 +754,10 @@ async def get_user_subscription_safe(
     return {
         "plan_id": "free",
         "status": "active",
-        "features": free_plan["features"],
+        "features": free_plan["features"] if free_plan else {},
         "plan": free_plan,
+        "entitlement_tier": "free",
+        "trial_active": False,
         "_entitlement_blocked": True,
         "_blocked_reason": reason,
         "_source_verification_reason": verify_reason
