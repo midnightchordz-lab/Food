@@ -431,57 +431,49 @@ export const ENABLE_AI_OBSERVER = !PHASE_1_MODE;
 - Timer UI display: IMPLEMENTED
 - Green glow on complete: IMPLEMENTED
 
-#### TTS Speech Orchestration Fix ✅ NEW (Feb 14, 2026)
+#### TTS Speech Orchestration Fix ✅ UPDATED (Feb 14, 2026)
 **Fixed Text-to-Speech cutting off mid-sentence in Hands-Free Cooking Mode**
 
-**Root Cause:** Multiple issues with speech cancellation discipline:
-1. Voice recognition was calling `stopSpeech()` during auto-restart, interrupting TTS
-2. `speakText()` was canceling previous speech even when not needed
-3. Missing single speech lock allowed overlapping utterances
-4. Timer state changes could inadvertently trigger re-renders affecting TTS
+**Root Cause:** The Web Speech API (`window.speechSynthesis`) was tied to React component lifecycle. Timer state changes (ticking every second) caused re-renders that interrupted TTS.
 
-**Fixes Applied:**
+**Final Solution - Global Singleton Controller:**
+Created `speechController.js` - a persistent speech engine that exists OUTSIDE React's component lifecycle.
 
-1. **TTS/MIC EXCLUSION:**
-   - Speech recognition only starts after TTS `onend` event + 400ms delay
-   - `startVoiceControl()` checks `isSpeaking()` before starting
-   - Auto-restart loop waits for TTS to finish before resuming
+**Architecture:**
+```
+speechController.js (Singleton)
+├── speak(text, onComplete)     - Single speech lock prevents overlapping
+├── cancelSpeech()              - Explicit cancel only on user actions
+├── isSpeaking()                - State check immune to re-renders
+├── narrateStep()               - Step narration with context
+├── startRecognition()          - Voice command listener
+├── stopRecognition()           - Stop listening
+└── setRecognitionCallbacks()   - Command handlers
+```
 
-2. **SINGLE SPEECH LOCK:**
-   - `currentUtterance` variable tracks active speech
-   - `speakText()` checks `speechSynthesis.speaking` before starting new utterance
-   - Returns `false` if speech is blocked (already speaking)
-
-3. **CANCEL DISCIPLINE:**
-   - `speechSynthesis.cancel()` ONLY runs on:
-     - User presses Pause ✓
-     - Step changes (Next/Prev/Repeat) ✓
-     - User exits hands-free mode ✓
-     - Modal closes ✓
-   - Does NOT run on:
-     - Timer updates ✓
-     - UI re-renders ✓
-     - Listening indicator updates ✓
-
-4. **TIMER ISOLATION:**
-   - Timer `setInterval` only updates timer state
-   - Timer completion checks `!isSpeaking()` before voice cue
-   - No speech control side-effects from timer UI updates
-
-5. **UTTERANCE COMPLETION GUARANTEE:**
-   - `onend` handler attached to each utterance
-   - Completion callback passed to `speakText(text, onComplete)`
-   - Voice control resumes only after `onend` fires + 400ms delay
+**Key Design Principles:**
+1. **Singleton Instance** - One controller for entire app
+2. **Persistent State** - Speech state (`isSpeaking`, `currentUtterance`) lives outside React
+3. **Speech Lock** - New `speak()` calls blocked if already speaking
+4. **MIC Exclusion** - Recognition only starts after TTS `onend` + 400ms delay
+5. **Cancel Discipline** - `cancelSpeech()` ONLY called on:
+   - User presses Pause
+   - Step changes (Next/Prev/Repeat)
+   - User exits hands-free mode
+   - Modal closes
 
 **Files Changed:**
-- `frontend/src/lib/browserSpeech.js` - Rewrote speech orchestration with single lock and completion handlers
-- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Updated pause handler, removed unnecessary stopSpeech calls
+- `frontend/src/lib/speechController.js` - NEW: Global singleton TTS controller
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Refactored to use global controller:
+  - Import `globalSpeak`, `globalCancelSpeech`, `globalNarrateStep`, etc.
+  - All speech calls now go through singleton (immune to re-renders)
+  - Timer ticking does NOT affect TTS
 
 **Success Conditions Met:**
 ✔ Voice reads entire step without interruption
-✔ No mid-sentence cut-offs
+✔ Timer ticks every second without cutting off TTS
+✔ No mid-sentence cut-offs from re-renders
 ✔ Mobile + Web stable
-✔ Timer and UI animations do not affect TTS
 ✔ Voice commands start only after narration ends
 
 ### 1. Mood-Based Recipe Generation
