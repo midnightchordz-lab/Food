@@ -1655,31 +1655,35 @@ export default function LiveCookingModal() {
                             <MicOff className="w-3 h-3 text-white/60" />
                           )}
                           
-                          {/* PHASE 7: State text */}
+                          {/* PHASE 7: State text - UI STATE SYNC */}
                           <span className={`text-xs hidden sm:inline ${
                             voiceRecognitionState === 'disabled'
                               ? 'text-gray-400'
-                              : voiceListening 
-                                ? 'text-green-400'
-                                : voiceRecognitionState === 'permission-needed'
-                                  ? 'text-amber-400'
-                                  : voiceRecognitionState === 'error'
-                                    ? 'text-red-400'
-                                    : handsFreeEnabled 
-                                      ? 'text-emerald-400' 
-                                      : 'text-white/60'
+                              : isTTSActive
+                                ? 'text-blue-400'
+                                : voiceListening 
+                                  ? 'text-green-400'
+                                  : voiceRecognitionState === 'permission-needed'
+                                    ? 'text-amber-400'
+                                    : voiceRecognitionState === 'error'
+                                      ? 'text-red-400'
+                                      : handsFreeEnabled 
+                                        ? 'text-emerald-400' 
+                                        : 'text-white/60'
                           }`}>
                             {voiceRecognitionState === 'disabled'
                               ? 'Disabled'
-                              : voiceListening 
-                                ? 'Listening' 
-                                : voiceRecognitionState === 'permission-needed'
-                                  ? 'Tap Mic'
-                                  : voiceRecognitionState === 'error'
-                                    ? 'Error'
-                                    : handsFreeEnabled 
-                                      ? 'Voice On' 
-                                      : 'Voice'}
+                              : isTTSActive
+                                ? 'Speaking'
+                                : voiceListening 
+                                  ? 'Listening' 
+                                  : voiceRecognitionState === 'permission-needed'
+                                    ? 'Tap Mic'
+                                    : voiceRecognitionState === 'error'
+                                      ? 'Error'
+                                      : handsFreeEnabled 
+                                        ? 'Voice On' 
+                                        : 'Voice'}
                           </span>
                         </Button>
                       </motion.div>
