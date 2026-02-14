@@ -7,7 +7,7 @@ import requests
 import os
 import time
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://voice-fallback-ui.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://audit-logs-1.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TEST_EMAIL = f"test_hybrid_{int(time.time())}@test.com"
