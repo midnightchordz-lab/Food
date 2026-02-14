@@ -8,17 +8,25 @@ import { useLiveCooking } from "@/stores/useLiveCooking";
 import { useEmotionalVoiceOrchestrator } from "@/hooks/useEmotionalVoiceOrchestrator";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
+
+// GLOBAL SPEECH CONTROLLER (Singleton - outside React lifecycle)
+// This prevents UI re-renders (timer, state changes) from interrupting TTS
+import speechController, {
+  speak as globalSpeak,
+  cancelSpeech as globalCancelSpeech,
+  checkIsSpeaking as globalIsSpeaking,
+  narrateStep as globalNarrateStep,
+  startRecognition as globalStartRecognition,
+  stopRecognition as globalStopRecognition,
+  setRecognitionCallbacks as globalSetRecognitionCallbacks,
+} from "@/lib/speechController";
+
+// Legacy browserSpeech exports for backwards compatibility (will be phased out)
 import { 
-  narrateStep, 
-  stopSpeech, 
   isSpeechSupported,
-  startVoiceControl,
-  stopVoiceControl,
   setHandlers as setVoiceHandlers,
   setVisualCallbacks,
   isVoiceListening,
-  isSpeaking,
-  speakText,
 } from "@/lib/browserSpeech";
 // Phase-1 Feature Gate
 import {
