@@ -876,7 +876,8 @@ export default function LiveCookingModal() {
     if (handsFreeEnabled) {
       // Already enabled - disable it
       setHandsFreeEnabled(false);
-      stopSpeech();
+      // GLOBAL CONTROLLER: Cancel speech via singleton
+      globalCancelSpeech();
       
       // PHASE-1: Skip camera/gesture cleanup
       if (!PHASE_1_MODE) {
@@ -893,6 +894,9 @@ export default function LiveCookingModal() {
     // PHASE-1: No camera/mic permissions needed for basic voice
     if (PHASE_1_MODE) {
       setHandsFreeEnabled(true);
+      
+      // Initialize the global speech controller
+      speechController.init();
       
       // Show voice tutorial on first enable (check localStorage)
       const hasSeenTutorial = localStorage.getItem(hasSeenTutorialKey);
