@@ -16,7 +16,7 @@ import re
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://tts-refactor.preview.emergentagent.com"
+    BASE_URL = "https://speech-controller.preview.emergentagent.com"
 
 # Test credentials
 TEST_EMAIL = "test_recipe_1770442035@test.com"
