@@ -656,6 +656,15 @@ export default function LiveCookingModal() {
     const newIsPlaying = !isPlaying;
     togglePlay();
     
+    // CANCEL DISCIPLINE: Stop speech when user presses pause
+    if (!newIsPlaying) {
+      stopSpeech();
+      // Also stop any audio playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    }
+    
     if (newIsPlaying && !hasUserStartedRef.current) {
       hasUserStartedRef.current = true;
       // Enable hands-free controls when user first presses play
