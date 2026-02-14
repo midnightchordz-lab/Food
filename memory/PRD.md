@@ -431,6 +431,59 @@ export const ENABLE_AI_OBSERVER = !PHASE_1_MODE;
 - Timer UI display: IMPLEMENTED
 - Green glow on complete: IMPLEMENTED
 
+#### TTS Speech Orchestration Fix ✅ NEW (Feb 14, 2026)
+**Fixed Text-to-Speech cutting off mid-sentence in Hands-Free Cooking Mode**
+
+**Root Cause:** Multiple issues with speech cancellation discipline:
+1. Voice recognition was calling `stopSpeech()` during auto-restart, interrupting TTS
+2. `speakText()` was canceling previous speech even when not needed
+3. Missing single speech lock allowed overlapping utterances
+4. Timer state changes could inadvertently trigger re-renders affecting TTS
+
+**Fixes Applied:**
+
+1. **TTS/MIC EXCLUSION:**
+   - Speech recognition only starts after TTS `onend` event + 400ms delay
+   - `startVoiceControl()` checks `isSpeaking()` before starting
+   - Auto-restart loop waits for TTS to finish before resuming
+
+2. **SINGLE SPEECH LOCK:**
+   - `currentUtterance` variable tracks active speech
+   - `speakText()` checks `speechSynthesis.speaking` before starting new utterance
+   - Returns `false` if speech is blocked (already speaking)
+
+3. **CANCEL DISCIPLINE:**
+   - `speechSynthesis.cancel()` ONLY runs on:
+     - User presses Pause ✓
+     - Step changes (Next/Prev/Repeat) ✓
+     - User exits hands-free mode ✓
+     - Modal closes ✓
+   - Does NOT run on:
+     - Timer updates ✓
+     - UI re-renders ✓
+     - Listening indicator updates ✓
+
+4. **TIMER ISOLATION:**
+   - Timer `setInterval` only updates timer state
+   - Timer completion checks `!isSpeaking()` before voice cue
+   - No speech control side-effects from timer UI updates
+
+5. **UTTERANCE COMPLETION GUARANTEE:**
+   - `onend` handler attached to each utterance
+   - Completion callback passed to `speakText(text, onComplete)`
+   - Voice control resumes only after `onend` fires + 400ms delay
+
+**Files Changed:**
+- `frontend/src/lib/browserSpeech.js` - Rewrote speech orchestration with single lock and completion handlers
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Updated pause handler, removed unnecessary stopSpeech calls
+
+**Success Conditions Met:**
+✔ Voice reads entire step without interruption
+✔ No mid-sentence cut-offs
+✔ Mobile + Web stable
+✔ Timer and UI animations do not affect TTS
+✔ Voice commands start only after narration ends
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
