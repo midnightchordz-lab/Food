@@ -296,6 +296,14 @@ function speakInternal(text, onComplete) {
     
     // SAFARI FIX: Small delay before speak to ensure audio context is ready
     setTimeout(() => {
+      // TYPE ENFORCEMENT: Ensure currentUtterance is a valid SpeechSynthesisUtterance
+      if (!currentUtterance || !(currentUtterance instanceof SpeechSynthesisUtterance)) {
+        console.error('[SpeechController] Invalid utterance - must be SpeechSynthesisUtterance instance');
+        isSpeaking = false;
+        enableRecognitionAfterTTS();
+        return;
+      }
+      
       console.log('[SpeechController] Calling speechSynthesis.speak()');
       window.speechSynthesis.speak(currentUtterance);
       
