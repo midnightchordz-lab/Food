@@ -126,7 +126,8 @@ def log_security_event(
     if event_type in [
         SecurityEvent.INVALID_PREMIUM_BLOCKED,
         SecurityEvent.WEBHOOK_REJECTED_NO_PAYMENT,
-        SecurityEvent.ILLEGAL_POST_SIGNUP_UPGRADE
+        SecurityEvent.ILLEGAL_POST_SIGNUP_UPGRADE,
+        SecurityEvent.ILLEGAL_AUTO_UPGRADE_BLOCKED
     ]:
         audit_logger.warning(f"[SECURITY] {log_entry}")
         logging.warning(f"[ENTITLEMENT_GUARD] {event_type.value}: user={user_id}, source={source}, payment={payment_id}")
@@ -138,6 +139,72 @@ def log_security_event(
         logging.info(f"[ENTITLEMENT_GUARD] {event_type.value}: user={user_id}, source={source}")
     
     return log_entry
+
+
+def enforce_free_default(plan_id: Optional[str], user_id: str) -> str:
+    """
+    CRITICAL SAFETY: If plan is null/undefined/empty → ALWAYS return FREE.
+    
+    This is the final fallback that prevents ANY auto-upgrade logic.
+    
+    REMOVES ANY FALLBACK SUCH AS:
+    - "if plan null → CHEF_PRO"
+    - "if user has no tier → assign highest"
+    - "if entitlement undefined → premium"
+    
+    REPLACES WITH:
+    - "if undefined → FREE"
+    """
+    if not plan_id or plan_id in [None, "", "null", "undefined"]:
+        log_security_event(
+            event_type=SecurityEvent.ILLEGAL_AUTO_UPGRADE_BLOCKED,
+            user_id=user_id,
+            source="default_enforcement",
+            plan_id="free",
+            details={
+                "decision_reason": "NULL_PLAN_DEFAULTED_TO_FREE",
+                "original_value": str(plan_id),
+                "enforced_value": "free"
+            }
+        )
+        return "free"
+    return plan_id
+
+
+def safety_check_before_premium(
+    payment_exists: bool,
+    trial_active: bool,
+    user_id: str,
+    requested_plan: str
+) -> Tuple[bool, str]:
+    """
+    SAFETY CHECK - MUST RUN BEFORE RETURNING PREMIUM ENTITLEMENT
+    
+    Rule: if (!payment && !trialActive) return FREE;
+    
+    This is the FINAL gate that prevents premium access without payment/trial.
+    """
+    if requested_plan == "free":
+        return True, "free_plan_allowed"
+    
+    # For ANY non-free plan, require payment OR active trial
+    if not payment_exists and not trial_active:
+        log_security_event(
+            event_type=SecurityEvent.ILLEGAL_AUTO_UPGRADE_BLOCKED,
+            user_id=user_id,
+            source="safety_check",
+            plan_id="free",
+            details={
+                "decision_reason": "NO_PAYMENT_NO_TRIAL_BLOCKED",
+                "requested_plan": requested_plan,
+                "payment_exists": payment_exists,
+                "trial_active": trial_active,
+                "enforced_plan": "free"
+            }
+        )
+        return False, "blocked_no_payment_no_trial"
+    
+    return True, "payment_or_trial_verified"
 
 
 def _is_within_grace_period(subscription: Dict) -> Tuple[bool, str]:
