@@ -262,10 +262,13 @@ function speak(text, onComplete = null) {
     utterance.pitch = CONFIG.SPEECH_PITCH;
     utterance.volume = CONFIG.SPEECH_VOLUME;
     
-    // Set voice if available
-    const voice = getPreferredVoice();
-    if (voice) {
-      utterance.voice = voice;
+    // Set voice if available (Safari needs this)
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      const voice = getPreferredVoice();
+      if (voice) {
+        utterance.voice = voice;
+      }
     }
     
     // ========================================
@@ -292,44 +295,38 @@ function speak(text, onComplete = null) {
     
     utterance.onerror = (event) => {
       console.log('[SpeechController] onerror:', event.error);
-      if (event.error === 'canceled' || event.error === 'interrupted' || speechCancelled) {
-        // Full stop
-        isSpeaking = false;
-        currentUtterance = null;
-        if (keepAliveTimer) {
-          clearInterval(keepAliveTimer);
-          keepAliveTimer = null;
-        }
-        enableRecognitionAfterTTS();
-      } else {
-        // Try next chunk on other errors
-        chunkIndex++;
-        setTimeout(speakNextChunk, 100);
+      // Release lock on any error
+      isSpeaking = false;
+      currentUtterance = null;
+      if (keepAliveTimer) {
+        clearInterval(keepAliveTimer);
+        keepAliveTimer = null;
+      }
+      enableRecognitionAfterTTS();
+      
+      // Call completion callback on error too
+      if (onSpeechEndCallback) {
+        const cb = onSpeechEndCallback;
+        onSpeechEndCallback = null;
+        cb();
       }
     };
     
     // ========================================
     // FINAL EXECUTION - speak() with fresh utterance
     // ========================================
-    try {
-      window.speechSynthesis.speak(utterance);
-      console.log('[SpeechController] speechSynthesis.speak() called');
-      
-      // Safari kick - sometimes needs resume
-      setTimeout(() => {
-        if (!window.speechSynthesis.speaking && !speechCancelled && currentUtterance === utterance) {
-          console.log('[SpeechController] Safari kick - calling resume');
+    console.log('[SpeechController] Calling speechSynthesis.speak()');
+    window.speechSynthesis.speak(utterance);
+    
+    // Safari sometimes needs a kick after a short delay
+    setTimeout(() => {
+      if (currentUtterance === utterance && !window.speechSynthesis.speaking && !speechCancelled) {
+        console.log('[SpeechController] Safari kick - trying resume');
+        try {
           window.speechSynthesis.resume();
-        }
-      }, 200);
-    } catch (e) {
-      console.error('[SpeechController] speak() threw:', e.message);
-      isSpeaking = false;
-      currentUtterance = null;
-      enableRecognitionAfterTTS();
-      onComplete?.();
-      return;
-    }
+        } catch (e) {}
+      }
+    }, 250);
   };
   
   // Start speaking
