@@ -1,6 +1,11 @@
 /**
  * GLOBAL SPEECH CONTROLLER - Singleton Pattern
  * 
+ * HYBRID ARCHITECTURE (Dec 2025):
+ * - Native App (iOS/Android via Capacitor): Uses native speech plugin for recognition
+ * - Web/PWA: Uses Web Speech API
+ * - TTS always uses Web Speech API (better voice quality)
+ * 
  * MOBILE AUDIO FOCUS SEQUENCING
  * 
  * SINGLE AUDIO OWNER RULE:
@@ -26,6 +31,39 @@
  * - After armed, continuous speak-listen loop
  * - Only cancel on: user pause, step change, exit cooking mode
  */
+
+import { Capacitor } from '@capacitor/core';
+
+// ============================================
+// NATIVE PLATFORM DETECTION & DELEGATION
+// ============================================
+
+// Check if we should use the hybrid controller (native app)
+const isNativePlatform = typeof window !== 'undefined' && Capacitor.isNativePlatform();
+
+// Lazy-load hybrid controller only on native platforms
+let hybridController = null;
+let useHybridController = false;
+
+async function initHybridController() {
+  if (!isNativePlatform || hybridController !== null) return;
+  
+  try {
+    const module = await import('./hybridSpeechController');
+    hybridController = module.default;
+    await hybridController.init();
+    useHybridController = true;
+    console.log('[SpeechController] Native platform detected - using hybrid controller');
+  } catch (e) {
+    console.log('[SpeechController] Hybrid controller not available, using web fallback:', e.message);
+    useHybridController = false;
+  }
+}
+
+// Initialize on load for native platforms
+if (isNativePlatform) {
+  initHybridController().catch(() => {});
+}
 
 // Singleton instance
 let instance = null;
