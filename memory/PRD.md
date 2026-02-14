@@ -375,6 +375,62 @@ export const ENABLE_AI_OBSERVER = !PHASE_1_MODE;
 **Files Changed:**
 - `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Added tutorial overlay and dismiss logic
 
+#### Step Countdown Timer ✅ NEW (Feb 14, 2026)
+**Automatic countdown timer for recipe steps with duration values**
+
+**Timer Activation:**
+- Activates when step becomes active AND step.time exists
+- Parses time strings: "5 minutes", "2-3 min", "30 seconds", "1 hour"
+- For ranges like "2-3 min", uses higher value (3 minutes)
+
+**Timer Display:**
+- MM:SS format near step indicator
+- Circular progress ring showing visual countdown
+- Color transitions: white → orange (≤30s) → green (complete)
+- "✓ Done" text when timer reaches zero
+
+**Timer Stop Conditions:**
+- Step change (Next/Prev) - timer cleared
+- Pause cooking - timer paused
+- User exits modal - timer cleared
+- Timer reaches zero - completion triggered
+
+**Timer Reset:**
+- Repeat button click - timer restarts from initial value
+- Navigate away and return - timer restarts
+
+**Completion Enhancements:**
+- Soft two-note chime (C5 + E5) using Web Audio API
+- Voice cue "Step time complete" via browser speech
+- Green glow animation on card border
+- Auto-clears glow after 3 seconds
+
+**Technical Implementation:**
+| Feature | Location |
+|---------|----------|
+| parseTimeToSeconds() | lines 51-86 |
+| formatTime() | lines 91-96 |
+| Timer state | lines 313-317 |
+| Timer logic effect | lines 516-568 |
+| Completion handling | lines 571-625 |
+| resetStepTimer() | lines 628-652 |
+| Timer UI | lines 1683-1757 |
+| Green glow | lines 1636-1654 |
+
+**Files Changed:**
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Added timer utilities, state, logic, and UI
+
+**Test Status:** ✅ Code Review VERIFIED (iteration_81.json)
+- parseTimeToSeconds function: IMPLEMENTED
+- Timer state management: IMPLEMENTED
+- Timer activation logic: IMPLEMENTED
+- Timer stop conditions: IMPLEMENTED
+- Timer reset on repeat: IMPLEMENTED
+- Completion chime: IMPLEMENTED
+- Voice cue: IMPLEMENTED
+- Timer UI display: IMPLEMENTED
+- Green glow on complete: IMPLEMENTED
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
