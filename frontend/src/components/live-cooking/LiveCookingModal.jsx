@@ -820,7 +820,7 @@ export default function LiveCookingModal() {
     onStopSpeaking: () => {
       // CANCEL DISCIPLINE: This is called when user presses pause or step changes
       // GLOBAL CONTROLLER: Cancel via singleton
-      globalCancelSpeech();
+      globalCancelSpeech('orchestratorStop');
     },
     onStepChange: (direction) => {
       // This is called by orchestrator after gesture/voice navigation
