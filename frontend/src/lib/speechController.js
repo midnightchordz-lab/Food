@@ -102,7 +102,7 @@ function checkIsSpeaking() {
 /**
  * Speak text with completion guarantee
  * SPEECH LOCK: Will not start if already speaking
- * CHROME WORKAROUND: Uses keep-alive timer to prevent 15s timeout
+ * CHROME WORKAROUND: Uses text chunking for long text
  * 
  * @param {string} text - Text to speak
  * @param {function} onComplete - Callback when speech finishes
@@ -136,87 +136,145 @@ function speak(text, onComplete = null) {
   // Cancel any pending speech (but we know we're not speaking)
   window.speechSynthesis.cancel();
   
-  // Create new utterance (SINGLE INSTANCE per speak call)
-  currentUtterance = new SpeechSynthesisUtterance(text);
-  onSpeechEndCallback = onComplete;
+  // CHROME WORKAROUND: Split long text into chunks to prevent 15s timeout
+  // Chrome kills speechSynthesis after ~15 seconds on some systems
+  const chunks = splitIntoChunks(text);
+  console.log(`[SpeechController] Speaking ${chunks.length} chunk(s)`);
   
-  // Configure utterance
-  currentUtterance.rate = CONFIG.SPEECH_RATE;
-  currentUtterance.pitch = CONFIG.SPEECH_PITCH;
-  currentUtterance.volume = CONFIG.SPEECH_VOLUME;
+  let chunkIndex = 0;
+  let cancelled = false;
   
-  const preferredVoice = getPreferredVoice();
-  if (preferredVoice) {
-    currentUtterance.voice = preferredVoice;
+  const speakNextChunk = () => {
+    if (cancelled || chunkIndex >= chunks.length) {
+      // All chunks done
+      console.log('[SpeechController] All chunks completed');
+      isSpeaking = false;
+      currentUtterance = null;
+      
+      // Clear keep-alive timer
+      if (keepAliveTimer) {
+        clearInterval(keepAliveTimer);
+        keepAliveTimer = null;
+      }
+      
+      const callback = onSpeechEndCallback;
+      onSpeechEndCallback = null;
+      if (callback) setTimeout(callback, 50);
+      
+      // MIC EXCLUSION: Resume recognition after delay
+      if (shouldBeListening && !isListening) {
+        setTimeout(() => {
+          if (shouldBeListening && !isListening && !checkIsSpeaking()) {
+            console.log('[SpeechController] TTS ended, resuming recognition');
+            startRecognition();
+          }
+        }, CONFIG.MIC_DELAY_AFTER_TTS);
+      }
+      return;
+    }
+    
+    const chunk = chunks[chunkIndex];
+    console.log(`[SpeechController] Chunk ${chunkIndex + 1}/${chunks.length}: "${chunk.substring(0, 30)}..."`);
+    
+    currentUtterance = new SpeechSynthesisUtterance(chunk);
+    onSpeechEndCallback = onComplete;
+    
+    // Configure utterance
+    currentUtterance.rate = CONFIG.SPEECH_RATE;
+    currentUtterance.pitch = CONFIG.SPEECH_PITCH;
+    currentUtterance.volume = CONFIG.SPEECH_VOLUME;
+    
+    const preferredVoice = getPreferredVoice();
+    if (preferredVoice) {
+      currentUtterance.voice = preferredVoice;
+    }
+    
+    currentUtterance.onstart = () => {
+      isSpeaking = true;
+      if (chunkIndex === 0) {
+        console.log('[SpeechController] Speech started');
+      }
+      
+      // CHROME WORKAROUND: Start keep-alive timer for long chunks
+      if (!keepAliveTimer) {
+        keepAliveTimer = setInterval(() => {
+          if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+            console.log('[SpeechController] Keep-alive poke');
+            window.speechSynthesis.pause();
+            window.speechSynthesis.resume();
+          }
+        }, KEEP_ALIVE_INTERVAL);
+      }
+    };
+    
+    currentUtterance.onend = () => {
+      console.log(`[SpeechController] Chunk ${chunkIndex + 1} completed`);
+      chunkIndex++;
+      // Small delay between chunks for natural flow
+      setTimeout(speakNextChunk, 100);
+    };
+    
+    currentUtterance.onerror = (event) => {
+      console.log('[SpeechController] Speech error:', event.error);
+      // On error, try to continue with next chunk
+      if (event.error !== 'canceled') {
+        chunkIndex++;
+        setTimeout(speakNextChunk, 100);
+      } else {
+        cancelled = true;
+        isSpeaking = false;
+        currentUtterance = null;
+        if (keepAliveTimer) {
+          clearInterval(keepAliveTimer);
+          keepAliveTimer = null;
+        }
+      }
+    };
+    
+    window.speechSynthesis.speak(currentUtterance);
+  };
+  
+  // Start speaking first chunk
+  speakNextChunk();
+  return true;
+}
+
+/**
+ * Split text into chunks for Chrome compatibility
+ * Splits on sentence boundaries, keeping chunks under 200 chars
+ */
+function splitIntoChunks(text) {
+  const MAX_CHUNK_LENGTH = 180;
+  
+  // If text is short enough, don't split
+  if (text.length <= MAX_CHUNK_LENGTH) {
+    return [text];
   }
   
-  // UTTERANCE COMPLETION GUARANTEE
-  currentUtterance.onstart = () => {
-    isSpeaking = true;
-    console.log('[SpeechController] Speech started');
-    
-    // CHROME WORKAROUND: Start keep-alive timer
-    // Chrome kills speechSynthesis after ~15s of perceived silence
-    // This pause/resume "poke" keeps the speech engine alive
-    keepAliveTimer = setInterval(() => {
-      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-        console.log('[SpeechController] Keep-alive poke');
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, KEEP_ALIVE_INTERVAL);
-  };
+  const chunks = [];
+  // Split by sentence-ending punctuation while keeping the punctuation
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
   
-  currentUtterance.onend = () => {
-    console.log('[SpeechController] Speech completed');
-    isSpeaking = false;
-    currentUtterance = null;
-    
-    // Clear keep-alive timer
-    if (keepAliveTimer) {
-      clearInterval(keepAliveTimer);
-      keepAliveTimer = null;
-    }
-    
-    const callback = onSpeechEndCallback;
-    onSpeechEndCallback = null;
-    
-    // Call completion callback
-    if (callback) {
-      setTimeout(callback, 50);
-    }
-    
-    // MIC EXCLUSION: Resume recognition after delay
-    if (shouldBeListening && !isListening) {
-      setTimeout(() => {
-        if (shouldBeListening && !isListening && !checkIsSpeaking()) {
-          console.log('[SpeechController] TTS ended, resuming recognition');
-          startRecognition();
-        }
-      }, CONFIG.MIC_DELAY_AFTER_TTS);
-    }
-  };
+  let currentChunk = '';
   
-  currentUtterance.onerror = (event) => {
-    console.log('[SpeechController] Speech error:', event.error);
-    isSpeaking = false;
-    currentUtterance = null;
+  for (const sentence of sentences) {
+    const trimmedSentence = sentence.trim();
     
-    // Clear keep-alive timer
-    if (keepAliveTimer) {
-      clearInterval(keepAliveTimer);
-      keepAliveTimer = null;
+    // If adding this sentence would make chunk too long, save current and start new
+    if (currentChunk && (currentChunk.length + trimmedSentence.length + 1) > MAX_CHUNK_LENGTH) {
+      chunks.push(currentChunk.trim());
+      currentChunk = trimmedSentence;
+    } else {
+      currentChunk += (currentChunk ? ' ' : '') + trimmedSentence;
     }
-    
-    const callback = onSpeechEndCallback;
-    onSpeechEndCallback = null;
-    callback?.();
-  };
+  }
   
-  // Start speaking
-  window.speechSynthesis.speak(currentUtterance);
-  console.log('[SpeechController] Speaking:', text.substring(0, 50) + '...');
-  return true;
+  // Add any remaining text
+  if (currentChunk.trim()) {
+    chunks.push(currentChunk.trim());
+  }
+  
+  return chunks.length > 0 ? chunks : [text];
 }
 
 /**
