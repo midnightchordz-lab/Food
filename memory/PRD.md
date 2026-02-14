@@ -201,6 +201,24 @@ THEN:
 - ElevenLabs Starter plan active and working
 - Tested and confirmed working for English and Hindi narration
 
+### UI Bug Fixes
+
+#### Subscription Page Text Cut-Off Fix ✅ (Feb 14, 2026)
+**Fixed layout issue where page header text was being clipped by fixed navigation.**
+
+**Problem:**
+- On the `/subscription` page, the text "Subscription Management" and "Manage your plan, billing, and usage" was getting cut off below the navigation tabs
+- The fixed navigation bar (h-16/64px) was overlapping the page content
+
+**Solution:**
+- Added `pt-16 md:pt-20` (64px/80px top padding) to the main container in `SubscriptionManagementPage.js`
+- This accounts for the fixed navigation height and ensures all content is visible
+
+**File Changed:**
+- `frontend/src/pages/SubscriptionManagementPage.js` - Line 209: Added `pt-16 md:pt-20` class
+
+**Test Status:** ✅ VERIFIED via screenshot - text now fully visible
+
 #### Permission Orchestration Layer ✅ NEW (Feb 13, 2026)
 **Single initialization for camera + microphone + speech recognition.**
 
