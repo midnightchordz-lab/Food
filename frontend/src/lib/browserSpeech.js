@@ -113,6 +113,7 @@ export const stopSpeaking = stopSpeech;
 /**
  * Speak text using browser's built-in TTS (FREE)
  * SINGLE SPEECH LOCK: Won't start if already speaking
+ * CRITICAL: Disables recognition while speaking to prevent feedback loop
  * @param {string} text - Text to speak
  * @param {function} onComplete - Optional callback when speech finishes
  * @returns {boolean} - true if speech started, false if blocked
@@ -127,6 +128,16 @@ export function speakText(text, onComplete = null) {
   if (window.speechSynthesis.speaking) {
     console.log('[BrowserSpeech] Already speaking, ignoring new speak request');
     return false;
+  }
+
+  // CRITICAL: Stop recognition BEFORE starting TTS
+  // This prevents recognition from hearing TTS output and triggering commands
+  if (recognition && isListening) {
+    console.log('[BrowserSpeech] Stopping recognition before TTS');
+    try {
+      recognition.abort();
+    } catch {}
+    isListening = false;
   }
 
   // Cancel any pending speech (but not if currently speaking - handled above)
