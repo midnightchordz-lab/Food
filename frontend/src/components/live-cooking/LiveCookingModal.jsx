@@ -873,11 +873,12 @@ export default function LiveCookingModal() {
                 <audio ref={audioRef} className="hidden" />
                 
                 {/* ============================================ */}
-                {/* FULL-SCREEN CAMERA BACKGROUND */}
+                {/* FULL-SCREEN BACKGROUND */}
+                {/* PHASE-1: Camera preview DORMANT (no camera permission popup) */}
                 {/* ============================================ */}
                 <div className="absolute inset-0 z-0">
-                  {/* Camera feed as full background */}
-                  {showCamera && (
+                  {/* Camera feed - DORMANT in Phase-1 (code exists but not rendered) */}
+                  {!PHASE_1_MODE && showCamera && (
                     <video
                       ref={cameraVideoRef}
                       autoPlay
@@ -888,8 +889,8 @@ export default function LiveCookingModal() {
                     />
                   )}
                   
-                  {/* Fallback background when camera is off */}
-                  {(!showCamera || !hasCameraAccess) && (
+                  {/* PHASE-1: Always show recipe background (no camera fallback logic) */}
+                  {(PHASE_1_MODE || !showCamera || !hasCameraAccess) && (
                     <>
                       {recipeVideo ? (
                         <video
