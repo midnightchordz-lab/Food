@@ -288,7 +288,8 @@ function speak(text, onComplete = null) {
     // EVENT HANDLERS - Release lock on end/error
     // ========================================
     utterance.onstart = () => {
-      console.log('[SpeechController] onstart fired');
+      console.log('[SpeechController] >>> SPEECH STARTED - onstart fired');
+      clearTimeout(safetyTimeout); // Speech started, clear safety
       // Start keep-alive for Chrome
       if (!keepAliveTimer) {
         keepAliveTimer = setInterval(() => {
