@@ -102,6 +102,7 @@ function checkIsSpeaking() {
 /**
  * Speak text with completion guarantee
  * SPEECH LOCK: Will not start if already speaking
+ * CHROME WORKAROUND: Uses keep-alive timer to prevent 15s timeout
  * 
  * @param {string} text - Text to speak
  * @param {function} onComplete - Callback when speech finishes
@@ -126,6 +127,12 @@ function speak(text, onComplete = null) {
     return false;
   }
   
+  // Clear any keep-alive timer from previous speech
+  if (keepAliveTimer) {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = null;
+  }
+  
   // Cancel any pending speech (but we know we're not speaking)
   window.speechSynthesis.cancel();
   
@@ -147,12 +154,29 @@ function speak(text, onComplete = null) {
   currentUtterance.onstart = () => {
     isSpeaking = true;
     console.log('[SpeechController] Speech started');
+    
+    // CHROME WORKAROUND: Start keep-alive timer
+    // Chrome kills speechSynthesis after ~15s of perceived silence
+    // This pause/resume "poke" keeps the speech engine alive
+    keepAliveTimer = setInterval(() => {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        console.log('[SpeechController] Keep-alive poke');
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, KEEP_ALIVE_INTERVAL);
   };
   
   currentUtterance.onend = () => {
     console.log('[SpeechController] Speech completed');
     isSpeaking = false;
     currentUtterance = null;
+    
+    // Clear keep-alive timer
+    if (keepAliveTimer) {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+    }
     
     const callback = onSpeechEndCallback;
     onSpeechEndCallback = null;
@@ -177,6 +201,12 @@ function speak(text, onComplete = null) {
     console.log('[SpeechController] Speech error:', event.error);
     isSpeaking = false;
     currentUtterance = null;
+    
+    // Clear keep-alive timer
+    if (keepAliveTimer) {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+    }
     
     const callback = onSpeechEndCallback;
     onSpeechEndCallback = null;
