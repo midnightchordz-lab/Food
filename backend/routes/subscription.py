@@ -271,7 +271,14 @@ def get_plan_by_id(plan_id: str) -> Optional[Dict]:
 
 
 async def get_user_subscription(user_id: str) -> Dict:
-    """Get user's current subscription"""
+    """
+    Get user's current subscription with entitlement validation.
+    
+    PRODUCTION ENTITLEMENT GUARD:
+    - Only subscriptions with valid source (payment, trial, admin) are honored
+    - Subscriptions without proper source or payment record default to FREE
+    - This prevents accidental paid plan assignment from bugs, seed data, or API misuse
+    """
     subscription = await db.user_subscriptions.find_one(
         {"user_id": user_id, "status": {"$in": ["active", "trialing"]}},
         {"_id": 0}
@@ -286,6 +293,40 @@ async def get_user_subscription(user_id: str) -> Dict:
             "features": free_plan["features"],
             "plan": free_plan
         }
+    
+    # PRODUCTION ENTITLEMENT GUARD
+    # Validate subscription has proper source or payment record
+    subscription_source = subscription.get("source", "")
+    plan_id = subscription.get("plan_id", "free")
+    
+    # If subscription is for a paid plan, verify it has valid source
+    if plan_id != "free":
+        valid_sources = ["payment", "trial", "admin", "razorpay", "stripe"]
+        
+        # Check for payment provider (indicates real payment flow)
+        has_payment_provider = bool(subscription.get("razorpay_order_id") or 
+                                     subscription.get("payment_provider_id", "").startswith("pay_"))
+        
+        # Check for valid source marker
+        is_valid_source = subscription_source in valid_sources or has_payment_provider
+        
+        if not is_valid_source:
+            # Log suspicious subscription without payment
+            logging.warning(
+                f"[ENTITLEMENT GUARD] User {user_id} has paid subscription '{plan_id}' "
+                f"without valid payment source. Reverting to FREE plan. "
+                f"Source: '{subscription_source}', Payment Provider ID: '{subscription.get('payment_provider_id')}'"
+            )
+            
+            # Return free plan for subscriptions without valid payment
+            free_plan = get_plan_by_id("free")
+            return {
+                "plan_id": "free",
+                "status": "active",
+                "features": free_plan["features"],
+                "plan": free_plan,
+                "_entitlement_warning": "Subscription requires valid payment verification"
+            }
     
     plan = get_plan_by_id(subscription["plan_id"])
     subscription["features"] = plan["features"] if plan else {}
