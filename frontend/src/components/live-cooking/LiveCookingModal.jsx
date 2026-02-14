@@ -940,30 +940,6 @@ export default function LiveCookingModal() {
       onRepeat: handleRepeat,
     });
     
-    // GLOBAL CONTROLLER: Set up recognition callbacks on singleton
-    globalSetRecognitionCallbacks({
-      onResult: (transcript) => {
-        // Handle voice command from global controller
-        const cmd = transcript.toLowerCase().trim();
-        if (cmd.includes('next')) handleNextWithVoice();
-        else if (cmd.includes('back') || cmd.includes('previous')) handlePrevWithVoice();
-        else if (cmd.includes('repeat') || cmd.includes('again')) handleRepeat();
-        else if (cmd.includes('pause') || cmd.includes('stop')) handleTogglePlayWithVoice();
-        else if (cmd.includes('resume') || cmd.includes('play') || cmd.includes('continue')) handleTogglePlayWithVoice();
-      },
-      onStart: () => {
-        setVoiceListening(true);
-        console.log('[LiveCooking] Global voice recognition started');
-      },
-      onEnd: () => {
-        setVoiceListening(false);
-        console.log('[LiveCooking] Global voice recognition ended');
-      },
-      onError: (error) => {
-        console.log('[LiveCooking] Global voice recognition error:', error);
-      },
-    });
-    
     // Set up visual callbacks for UI feedback (legacy browserSpeech for backwards compat)
     setVisualCallbacks({
       onListeningStart: () => {
