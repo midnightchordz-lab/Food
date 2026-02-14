@@ -303,6 +303,58 @@ export const ENABLE_AI_OBSERVER = !PHASE_1_MODE;
 ✔ AI/gesture code present but inactive
 ✔ Zero business logic changes
 
+#### Phase-1 Voice Command Reliability ✅ NEW (Feb 14, 2026)
+**Improved voice command reliability for Hands-Free Cooking Phase-1 mode**
+
+**RELIABILITY IMPROVEMENTS IMPLEMENTED:**
+
+1. **Strict Vocabulary Filter**
+   - Only exact phrases trigger actions: "next", "back", "repeat", "pause", "resume"
+   - Ignores partial matches and random speech
+   - Prevents accidental triggers from background noise
+
+2. **Continuous Listening Loop**
+   - Auto-restarts speech recognition via `onend` event
+   - `shouldBeListening` flag controls intent
+   - Recoverable errors (network, no-speech) trigger automatic retry
+
+3. **Command Confirmation Delay**
+   - 400ms delay before executing action
+   - Prevents rapid double-triggers
+   - 800ms cooldown between commands
+
+4. **TTS/Mic Mutual Exclusion**
+   - `stopSpeech()` called before starting recognition
+   - `pauseVoiceControl()` and `resumeVoiceControl()` for TTS playback
+   - Prevents audio feedback loop
+
+5. **Visual Feedback States**
+   - Pulsing green dot when listening
+   - Status indicator shows "Listening..." with mic icon
+   - Yellow flash on command received
+   - Status text shows available commands
+
+**Technical Implementation:**
+| Feature | Location | Implementation |
+|---------|----------|----------------|
+| Strict Vocabulary | browserSpeech.js:19-25 | `STRICT_COMMANDS` object with exact phrases |
+| Continuous Loop | browserSpeech.js:223-247 | `shouldBeListening` + `onend` handler |
+| Confirmation Delay | browserSpeech.js:137 | `COMMAND_CONFIRMATION_DELAY_MS = 400` |
+| Mutual Exclusion | browserSpeech.js:153 | `stopSpeech()` before `recognition.start()` |
+| Visual Callbacks | browserSpeech.js:54-62 | `setVisualCallbacks()` function |
+
+**Files Changed:**
+- `frontend/src/lib/browserSpeech.js` - Added strict vocabulary, continuous loop, confirmation delay, visual callbacks
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Added visual feedback states, voice control setup for Phase-1
+
+**Test Status:** ✅ VERIFIED (iteration_80.json - 100% frontend tests passed)
+- Live Cooking Modal opens: PASS
+- Voice button toggle: PASS
+- Visual listening indicator: PASS
+- All control buttons work: PASS
+- Step navigation: PASS
+- Browser speech fallback: PASS
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
