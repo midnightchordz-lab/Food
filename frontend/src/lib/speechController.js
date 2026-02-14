@@ -158,6 +158,13 @@ function speak(text, onComplete = null) {
     return false;
   }
   
+  // TYPE ENFORCEMENT: Ensure text is a string
+  if (typeof text !== 'string') {
+    console.error('[SpeechController] Invalid text type:', typeof text, '- must be string');
+    onComplete?.();
+    return false;
+  }
+  
   if (!text || text.trim() === '') {
     console.log('[SpeechController] Empty text, skipping');
     onComplete?.();
