@@ -1068,25 +1068,25 @@ export default function LiveCookingModal() {
   }, [handleNextWithVoice, handlePrevWithVoice, handleTogglePlayWithVoice, handleRepeat]);
   
   // Start/stop voice recognition based on handsFreeEnabled (Phase-1 only)
-  // MOBILE VOICE RECOVERY: No auto-start on mobile - requires tap
+  // MOBILE AUDIO SEQUENCING: Single audio owner, turn-taking
   useEffect(() => {
-    if (!PHASE_1_MODE) return; // Full mode uses engine orchestrator
+    if (!PHASE_1_MODE) return;
     
     if (open && handsFreeEnabled) {
-      console.log('[LiveCooking] Setting up voice recognition callbacks');
+      console.log('[LiveCooking] Setting up voice recognition');
       
-      // Set up recognition callbacks (these don't auto-start recognition)
+      // Set up recognition callbacks - UI state synchronization
       globalSetRecognitionCallbacks({
         onResult: (transcript) => {
           const cmd = transcript.toLowerCase().trim();
-          console.log('[LiveCooking] Voice command received:', cmd);
+          console.log('[LiveCooking] Voice command:', cmd);
           
-          // Flash UI feedback
+          // UI feedback
           setLastCommand(cmd);
           setCommandFlash(true);
           setTimeout(() => setCommandFlash(false), 500);
           
-          // Execute command
+          // Execute command - these will stop recognition, speak, then restart recognition
           if (cmd.includes('next')) handleNextWithVoice();
           else if (cmd.includes('back') || cmd.includes('previous')) handlePrevWithVoice();
           else if (cmd.includes('repeat') || cmd.includes('again')) handleRepeat();
@@ -1094,47 +1094,59 @@ export default function LiveCookingModal() {
           else if (cmd.includes('resume') || cmd.includes('play') || cmd.includes('continue')) handleTogglePlayWithVoice();
         },
         onStart: () => {
+          // UI STATE: Show listening (green)
           setVoiceListening(true);
           setVoiceRecognitionState('listening');
-          console.log('[LiveCooking] Voice recognition ACTIVE');
+          console.log('[LiveCooking] >>> LISTENING');
         },
         onEnd: () => {
-          setVoiceListening(false);
-          console.log('[LiveCooking] Voice recognition ended');
-          // PHASE 2: On mobile, don't auto-update state - wait for tap
+          // UI STATE: Show idle if not speaking
           const env = globalGetEnvironment();
-          if (!env.isMobile && !env.isWebView) {
+          setVoiceListening(false);
+          console.log('[LiveCooking] Recognition ended');
+          
+          // MOBILE: Keep showing "Voice On" if session armed, otherwise show "Tap Mic"
+          if (env.isMobile || env.isWebView) {
+            if (globalIsSessionArmed()) {
+              // Session armed - recognition will restart after TTS
+              setVoiceRecognitionState(globalIsSpeaking() ? 'idle' : 'listening');
+            } else {
+              setVoiceRecognitionState('permission-needed');
+            }
+          } else {
             setVoiceRecognitionState('idle');
           }
         },
         onError: (error) => {
-          console.log('[LiveCooking] Voice recognition error:', error);
+          console.log('[LiveCooking] Recognition error:', error);
           setVoiceListening(false);
           if (error === 'not-allowed') {
             setVoiceRecognitionState('disabled');
+            globalDisarmSession();
           } else {
             setVoiceRecognitionState('error');
           }
         },
       });
       
-      // PHASE 2: Check environment and set initial state
+      // Check environment and set initial state
       const env = globalGetEnvironment();
-      console.log('[LiveCooking] Environment check:', env);
+      console.log('[LiveCooking] Env:', env.isMobile ? 'Mobile' : 'Desktop');
       
       if (env.isMobile || env.isWebView) {
-        // MOBILE/WEBVIEW: Do NOT auto-start - show "Tap to Enable" state
-        console.log('[LiveCooking] PHASE 2 - Mobile/WebView: Waiting for user tap');
+        // MOBILE: Wait for user tap to arm session
+        console.log('[LiveCooking] Mobile: Tap mic to start hands-free');
         setVoiceRecognitionState('permission-needed');
-        // NO globalStartRecognition() call here!
       } else {
-        // DESKTOP: Can auto-start recognition
-        console.log('[LiveCooking] Desktop: Auto-starting recognition');
+        // DESKTOP: Auto-start
+        console.log('[LiveCooking] Desktop: Auto-start recognition');
         globalStartRecognition();
+        setVoiceListening(true);
       }
     } else {
-      // Cleanup when disabled or modal closes
+      // Cleanup
       globalStopRecognition();
+      globalDisarmSession();
       setVoiceRecognitionState('idle');
       setVoiceListening(false);
     }
