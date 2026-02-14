@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, MicOff, RotateCcw } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, MicOff, RotateCcw, Timer } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useLiveCooking } from "@/stores/useLiveCooking";
@@ -18,6 +18,7 @@ import {
   setVisualCallbacks,
   isVoiceListening,
   isSpeaking,
+  speakText,
 } from "@/lib/browserSpeech";
 // Phase-1 Feature Gate
 import {
@@ -37,6 +38,63 @@ import { useEngineOrchestrator, EngineState } from "@/hooks/useEngineOrchestrato
 import { useAIObserver, ObserverEvents } from "@/hooks/useAIObserver";
 
 const API = process.env.REACT_APP_BACKEND_URL;
+
+// ============================================
+// STEP TIMER UTILITIES
+// ============================================
+
+/**
+ * Parse time string to seconds
+ * Handles formats: "5 minutes", "2-3 min", "30 seconds", "1 hour", etc.
+ * For ranges like "2-3 min", uses the higher value
+ */
+function parseTimeToSeconds(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return null;
+  
+  const normalized = timeStr.toLowerCase().trim();
+  
+  // Match patterns like "5 minutes", "2-3 min", "30 sec", "1 hour"
+  const hourMatch = normalized.match(/(\d+)\s*(?:hour|hr|h)/);
+  const minMatch = normalized.match(/(\d+)(?:\s*[-–]\s*(\d+))?\s*(?:min|minute|m(?!\w))/);
+  const secMatch = normalized.match(/(\d+)\s*(?:sec|second|s(?!\w))/);
+  
+  let totalSeconds = 0;
+  
+  if (hourMatch) {
+    totalSeconds += parseInt(hourMatch[1], 10) * 3600;
+  }
+  
+  if (minMatch) {
+    // For ranges "2-3 min", use the higher value (minMatch[2])
+    const minutes = minMatch[2] ? parseInt(minMatch[2], 10) : parseInt(minMatch[1], 10);
+    totalSeconds += minutes * 60;
+  }
+  
+  if (secMatch) {
+    totalSeconds += parseInt(secMatch[1], 10);
+  }
+  
+  // If nothing matched but there's a number, assume minutes
+  if (totalSeconds === 0) {
+    const plainNumber = normalized.match(/^(\d+)$/);
+    if (plainNumber) {
+      totalSeconds = parseInt(plainNumber[1], 10) * 60;
+    }
+  }
+  
+  return totalSeconds > 0 ? totalSeconds : null;
+}
+
+/**
+ * Format seconds to MM:SS display
+ */
+function formatTime(seconds) {
+  if (seconds === null || seconds < 0) return null;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 
 /**
  * Mood-based color themes for the futuristic UI
