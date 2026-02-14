@@ -287,6 +287,9 @@ function cancelSpeech() {
   
   console.log('[SpeechController] Canceling speech');
   
+  // Set global cancel flag to stop chunk queue
+  speechCancelled = true;
+  
   // Clear keep-alive timer
   if (keepAliveTimer) {
     clearInterval(keepAliveTimer);
