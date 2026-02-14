@@ -497,14 +497,16 @@ export default function LiveCookingModal() {
     // This invalidates any in-flight narration requests
     stepChangeIdRef.current++;
     
-    // HARD SYNC: Immediately stop any playing audio when step changes
+    // HARD SYNC: Stop ElevenLabs audio when step changes
+    // Browser speech will complete naturally (no manual cancel)
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       audioRef.current.volume = 1; // Reset volume for next play
     }
-    // GLOBAL CONTROLLER: Cancel speech for step change (user-initiated)
-    globalCancelSpeech('stepChange');
+    // REMOVED: globalCancelSpeech('stepChange') - was causing cut-off
+    // The stepChangeIdRef increment already invalidates in-flight narrations
+    // New step narration will start fresh via readCurrentStep()
     
     // Abort any pending narration (both step and emotional)
     narrationAbortRef.current = true;
