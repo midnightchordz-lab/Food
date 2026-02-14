@@ -582,15 +582,19 @@ export default function LiveCookingModal() {
       hasUserStartedRef.current = false;
       setAiState('idle');
       setShowWhisper(false);
-      setHandsFreeEnabled(false); // Reset hands-free when modal closes
-      setShowCamera(false); // Hide camera
-      setGestureEnabled(false); // Reset gesture state
-      setUseBrowserSpeech(false); // Reset fallback mode
-      stopSpeech(); // Stop any browser speech
-      resetOrchestrator(); // Reset emotional voice state
-      stopCameraStream(); // Stop camera stream from permission hook
-      resetPermissions(); // Reset permission state
-      resetEngineOrchestrator(); // Reset engine orchestrator state
+      setHandsFreeEnabled(false);
+      setShowCamera(false);
+      setGestureEnabled(false);
+      setUseBrowserSpeech(false);
+      stopSpeech();
+      resetOrchestrator();
+      
+      // PHASE-1: Only cleanup camera if it was enabled
+      if (!PHASE_1_MODE) {
+        stopCameraStream();
+        resetPermissions();
+        resetEngineOrchestrator();
+      }
     }
   }, [open, resetOrchestrator, stopCameraStream, resetPermissions, resetEngineOrchestrator]);
 
