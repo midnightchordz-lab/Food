@@ -761,8 +761,14 @@ export default function LiveCookingModal() {
     onEvent: handleAIEvent,
   });
 
-  // Toggle camera visibility (only if permissions granted)
+  // Toggle camera visibility - DORMANT in PHASE-1
   const toggleCamera = useCallback(() => {
+    // PHASE-1: Camera toggle disabled
+    if (PHASE_1_MODE) {
+      toast.info('Camera preview coming in future update');
+      return;
+    }
+    
     if (hasCameraAccess) {
       setShowCamera(prev => !prev);
     }
