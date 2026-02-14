@@ -1118,3 +1118,81 @@ def log_subscription_creation(
             **(additional_data or {})
         }
     )
+
+
+async def log_plan_change(
+    db,
+    user_id: str,
+    old_plan: str,
+    new_plan: str,
+    reason: str,
+    metadata: Optional[Dict] = None
+) -> Dict:
+    """
+    AUDIT LOG FOR SUBSCRIPTION PLAN CHANGES
+    
+    Tracks all subscription plan changes for debugging and compliance.
+    Creates a permanent, append-only audit trail.
+    
+    Args:
+        db: Database connection
+        user_id: User whose plan changed
+        old_plan: Previous plan_id (e.g., "free", "premium_monthly")
+        new_plan: New plan_id
+        reason: Human-readable reason for change (e.g., "payment_verified", "trial_expired", "admin_override")
+        metadata: Optional additional context (payment_id, subscription_id, etc.)
+    
+    Returns:
+        The created audit log entry
+    """
+    import uuid
+    
+    now = datetime.now(timezone.utc)
+    
+    audit_entry = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "old_plan": old_plan or "none",
+        "new_plan": new_plan or "none",
+        "reason": reason,
+        "timestamp": now.isoformat(),
+        "metadata": metadata or {}
+    }
+    
+    # Insert into audit_logs collection
+    await db.audit_logs.insert_one(audit_entry)
+    
+    # Also log to standard logger for immediate visibility
+    logging.info(
+        f"[AUDIT_LOG] Plan change: user={user_id}, "
+        f"old_plan={old_plan}, new_plan={new_plan}, reason={reason}"
+    )
+    
+    # Remove _id before returning (MongoDB adds it)
+    audit_entry.pop("_id", None)
+    
+    return audit_entry
+
+
+async def get_plan_change_history(
+    db,
+    user_id: str,
+    limit: int = 50
+) -> List[Dict]:
+    """
+    Get plan change history for a user.
+    
+    Args:
+        db: Database connection
+        user_id: User to get history for
+        limit: Max records to return
+    
+    Returns:
+        List of audit log entries, newest first
+    """
+    cursor = db.audit_logs.find(
+        {"user_id": user_id},
+        {"_id": 0}
+    ).sort("timestamp", -1).limit(limit)
+    
+    return await cursor.to_list(length=limit)
