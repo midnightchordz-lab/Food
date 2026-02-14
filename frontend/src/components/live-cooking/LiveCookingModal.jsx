@@ -1123,7 +1123,7 @@ export default function LiveCookingModal() {
 
                     {/* Right: Control buttons */}
                     <div className="flex items-center gap-2">
-                      {/* PHASE-1: Simplified Voice Control Button */}
+                      {/* PHASE-1: Simplified Voice Control Button with listening indicator */}
                       <motion.div
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -1135,24 +1135,41 @@ export default function LiveCookingModal() {
                           variant="ghost"
                           size="sm"
                           onClick={handleEnableHandsFree}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
-                            handsFreeEnabled 
-                              ? 'bg-emerald-500/20' 
-                              : 'bg-black/30'
+                          className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
+                            voiceListening 
+                              ? 'bg-green-500/30 border-green-400/30'
+                              : handsFreeEnabled 
+                                ? 'bg-emerald-500/20' 
+                                : 'bg-black/30'
                           }`}
                           data-testid="live-cooking-handsfree-btn"
                         >
+                          {/* Pulsing dot indicator when listening */}
+                          {voiceListening && (
+                            <motion.div
+                              className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"
+                              animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                              transition={{ duration: 1, repeat: Infinity }}
+                            />
+                          )}
                           {handsFreeEnabled ? (
-                            <Mic className="w-3 h-3 text-emerald-400" />
+                            <motion.div
+                              animate={voiceListening ? { scale: [1, 1.2, 1] } : {}}
+                              transition={{ duration: 0.5, repeat: Infinity }}
+                            >
+                              <Mic className={`w-3 h-3 ${voiceListening ? 'text-green-400' : 'text-emerald-400'}`} />
+                            </motion.div>
                           ) : (
                             <MicOff className="w-3 h-3 text-white/60" />
                           )}
                           <span className={`text-xs hidden sm:inline ${
-                            handsFreeEnabled 
-                              ? 'text-emerald-400' 
-                              : 'text-white/60'
+                            voiceListening 
+                              ? 'text-green-400'
+                              : handsFreeEnabled 
+                                ? 'text-emerald-400' 
+                                : 'text-white/60'
                           }`}>
-                            {handsFreeEnabled ? 'Voice On' : 'Voice'}
+                            {voiceListening ? 'Listening' : handsFreeEnabled ? 'Voice On' : 'Voice'}
                           </span>
                         </Button>
                       </motion.div>
