@@ -919,8 +919,8 @@ export default function LiveCookingModal() {
     if (PHASE_1_MODE) {
       setHandsFreeEnabled(true);
       
-      // Initialize the global speech controller
-      speechController.init();
+      // Initialize the global speech controller (async for native hybrid support)
+      await speechController.init();
       
       // Set up state change callback for UI sync
       globalSetStateChangeCallback((state) => {
@@ -933,9 +933,9 @@ export default function LiveCookingModal() {
       const env = globalGetEnvironment();
       console.log('[LiveCooking] Environment:', env);
       
-      // MOBILE: Use gesture-based start (will be triggered by mic button tap)
-      if (env.isMobile) {
-        console.log('[LiveCooking] Mobile detected - recognition will start on tap');
+      // MOBILE/NATIVE: Use gesture-based start (will be triggered by mic button tap)
+      if (env.isMobile || env.isNativeApp) {
+        console.log('[LiveCooking] Mobile/Native detected - recognition will start on tap');
         setVoiceRecognitionState('permission-needed');
         toast.success('Tap the mic button to start voice control!');
       } else {
