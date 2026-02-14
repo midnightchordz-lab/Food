@@ -126,6 +126,61 @@ Created `/app/frontend/src/utils/auth.js` with `isUserPremium(user)` function th
 
 **Test Status:** ✅ VERIFIED (iteration_78.json - 100% backend tests passed)
 
+#### Production Entitlement Guard - Comprehensive Backend Hotfix ✅ (Feb 14, 2026)
+**Complete server-side entitlement validation system to prevent unauthorized premium access.**
+
+**Implementation Details:**
+
+**1. AUTHORITATIVE_ENTITLEMENT_GUARD (services/entitlement_guard.py)**
+```
+IF subscription has:
+  - no valid payment_id (razorpay_payment_id, razorpay_order_id)
+  - AND no active trial flag
+THEN:
+  → BLOCK premium access → return FREE plan
+  → LOG security event "INVALID_PREMIUM_BLOCKED"
+```
+- Runs in `get_user_subscription()` on EVERY subscription fetch
+- Validates source is in: `payment`, `trial`, `admin`, `razorpay`, `stripe`
+
+**2. WEBHOOK_SAFETY_FILTER**
+- `validate_webhook_event()` checks event type and payment_id presence
+- Valid events: `payment.captured`, `order.paid`, `subscription.activated`, etc.
+- Invalid events → REJECT and LOG "WEBHOOK_REJECTED_NO_PAYMENT"
+
+**3. SIGNUP_HARD_DEFAULT (routes/auth.py)**
+- New registrations set: `default_plan="free"`, `subscription_status="none"`
+- Logged as SecurityEvent.SUBSCRIPTION_CREATED
+
+**4. PRODUCTION_LOGGING (SecurityEvent enum)**
+- INVALID_PREMIUM_BLOCKED
+- WEBHOOK_REJECTED_NO_PAYMENT
+- ILLEGAL_POST_SIGNUP_UPGRADE
+- BULK_PREMIUM_CORRECTION
+- SUBSCRIPTION_CREATED / SUBSCRIPTION_VALIDATED
+
+**5. DATA_REPAIR_SCRIPT (Admin Endpoints)**
+- `GET /api/subscription/admin/subscription-integrity-check` - Reports integrity status
+- `POST /api/subscription/admin/fix-invalid-subscriptions?hours_window=24&dry_run=true`
+
+**Files Changed:**
+- `backend/services/entitlement_guard.py` - NEW: Complete entitlement guard module
+- `backend/routes/subscription.py` - Updated: get_user_subscription(), webhook handler, admin endpoints
+- `backend/routes/auth.py` - Updated: Signup hard default
+
+**Scenario Tests (All 9 Passed):**
+1. ✅ New signup → FREE plan
+2. ✅ Demo subscription → source='demo'
+3. ✅ Entitlement guard blocks demo → FREE plan
+4. ✅ Failed payment → remains FREE
+5. ✅ Real payment → premium retained
+6. ✅ Webhook replay protection
+7. ✅ Admin integrity check
+8. ✅ Admin fix endpoint (dry_run)
+9. ✅ Cron sync protection
+
+**Test Status:** ✅ VERIFIED (iteration_79.json - 17/17 backend tests passed)
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
