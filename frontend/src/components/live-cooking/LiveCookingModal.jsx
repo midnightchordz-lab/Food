@@ -1249,8 +1249,8 @@ export default function LiveCookingModal() {
                         </motion.p>
                       </AnimatePresence>
 
-                      {/* Control buttons */}
-                      <div className="flex items-center justify-center gap-4">
+                      {/* Control buttons - PHASE-1: Large controls with Repeat */}
+                      <div className="flex items-center justify-center gap-3 md:gap-4">
                         {/* Previous */}
                         <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                           <Button
@@ -1258,10 +1258,10 @@ export default function LiveCookingModal() {
                             size="icon"
                             onClick={handlePrevWithVoice}
                             disabled={currentStep === 0}
-                            className="w-12 h-12 rounded-full backdrop-blur-md border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-30"
+                            className="w-12 h-12 md:w-14 md:h-14 rounded-full backdrop-blur-md border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-30"
                             data-testid="live-cooking-prev-btn"
                           >
-                            <ChevronLeft className="h-6 w-6" />
+                            <ChevronLeft className="h-6 w-6 md:h-7 md:w-7" />
                           </Button>
                         </motion.div>
 
@@ -1301,10 +1301,24 @@ export default function LiveCookingModal() {
                             size="icon"
                             onClick={handleNextWithVoice}
                             disabled={currentStep >= instructions.length - 1}
-                            className="w-12 h-12 rounded-full backdrop-blur-md border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-30"
+                            className="w-12 h-12 md:w-14 md:h-14 rounded-full backdrop-blur-md border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-30"
                             data-testid="live-cooking-next-btn"
                           >
-                            <ChevronRight className="h-6 w-6" />
+                            <ChevronRight className="h-6 w-6 md:h-7 md:w-7" />
+                          </Button>
+                        </motion.div>
+
+                        {/* PHASE-1: Repeat Button - Tap to repeat current step narration */}
+                        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleRepeat}
+                            className="w-10 h-10 md:w-12 md:h-12 rounded-full backdrop-blur-md border border-white/10 bg-white/5 text-white hover:bg-white/10"
+                            data-testid="live-cooking-repeat-btn"
+                            title="Repeat current step"
+                          >
+                            <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
                           </Button>
                         </motion.div>
                       </div>
@@ -1312,8 +1326,8 @@ export default function LiveCookingModal() {
                   </motion.div>
                 </motion.div>
 
-                {/* Hidden video for recipe video playback when camera is off */}
-                {!showCamera && recipeVideo && (
+                {/* Hidden video for recipe video playback - PHASE-1: Always show recipe */}
+                {(PHASE_1_MODE || !showCamera) && recipeVideo && (
                   <video
                     ref={videoRef}
                     src={recipeVideo}
