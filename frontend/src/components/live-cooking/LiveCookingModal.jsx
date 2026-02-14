@@ -1118,32 +1118,34 @@ export default function LiveCookingModal() {
                 </motion.div>
 
                 {/* ============================================ */}
-                {/* WHISPER SUGGESTION LAYER */}
+                {/* WHISPER SUGGESTION LAYER - DORMANT in PHASE-1 */}
                 {/* ============================================ */}
-                <AnimatePresence>
-                  {showWhisper && whisperText && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
-                      className="absolute left-0 right-0 bottom-64 md:bottom-72 z-20 flex justify-center px-4"
-                    >
-                      <div 
-                        className="px-6 py-3 rounded-2xl backdrop-blur-xl border"
-                        style={{ 
-                          backgroundColor: 'rgba(0,0,0,0.4)',
-                          borderColor: theme.accent + '30',
-                          boxShadow: `0 0 30px ${theme.glow}`,
-                        }}
+                {!PHASE_1_MODE && (
+                  <AnimatePresence>
+                    {showWhisper && whisperText && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="absolute left-0 right-0 bottom-64 md:bottom-72 z-20 flex justify-center px-4"
                       >
-                        <p className={`text-sm ${theme.text} text-center`}>
-                          {whisperText}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                        <div 
+                          className="px-6 py-3 rounded-2xl backdrop-blur-xl border"
+                          style={{ 
+                            backgroundColor: 'rgba(0,0,0,0.4)',
+                            borderColor: theme.accent + '30',
+                            boxShadow: `0 0 30px ${theme.glow}`,
+                          }}
+                        >
+                          <p className={`text-sm ${theme.text} text-center`}>
+                            {whisperText}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
 
                 {/* ============================================ */}
                 {/* FLOATING GLASS STEP CARD */}
