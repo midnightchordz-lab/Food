@@ -976,6 +976,20 @@ async def run_bulk_premium_correction(
                             "previous_status": current_sub.get("status")
                         }
                     )
+                    
+                    # AUDIT LOG: Record restoration
+                    await log_plan_change(
+                        db=db,
+                        user_id=user_id,
+                        old_plan="free",
+                        new_plan=original_plan,
+                        reason="admin_bulk_restoration",
+                        metadata={
+                            "subscription_id": current_sub.get("id"),
+                            "payment_id": payment.get("transaction_id"),
+                            "previous_status": current_sub.get("status")
+                        }
+                    )
                 
                 restorations.append(restoration)
     
