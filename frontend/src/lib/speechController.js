@@ -31,6 +31,9 @@
  * - Any automatic system event
  */
 
+// Singleton instance
+let instance = null;
+
 // ============================================
 // PHASE 1: MOBILE ENVIRONMENT DETECTION
 // ============================================
