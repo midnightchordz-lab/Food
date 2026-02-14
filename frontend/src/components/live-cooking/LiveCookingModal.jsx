@@ -373,8 +373,8 @@ export default function LiveCookingModal() {
       audioRef.current.currentTime = 0;
       audioRef.current.volume = 1; // Reset volume
     }
-    // Also stop browser speech if active
-    stopSpeech();
+    // GLOBAL CONTROLLER: Cancel speech via singleton (immune to re-renders)
+    globalCancelSpeech();
     
     // Mark any pending narration as aborted
     narrationAbortRef.current = true;
