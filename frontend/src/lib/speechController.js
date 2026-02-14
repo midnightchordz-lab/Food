@@ -473,14 +473,89 @@ function cancelSpeech(reason = 'unknown') {
 // VOICE RECOGNITION ENGINE
 // ============================================
 
+// Mobile detection and state
+let isMobile = false;
+let isWebView = false;
+let isSecureContext = true;
+let hasUserGesture = false;
+let micPermissionState = 'unknown'; // 'unknown', 'granted', 'denied', 'prompt'
+let recognitionState = 'idle'; // 'idle', 'starting', 'listening', 'error', 'permission-needed'
+let stateChangeCallback = null;
+
+/**
+ * Detect mobile, WebView, and security context
+ */
+function detectEnvironment() {
+  if (typeof window === 'undefined') return;
+  
+  // Mobile detection
+  isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+  
+  // WebView/Capacitor/Cordova detection
+  isWebView = !!(
+    window.Capacitor ||
+    window.cordova ||
+    navigator.userAgent.includes('wv') ||
+    navigator.userAgent.includes('WebView') ||
+    (window.webkit && window.webkit.messageHandlers)
+  );
+  
+  // Secure context check (required for getUserMedia)
+  isSecureContext = window.isSecureContext !== false && 
+    (window.location.protocol === 'https:' || window.location.hostname === 'localhost');
+  
+  console.log(`[SpeechController] Environment: mobile=${isMobile}, webView=${isWebView}, secure=${isSecureContext}`);
+}
+
+/**
+ * Update recognition state and notify listeners
+ */
+function setRecognitionState(state) {
+  recognitionState = state;
+  console.log('[SpeechController] Recognition state:', state);
+  stateChangeCallback?.(state);
+}
+
+/**
+ * Check microphone permission
+ */
+async function checkMicPermission() {
+  try {
+    if (navigator.permissions) {
+      const result = await navigator.permissions.query({ name: 'microphone' });
+      micPermissionState = result.state;
+      result.onchange = () => {
+        micPermissionState = result.state;
+        console.log('[SpeechController] Mic permission changed:', micPermissionState);
+      };
+    }
+  } catch (e) {
+    // Permissions API not supported
+    micPermissionState = 'unknown';
+  }
+  return micPermissionState;
+}
+
 /**
  * Initialize speech recognition
  */
 function initRecognition() {
+  // Environment detection
+  detectEnvironment();
+  
+  // Security check
+  if (!isSecureContext) {
+    console.log('[SpeechController] Not secure context - voice disabled');
+    setRecognitionState('error');
+    return false;
+  }
+  
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   
   if (!SpeechRecognition) {
     console.log('[SpeechController] Speech recognition not supported');
+    setRecognitionState('error');
     return false;
   }
   
@@ -490,8 +565,17 @@ function initRecognition() {
   recognition.lang = 'en-US';
   recognition.maxAlternatives = 1;
   
+  // Mobile: Shorter silence timeout to prevent instant stop
+  if (isMobile) {
+    try {
+      // Some browsers support these
+      recognition.continuous = true;
+    } catch (e) {}
+  }
+  
   recognition.onstart = () => {
     isListening = true;
+    setRecognitionState('listening');
     console.log('[SpeechController] Recognition started');
     recognitionCallbacks.onStart?.();
   };
@@ -507,15 +591,32 @@ function initRecognition() {
   recognition.onerror = (event) => {
     console.log('[SpeechController] Recognition error:', event.error);
     isListening = false;
+    
+    if (event.error === 'not-allowed') {
+      micPermissionState = 'denied';
+      setRecognitionState('permission-needed');
+      shouldBeListening = false;
+      recognitionCallbacks.onError?.(event.error);
+      return;
+    }
+    
+    if (event.error === 'aborted') {
+      setRecognitionState('idle');
+      shouldBeListening = false;
+      recognitionCallbacks.onError?.(event.error);
+      return;
+    }
+    
+    setRecognitionState('error');
     recognitionCallbacks.onError?.(event.error);
     
-    // Don't auto-restart on fatal errors
-    if (event.error === 'aborted' || event.error === 'not-allowed') {
+    // Mobile: Don't auto-retry, wait for user gesture
+    if (isMobile) {
       shouldBeListening = false;
       return;
     }
     
-    // Retry for recoverable errors - but ONLY if not speaking
+    // Desktop: Retry for recoverable errors - but ONLY if not speaking
     if (shouldBeListening && !checkIsSpeaking()) {
       setTimeout(() => {
         if (shouldBeListening && !isListening && !checkIsSpeaking()) {
@@ -528,10 +629,19 @@ function initRecognition() {
   recognition.onend = () => {
     isListening = false;
     console.log('[SpeechController] Recognition ended');
+    
+    if (recognitionState !== 'permission-needed' && recognitionState !== 'error') {
+      setRecognitionState('idle');
+    }
+    
     recognitionCallbacks.onEnd?.();
     
-    // CRITICAL: Only restart if NOT speaking
-    // This is the key fix - don't restart while TTS is active
+    // Mobile: Don't auto-restart, wait for user gesture
+    if (isMobile) {
+      return;
+    }
+    
+    // Desktop: Auto-restart if NOT speaking
     if (shouldBeListening && !checkIsSpeaking()) {
       setTimeout(() => {
         if (shouldBeListening && !isListening && !checkIsSpeaking()) {
@@ -548,15 +658,34 @@ function initRecognition() {
     }
   };
   
+  // Focus/visibility handling
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && isListening) {
+        console.log('[SpeechController] Tab hidden - stopping recognition');
+        stopRecognition();
+      }
+      // Don't auto-restart on visibility return - wait for user gesture
+    });
+  }
+  
   console.log('[SpeechController] Recognition initialized');
   return true;
 }
 
 /**
  * Start voice recognition
- * CRITICAL: Will NOT start if TTS is speaking
+ * MOBILE: Requires user gesture (hasUserGesture flag)
+ * DESKTOP: Can auto-start
  */
 function startRecognition() {
+  // Security check
+  if (!isSecureContext) {
+    console.log('[SpeechController] Cannot start - not secure context');
+    setRecognitionState('error');
+    return false;
+  }
+  
   if (!recognition) {
     if (!initRecognition()) return false;
   }
@@ -570,11 +699,19 @@ function startRecognition() {
   if (checkIsSpeaking()) {
     console.log('[SpeechController] TTS speaking, will NOT start recognition until done');
     shouldBeListening = true;
-    // Recognition will be started by enableRecognitionAfterTTS() when TTS ends
     return true;
   }
   
+  // Mobile: Check for user gesture
+  if (isMobile && !hasUserGesture) {
+    console.log('[SpeechController] Mobile requires user gesture - setting permission-needed state');
+    setRecognitionState('permission-needed');
+    shouldBeListening = true;
+    return false;
+  }
+  
   shouldBeListening = true;
+  setRecognitionState('starting');
   
   try {
     recognition.start();
@@ -582,8 +719,25 @@ function startRecognition() {
     return true;
   } catch (e) {
     console.log('[SpeechController] Start failed:', e.message);
+    setRecognitionState('error');
     return false;
   }
+}
+
+/**
+ * Start recognition from user interaction (tap/click)
+ * This is the mobile-safe entry point
+ */
+function startRecognitionFromUserGesture() {
+  console.log('[SpeechController] User gesture received - enabling recognition');
+  hasUserGesture = true;
+  
+  // Reset permission state to allow retry
+  if (micPermissionState === 'denied') {
+    micPermissionState = 'prompt';
+  }
+  
+  return startRecognition();
 }
 
 /**
