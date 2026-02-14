@@ -179,6 +179,7 @@ class TestScenario5ExpiredTrial:
             "user_id": "trial_user",
             "plan_id": "premium_annual",
             "status": "trialing",
+            "source": "trial",  # Valid source for trial
             "trial_end": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),  # Expired yesterday
             "created_at": (datetime.now(timezone.utc) - timedelta(days=15)).isoformat()
         }
@@ -188,12 +189,13 @@ class TestScenario5ExpiredTrial:
         assert "expired" in reason.lower()
     
     def test_active_trial_valid(self):
-        """Active trial should be valid"""
+        """Active trial from valid source should be valid"""
         subscription = {
             "id": "sub_trial_active",
             "user_id": "active_trial_user",
             "plan_id": "premium_annual",
             "status": "trialing",
+            "source": "trial",  # Valid source for trial
             "trial_end": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),  # 7 days remaining
             "created_at": (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
         }
@@ -206,6 +208,22 @@ class TestScenario5ExpiredTrial:
         is_valid, full_reason = validate_subscription_entitlement(subscription, "active_trial_user")
         assert is_valid is True
         assert "trial" in full_reason.lower()
+    
+    def test_demo_trial_invalid(self):
+        """Trial from demo source should be INVALID"""
+        subscription = {
+            "id": "sub_demo_trial",
+            "user_id": "demo_trial_user",
+            "plan_id": "premium_annual",
+            "status": "trialing",
+            "source": "demo",  # INVALID source for trial
+            "trial_end": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+            "created_at": (datetime.now(timezone.utc)).isoformat()
+        }
+        
+        has_trial, reason = _check_trial_status(subscription)
+        assert has_trial is False
+        assert "invalid_source" in reason.lower()
 
 
 class TestGraceAndAccountAge:
