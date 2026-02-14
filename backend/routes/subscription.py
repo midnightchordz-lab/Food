@@ -14,6 +14,17 @@ import hmac
 import razorpay
 
 from .deps import db, User, get_current_user
+from ..services.entitlement_guard import (
+    validate_subscription_entitlement,
+    validate_webhook_event,
+    check_signup_protection,
+    log_subscription_creation,
+    log_security_event,
+    run_bulk_premium_correction,
+    SecurityEvent,
+    EntitlementSource,
+    VALID_PREMIUM_SOURCES
+)
 
 router = APIRouter(prefix="/subscription", tags=["Subscription"])
 
