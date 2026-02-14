@@ -103,13 +103,15 @@ function checkIsSpeaking() {
 /**
  * Speak text with completion guarantee
  * SPEECH LOCK: Will not start if already speaking
- * CHROME WORKAROUND: Uses text chunking for long text
+ * CHROME/SAFARI WORKAROUND: Uses text chunking for long text
  * 
  * @param {string} text - Text to speak
  * @param {function} onComplete - Callback when speech finishes
  * @returns {boolean} - true if speech started, false if blocked
  */
 function speak(text, onComplete = null) {
+  console.log('[SpeechController] speak() called with text length:', text?.length);
+  
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     console.log('[SpeechController] Speech not supported');
     onComplete?.();
@@ -122,8 +124,15 @@ function speak(text, onComplete = null) {
     return false;
   }
   
+  // SAFARI FIX: Check if voices are loaded, if not wait for them
+  const voices = window.speechSynthesis.getVoices();
+  console.log('[SpeechController] Available voices:', voices.length);
+  
   // SPEECH LOCK: Prevent new speak() if already speaking
-  if (checkIsSpeaking()) {
+  const currentlySpeaking = checkIsSpeaking();
+  console.log('[SpeechController] Currently speaking:', currentlySpeaking, 'isSpeaking var:', isSpeaking, 'synth.speaking:', window.speechSynthesis.speaking);
+  
+  if (currentlySpeaking) {
     console.log('[SpeechController] Already speaking, blocking new request');
     return false;
   }
@@ -137,31 +146,41 @@ function speak(text, onComplete = null) {
     keepAliveTimer = null;
   }
   
-  // Cancel any pending speech (but we know we're not speaking)
-  window.speechSynthesis.cancel();
+  // SAFARI FIX: Don't cancel before speaking - Safari might not restart properly
+  // Only cancel if we're 100% sure something is stuck
+  if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+    console.log('[SpeechController] Cancelling stuck speech');
+    window.speechSynthesis.cancel();
+    // Small delay after cancel for Safari
+    setTimeout(() => speakInternal(text, onComplete), 100);
+    return true;
+  }
   
+  return speakInternal(text, onComplete);
+}
+
+/**
+ * Internal speak function after safety checks
+ */
+function speakInternal(text, onComplete) {
   // CHROME WORKAROUND: Split long text into chunks to prevent 15s timeout
-  // Chrome kills speechSynthesis after ~15 seconds on some systems
   const chunks = splitIntoChunks(text);
-  console.log(`[SpeechController] Speaking ${chunks.length} chunk(s)`);
+  console.log(`[SpeechController] Speaking ${chunks.length} chunk(s), first chunk: "${chunks[0]?.substring(0, 50)}..."`);
   
   let chunkIndex = 0;
   
   const speakNextChunk = () => {
     // Check global cancel flag
     if (speechCancelled || chunkIndex >= chunks.length) {
-      // All chunks done or cancelled
       console.log('[SpeechController] Speech ' + (speechCancelled ? 'cancelled' : 'completed'));
       isSpeaking = false;
       currentUtterance = null;
       
-      // Clear keep-alive timer
       if (keepAliveTimer) {
         clearInterval(keepAliveTimer);
         keepAliveTimer = null;
       }
       
-      // Only call completion callback if not cancelled
       if (!speechCancelled) {
         const callback = onSpeechEndCallback;
         onSpeechEndCallback = null;
@@ -181,7 +200,7 @@ function speak(text, onComplete = null) {
     }
     
     const chunk = chunks[chunkIndex];
-    console.log(`[SpeechController] Chunk ${chunkIndex + 1}/${chunks.length}: "${chunk.substring(0, 30)}..."`);
+    console.log(`[SpeechController] Chunk ${chunkIndex + 1}/${chunks.length}: "${chunk.substring(0, 40)}..."`);
     
     currentUtterance = new SpeechSynthesisUtterance(chunk);
     onSpeechEndCallback = onComplete;
@@ -191,16 +210,16 @@ function speak(text, onComplete = null) {
     currentUtterance.pitch = CONFIG.SPEECH_PITCH;
     currentUtterance.volume = CONFIG.SPEECH_VOLUME;
     
+    // SAFARI FIX: Use a specific voice if available
     const preferredVoice = getPreferredVoice();
     if (preferredVoice) {
       currentUtterance.voice = preferredVoice;
+      console.log('[SpeechController] Using voice:', preferredVoice.name);
     }
     
     currentUtterance.onstart = () => {
       isSpeaking = true;
-      if (chunkIndex === 0) {
-        console.log('[SpeechController] Speech started');
-      }
+      console.log('[SpeechController] onstart fired - Speech actually started!');
       
       // CHROME WORKAROUND: Start keep-alive timer for long chunks
       if (!keepAliveTimer) {
@@ -215,16 +234,15 @@ function speak(text, onComplete = null) {
     };
     
     currentUtterance.onend = () => {
-      console.log(`[SpeechController] Chunk ${chunkIndex + 1} completed`);
+      console.log(`[SpeechController] onend fired - Chunk ${chunkIndex + 1} completed`);
       chunkIndex++;
-      // Small delay between chunks for natural flow
       setTimeout(speakNextChunk, 100);
     };
     
     currentUtterance.onerror = (event) => {
-      console.log('[SpeechController] Speech error:', event.error);
-      // On error, try to continue with next chunk unless cancelled
-      if (event.error !== 'canceled' && !speechCancelled) {
+      console.log('[SpeechController] onerror fired:', event.error);
+      // SAFARI: "interrupted" error is common when user navigates or cancels
+      if (event.error !== 'canceled' && event.error !== 'interrupted' && !speechCancelled) {
         chunkIndex++;
         setTimeout(speakNextChunk, 100);
       } else {
@@ -237,7 +255,20 @@ function speak(text, onComplete = null) {
       }
     };
     
-    window.speechSynthesis.speak(currentUtterance);
+    // SAFARI FIX: Small delay before speak to ensure audio context is ready
+    setTimeout(() => {
+      console.log('[SpeechController] Calling speechSynthesis.speak()');
+      window.speechSynthesis.speak(currentUtterance);
+      
+      // SAFARI FIX: Sometimes Safari needs a "kick" to start speaking
+      // Check if speaking started after 200ms, if not try to resume
+      setTimeout(() => {
+        if (!window.speechSynthesis.speaking && !speechCancelled && currentUtterance) {
+          console.log('[SpeechController] SAFARI FIX: Speech not started, trying resume...');
+          window.speechSynthesis.resume();
+        }
+      }, 200);
+    }, 50);
   };
   
   // Start speaking first chunk
