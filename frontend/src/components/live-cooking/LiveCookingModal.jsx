@@ -1,25 +1,34 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, MicOff, Camera, CameraOff, Hand, AlertCircle } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Pause, Play, Mic, MicOff, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useLiveCooking } from "@/stores/useLiveCooking";
-import { useGestureControl } from "@/hooks/useGestureControl";
-import { useHandsFreePermissions, PermissionStatus } from "@/hooks/useHandsFreePermissions";
-import { useEngineOrchestrator, EngineState } from "@/hooks/useEngineOrchestrator";
-import { useAIObserver, ObserverEvents } from "@/hooks/useAIObserver";
 import { useEmotionalVoiceOrchestrator } from "@/hooks/useEmotionalVoiceOrchestrator";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import axios from "axios";
 import { 
   narrateStep, 
-  narrateCurrentStep, 
   stopSpeech, 
   isSpeechSupported, 
-  setHandlers as setBrowserSpeechHandlers,
-  connectGestureEvents 
 } from "@/lib/browserSpeech";
+// Phase-1 Feature Gate
+import {
+  PHASE_1_MODE,
+  ENABLE_CAMERA_PREVIEW,
+  ENABLE_GESTURE_DETECTION,
+  ENABLE_AI_OBSERVER,
+  ENABLE_VOICE_COMMANDS,
+  logFeatureStatus,
+} from "@/config/handsFreeConfig";
+
+// DORMANT IMPORTS - Code exists but feature-gated
+// These modules are NOT deleted, just conditionally disabled
+import { useGestureControl } from "@/hooks/useGestureControl";
+import { useHandsFreePermissions, PermissionStatus } from "@/hooks/useHandsFreePermissions";
+import { useEngineOrchestrator, EngineState } from "@/hooks/useEngineOrchestrator";
+import { useAIObserver, ObserverEvents } from "@/hooks/useAIObserver";
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
