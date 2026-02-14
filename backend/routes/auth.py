@@ -209,20 +209,43 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
     if existing_user:
         user_data = existing_user
     else:
-        # Create new user with phone number
+        # Create new user with phone number - HARD DEFAULTS (MANDATORY)
         is_new_user = True
+        user_id = str(uuid.uuid4())
         new_user = {
-            "id": str(uuid.uuid4()),
+            "id": user_id,
             "phone_number": phone,
             "email": None,
             "name": f"User-{phone[-4:]}",
             "dietary_restrictions": [],
             "cuisine_preferences": [],
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            # === MANDATORY ENTITLEMENT DEFAULTS ===
+            "default_plan": "free",           # ALWAYS "free"
+            "subscription_status": "inactive", # ALWAYS "inactive"
+            "trial_active": False,            # ALWAYS False
+            "entitlement_tier": "free",       # ALWAYS "free"
+            # === END MANDATORY DEFAULTS ===
         }
         await db.users.insert_one(new_user)
         new_user.pop('_id', None)
         user_data = new_user
+        
+        # LOG PHONE USER CREATION
+        log_security_event(
+            event_type=SecurityEvent.SUBSCRIPTION_CREATED,
+            user_id=user_id,
+            source="phone_signup",
+            plan_id="free",
+            details={
+                "phone": phone[-4:],  # Last 4 digits only for privacy
+                "action": "phone_user_registered",
+                "default_plan": "free",
+                "subscription_status": "inactive",
+                "trial_active": False,
+                "entitlement_tier": "free"
+            }
+        )
     
     # Generate JWT token
     token_data = {
