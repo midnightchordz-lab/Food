@@ -194,6 +194,12 @@ export function speakText(text, onComplete = null) {
     callback?.();
   };
 
+  // TYPE ENFORCEMENT: Final check before speak()
+  if (!(currentUtterance instanceof SpeechSynthesisUtterance)) {
+    console.error('[BrowserSpeech] Invalid utterance - must be SpeechSynthesisUtterance instance');
+    return false;
+  }
+
   window.speechSynthesis.speak(currentUtterance);
   console.log('[BrowserSpeech] Started speaking:', text.substring(0, 50) + '...');
   return true;
