@@ -9,9 +9,23 @@
  * 1. Singleton instance - one controller for entire app
  * 2. Persistent utterance - not recreated on re-renders
  * 3. Speech lock - prevents overlapping speak() calls
- * 4. MIC exclusion - recognition only after TTS completion + delay
+ * 4. STRICT TTS/MIC EXCLUSION - recognition DISABLED while speaking
  * 5. UI decoupled - no React state dependencies
  * 6. Chrome workaround - keep-alive prevents 15s timeout
+ * 
+ * STOP CONDITIONS FILTERING:
+ * Speech should ONLY be cancelled when:
+ * - User presses Pause
+ * - User presses Next/Back
+ * - Voice command recognized (user-initiated action)
+ * - App exits cooking mode
+ * 
+ * Speech should NOT be cancelled when:
+ * - Timer starts/updates
+ * - Recognition restarts
+ * - Gestures idle
+ * - Orchestrator cleanup runs automatically
+ * - ANY non-user-initiated event
  */
 
 // ============================================
@@ -28,8 +42,6 @@ let onSpeechEndCallback = null;
 let speechCancelled = false; // Global cancel flag for chunked speech
 
 // Chrome bug workaround: keep-alive timer
-// Chrome/WebKit cancels speechSynthesis after ~15 seconds of silence detection
-// This timer "pokes" the speech engine to keep it alive
 let keepAliveTimer = null;
 const KEEP_ALIVE_INTERVAL = 10000; // 10 seconds
 
@@ -46,7 +58,7 @@ let recognitionCallbacks = {
 
 // Configuration
 const CONFIG = {
-  MIC_DELAY_AFTER_TTS: 400,    // ms to wait after TTS ends before starting mic
+  MIC_DELAY_AFTER_TTS: 500,    // ms to wait after TTS ends before starting mic
   SPEECH_RATE: 0.95,
   SPEECH_PITCH: 1,
   SPEECH_VOLUME: 1,
@@ -101,6 +113,34 @@ function checkIsSpeaking() {
 }
 
 /**
+ * CRITICAL: Stop recognition while TTS is active
+ * This prevents recognition from hearing TTS output
+ */
+function disableRecognitionDuringTTS() {
+  if (recognition && isListening) {
+    console.log('[SpeechController] Disabling recognition during TTS');
+    try {
+      recognition.abort();
+    } catch {}
+    isListening = false;
+  }
+}
+
+/**
+ * Re-enable recognition after TTS completes
+ */
+function enableRecognitionAfterTTS() {
+  if (shouldBeListening && !isListening && !checkIsSpeaking()) {
+    console.log('[SpeechController] Re-enabling recognition after TTS');
+    setTimeout(() => {
+      if (shouldBeListening && !isListening && !checkIsSpeaking()) {
+        startRecognition();
+      }
+    }, CONFIG.MIC_DELAY_AFTER_TTS);
+  }
+}
+
+/**
  * Speak text with completion guarantee
  * SPEECH LOCK: Will not start if already speaking
  * CHROME/SAFARI WORKAROUND: Uses text chunking for long text
@@ -136,6 +176,10 @@ function speak(text, onComplete = null) {
     console.log('[SpeechController] Already speaking, blocking new request');
     return false;
   }
+  
+  // CRITICAL: Disable recognition BEFORE starting TTS
+  // This prevents recognition from hearing TTS output
+  disableRecognitionDuringTTS();
   
   // Reset cancel flag for new speech
   speechCancelled = false;
@@ -186,15 +230,8 @@ function speakInternal(text, onComplete) {
         onSpeechEndCallback = null;
         if (callback) setTimeout(callback, 50);
         
-        // MIC EXCLUSION: Resume recognition after delay
-        if (shouldBeListening && !isListening) {
-          setTimeout(() => {
-            if (shouldBeListening && !isListening && !checkIsSpeaking()) {
-              console.log('[SpeechController] TTS ended, resuming recognition');
-              startRecognition();
-            }
-          }, CONFIG.MIC_DELAY_AFTER_TTS);
-        }
+        // CRITICAL: Re-enable recognition after TTS ends
+        enableRecognitionAfterTTS();
       }
       return;
     }
@@ -252,6 +289,8 @@ function speakInternal(text, onComplete) {
           clearInterval(keepAliveTimer);
           keepAliveTimer = null;
         }
+        // Re-enable recognition even on error
+        enableRecognitionAfterTTS();
       }
     };
     
@@ -316,12 +355,27 @@ function splitIntoChunks(text) {
 
 /**
  * Cancel current speech
- * CANCEL DISCIPLINE: Only call from Pause, Step Change, or Exit
+ * 
+ * STOP CONDITIONS FILTERING:
+ * This should ONLY be called from:
+ * - User presses Pause button
+ * - User presses Next/Back button
+ * - Voice command recognized (user-initiated)
+ * - App exits cooking mode (modal closes)
+ * 
+ * This should NEVER be called from:
+ * - Timer starts/updates
+ * - Recognition restarts
+ * - Gestures idle
+ * - Orchestrator automatic cleanup
+ * - ANY non-user-initiated event
+ * 
+ * @param {string} reason - For debugging: why cancel was called
  */
-function cancelSpeech() {
+function cancelSpeech(reason = 'unknown') {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   
-  console.log('[SpeechController] Canceling speech');
+  console.log('[SpeechController] Canceling speech, reason:', reason);
   
   // Set global cancel flag to stop chunk queue
   speechCancelled = true;
@@ -384,8 +438,8 @@ function initRecognition() {
       return;
     }
     
-    // Retry for recoverable errors
-    if (shouldBeListening) {
+    // Retry for recoverable errors - but ONLY if not speaking
+    if (shouldBeListening && !checkIsSpeaking()) {
       setTimeout(() => {
         if (shouldBeListening && !isListening && !checkIsSpeaking()) {
           startRecognition();
@@ -399,7 +453,8 @@ function initRecognition() {
     console.log('[SpeechController] Recognition ended');
     recognitionCallbacks.onEnd?.();
     
-    // MIC EXCLUSION: Only restart if not speaking
+    // CRITICAL: Only restart if NOT speaking
+    // This is the key fix - don't restart while TTS is active
     if (shouldBeListening && !checkIsSpeaking()) {
       setTimeout(() => {
         if (shouldBeListening && !isListening && !checkIsSpeaking()) {
@@ -408,7 +463,7 @@ function initRecognition() {
           } catch (e) {
             console.log('[SpeechController] Restart failed:', e.message);
             setTimeout(() => {
-              if (shouldBeListening) startRecognition();
+              if (shouldBeListening && !checkIsSpeaking()) startRecognition();
             }, 300);
           }
         }
@@ -422,7 +477,7 @@ function initRecognition() {
 
 /**
  * Start voice recognition
- * MIC EXCLUSION: Will not start if TTS is speaking
+ * CRITICAL: Will NOT start if TTS is speaking
  */
 function startRecognition() {
   if (!recognition) {
@@ -434,10 +489,11 @@ function startRecognition() {
     return true;
   }
   
-  // MIC EXCLUSION: Don't start if speaking
+  // CRITICAL: Don't start if speaking - this is the key mutual exclusion
   if (checkIsSpeaking()) {
-    console.log('[SpeechController] TTS speaking, will start when done');
+    console.log('[SpeechController] TTS speaking, will NOT start recognition until done');
     shouldBeListening = true;
+    // Recognition will be started by enableRecognitionAfterTTS() when TTS ends
     return true;
   }
   
@@ -543,7 +599,18 @@ class SpeechController {
   
   // Speech methods
   speak(text, onComplete) { return speak(text, onComplete); }
-  cancel() { cancelSpeech(); }
+  
+  /**
+   * Cancel speech - ONLY call for user-initiated actions
+   * @param {string} reason - Required: document why cancel is being called
+   */
+  cancel(reason) { 
+    if (!reason) {
+      console.warn('[SpeechController] cancel() called without reason - this may indicate improper usage');
+    }
+    cancelSpeech(reason); 
+  }
+  
   isSpeaking() { return checkIsSpeaking(); }
   
   // Step narration
@@ -559,7 +626,7 @@ class SpeechController {
   
   // Cleanup
   destroy() {
-    this.cancel();
+    this.cancel('destroy');
     this.stopListening();
     recognition = null;
     instance = null;
