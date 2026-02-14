@@ -251,6 +251,58 @@ REPLACED WITH: "if undefined → FREE"
 
 **Test Status:** ✅ VERIFIED (8/8 tests passed)
 
+#### Hands-Free Cooking Phase-1 Stabilization ✅ NEW (Feb 14, 2026)
+**Stabilized Hands-Free Cooking with Basic Voice Only - Camera/Gesture Systems DORMANT**
+
+**PHASE-1 MODE ACTIVE FEATURES:**
+- ✓ Voice Narration (TTS) - Read current step, stop on pause, resume on play
+- ✓ Voice Commands - Limited set: "next step", "previous step", "repeat", "pause", "resume"
+- ✓ Large On-Screen Controls - Play/Pause, Next, Previous, Repeat buttons
+- ✓ Tap step card to repeat narration
+- ✓ Works without camera permission
+- ✓ Works without microphone permission (narration still works)
+- ✓ Falls back to touch controls automatically
+
+**DORMANT FEATURES (code intact, not executed):**
+- ○ Camera Preview - Behind feature gate, no permission popup
+- ○ Hand Gesture Detection - Code exists, not attached
+- ○ AI Observer - Code exists, not running
+- ○ Motion Tracking - Code exists, not initialized
+
+**Feature Gate Location:**
+`/app/frontend/src/config/handsFreeConfig.js`
+```javascript
+export const PHASE_1_MODE = true;  // Set to false to enable all features
+export const ENABLE_CAMERA_PREVIEW = !PHASE_1_MODE;
+export const ENABLE_GESTURE_DETECTION = !PHASE_1_MODE;
+export const ENABLE_AI_OBSERVER = !PHASE_1_MODE;
+```
+
+**Modules Wrapped with Feature Gate:**
+| Module | File | Gate Check |
+|--------|------|------------|
+| Camera Stream | LiveCookingModal.jsx | `!PHASE_1_MODE && showCamera` |
+| Gesture Control | useGestureControl.js | `!PHASE_1_MODE && enabled` |
+| AI Observer | useAIObserver.js | `!PHASE_1_MODE && enabled` |
+| Engine Orchestrator | useEngineOrchestrator.js | `!PHASE_1_MODE && enabled` |
+| Permission Requests | LiveCookingModal.jsx | Camera permissions skipped in Phase-1 |
+
+**Files Changed:**
+- `frontend/src/config/handsFreeConfig.js` - NEW: Central feature gate configuration
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Modified: Feature-gated all camera/gesture code
+- `frontend/src/hooks/useGestureControl.js` - Code intact (dormant)
+- `frontend/src/hooks/useAIObserver.js` - Code intact (dormant)
+- `frontend/src/hooks/useEngineOrchestrator.js` - Code intact (dormant)
+
+**SUCCESS CONDITIONS MET:**
+✔ Hands-Free Mode stable on Web + Mobile
+✔ Voice narration synchronized with steps
+✔ No camera permission popup
+✔ No gesture interference
+✔ No entitlement regressions
+✔ AI/gesture code present but inactive
+✔ Zero business logic changes
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
