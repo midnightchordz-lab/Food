@@ -128,6 +128,9 @@ function speak(text, onComplete = null) {
     return false;
   }
   
+  // Reset cancel flag for new speech
+  speechCancelled = false;
+  
   // Clear any keep-alive timer from previous speech
   if (keepAliveTimer) {
     clearInterval(keepAliveTimer);
@@ -143,12 +146,12 @@ function speak(text, onComplete = null) {
   console.log(`[SpeechController] Speaking ${chunks.length} chunk(s)`);
   
   let chunkIndex = 0;
-  let cancelled = false;
   
   const speakNextChunk = () => {
-    if (cancelled || chunkIndex >= chunks.length) {
-      // All chunks done
-      console.log('[SpeechController] All chunks completed');
+    // Check global cancel flag
+    if (speechCancelled || chunkIndex >= chunks.length) {
+      // All chunks done or cancelled
+      console.log('[SpeechController] Speech ' + (speechCancelled ? 'cancelled' : 'completed'));
       isSpeaking = false;
       currentUtterance = null;
       
@@ -158,18 +161,21 @@ function speak(text, onComplete = null) {
         keepAliveTimer = null;
       }
       
-      const callback = onSpeechEndCallback;
-      onSpeechEndCallback = null;
-      if (callback) setTimeout(callback, 50);
-      
-      // MIC EXCLUSION: Resume recognition after delay
-      if (shouldBeListening && !isListening) {
-        setTimeout(() => {
-          if (shouldBeListening && !isListening && !checkIsSpeaking()) {
-            console.log('[SpeechController] TTS ended, resuming recognition');
-            startRecognition();
-          }
-        }, CONFIG.MIC_DELAY_AFTER_TTS);
+      // Only call completion callback if not cancelled
+      if (!speechCancelled) {
+        const callback = onSpeechEndCallback;
+        onSpeechEndCallback = null;
+        if (callback) setTimeout(callback, 50);
+        
+        // MIC EXCLUSION: Resume recognition after delay
+        if (shouldBeListening && !isListening) {
+          setTimeout(() => {
+            if (shouldBeListening && !isListening && !checkIsSpeaking()) {
+              console.log('[SpeechController] TTS ended, resuming recognition');
+              startRecognition();
+            }
+          }, CONFIG.MIC_DELAY_AFTER_TTS);
+        }
       }
       return;
     }
@@ -217,12 +223,11 @@ function speak(text, onComplete = null) {
     
     currentUtterance.onerror = (event) => {
       console.log('[SpeechController] Speech error:', event.error);
-      // On error, try to continue with next chunk
-      if (event.error !== 'canceled') {
+      // On error, try to continue with next chunk unless cancelled
+      if (event.error !== 'canceled' && !speechCancelled) {
         chunkIndex++;
         setTimeout(speakNextChunk, 100);
       } else {
-        cancelled = true;
         isSpeaking = false;
         currentUtterance = null;
         if (keepAliveTimer) {
