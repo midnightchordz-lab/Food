@@ -669,7 +669,7 @@ export default function LiveCookingModal() {
     // CANCEL DISCIPLINE: Stop speech when user presses pause
     // GLOBAL CONTROLLER: Use singleton cancel (immune to re-renders)
     if (!newIsPlaying) {
-      globalCancelSpeech();
+      globalCancelSpeech('userPause');
       // Also stop any audio playback
       if (audioRef.current) {
         audioRef.current.pause();
