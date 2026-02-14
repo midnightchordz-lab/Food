@@ -979,7 +979,19 @@ async def get_razorpay_config():
 
 @router.post("/razorpay/webhook")
 async def razorpay_webhook(request: Request):
-    """Handle Razorpay webhook events"""
+    """
+    Handle Razorpay webhook events with WEBHOOK SAFETY FILTER
+    
+    Before creating any subscription from a webhook:
+    ALLOW only if:
+        - event type is verified payment success OR trial start
+        - signature is valid
+        - payment_id exists and is stored
+    
+    Otherwise:
+        → IGNORE event
+        → LOG "WEBHOOK_REJECTED_NO_PAYMENT"
+    """
     try:
         body = await request.body()
         signature = request.headers.get('x-razorpay-signature', '')
@@ -994,14 +1006,41 @@ async def razorpay_webhook(request: Request):
         ).hexdigest()
         
         if signature != expected_signature:
-            logging.warning("Invalid Razorpay webhook signature")
+            logging.warning("[WEBHOOK_SAFETY] Invalid Razorpay webhook signature - REJECTED")
+            log_security_event(
+                event_type=SecurityEvent.WEBHOOK_REJECTED_NO_PAYMENT,
+                user_id="unknown",
+                source="razorpay_webhook",
+                details={"reason": "invalid_signature"}
+            )
             raise HTTPException(status_code=400, detail="Invalid signature")
         
         import json
         event = json.loads(body)
         event_type = event.get('event')
         
-        logging.info(f"Received Razorpay webhook: {event_type}")
+        logging.info(f"[WEBHOOK] Received Razorpay webhook: {event_type}")
+        
+        # WEBHOOK SAFETY FILTER
+        is_valid_event, validation_reason = validate_webhook_event(
+            event_type=event_type,
+            payload=event,
+            signature=signature,
+            expected_secret=webhook_secret
+        )
+        
+        if not is_valid_event:
+            logging.warning(f"[WEBHOOK_SAFETY] Event rejected: {event_type}, reason: {validation_reason}")
+            log_security_event(
+                event_type=SecurityEvent.WEBHOOK_REJECTED_NO_PAYMENT,
+                user_id="unknown",
+                source="razorpay_webhook",
+                details={
+                    "event_type": event_type,
+                    "reason": validation_reason
+                }
+            )
+            return {"status": "ignored", "reason": validation_reason}
         
         now = datetime.now(timezone.utc)
         
