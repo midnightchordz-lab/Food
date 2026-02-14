@@ -504,6 +504,29 @@ keepAliveTimer = setInterval(() => {
 - ElevenLabs Starter plan active and working
 - Tested and confirmed working for English and Hindi narration
 
+
+#### Recipe Image Search Fix ✅ NEW (Dec 2025)
+**Fixed incorrect/irrelevant recipe images (restaurant scenes instead of food close-ups)**
+
+**Problem:**
+- Recipe images for certain dishes (e.g., "Thai Garlic Butter Crab") were showing restaurant/dining scenes instead of actual food photos
+- SerpAPI image search was returning images of outdoor patios, restaurant interiors, and table settings
+
+**Solution:**
+1. **Negative Keywords in Search Query** - Added exclusion terms to filter out irrelevant images:
+   - `-restaurant -dining -patio -outdoor -table -setting -scene -people`
+   - Added `close-up` to prioritize food photography
+   
+2. **Title-based Filtering** - Added logic to skip images with restaurant-related titles:
+   - Skips: "restaurant", "dining", "patio", "outdoor", "table setting", "chef", "kitchen staff", "waiter", "menu", "ambiance", "interior", "exterior", "seating"
+
+**File Changed:**
+- `backend/services/serpapi_service.py` - Modified `search_food_images()` function (lines ~1027, ~1060-1070)
+
+**Test Status:** ✅ VERIFIED
+- "Thai Garlic Butter Crab" now returns crab dish images (not restaurant scenes)
+- "Spicy Prawn Curry" returns curry recipe photos
+
 ### UI Bug Fixes
 
 #### Subscription Page Text Cut-Off Fix ✅ (Feb 14, 2026)
