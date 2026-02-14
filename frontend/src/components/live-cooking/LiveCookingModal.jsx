@@ -1045,20 +1045,25 @@ export default function LiveCookingModal() {
   }, [handleNextWithVoice, handlePrevWithVoice, handleTogglePlayWithVoice, handleRepeat]);
   
   // Start/stop voice recognition based on handsFreeEnabled (Phase-1 only)
-  // GLOBAL CONTROLLER: Uses singleton recognition (immune to re-renders)
-  // SAFARI FIX: Don't start recognition immediately - wait for speech to complete
+  // MOBILE VOICE RECOVERY: No auto-start on mobile - requires tap
   useEffect(() => {
     if (!PHASE_1_MODE) return; // Full mode uses engine orchestrator
     
     if (open && handsFreeEnabled) {
-      // SAFARI FIX: Mark that we WANT to be listening, but don't start immediately
-      // The speech controller will start recognition after TTS ends
-      // This prevents Safari from blocking speech synthesis
-      console.log('[LiveCooking] Hands-free enabled - recognition will start after speech');
-      // Set the flag so speechController knows to start recognition after TTS
+      console.log('[LiveCooking] Setting up voice recognition callbacks');
+      
+      // Set up recognition callbacks (these don't auto-start recognition)
       globalSetRecognitionCallbacks({
         onResult: (transcript) => {
           const cmd = transcript.toLowerCase().trim();
+          console.log('[LiveCooking] Voice command received:', cmd);
+          
+          // Flash UI feedback
+          setLastCommand(cmd);
+          setCommandFlash(true);
+          setTimeout(() => setCommandFlash(false), 500);
+          
+          // Execute command
           if (cmd.includes('next')) handleNextWithVoice();
           else if (cmd.includes('back') || cmd.includes('previous')) handlePrevWithVoice();
           else if (cmd.includes('repeat') || cmd.includes('again')) handleRepeat();
@@ -1067,37 +1072,54 @@ export default function LiveCookingModal() {
         },
         onStart: () => {
           setVoiceListening(true);
-          console.log('[LiveCooking] Global voice recognition started');
+          setVoiceRecognitionState('listening');
+          console.log('[LiveCooking] Voice recognition ACTIVE');
         },
         onEnd: () => {
           setVoiceListening(false);
-          console.log('[LiveCooking] Global voice recognition ended');
+          console.log('[LiveCooking] Voice recognition ended');
+          // PHASE 2: On mobile, don't auto-update state - wait for tap
+          const env = globalGetEnvironment();
+          if (!env.isMobile && !env.isWebView) {
+            setVoiceRecognitionState('idle');
+          }
         },
         onError: (error) => {
-          console.log('[LiveCooking] Global voice recognition error:', error);
+          console.log('[LiveCooking] Voice recognition error:', error);
+          setVoiceListening(false);
+          if (error === 'not-allowed') {
+            setVoiceRecognitionState('disabled');
+          } else {
+            setVoiceRecognitionState('error');
+          }
         },
       });
       
-      // Check environment and start recognition appropriately
+      // PHASE 2: Check environment and set initial state
       const env = globalGetEnvironment();
-      if (!env.isMobile) {
-        // Desktop: Auto-start recognition (after TTS if speaking)
-        console.log('[LiveCooking] Desktop - starting recognition');
-        globalStartRecognition();
-      } else {
-        // Mobile: Wait for user gesture (tap on mic button)
-        console.log('[LiveCooking] Mobile - waiting for user tap to start recognition');
+      console.log('[LiveCooking] Environment check:', env);
+      
+      if (env.isMobile || env.isWebView) {
+        // MOBILE/WEBVIEW: Do NOT auto-start - show "Tap to Enable" state
+        console.log('[LiveCooking] PHASE 2 - Mobile/WebView: Waiting for user tap');
         setVoiceRecognitionState('permission-needed');
+        // NO globalStartRecognition() call here!
+      } else {
+        // DESKTOP: Can auto-start recognition
+        console.log('[LiveCooking] Desktop: Auto-starting recognition');
+        globalStartRecognition();
       }
     } else {
-      // GLOBAL CONTROLLER: Stop recognition when disabled or modal closes
+      // Cleanup when disabled or modal closes
       globalStopRecognition();
       setVoiceRecognitionState('idle');
+      setVoiceListening(false);
     }
     
     return () => {
       if (!open) {
         globalStopRecognition();
+        setVoiceListening(false);
       }
     };
   }, [open, handsFreeEnabled, handleNextWithVoice, handlePrevWithVoice, handleTogglePlayWithVoice, handleRepeat]);
