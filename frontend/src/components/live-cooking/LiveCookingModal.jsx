@@ -1666,7 +1666,7 @@ export default function LiveCookingModal() {
 
                     {/* Card content */}
                     <div className="p-6 md:p-8">
-                      {/* Step indicator & timer */}
+                      {/* Step indicator row */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                           <span 
@@ -1678,83 +1678,6 @@ export default function LiveCookingModal() {
                           >
                             Step {currentStep + 1} of {instructions.length || 1}
                           </span>
-                          
-                          {/* Countdown Timer Display */}
-                          {timerSeconds !== null && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${
-                                timerComplete 
-                                  ? 'bg-green-500/30 border border-green-400/40' 
-                                  : timerSeconds <= 30 
-                                    ? 'bg-orange-500/20 border border-orange-400/30' 
-                                    : 'bg-white/10 border border-white/10'
-                              }`}
-                            >
-                              <motion.div
-                                animate={timerComplete ? { 
-                                  scale: [1, 1.3, 1],
-                                  rotate: [0, 10, -10, 0]
-                                } : timerSeconds <= 10 ? {
-                                  scale: [1, 1.1, 1]
-                                } : {}}
-                                transition={{ 
-                                  duration: timerComplete ? 0.5 : 1, 
-                                  repeat: timerComplete ? 3 : timerSeconds <= 10 ? Infinity : 0 
-                                }}
-                              >
-                                <Timer className={`w-3 h-3 ${
-                                  timerComplete 
-                                    ? 'text-green-400' 
-                                    : timerSeconds <= 30 
-                                      ? 'text-orange-400' 
-                                      : 'text-white/60'
-                                }`} />
-                              </motion.div>
-                              <motion.span 
-                                className={`text-xs font-mono font-medium ${
-                                  timerComplete 
-                                    ? 'text-green-400' 
-                                    : timerSeconds <= 30 
-                                      ? 'text-orange-400' 
-                                      : 'text-white/80'
-                                }`}
-                                animate={timerSeconds <= 10 && !timerComplete ? { 
-                                  opacity: [1, 0.5, 1] 
-                                } : {}}
-                                transition={{ duration: 0.5, repeat: Infinity }}
-                              >
-                                {timerComplete ? '✓ Done' : formatTime(timerSeconds)}
-                              </motion.span>
-                              
-                              {/* Timer progress ring */}
-                              {!timerComplete && timerInitialSeconds && (
-                                <svg className="w-4 h-4 -rotate-90" viewBox="0 0 20 20">
-                                  <circle
-                                    cx="10"
-                                    cy="10"
-                                    r="8"
-                                    fill="none"
-                                    stroke="rgba(255,255,255,0.1)"
-                                    strokeWidth="2"
-                                  />
-                                  <motion.circle
-                                    cx="10"
-                                    cy="10"
-                                    r="8"
-                                    fill="none"
-                                    stroke={timerSeconds <= 30 ? '#fb923c' : theme.accent}
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeDasharray={50.27}
-                                    strokeDashoffset={50.27 * (1 - timerSeconds / timerInitialSeconds)}
-                                    transition={{ duration: 0.5 }}
-                                  />
-                                </svg>
-                              )}
-                            </motion.div>
-                          )}
                           
                           {/* Original step time (only show if no countdown active) */}
                           {stepTime && timerSeconds === null && (
