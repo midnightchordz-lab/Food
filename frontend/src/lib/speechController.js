@@ -1,448 +1,259 @@
 /**
- * GLOBAL SPEECH CONTROLLER - Singleton Pattern
+ * SPEECH CONTROLLER - CLEAN RESET (Dec 2025)
  * 
- * HYBRID ARCHITECTURE (Dec 2025):
- * - Native App (iOS/Android via Capacitor): Uses native speech plugin for recognition
- * - Web/PWA: Uses Web Speech API
- * - TTS always uses Web Speech API (better voice quality)
+ * Single centralized module for all speech operations.
+ * No other component may directly call speech APIs.
  * 
- * MOBILE AUDIO FOCUS SEQUENCING
+ * SUPPORTED OPERATIONS:
+ * - initialize()     - Must be called before any speech operations
+ * - speak(text)      - TTS narration
+ * - startListening() - Voice recognition  
+ * - stopListening()  - Stop recognition
+ * - destroy()        - Full cleanup
  * 
- * SINGLE AUDIO OWNER RULE:
- * Mobile OS allows only ONE audio owner at a time.
- * TTS and Recognition CANNOT run simultaneously.
- * 
- * TURN-TAKING SEQUENCE (Mobile):
- * 1. User taps Start Cooking (arms session)
- * 2. TTS narrates full step
- * 3. TTS onend fires
- * 4. Delay 400ms (audio focus buffer)
- * 5. Start Recognition
- * 6. Command detected → callback fires
- * 7. Stop Recognition
- * 8. Delay 200ms
- * 9. Speak next step
- * 10. Repeat from step 2
- * 
- * STRICT RULES:
- * - Recognition NEVER starts while TTS is speaking
- * - TTS NEVER starts while Recognition is active
- * - One initial tap arms the session
- * - After armed, continuous speak-listen loop
- * - Only cancel on: user pause, step change, exit cooking mode
+ * MOBILE AUDIO RULES:
+ * - TTS and Recognition CANNOT run simultaneously
+ * - User tap required to "arm" session on mobile
+ * - Turn-taking: TTS → pause → Recognition → pause → TTS
  */
 
-import { Capacitor } from '@capacitor/core';
-
 // ============================================
-// NATIVE PLATFORM DETECTION & DELEGATION
+// STATE
 // ============================================
 
-// Check if we should use the hybrid controller (native app)
-const isNativePlatform = typeof window !== 'undefined' && Capacitor.isNativePlatform();
+let initialized = false;
+let destroyed = false;
 
-// Lazy-load hybrid controller only on native platforms
-let hybridController = null;
-let useHybridController = false;
+// Environment
+let isMobile = false;
+let isSecureContext = true;
 
-async function initHybridController() {
-  if (!isNativePlatform || hybridController !== null) return;
-  
-  try {
-    const module = await import('./hybridSpeechController');
-    hybridController = module.default;
-    await hybridController.init();
-    useHybridController = true;
-    console.log('[SpeechController] Native platform detected - using hybrid controller');
-  } catch (e) {
-    console.log('[SpeechController] Hybrid controller not available, using web fallback:', e.message);
-    useHybridController = false;
-  }
-}
+// TTS State
+let synthesis = null;
+let currentUtterance = null;
+let isSpeaking = false;
+let selectedVoice = null;
+let voicesLoaded = false;
+let speechEndCallback = null;
+let keepAliveInterval = null;
 
-// Initialize on load for native platforms
-if (isNativePlatform) {
-  initHybridController().catch(() => {});
-}
+// Recognition State
+let recognition = null;
+let isListening = false;
+let sessionArmed = false;
+let shouldBeListening = false;
 
-// Singleton instance
-let instance = null;
+// Callbacks
+let onRecognitionResult = null;
+let onRecognitionStateChange = null;
+let onSynthesisStateChange = null;
 
 // ============================================
 // ENVIRONMENT DETECTION
 // ============================================
 
-let isMobile = false;
-let isWebView = false;
-let isSecureContext = true;
-let isPWA = false;
-let environmentChecked = false;
-
 function detectEnvironment() {
   if (typeof window === 'undefined') {
-    return { isMobile: false, isWebView: false, isSecureContext: false, isPWA: false, isSupported: false };
+    return { isMobile: false, isSecureContext: false };
   }
   
-  if (environmentChecked) {
-    return { isMobile, isWebView, isSecureContext, isPWA, isSupported: isSecureContext };
-  }
-  
-  const userAgent = navigator.userAgent || '';
-  isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ||
+  const ua = navigator.userAgent || '';
+  isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
     ('ontouchstart' in window) ||
-    (navigator.maxTouchPoints && navigator.maxTouchPoints > 2) ||
-    (window.innerWidth <= 768 && 'ontouchstart' in window);
-  
-  isWebView = !!(
-    window.Capacitor ||
-    window.cordova ||
-    userAgent.includes('wv') ||
-    userAgent.includes('WebView') ||
-    (userAgent.includes('iPhone') && !userAgent.includes('Safari')) ||
-    (userAgent.includes('Android') && userAgent.includes('Version/')) ||
-    (window.webkit && window.webkit.messageHandlers)
-  );
-  
-  isPWA = window.matchMedia?.('(display-mode: standalone)').matches ||
-    window.navigator?.standalone === true;
+    (navigator.maxTouchPoints > 2);
   
   isSecureContext = window.isSecureContext === true || 
     window.location.protocol === 'https:' || 
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1';
+    window.location.hostname === 'localhost';
   
-  environmentChecked = true;
-  
-  console.log(`[SpeechController] Environment: Mobile=${isMobile}, WebView=${isWebView}, Secure=${isSecureContext}`);
-  
-  return { isMobile, isWebView, isSecureContext, isPWA, isSupported: isSecureContext };
+  console.log(`[Speech] Environment: mobile=${isMobile}, secure=${isSecureContext}`);
+  return { isMobile, isSecureContext };
 }
 
 function getEnvironment() {
-  if (!environmentChecked) detectEnvironment();
-  return { isMobile, isWebView, isSecureContext, isPWA, micPermissionState };
+  return { isMobile, isSecureContext, sessionArmed };
 }
 
 // ============================================
-// AUDIO FOCUS MANAGEMENT (MOBILE)
+// TTS ENGINE
 // ============================================
 
-// Audio owner states
-const AUDIO_OWNER = {
-  NONE: 'none',
-  TTS: 'tts',
-  RECOGNITION: 'recognition'
-};
-
-let currentAudioOwner = AUDIO_OWNER.NONE;
-let sessionArmed = false; // One-time activation flag
-
-// Audio focus delay buffers (ms)
-const AUDIO_DELAYS = {
-  TTS_TO_RECOGNITION: 400, // After TTS ends, before recognition starts
-  RECOGNITION_TO_TTS: 200, // After recognition stops, before TTS starts
-  RECOGNITION_COOLDOWN: 100 // Brief cooldown after stopping recognition
-};
-
-/**
- * Check if we can acquire audio focus for an engine
- */
-function canAcquireAudioFocus(requestedOwner) {
-  if (!isMobile) return true; // Desktop: no restrictions
-  
-  // Single audio owner rule
-  if (currentAudioOwner === AUDIO_OWNER.NONE) return true;
-  if (currentAudioOwner === requestedOwner) return true;
-  
-  console.log(`[AudioFocus] BLOCKED: ${requestedOwner} cannot start while ${currentAudioOwner} is active`);
-  return false;
-}
-
-/**
- * Acquire audio focus
- */
-function acquireAudioFocus(owner) {
-  if (isMobile && currentAudioOwner !== AUDIO_OWNER.NONE && currentAudioOwner !== owner) {
-    console.log(`[AudioFocus] WARNING: Forcing ${owner}, releasing ${currentAudioOwner}`);
-  }
-  currentAudioOwner = owner;
-  console.log(`[AudioFocus] Acquired by: ${owner}`);
-}
-
-/**
- * Release audio focus
- */
-function releaseAudioFocus(owner) {
-  if (currentAudioOwner === owner) {
-    currentAudioOwner = AUDIO_OWNER.NONE;
-    console.log(`[AudioFocus] Released by: ${owner}`);
-  }
-}
-
-// ============================================
-// SYNTHESIS ENGINE (TTS)
-// ============================================
-
-let synthesisInstance = null;
-let currentUtterance = null;
-let isSpeaking = false;
-let speechCancelled = false;
-let onSpeechEndCallback = null;
-let keepAliveTimer = null;
-let selectedVoice = null;
-let voicesLoaded = false;
-let voiceLoadAttempts = 0;
-
-let synthesisState = 'idle';
-let synthesisStateCallback = null;
-
-const SYNTHESIS_CONFIG = {
-  SPEECH_RATE: 0.95,
-  SPEECH_PITCH: 1,
-  SPEECH_VOLUME: 1,
-  KEEP_ALIVE_INTERVAL: 10000,
-  CHUNK_MAX_LENGTH: 180,
-  SAFETY_TIMEOUT: 8000,
-};
-
-function setSynthesisState(state) {
-  synthesisState = state;
-  console.log('[TTS] State:', state);
-  synthesisStateCallback?.(state);
-}
-
-function initSynthesis() {
+function initTTS() {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     console.log('[TTS] Not supported');
-    setSynthesisState('error');
     return false;
   }
   
-  synthesisInstance = window.speechSynthesis;
-  loadVoices();
-  synthesisInstance.onvoiceschanged = loadVoices;
+  synthesis = window.speechSynthesis;
   
-  console.log('[TTS] Initialized');
+  // Load voices
+  const loadVoices = () => {
+    const voices = synthesis.getVoices();
+    if (voices.length === 0) return;
+    
+    voicesLoaded = true;
+    selectedVoice = voices.find(v => 
+      v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Alex')
+    ) || voices.find(v => v.lang.startsWith('en') && v.localService
+    ) || voices.find(v => v.lang.startsWith('en')
+    ) || voices[0];
+    
+    console.log('[TTS] Voice:', selectedVoice?.name);
+  };
+  
+  loadVoices();
+  synthesis.onvoiceschanged = loadVoices;
+  
+  console.log('[TTS] Ready');
   return true;
 }
 
-function loadVoices() {
-  if (voicesLoaded || voiceLoadAttempts >= 2) return;
-  voiceLoadAttempts++;
-  
-  const voices = window.speechSynthesis?.getVoices() || [];
-  if (voices.length === 0) return;
-  
-  voicesLoaded = true;
-  selectedVoice = voices.find(v => 
-    v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Alex')
-  ) || voices.find(v => v.lang.startsWith('en') && v.localService
-  ) || voices.find(v => v.lang.startsWith('en')
-  ) || voices[0];
-  
-  console.log(`[TTS] Voice: ${selectedVoice?.name || 'default'}`);
-}
-
-function checkIsSpeaking() {
-  return isSpeaking || (synthesisInstance?.speaking === true);
-}
-
-function splitIntoChunks(text) {
-  const MAX = SYNTHESIS_CONFIG.CHUNK_MAX_LENGTH;
-  if (text.length <= MAX) return [text];
-  
-  const chunks = [];
-  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
-  let current = '';
-  
-  for (const sentence of sentences) {
-    const trimmed = sentence.trim();
-    if (current && (current.length + trimmed.length + 1) > MAX) {
-      chunks.push(current.trim());
-      current = trimmed;
-    } else {
-      current += (current ? ' ' : '') + trimmed;
-    }
-  }
-  
-  if (current.trim()) chunks.push(current.trim());
-  return chunks.length > 0 ? chunks : [text];
-}
-
 /**
- * Speak text with SINGLE AUDIO OWNER enforcement
- * On mobile: Stops recognition first, acquires TTS focus
+ * Speak text with TTS
+ * @param {string} text - Text to speak
+ * @param {function} onComplete - Callback when done
  */
 function speak(text, onComplete = null) {
-  if (!synthesisInstance && !initSynthesis()) {
+  if (destroyed) {
     onComplete?.();
     return false;
   }
   
+  if (!synthesis) {
+    if (!initTTS()) {
+      onComplete?.();
+      return false;
+    }
+  }
+  
+  // Validate input
   if (text === null || text === undefined) {
     onComplete?.();
     return false;
   }
   
-  let cleanText = String(text).replace(/<[^>]*>/g, '').trim();
-  if (cleanText === '') {
+  const cleanText = String(text).replace(/<[^>]*>/g, '').trim();
+  if (!cleanText) {
     onComplete?.();
     return false;
   }
   
-  // Already speaking - block
+  // Block if already speaking
   if (isSpeaking) {
-    console.log('[TTS] Already speaking, blocking');
+    console.log('[TTS] Already speaking');
     return false;
   }
   
-  // MOBILE: Single audio owner - stop recognition first
+  // MOBILE: Stop recognition first (single audio owner)
   if (isMobile && isListening) {
-    console.log('[TTS] Mobile: Stopping recognition before TTS');
+    console.log('[TTS] Stopping recognition for TTS');
     forceStopRecognition();
-  }
-  
-  // Check audio focus
-  if (!canAcquireAudioFocus(AUDIO_OWNER.TTS)) {
-    console.log('[TTS] Cannot acquire audio focus');
-    onComplete?.();
-    return false;
   }
   
   // Ensure voices loaded
   if (!voicesLoaded) {
-    loadVoices();
-    const voices = window.speechSynthesis?.getVoices() || [];
-    if (voices.length > 0 && !selectedVoice) selectedVoice = voices[0];
+    const voices = synthesis.getVoices();
+    if (voices.length > 0) {
+      selectedVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+      voicesLoaded = true;
+    }
   }
   
-  // Acquire focus and lock
-  acquireAudioFocus(AUDIO_OWNER.TTS);
+  // Set state
   isSpeaking = true;
-  speechCancelled = false;
-  onSpeechEndCallback = onComplete;
-  setSynthesisState('speaking');
+  speechEndCallback = onComplete;
+  onSynthesisStateChange?.('speaking');
   
-  console.log(`[TTS] Speaking: "${cleanText.substring(0, 50)}..."`);
+  console.log('[TTS] Speaking:', cleanText.substring(0, 60) + (cleanText.length > 60 ? '...' : ''));
   
-  // Safety timeout
-  const safetyTimeout = setTimeout(() => {
-    if (isSpeaking && !synthesisInstance?.speaking) {
-      console.log('[TTS] Safety timeout - releasing');
-      releaseSpeechLock();
-      onComplete?.();
-    }
-  }, SYNTHESIS_CONFIG.SAFETY_TIMEOUT);
+  // Create utterance
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  currentUtterance = utterance;
   
-  if (keepAliveTimer) {
-    clearInterval(keepAliveTimer);
-    keepAliveTimer = null;
-  }
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  if (selectedVoice) utterance.voice = selectedVoice;
   
-  const chunks = splitIntoChunks(cleanText);
-  let chunkIndex = 0;
-  
-  const speakNextChunk = () => {
-    clearTimeout(safetyTimeout);
-    
-    if (speechCancelled || chunkIndex >= chunks.length) {
-      console.log('[TTS]', speechCancelled ? 'Cancelled' : 'Completed');
-      releaseSpeechLock();
-      
-      if (!speechCancelled && onSpeechEndCallback) {
-        const cb = onSpeechEndCallback;
-        onSpeechEndCallback = null;
-        // MOBILE: Audio focus buffer before callback
-        const delay = isMobile ? AUDIO_DELAYS.TTS_TO_RECOGNITION : 50;
-        setTimeout(() => cb(), delay);
+  utterance.onstart = () => {
+    console.log('[TTS] >>> STARTED');
+    // Chrome keep-alive workaround
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    keepAliveInterval = setInterval(() => {
+      if (synthesis?.speaking && !synthesis?.paused) {
+        synthesis.pause();
+        synthesis.resume();
       }
-      return;
-    }
-    
-    const chunkText = chunks[chunkIndex];
-    const utterance = new SpeechSynthesisUtterance(chunkText);
-    currentUtterance = utterance;
-    
-    utterance.rate = SYNTHESIS_CONFIG.SPEECH_RATE;
-    utterance.pitch = SYNTHESIS_CONFIG.SPEECH_PITCH;
-    utterance.volume = SYNTHESIS_CONFIG.SPEECH_VOLUME;
-    if (selectedVoice) utterance.voice = selectedVoice;
-    
-    utterance.onstart = () => {
-      console.log('[TTS] >>> AUDIO PLAYING');
-      if (!keepAliveTimer) {
-        keepAliveTimer = setInterval(() => {
-          if (synthesisInstance?.speaking && !synthesisInstance?.paused) {
-            synthesisInstance.pause();
-            synthesisInstance.resume();
-          }
-        }, SYNTHESIS_CONFIG.KEEP_ALIVE_INTERVAL);
-      }
-    };
-    
-    utterance.onend = () => {
-      chunkIndex++;
-      setTimeout(speakNextChunk, 100);
-    };
-    
-    utterance.onerror = (event) => {
-      console.log('[TTS] Error:', event.error);
-      releaseSpeechLock();
-      onSpeechEndCallback?.();
-      onSpeechEndCallback = null;
-    };
-    
-    synthesisInstance.speak(utterance);
-    
-    // Safari kick
-    setTimeout(() => {
-      if (currentUtterance === utterance && !synthesisInstance?.speaking && !speechCancelled) {
-        try { synthesisInstance?.resume(); } catch (e) {}
-      }
-    }, 250);
+    }, 10000);
   };
   
-  speakNextChunk();
+  utterance.onend = () => {
+    console.log('[TTS] <<< ENDED');
+    cleanupTTS();
+    
+    const cb = speechEndCallback;
+    speechEndCallback = null;
+    
+    // Delay before callback (audio focus handoff)
+    setTimeout(() => cb?.(), isMobile ? 400 : 50);
+  };
+  
+  utterance.onerror = (e) => {
+    console.log('[TTS] Error:', e.error);
+    cleanupTTS();
+    speechEndCallback?.();
+    speechEndCallback = null;
+  };
+  
+  // Start speaking
+  synthesis.speak(utterance);
+  
+  // Safari kick
+  setTimeout(() => {
+    if (currentUtterance === utterance && !synthesis?.speaking) {
+      try { synthesis?.resume(); } catch {}
+    }
+  }, 250);
+  
   return true;
 }
 
-function releaseSpeechLock() {
+function cleanupTTS() {
   isSpeaking = false;
   currentUtterance = null;
-  releaseAudioFocus(AUDIO_OWNER.TTS);
-  setSynthesisState('idle');
+  onSynthesisStateChange?.('idle');
   
-  if (keepAliveTimer) {
-    clearInterval(keepAliveTimer);
-    keepAliveTimer = null;
+  if (keepAliveInterval) {
+    clearInterval(keepAliveInterval);
+    keepAliveInterval = null;
   }
 }
 
 /**
- * Cancel speech - USER ACTIONS ONLY
+ * Cancel speech (user actions only)
  */
 function cancelSpeech(reason = 'unknown') {
-  if (!synthesisInstance) return;
+  const validReasons = ['userPause', 'userNext', 'userBack', 'userRepeat', 'modalClose', 'disableHandsFree', 'destroy'];
   
-  // Strict user-only whitelist
-  const userOnlyReasons = ['userPause', 'userNext', 'userBack', 'userRepeat', 'modalClose', 'disableHandsFree', 'destroy'];
-  
-  if (!userOnlyReasons.includes(reason)) {
-    if (reason !== 'unknown') {
-      console.log('[TTS] BLOCKED cancel:', reason);
-    }
+  if (!validReasons.includes(reason)) {
     return;
   }
   
-  if (!isSpeaking && !synthesisInstance?.speaking) return;
+  if (!synthesis || (!isSpeaking && !synthesis?.speaking)) return;
   
-  console.log('[TTS] Canceling:', reason);
-  speechCancelled = true;
-  synthesisInstance.cancel();
-  releaseSpeechLock();
-  onSpeechEndCallback = null;
+  console.log('[TTS] Cancel:', reason);
+  synthesis.cancel();
+  cleanupTTS();
+  speechEndCallback = null;
 }
 
+function checkIsSpeaking() {
+  return isSpeaking || (synthesis?.speaking === true);
+}
+
+/**
+ * Narrate a cooking step
+ */
 function narrateStep(text, stepNumber, totalSteps, onComplete = null) {
   if (typeof text !== 'string' || !text.trim()) {
     onComplete?.();
@@ -468,272 +279,194 @@ function narrateStep(text, stepNumber, totalSteps, onComplete = null) {
 // RECOGNITION ENGINE
 // ============================================
 
-let recognitionInstance = null;
-let isListening = false;
-let shouldBeListening = false;
-let pendingRecognitionStart = false;
-let recognitionCallbacks = {
-  onResult: null,
-  onStart: null,
-  onEnd: null,
-  onError: null,
-};
-
-let recognitionState = 'idle';
-let recognitionStateCallback = null;
-let micPermissionState = 'unknown';
-
-function setRecognitionState(state) {
-  recognitionState = state;
-  console.log('[Recognition] State:', state);
-  recognitionStateCallback?.(state);
-}
-
-function getRecognitionState() {
-  return recognitionState;
-}
-
-async function checkMicPermission() {
-  try {
-    if (navigator.permissions) {
-      const result = await navigator.permissions.query({ name: 'microphone' });
-      micPermissionState = result.state;
-      result.onchange = () => {
-        micPermissionState = result.state;
-        if (micPermissionState === 'denied') setRecognitionState('disabled');
-      };
-    }
-  } catch (e) {
-    micPermissionState = 'unknown';
-  }
-  return micPermissionState;
-}
-
 function initRecognition() {
-  detectEnvironment();
-  
   if (!isSecureContext) {
     console.log('[Recognition] Not secure context');
-    setRecognitionState('disabled');
     return false;
   }
   
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
     console.log('[Recognition] Not supported');
-    setRecognitionState('disabled');
     return false;
   }
   
-  recognitionInstance = new SpeechRecognition();
-  recognitionInstance.continuous = true;
-  recognitionInstance.interimResults = false;
-  recognitionInstance.lang = 'en-US';
-  recognitionInstance.maxAlternatives = 1;
+  // Destroy existing instance
+  if (recognition) {
+    try { recognition.abort(); } catch {}
+    recognition = null;
+  }
   
-  recognitionInstance.onstart = () => {
+  // Create fresh instance
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+  recognition.maxAlternatives = 1;
+  
+  recognition.onstart = () => {
     isListening = true;
-    pendingRecognitionStart = false;
-    setRecognitionState('listening');
     console.log('[Recognition] >>> LISTENING');
-    recognitionCallbacks.onStart?.();
+    onRecognitionStateChange?.('listening');
   };
   
-  recognitionInstance.onresult = (event) => {
+  recognition.onresult = (event) => {
     const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
     console.log('[Recognition] Heard:', transcript);
-    recognitionCallbacks.onResult?.(transcript);
+    onRecognitionResult?.(transcript);
   };
   
-  recognitionInstance.onerror = (event) => {
+  recognition.onerror = (event) => {
     console.log('[Recognition] Error:', event.error);
     isListening = false;
-    pendingRecognitionStart = false;
-    releaseAudioFocus(AUDIO_OWNER.RECOGNITION);
     
     if (event.error === 'not-allowed') {
-      micPermissionState = 'denied';
-      setRecognitionState('permission-needed');
-      shouldBeListening = false;
       sessionArmed = false;
-      recognitionCallbacks.onError?.(event.error);
+      shouldBeListening = false;
+      onRecognitionStateChange?.('permission-needed');
       return;
     }
     
     if (event.error === 'aborted') {
-      recognitionCallbacks.onError?.(event.error);
       return;
     }
     
-    setRecognitionState('error');
-    recognitionCallbacks.onError?.(event.error);
+    onRecognitionStateChange?.('error');
   };
   
-  recognitionInstance.onend = () => {
+  recognition.onend = () => {
     const wasListening = isListening;
     isListening = false;
-    releaseAudioFocus(AUDIO_OWNER.RECOGNITION);
-    console.log('[Recognition] Ended');
+    console.log('[Recognition] <<< ENDED');
     
-    if (recognitionState !== 'permission-needed' && recognitionState !== 'disabled') {
-      setRecognitionState('idle');
-    }
+    onRecognitionStateChange?.('idle');
     
-    recognitionCallbacks.onEnd?.();
-    
-    // MOBILE: If session armed and should be listening, restart after delay
-    // But ONLY if TTS is not speaking
-    if (isMobile && sessionArmed && shouldBeListening && wasListening && !isSpeaking) {
-      console.log('[Recognition] Mobile: Will restart after buffer');
+    // Auto-restart if armed and should be listening (not during TTS)
+    if (sessionArmed && shouldBeListening && wasListening && !isSpeaking) {
       setTimeout(() => {
-        if (shouldBeListening && !isListening && !isSpeaking) {
+        if (shouldBeListening && !isListening && !isSpeaking && !destroyed) {
           safeStartRecognition();
         }
-      }, AUDIO_DELAYS.RECOGNITION_COOLDOWN);
+      }, 100);
     }
   };
   
-  // Tab visibility
+  // Tab visibility handler
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && isListening) {
-        console.log('[Recognition] Tab hidden - pausing');
         forceStopRecognition();
       }
     });
   }
   
-  console.log('[Recognition] Initialized');
+  console.log('[Recognition] Ready');
   return true;
 }
 
 function safeStartRecognition() {
-  if (!recognitionInstance) return false;
-  if (isListening || pendingRecognitionStart) return true;
+  if (!recognition || isListening || destroyed) return false;
   
-  // MOBILE: Single audio owner - cannot start while TTS is speaking
+  // MOBILE: Block if TTS speaking
   if (isMobile && isSpeaking) {
-    console.log('[Recognition] BLOCKED: TTS is speaking');
-    return false;
-  }
-  
-  if (!canAcquireAudioFocus(AUDIO_OWNER.RECOGNITION)) {
+    console.log('[Recognition] Blocked - TTS speaking');
     return false;
   }
   
   try {
-    pendingRecognitionStart = true;
-    acquireAudioFocus(AUDIO_OWNER.RECOGNITION);
-    recognitionInstance.start();
+    recognition.start();
     return true;
   } catch (e) {
-    pendingRecognitionStart = false;
-    releaseAudioFocus(AUDIO_OWNER.RECOGNITION);
-    
     if (e.name === 'InvalidStateError') {
-      console.log('[Recognition] Already starting, retry later');
+      // Already running or starting
       setTimeout(() => {
-        if (shouldBeListening && !isListening && !isSpeaking) {
+        if (shouldBeListening && !isListening && !isSpeaking && !destroyed) {
           safeStartRecognition();
         }
       }, 200);
       return true;
     }
     console.log('[Recognition] Start failed:', e.message);
-    setRecognitionState('error');
+    onRecognitionStateChange?.('error');
     return false;
   }
 }
 
 function forceStopRecognition() {
-  if (!recognitionInstance) return;
-  
-  pendingRecognitionStart = false;
+  if (!recognition) return;
   
   try {
-    recognitionInstance.abort();
-  } catch (e) {}
+    recognition.abort();
+  } catch {}
   
   isListening = false;
-  releaseAudioFocus(AUDIO_OWNER.RECOGNITION);
 }
 
 /**
- * Start recognition - PUBLIC API
- * MOBILE: Only starts if TTS not speaking
+ * Start listening (public API)
  */
-function startRecognition() {
-  detectEnvironment();
-  
+function startListening() {
   if (!isSecureContext) {
-    setRecognitionState('disabled');
+    onRecognitionStateChange?.('disabled');
     return false;
   }
   
-  if (!recognitionInstance && !initRecognition()) return false;
+  if (!recognition && !initRecognition()) return false;
   
-  if (isListening) {
-    console.log('[Recognition] Already listening');
-    return true;
-  }
+  if (isListening) return true;
   
-  // MOBILE: Block if TTS is speaking (single audio owner)
+  // MOBILE: Block if TTS speaking
   if (isMobile && isSpeaking) {
-    console.log('[Recognition] Mobile: TTS speaking, will start after TTS ends');
     shouldBeListening = true;
     return false;
   }
   
-  // MOBILE: Require session armed (initial user tap)
+  // MOBILE: Require session armed
   if (isMobile && !sessionArmed) {
-    console.log('[Recognition] Mobile: Session not armed, need user tap');
-    setRecognitionState('permission-needed');
+    onRecognitionStateChange?.('permission-needed');
     return false;
   }
   
   shouldBeListening = true;
-  setRecognitionState('starting');
+  onRecognitionStateChange?.('starting');
   
   return safeStartRecognition();
 }
 
 /**
- * Start recognition from user gesture - ARMS SESSION
- * This is THE mobile activation entry point
+ * Start listening from user gesture (arms session on mobile)
  */
-function startRecognitionFromUserGesture() {
+function startListeningFromGesture() {
   console.log('[Recognition] User gesture - arming session');
   sessionArmed = true;
   
-  // Reset error states
-  if (micPermissionState === 'denied') micPermissionState = 'prompt';
-  if (recognitionState === 'error' || recognitionState === 'permission-needed') {
-    setRecognitionState('idle');
-  }
-  
-  // MOBILE: If TTS is speaking, just arm the session - recognition will start after TTS ends
+  // MOBILE: If TTS speaking, just arm session
   if (isMobile && isSpeaking) {
-    console.log('[Recognition] TTS speaking - armed for later');
     shouldBeListening = true;
     return true;
   }
   
   shouldBeListening = true;
+  
+  if (!recognition && !initRecognition()) {
+    onRecognitionStateChange?.('error');
+    return false;
+  }
+  
   return safeStartRecognition();
 }
 
 /**
- * Stop recognition
+ * Stop listening
  */
-function stopRecognition() {
+function stopListening() {
   shouldBeListening = false;
   forceStopRecognition();
-  setRecognitionState('idle');
-  console.log('[Recognition] Stopped');
+  onRecognitionStateChange?.('idle');
 }
 
 /**
- * Disable session - clears armed state
+ * Disarm session
  */
 function disarmSession() {
   sessionArmed = false;
@@ -742,241 +475,189 @@ function disarmSession() {
   console.log('[Recognition] Session disarmed');
 }
 
-function setRecognitionCallbacks(callbacks) {
-  recognitionCallbacks = {
-    onResult: callbacks.onResult || null,
-    onStart: callbacks.onStart || null,
-    onEnd: callbacks.onEnd || null,
-    onError: callbacks.onError || null,
-  };
-  
-  if (callbacks.onResult) {
-    console.log('[Recognition] Callbacks set');
-  }
+function checkIsListening() {
+  return isListening;
 }
 
-function setStateChangeCallback(callback) {
-  recognitionStateCallback = callback;
+function checkIsSessionArmed() {
+  return sessionArmed;
 }
 
-function setSynthesisStateCallback(callback) {
-  synthesisStateCallback = callback;
+function getRecognitionState() {
+  if (!isSecureContext) return 'disabled';
+  if (isListening) return 'listening';
+  return 'idle';
 }
 
 // ============================================
-// TURN-TAKING HELPERS
+// TURN-TAKING (MOBILE)
 // ============================================
 
 /**
- * Start recognition after TTS completes (mobile turn-taking)
- * Called automatically when TTS ends and session is armed
- */
-function startRecognitionAfterTTS() {
-  if (!sessionArmed || !shouldBeListening) return;
-  if (isListening) return;
-  
-  // Audio focus buffer delay
-  setTimeout(() => {
-    if (shouldBeListening && !isListening && !isSpeaking) {
-      console.log('[TurnTaking] TTS ended -> Starting recognition');
-      safeStartRecognition();
-    }
-  }, AUDIO_DELAYS.TTS_TO_RECOGNITION);
-}
-
-/**
- * Speak and auto-start recognition after (mobile turn-taking)
+ * Speak then start listening (mobile turn-taking)
  */
 function speakThenListen(text, stepNumber, totalSteps) {
   return narrateStep(text, stepNumber, totalSteps, () => {
-    if (isMobile && sessionArmed) {
-      startRecognitionAfterTTS();
+    if (isMobile && sessionArmed && shouldBeListening) {
+      setTimeout(() => {
+        if (shouldBeListening && !isListening && !isSpeaking && !destroyed) {
+          safeStartRecognition();
+        }
+      }, 400);
     }
   });
 }
 
-/**
- * Check if session is armed
- */
-function isSessionArmed() {
-  return sessionArmed;
+// ============================================
+// CALLBACKS
+// ============================================
+
+function setRecognitionCallbacks(callbacks) {
+  onRecognitionResult = callbacks.onResult || null;
+  console.log('[Recognition] Callbacks set');
+}
+
+function setStateChangeCallback(callback) {
+  onRecognitionStateChange = callback;
+}
+
+function setSynthesisStateCallback(callback) {
+  onSynthesisStateChange = callback;
 }
 
 // ============================================
-// SINGLETON CONTROLLER CLASS
+// LIFECYCLE
 // ============================================
+
+/**
+ * Initialize speech controller
+ * MUST be called before any speech operations
+ */
+async function initialize() {
+  if (initialized && !destroyed) {
+    console.log('[Speech] Already initialized');
+    return true;
+  }
+  
+  destroyed = false;
+  
+  detectEnvironment();
+  
+  const ttsOk = initTTS();
+  const recOk = initRecognition();
+  
+  initialized = ttsOk || recOk;
+  
+  console.log('[Speech] Initialized:', initialized ? 'OK' : 'FAILED');
+  return initialized;
+}
+
+/**
+ * Full cleanup - destroys all speech instances
+ */
+function destroy() {
+  console.log('[Speech] Destroying...');
+  destroyed = true;
+  
+  // Cancel TTS
+  cancelSpeech('destroy');
+  
+  // Stop recognition
+  disarmSession();
+  
+  // Clear recognition instance
+  if (recognition) {
+    try { recognition.abort(); } catch {}
+    recognition = null;
+  }
+  
+  // Clear callbacks
+  onRecognitionResult = null;
+  onRecognitionStateChange = null;
+  onSynthesisStateChange = null;
+  speechEndCallback = null;
+  
+  // Reset state
+  initialized = false;
+  isSpeaking = false;
+  isListening = false;
+  sessionArmed = false;
+  shouldBeListening = false;
+  
+  console.log('[Speech] Destroyed');
+}
+
+// ============================================
+// SINGLETON CLASS
+// ============================================
+
+let instance = null;
 
 class SpeechController {
   constructor() {
     if (instance) return instance;
-    this.initialized = false;
     instance = this;
   }
   
   async init() {
-    if (this.initialized) return this;
-    
-    detectEnvironment();
-    
-    // Check if we should use hybrid controller (native platform)
-    if (isNativePlatform && !hybridController) {
-      await initHybridController();
-    }
-    
-    // Always initialize web synthesis as fallback
-    initSynthesis();
-    
-    this.initialized = true;
-    console.log('[SpeechController] Ready', useHybridController ? '(hybrid mode)' : '(web mode)');
+    await initialize();
     return this;
   }
   
-  // Synthesis (always use web - better voice quality)
-  speak(text, onComplete) { 
-    if (useHybridController && hybridController) {
-      return hybridController.speak(text, onComplete);
-    }
-    return speak(text, onComplete); 
-  }
-  cancel(reason) { 
-    if (useHybridController && hybridController) {
-      return hybridController.cancel(reason);
-    }
-    cancelSpeech(reason); 
-  }
-  isSpeaking() { 
-    if (useHybridController && hybridController) {
-      return hybridController.isSpeaking();
-    }
-    return checkIsSpeaking(); 
-  }
-  narrateStep(text, stepNumber, totalSteps, onComplete) {
-    if (useHybridController && hybridController) {
-      return hybridController.narrateStep(text, stepNumber, totalSteps, onComplete);
-    }
-    return narrateStep(text, stepNumber, totalSteps, onComplete);
-  }
-  speakThenListen(text, stepNumber, totalSteps) {
-    if (useHybridController && hybridController) {
-      return hybridController.speakThenListen(text, stepNumber, totalSteps);
-    }
-    return speakThenListen(text, stepNumber, totalSteps);
-  }
+  // TTS
+  speak(text, onComplete) { return speak(text, onComplete); }
+  cancel(reason) { cancelSpeech(reason); }
+  isSpeaking() { return checkIsSpeaking(); }
+  narrateStep(text, step, total, onComplete) { return narrateStep(text, step, total, onComplete); }
+  speakThenListen(text, step, total) { return speakThenListen(text, step, total); }
   
-  // Recognition (delegate to hybrid on native)
-  startListening() { 
-    if (useHybridController && hybridController) {
-      return hybridController.startListening();
-    }
-    return startRecognition(); 
-  }
-  startListeningFromGesture() { 
-    if (useHybridController && hybridController) {
-      return hybridController.startListeningFromGesture();
-    }
-    return startRecognitionFromUserGesture(); 
-  }
-  stopListening() { 
-    if (useHybridController && hybridController) {
-      return hybridController.stopListening();
-    }
-    stopRecognition(); 
-  }
-  isListening() { 
-    if (useHybridController && hybridController) {
-      return hybridController.isListening();
-    }
-    return isListening; 
-  }
-  setRecognitionCallbacks(callbacks) { 
-    if (useHybridController && hybridController) {
-      return hybridController.setRecognitionCallbacks(callbacks);
-    }
-    setRecognitionCallbacks(callbacks); 
-  }
+  // Recognition
+  startListening() { return startListening(); }
+  startListeningFromGesture() { return startListeningFromGesture(); }
+  stopListening() { stopListening(); }
+  isListening() { return checkIsListening(); }
+  setRecognitionCallbacks(callbacks) { setRecognitionCallbacks(callbacks); }
   
   // Session
-  isSessionArmed() { 
-    if (useHybridController && hybridController) {
-      return hybridController.isSessionArmed();
-    }
-    return sessionArmed; 
-  }
-  disarmSession() { 
-    if (useHybridController && hybridController) {
-      return hybridController.disarmSession();
-    }
-    disarmSession(); 
-  }
+  isSessionArmed() { return checkIsSessionArmed(); }
+  disarmSession() { disarmSession(); }
   
   // State
-  setStateChangeCallback(callback) { 
-    if (useHybridController && hybridController) {
-      return hybridController.setStateChangeCallback(callback);
-    }
-    setStateChangeCallback(callback); 
-  }
-  setSynthesisStateCallback(callback) { 
-    if (useHybridController && hybridController) {
-      return hybridController.setSynthesisStateCallback(callback);
-    }
-    setSynthesisStateCallback(callback); 
-  }
-  getRecognitionState() { 
-    if (useHybridController && hybridController) {
-      return hybridController.getRecognitionState();
-    }
-    return getRecognitionState(); 
-  }
-  getSynthesisState() { 
-    if (useHybridController && hybridController) {
-      return hybridController.getSynthesisState();
-    }
-    return synthesisState; 
-  }
-  getEnvironment() { 
-    if (useHybridController && hybridController) {
-      return hybridController.getEnvironment();
-    }
-    return getEnvironment(); 
-  }
+  setStateChangeCallback(callback) { setStateChangeCallback(callback); }
+  setSynthesisStateCallback(callback) { setSynthesisStateCallback(callback); }
+  getRecognitionState() { return getRecognitionState(); }
+  getSynthesisState() { return isSpeaking ? 'speaking' : 'idle'; }
+  getEnvironment() { return getEnvironment(); }
   
-  // Cleanup
-  destroy() {
-    if (useHybridController && hybridController) {
-      hybridController.destroy();
-    }
-    cancelSpeech('destroy');
-    disarmSession();
-    recognitionInstance = null;
-    instance = null;
-    this.initialized = false;
-  }
+  // Lifecycle
+  destroy() { destroy(); instance = null; }
 }
 
 // ============================================
 // EXPORTS
 // ============================================
 
-const speechController = new SpeechController();
+export const speechController = new SpeechController();
 
+// Named exports for direct function access
 export {
-  speechController,
+  initialize,
   speak,
   cancelSpeech,
-  checkIsSpeaking as isSpeaking,
   narrateStep,
   speakThenListen,
-  startRecognition,
-  startRecognitionFromUserGesture,
-  stopRecognition,
+  checkIsSpeaking as isSpeaking,
+  startListening,
+  startListeningFromGesture,
+  stopListening,
+  checkIsListening as isListening,
   setRecognitionCallbacks,
   setStateChangeCallback,
   setSynthesisStateCallback,
   getRecognitionState,
   getEnvironment,
-  isSessionArmed,
   disarmSession,
+  destroy,
 };
 
 export default speechController;
