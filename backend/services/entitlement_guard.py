@@ -1091,6 +1091,19 @@ async def run_bulk_premium_correction(
                         "reason": reason
                     }
                 )
+                
+                # AUDIT LOG: Record downgrade
+                await log_plan_change(
+                    db=db,
+                    user_id=user_id,
+                    old_plan=plan_id,
+                    new_plan="free",
+                    reason="admin_bulk_correction",
+                    metadata={
+                        "subscription_id": subscription_id,
+                        "validation_reason": reason
+                    }
+                )
             
             corrections.append(correction)
     
