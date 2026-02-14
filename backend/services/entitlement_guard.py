@@ -895,7 +895,7 @@ async def run_bulk_premium_correction(
                     if minutes_old < MIN_ACCOUNT_AGE_FOR_DOWNGRADE_MINUTES:
                         # Too new - skip
                         continue
-                except:
+                except Exception:
                     pass
             
             # Truly invalid - add to corrections
