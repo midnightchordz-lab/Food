@@ -573,7 +573,7 @@ Platform Detection:
 - Async `init()` method for proper native initialization
 
 **Dependencies Added:**
-- `@capgo/capacitor-speech-recognition@8.0.8` - Native speech plugin
+- `@capacitor-community/speech-recognition@5.1.0` - Native speech plugin (Capacitor 5 compatible)
 
 **Capacitor Config Updated:**
 - Added `SpeechRecognition` plugin configuration
