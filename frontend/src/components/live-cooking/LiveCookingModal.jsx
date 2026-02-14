@@ -745,7 +745,8 @@ export default function LiveCookingModal() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
-    stopSpeech(); // Also stop browser speech
+    // GLOBAL CONTROLLER: Cancel speech via singleton
+    globalCancelSpeech();
     narrationAbortRef.current = true;
     abortEmotionalNarration();
     
@@ -764,7 +765,8 @@ export default function LiveCookingModal() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
-    stopSpeech(); // Also stop browser speech
+    // GLOBAL CONTROLLER: Cancel speech via singleton
+    globalCancelSpeech();
     narrationAbortRef.current = true;
     
     // Reset the step timer when repeating
