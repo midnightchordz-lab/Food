@@ -649,6 +649,9 @@ export default function LiveCookingModal() {
   
   // Setup recognition callbacks when they change
   useEffect(() => {
+    // PHASE-1: Skip if using feature gate
+    if (PHASE_1_MODE) return;
+    
     setRecognitionCallbacks({
       onNext: handleNextWithVoice,
       onPrev: handlePrevWithVoice,
@@ -658,7 +661,11 @@ export default function LiveCookingModal() {
   }, [setRecognitionCallbacks, handleNextWithVoice, handlePrevWithVoice, handleTogglePlayWithVoice, handleRepeat]);
   
   // Initialize camera and start recognition when hands-free is enabled
+  // PHASE-1: This entire block is skipped via feature gate
   useEffect(() => {
+    // PHASE-1: Skip camera/gesture initialization
+    if (PHASE_1_MODE) return;
+    
     if (open && handsFreeEnabled && hasCameraAccess && cameraStream) {
       // Initialize camera first (for gestures)
       initializeCamera().then(cameraReady => {
