@@ -746,6 +746,7 @@ function startRecognitionFromUserGesture() {
 function stopRecognition() {
   shouldBeListening = false;
   isListening = false;
+  hasUserGesture = false; // Reset gesture flag
   
   if (recognition) {
     try {
@@ -753,7 +754,29 @@ function stopRecognition() {
     } catch {}
   }
   
+  setRecognitionState('idle');
   console.log('[SpeechController] Recognition stopped');
+}
+
+/**
+ * Set state change callback for UI synchronization
+ */
+function setStateChangeCallback(callback) {
+  stateChangeCallback = callback;
+}
+
+/**
+ * Get current recognition state
+ */
+function getRecognitionState() {
+  return recognitionState;
+}
+
+/**
+ * Get environment info
+ */
+function getEnvironment() {
+  return { isMobile, isWebView, isSecureContext, micPermissionState };
 }
 
 /**
