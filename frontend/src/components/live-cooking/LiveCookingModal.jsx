@@ -951,6 +951,30 @@ export default function LiveCookingModal() {
     }
   }, [handsFreeEnabled, requestPermissions, stopCameraStream, permissionError, cleanupOrchestrator]);
   
+  // Handler for mic button tap - triggers recognition on mobile
+  const handleMicButtonTap = useCallback(() => {
+    if (!handsFreeEnabled) {
+      // First tap enables hands-free
+      handleEnableHandsFree();
+      return;
+    }
+    
+    // If already enabled, check if we need to start recognition (mobile)
+    const env = globalGetEnvironment();
+    if (env.isMobile || recognitionState === 'permission-needed') {
+      console.log('[LiveCooking] Mic button tapped - starting recognition from user gesture');
+      const started = globalStartRecognitionFromGesture();
+      if (started) {
+        toast.success('Voice control active! Say "next" or "back"');
+      } else {
+        toast.error('Could not start voice control. Please check microphone permissions.');
+      }
+    } else if (!voiceListening) {
+      // Desktop: Restart if stopped
+      globalStartRecognition();
+    }
+  }, [handsFreeEnabled, handleEnableHandsFree, recognitionState, voiceListening]);
+  
   // ============================================
   // PHASE-1: Voice Command Setup & Cleanup
   // Uses GLOBAL SPEECH CONTROLLER (singleton) for stability
