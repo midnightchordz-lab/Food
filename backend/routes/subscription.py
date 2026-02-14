@@ -27,9 +27,12 @@ from services.entitlement_guard import (
     run_bulk_premium_correction,
     get_user_subscription_safe,
     verify_payment_from_source_of_truth,
+    enforce_free_default,
+    safety_check_before_premium,
     SecurityEvent,
     EntitlementSource,
-    VALID_PREMIUM_SOURCES
+    VALID_PREMIUM_SOURCES,
+    INVALID_UPGRADE_SOURCES
 )
 
 router = APIRouter(prefix="/subscription", tags=["Subscription"])
