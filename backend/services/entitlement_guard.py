@@ -55,16 +55,27 @@ class SecurityEvent(Enum):
     PREMIUM_RESTORED_AFTER_FALSE_DOWNGRADE = "PREMIUM_RESTORED_AFTER_FALSE_DOWNGRADE"
     GRACE_PERIOD_PROTECTION = "GRACE_PERIOD_PROTECTION"
     PAYMENT_VERIFIED_FROM_SOURCE = "PAYMENT_VERIFIED_FROM_SOURCE"
+    ILLEGAL_AUTO_UPGRADE_BLOCKED = "ILLEGAL_AUTO_UPGRADE_BLOCKED"
 
 
-# Valid sources that can grant premium access
+# Valid sources that can grant premium access - ONLY FROM PAYMENTS/TRIALS
 VALID_PREMIUM_SOURCES = {
     EntitlementSource.PAYMENT.value,
     EntitlementSource.TRIAL.value,
     EntitlementSource.ADMIN.value,
     EntitlementSource.RAZORPAY.value,
     EntitlementSource.STRIPE.value,
-    EntitlementSource.WEBHOOK.value,  # Webhooks create valid subscriptions
+    EntitlementSource.WEBHOOK.value,  # Webhooks from payment providers
+}
+
+# INVALID sources that should NEVER grant premium
+INVALID_UPGRADE_SOURCES = {
+    EntitlementSource.DEMO.value,
+    EntitlementSource.CRON.value,
+    EntitlementSource.SIGNUP.value,
+    EntitlementSource.MIGRATION.value,
+    "",
+    None,
 }
 
 # Signup protection window (seconds)
