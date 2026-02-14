@@ -1077,6 +1077,12 @@ export default function LiveCookingModal() {
     if (open && handsFreeEnabled) {
       console.log('[LiveCooking] Setting up voice recognition');
       
+      // Set up TTS state callback for UI sync
+      globalSetSynthesisStateCallback((state) => {
+        console.log('[LiveCooking] TTS state:', state);
+        setIsTTSActive(state === 'speaking');
+      });
+      
       // Set up recognition callbacks - UI state synchronization
       globalSetRecognitionCallbacks({
         onResult: (transcript) => {
@@ -1151,6 +1157,7 @@ export default function LiveCookingModal() {
       globalDisarmSession();
       setVoiceRecognitionState('idle');
       setVoiceListening(false);
+      setIsTTSActive(false);
     }
     
     return () => {
