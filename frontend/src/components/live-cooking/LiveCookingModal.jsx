@@ -306,6 +306,15 @@ export default function LiveCookingModal() {
 
   // Get step time if available
   const stepTime = instructions[currentStep]?.time || null;
+  
+  // ============================================
+  // STEP COUNTDOWN TIMER
+  // ============================================
+  const [timerSeconds, setTimerSeconds] = useState(null); // Current countdown value
+  const [timerInitialSeconds, setTimerInitialSeconds] = useState(null); // Starting value for progress
+  const [timerComplete, setTimerComplete] = useState(false); // Glow animation trigger
+  const timerIntervalRef = useRef(null);
+  const timerChimeAudioRef = useRef(null);
 
   // ============================================
   // EXISTING LOGIC - PRESERVED EXACTLY AS IS
