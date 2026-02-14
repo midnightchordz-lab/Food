@@ -820,6 +820,15 @@ export default function LiveCookingModal() {
       stopVoiceControl(); // PHASE-1: Stop voice recognition
       resetOrchestrator();
       
+      // Clear step timer
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      setTimerSeconds(null);
+      setTimerInitialSeconds(null);
+      setTimerComplete(false);
+      
       // PHASE-1: Only cleanup camera if it was enabled
       if (!PHASE_1_MODE) {
         stopCameraStream();
