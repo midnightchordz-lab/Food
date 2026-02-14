@@ -34,6 +34,8 @@ export const SubscriptionProvider = ({ children }) => {
       const freeSub = { plan_id: 'free', features: {}, status: 'active' };
       setSubscription(freeSub);
       setLoading(false);
+      // Cache free state for offline
+      localStorage.setItem('cached_subscription', JSON.stringify(freeSub));
       return freeSub;
     }
 
@@ -45,6 +47,8 @@ export const SubscriptionProvider = ({ children }) => {
       if (response.data.success) {
         const sub = response.data.subscription;
         setSubscription(sub);
+        // Cache subscription for offline access
+        localStorage.setItem('cached_subscription', JSON.stringify(sub));
         console.log('[FeatureGate] Subscription loaded:', sub?.plan_id, 'features:', JSON.stringify(sub?.features));
         
         // If force refresh, increment version to notify all listeners
@@ -57,6 +61,18 @@ export const SubscriptionProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error loading subscription:', error);
+      // Use cached subscription for offline support
+      const cachedSub = localStorage.getItem('cached_subscription');
+      if (cachedSub) {
+        try {
+          const parsed = JSON.parse(cachedSub);
+          console.log('[FeatureGate] Using cached subscription:', parsed?.plan_id);
+          setSubscription(parsed);
+          return parsed;
+        } catch (e) {
+          // Cache invalid, fall through to free
+        }
+      }
       const freeSub = { plan_id: 'free', features: {}, status: 'active' };
       setSubscription(freeSub);
       return freeSub;
@@ -66,12 +82,12 @@ export const SubscriptionProvider = ({ children }) => {
     return { plan_id: 'free', features: {}, status: 'active' };
   }, []);
 
-  // Load on mount
+  // Load on mount - FORCE REFRESH to ensure fresh entitlements on app start
   useEffect(() => {
-    loadSubscription();
+    loadSubscription(true);
   }, [loadSubscription]);
 
-  // Listen for token changes (login/logout) and subscription update events
+  // Listen for token changes (login/logout), subscription updates, and app foreground resume
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'token') {
@@ -84,12 +100,20 @@ export const SubscriptionProvider = ({ children }) => {
       loadSubscription(true);
     };
     
+    // Listen for app returning to foreground (mobile)
+    const handleAppForegroundResume = () => {
+      console.log('[FeatureGate] App resumed - refreshing subscription');
+      loadSubscription(true);
+    };
+    
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('trigger-subscription-refresh', handleSubscriptionRefresh);
+    window.addEventListener('app-foreground-resume', handleAppForegroundResume);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('trigger-subscription-refresh', handleSubscriptionRefresh);
+      window.removeEventListener('app-foreground-resume', handleAppForegroundResume);
     };
   }, [loadSubscription]);
 
