@@ -31,6 +31,16 @@ TWILIO_FROM_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '+19064011655')
 
 @router.post("/register", response_model=Token)
 async def register(user: UserRegister):
+    """
+    SIGNUP HARD DEFAULT
+    
+    Immediately after user creation:
+    SET:
+        plan = FREE
+        subscription_status = NONE
+    
+    User starts with NO subscription - premium requires payment.
+    """
     # Check if user exists
     existing = await db.users.find_one({"email": user.email})
     if existing:
@@ -39,6 +49,7 @@ async def register(user: UserRegister):
     # Create user
     user_id = str(uuid.uuid4())
     hashed_password = get_password_hash(user.password)
+    now = datetime.now(timezone.utc)
     
     user_data = {
         "id": user_id,
@@ -47,10 +58,27 @@ async def register(user: UserRegister):
         "hashed_password": hashed_password,
         "dietary_restrictions": user.dietary_restrictions,
         "cuisine_preferences": user.cuisine_preferences,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": now.isoformat(),
+        # SIGNUP HARD DEFAULT: User starts with FREE plan, NO subscription
+        "default_plan": "free",
+        "subscription_status": "none"
     }
     
     await db.users.insert_one(user_data)
+    
+    # LOG NEW USER CREATION
+    log_security_event(
+        event_type=SecurityEvent.SUBSCRIPTION_CREATED,
+        user_id=user_id,
+        source="signup",
+        plan_id="free",
+        details={
+            "email": user.email,
+            "action": "user_registered",
+            "default_plan": "free",
+            "subscription_status": "none"
+        }
+    )
     
     # Create token
     access_token = create_access_token({"sub": user_id})
