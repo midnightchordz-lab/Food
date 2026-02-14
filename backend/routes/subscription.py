@@ -439,7 +439,17 @@ async def create_subscription(
     request: CreateSubscriptionRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new subscription"""
+    """
+    Create a new subscription - DEMO/TEST ENDPOINT ONLY
+    
+    PRODUCTION WARNING: This endpoint is for testing purposes only.
+    In production, subscriptions should ONLY be created via the payment flow:
+    - POST /api/subscription/razorpay/create-order (create payment order)
+    - POST /api/subscription/razorpay/verify-payment (verify and activate after payment)
+    
+    This endpoint creates subscriptions without payment verification and marks them
+    as 'source: demo' which will be blocked by the subscription guard in production.
+    """
     try:
         plan = get_plan_by_id(request.plan_id)
         if not plan:
@@ -475,12 +485,13 @@ async def create_subscription(
         
         subscription_id = str(uuid.uuid4())
         
-        # Create subscription document
+        # Create subscription document - marked as DEMO source (no payment verification)
         subscription_doc = {
             "id": subscription_id,
             "user_id": current_user.id,
             "plan_id": request.plan_id,
             "status": status,
+            "source": "demo",  # CRITICAL: Marks this as demo/test subscription
             "current_period_start": now.isoformat(),
             "current_period_end": period_end.isoformat(),
             "trial_start": now.isoformat() if trial_end else None,
@@ -505,6 +516,7 @@ async def create_subscription(
             "currency": "USD",
             "status": "completed",
             "transaction_type": "subscription",
+            "source": "demo",  # Mark as demo transaction
             "created_at": now.isoformat(),
             "paid_at": now.isoformat()
         }
