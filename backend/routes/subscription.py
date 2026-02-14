@@ -1139,8 +1139,8 @@ class CancelSubscriptionRequest(BaseModel):
     cancel_at_period_end: bool = True  # If true, access continues until period end
 
 
-@router.post("/cancel")
-async def cancel_subscription(
+@router.post("/cancel-v2")
+async def cancel_subscription_v2(
     request: CancelSubscriptionRequest,
     current_user: User = Depends(get_current_user)
 ):
