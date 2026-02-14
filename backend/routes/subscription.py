@@ -467,7 +467,10 @@ async def create_subscription(
     - POST /api/subscription/razorpay/verify-payment (verify and activate after payment)
     
     This endpoint creates subscriptions without payment verification and marks them
-    as 'source: demo' which will be blocked by the subscription guard in production.
+    as 'source: demo' which will be blocked by the entitlement guard.
+    
+    IMPORTANT: Demo subscriptions do NOT get trials since trials require
+    a valid payment source to be honored.
     """
     try:
         plan = get_plan_by_id(request.plan_id)
@@ -495,12 +498,11 @@ async def create_subscription(
         elif plan["billing_cycle"] == "annual":
             period_end = now + timedelta(days=365)
         
-        # Set trial if applicable
+        # DEMO subscriptions do NOT get trials - trials require valid payment source
+        # Status is "active" for demo, but entitlement guard will block premium access
         status = "active"
         trial_end = None
-        if plan["trial_period_days"] > 0:
-            trial_end = now + timedelta(days=plan["trial_period_days"])
-            status = "trialing"
+        trial_start = None
         
         subscription_id = str(uuid.uuid4())
         
@@ -513,11 +515,11 @@ async def create_subscription(
             "source": "demo",  # CRITICAL: Marks this as demo/test subscription
             "current_period_start": now.isoformat(),
             "current_period_end": period_end.isoformat(),
-            "trial_start": now.isoformat() if trial_end else None,
-            "trial_end": trial_end.isoformat() if trial_end else None,
+            "trial_start": trial_start,
+            "trial_end": trial_end,
             "cancel_at_period_end": False,
             "payment_provider": request.payment_provider,
-            "payment_provider_id": f"sub_{uuid.uuid4().hex[:16]}",
+            "payment_provider_id": f"sub_{uuid.uuid4().hex[:16]}",  # NOT a valid payment marker
             "created_at": now.isoformat(),
             "updated_at": now.isoformat()
         }
