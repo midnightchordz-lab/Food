@@ -29,6 +29,8 @@ from services.entitlement_guard import (
     verify_payment_from_source_of_truth,
     enforce_free_default,
     safety_check_before_premium,
+    log_plan_change,
+    get_plan_change_history,
     SecurityEvent,
     EntitlementSource,
     VALID_PREMIUM_SOURCES,
