@@ -1427,90 +1427,35 @@ async def get_invoice(
 # ============== ADMIN/MIGRATION ENDPOINTS ==============
 
 @router.post("/admin/fix-invalid-subscriptions")
-async def fix_invalid_subscriptions():
+async def fix_invalid_subscriptions(
+    hours_window: int = 24,
+    dry_run: bool = False
+):
     """
-    ADMIN ENDPOINT: Fix subscriptions created without valid payment.
+    DATA REPAIR SCRIPT (run once in production)
     
-    This migration script:
-    1. Finds all paid subscriptions created in the last 24 hours
-    2. Checks if they have valid payment records (razorpay_order_id or proper source)
-    3. Reverts invalid subscriptions to FREE plan
-    4. Does NOT affect users with valid payment records
+    For all users:
+    IF plan = CHEF_PRO_ANNUAL (or any paid plan)
+    AND no valid payment record
+    → downgrade to FREE
+    → preserve user data
+    → LOG "BULK_PREMIUM_CORRECTION"
     
-    This is a one-time correction script for the default plan assignment bug.
+    Query params:
+    - hours_window: Only check subscriptions in last N hours (0 = all time)
+    - dry_run: If true, only report what would be fixed without making changes
     """
     try:
-        now = datetime.now(timezone.utc)
-        twenty_four_hours_ago = now - timedelta(hours=24)
-        
-        # Find all paid subscriptions without proper payment source
-        invalid_subscriptions = await db.user_subscriptions.find({
-            "status": {"$in": ["active", "trialing"]},
-            "plan_id": {"$ne": "free"},
-            "created_at": {"$gte": twenty_four_hours_ago.isoformat()},
-            # Missing payment verification markers
-            "$and": [
-                {"$or": [
-                    {"razorpay_order_id": {"$exists": False}},
-                    {"razorpay_order_id": None}
-                ]},
-                {"$or": [
-                    {"source": {"$exists": False}},
-                    {"source": "demo"},
-                    {"source": ""}
-                ]}
-            ]
-        }).to_list(length=1000)
-        
-        corrected_count = 0
-        affected_users = []
-        
-        for sub in invalid_subscriptions:
-            user_id = sub["user_id"]
-            old_plan = sub["plan_id"]
-            
-            # Verify no valid payment exists for this subscription
-            payment = await db.payment_transactions.find_one({
-                "subscription_id": sub["id"],
-                "status": "completed",
-                "source": {"$ne": "demo"}
-            })
-            
-            if payment:
-                # Has valid payment - skip correction
-                logging.info(f"[FIX] Skipping user {user_id} - has valid payment record")
-                continue
-            
-            # Cancel invalid subscription
-            await db.user_subscriptions.update_one(
-                {"id": sub["id"]},
-                {
-                    "$set": {
-                        "status": "invalid_reverted",
-                        "reverted_at": now.isoformat(),
-                        "revert_reason": "No valid payment record found"
-                    }
-                }
-            )
-            
-            corrected_count += 1
-            affected_users.append({
-                "user_id": user_id,
-                "old_plan": old_plan,
-                "subscription_id": sub["id"]
-            })
-            
-            logging.warning(
-                f"[FIX] Reverted invalid subscription for user {user_id}: "
-                f"'{old_plan}' -> 'free' (no payment verification)"
-            )
+        result = await run_bulk_premium_correction(
+            db=db,
+            hours_window=hours_window,
+            dry_run=dry_run
+        )
         
         return {
             "success": True,
-            "message": f"Corrected {corrected_count} invalid subscriptions",
-            "corrected_count": corrected_count,
-            "affected_users": affected_users,
-            "check_window_hours": 24
+            "message": f"{'Would correct' if dry_run else 'Corrected'} {result['corrections_needed']} invalid subscriptions",
+            **result
         }
         
     except Exception as e:
