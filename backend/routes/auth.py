@@ -7,6 +7,7 @@ import os
 import uuid
 import logging
 import random
+import sys
 
 from .deps import (
     db, User, UserRegister, UserLogin, Token, 
@@ -14,7 +15,10 @@ from .deps import (
     get_current_user, verify_password, get_password_hash, create_access_token,
     SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_DAYS
 )
-from ..services.entitlement_guard import (
+
+# Add backend to path for services import
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services.entitlement_guard import (
     log_security_event,
     SecurityEvent
 )

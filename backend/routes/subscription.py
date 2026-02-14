@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 import os
+import sys
 import uuid
 import logging
 import hashlib
@@ -14,7 +15,10 @@ import hmac
 import razorpay
 
 from .deps import db, User, get_current_user
-from ..services.entitlement_guard import (
+
+# Add backend to path for services import
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from services.entitlement_guard import (
     validate_subscription_entitlement,
     validate_webhook_event,
     check_signup_protection,
