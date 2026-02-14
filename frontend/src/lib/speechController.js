@@ -227,6 +227,13 @@ function cancelSpeech() {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   
   console.log('[SpeechController] Canceling speech');
+  
+  // Clear keep-alive timer
+  if (keepAliveTimer) {
+    clearInterval(keepAliveTimer);
+    keepAliveTimer = null;
+  }
+  
   window.speechSynthesis.cancel();
   isSpeaking = false;
   currentUtterance = null;
