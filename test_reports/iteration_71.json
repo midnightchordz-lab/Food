@@ -116,12 +116,12 @@
   
   "test_environment": {
     "viewport": {"width": 1920, "height": 1080, "device": "Desktop"},
-    "url": "https://speech-controller.preview.emergentagent.com",
+    "url": "https://speech-engine.preview.emergentagent.com",
     "browser_automation": "Playwright"
   },
   
   "manual_testing_guide_for_sync_fix": [
-    "1. Login/signup at https://speech-controller.preview.emergentagent.com",
+    "1. Login/signup at https://speech-engine.preview.emergentagent.com",
     "2. Complete chat flow: Mood -> Meal Type -> Dietary -> Cuisine -> Show Recipes",
     "3. Wait for AI recipe generation (10-15 seconds)",
     "4. Click 'View Recipe' on any recipe card",

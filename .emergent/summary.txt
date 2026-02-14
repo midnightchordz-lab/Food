@@ -1,84 +1,65 @@
 <analysis>**original_problem_statement**:
-The user's initial goal was to fix production bugs and add an audit log. The project then pivoted to enhancing the Hands-Free Cooking feature. The primary and persistent problem is the Text-to-Speech (TTS) narration being cut off mid-sentence, especially on the Safari browser. This has led to a significant architectural refactor to create a stable, decoupled speech controller. A secondary issue of an incorrect recipe image being displayed has also been raised.
+The user's initial goal was to fix production bugs and add an audit log. The project then pivoted to enhancing the Hands-Free Cooking feature. The primary and persistent problem is the Text-to-Speech (TTS) narration being cut off mid-sentence, especially on Safari and mobile devices. After fixing a secondary issue with incorrect recipe images, the entire focus has been on stabilizing the speech engine. The user has provided very specific, technical instructions diagnosing the root cause: an orchestrator cleanup loop is repeatedly canceling speech, and the speech recognition and synthesis engines are conflicting with each other. The current task is a complete overhaul of the mobile voice functionality to make it stable.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The Hands-Free Cooking mode, within , features voice commands, TTS narration, and a step timer. The TTS system is critically unstable, particularly on Safari. The premium ElevenLabs TTS service is disabled due to an exhausted quota, forcing the app to rely on the browser's native Web Speech API, which is the source of the current bugs.
+The application has a Hands-Free Cooking mode within  that uses the browser's Web Speech API for TTS and voice recognition. This feature is critically unstable. The core issue lies in the application's logic, where an engine orchestrator cleanup process gets into an infinite loop, repeatedly calling  and killing the narration. Furthermore, the speech recognition and synthesis systems are not mutually exclusive, causing recognition to hear the TTS output and trigger a cleanup, which in turn cancels the TTS. On mobile, the voice feature is completely non-functional as it fails to initialize correctly without an explicit user gesture.
 
-To solve this, the agent has re-architected the speech logic into a singleton  to decouple it from the React component lifecycle. Several strategies have been implemented within this controller to combat the TTS cut-off issue, including a keep-alive timer and robust text chunking. The latest changes focused on resolving a race condition specific to Safari where speech recognition and synthesis conflict.
+Previous attempts to patch this with speaking locks and conditional cancellations have failed. The last agent began a larger refactor based on detailed user instructions to implement a mobile-first, tap-to-activate voice flow, but the implementation is incomplete.
 
 **Last working item**:
--   **Last item agent was working:** The agent was working on two parallel tasks as requested by the user:
-    1.  **(P0) Fixing the TTS cut-off on Safari:** The user reported that speech is cut off immediately upon starting. The agent identified a likely race condition on Safari between speech recognition and synthesis. A fix was implemented in  and  to prevent recognition from starting until after speech has finished. Extensive debug logging was also added to  to gather more information from the user's browser console.
-    2.  **(P1) Fixing Incorrect Recipe Image:** The user pointed out an incorrect image for a crab dish. The agent started investigating the backend image search logic in  to improve query accuracy.
+-   **Last item agent was working:** Implementing a Mobile Voice Full Recovery based on a detailed, multi-phase plan provided by the user. The goal is to completely re-architect the mobile speech functionality by isolating the recognition and synthesis engines, adding robust environment detection (mobile, WebView, HTTPS), and strictly enforcing a user-initiated tap-to-start activation flow.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** Manual testing by user. The next agent needs to ask the user to provide the console logs from their Safari browser to analyze the debug output. After the fix is confirmed, the  should be used for regression testing.
--   **User Testing Done:** Y (User confirmed the issue still exists)
+-   **Which testing method agent to use?** frontend testing agent. The fix is a complex, architectural change to a core feature. The test should simulate a mobile environment, verify that voice recognition only starts on a user tap, and confirm that full sentences are narrated without being cut off.
+-   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** TTS narration cuts off immediately at the beginning on Safari. (P0 - HIGHEST)
--   **Issue 2:** An incorrect image is displayed for the Thai Garlic Butter Crab recipe. (P1)
--   **Issue 3:** ElevenLabs TTS quota is exhausted, disabling the premium voice feature. (P2)
+-   **Issue 1:** (P0 - CRITICAL) Voice is completely non-functional on mobile devices, and TTS narration is unstable (cuts off) on all platforms, especially Safari.
+-   **Issue 2:** (P2) ElevenLabs TTS quota is exhausted, disabling the premium voice feature.
 
 **Issues Detail**:
--   **Issue 1: TTS narration cuts off immediately at the beginning on Safari.**
+-   **Issue 1: Mobile voice non-functional / TTS unstable.**
     -   **Attempted fixes:**
-        1.  **Singleton Controller:** Re-architected all speech logic into  to decouple it from the React component lifecycle.
-        2.  **Keep-Alive/Chunking:** Implemented a keep-alive timer and robust text-chunking within the controller to handle browser limitations. This did not fix the immediate cut-off.
-        3.  **Safari Race Condition:** Identified that starting speech recognition and synthesis simultaneously on Safari can cause synthesis to fail. The logic in  was refactored to ensure recognition only starts *after* TTS has completed, orchestrated by the . This is the latest attempted fix.
+        1.  **Stop Condition Filtering:** Added  parameters to  to ignore calls from the orchestrator. This was insufficient as the calls persisted.
+        2.  **Type Enforcement:** Fixed a runtime error by ensuring  receives a valid  object. This did not fix the underlying logic flaw.
+        3.  **Speaking Lock:** Added a boolean lock () which was ineffective against the aggressive, repeated  calls.
+        4.  **Mobile Activation Logic:** Started adding mobile detection and gesture-based handlers, but the implementation is partial and tangled with existing logic.
     -   **Next debug checklist**:
-        1.  **Crucial:** Ask the user to open the browser's developer console on Safari, reproduce the bug, and provide the logged output. The agent added specific logs (, , ) to pinpoint the failure.
-        2.  Based on the logs, investigate why Safari is rejecting or canceling the speech utterance.
-        3.  If  never fires, it's a rejection. Explore Safari-specific requirements, like ensuring  has completed before calling .
-        4.  If  fires, analyze the error message.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical bug blocking the core functionality of the hands-free cooking mode. Fixing it will make the feature usable.
+        1.  **Follow User's Plan:** Systematically implement the 10-phase plan from the user's last message (Chat Message 278).
+        2.  **Isolate Engines:** Refactor  to create two separate, isolated modules for  and . They must not automatically interfere with each other.
+        3.  **Enforce User Activation:** In , remove all automatic voice recognition startup logic for mobile. Recognition must *only* start after a direct user tap on the microphone button.
+        4.  **Remove Automatic Cancellation:** Scrutinize  and . Remove or guard any  or  calls triggered by timers, gesture engines, or cleanup cycles. Speech should only be cancelled by explicit user actions (Pause, Stop, Step Change).
+        5.  **Add Environment Guards:** In , add checks for mobile browsers, WebViews, and HTTPS secure context before attempting to initialize any speech functions, disabling the UI gracefully if conditions aren't met.
+    -   **Why fix this issue and what will be achieved with the fix?** The hands-free cooking mode is the app's key feature and is currently unusable. This fix will make it functional and stable.
     -   **Status:** IN PROGRESS
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend.
-    -   **Blocked on other issue:** None.
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None
 
--   **Issue 2: An incorrect image is displayed for the Thai Garlic Butter Crab recipe.**
-    -   **Attempted fixes:** Investigation has started.
+-   **Issue 2: ElevenLabs TTS quota is exhausted.**
+    -   **Attempted fixes:** A fallback to the browser's standard voice is implemented.
     -   **Next debug checklist**:
-        1.  Edit .
-        2.  Modify the  function.
-        3.  Append negative keywords to the search query (e.g., , , , ) to filter out irrelevant images of restaurant settings.
-    -   **Why fix this issue and what will be achieved with the fix?** Improves the visual accuracy and user experience of the recipe page.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Backend (for the API change) and Frontend (to see the new image).
-    -   **Blocked on other issue:** None.
-
--   **Issue 3: ElevenLabs TTS quota is exhausted.**
-    -   **Attempted fixes:** A fallback to the browser's standard voice is already implemented.
-    -   **Next debug checklist**:
-        1.  As a low-priority task, add a UI notification (e.g., a toast using Sonner) in  to inform the user that a standard voice is being used because the premium voice is unavailable.
+        1.  As a low-priority task, add a UI notification (e.g., a toast using Sonner) in  to inform the user that a standard voice is being used.
     -   **Why fix this issue and what will be achieved with the fix?** Manages user expectations regarding voice quality.
-    -   **Status:** NOT STARTED (The UI notification part is pending). Blocked on the user providing a new ElevenLabs key to restore premium functionality.
+    -   **Status:** NOT STARTED
     -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend.
-    -   **Blocked on other issue:** None.
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None. The feature itself is blocked on the user providing a new key.
 
 **In progress Task List**:
--   **Task 1: Resolve Safari TTS Cut-off**
-    -   **Where to resume:** Waiting for the user to provide Safari console logs to analyze the new debug output from .
-    -   **What will be achieved with this?** A functional and stable hands-free cooking mode on all browsers.
-    -   **Status:** BLOCKED (waiting on user feedback)
-    -   **Should Test frontend/backend/both after fix?** Frontend.
-    -   **Blocked on something:** User providing console logs.
-
--   **Task 2: Fix Incorrect Recipe Image**
-    -   **Where to resume:** Edit  to refine the image search query.
-    -   **What will be achieved with this?** More accurate recipe images.
+-   **Task 1: Mobile Voice Full Recovery (P0)**
+    -   **Where to resume:** Re-approach the task using the user's detailed 10-phase plan (Chat Message 278) as a blueprint. The current code in  and  is a mix of old and new logic; it should be refactored cleanly according to the user's specification for isolated engines and a user-gated activation flow.
+    -   **What will be achieved with this?** A stable, functional, and reliable hands-free cooking mode on mobile devices and all other platforms.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Both.
-    -   **Blocked on something:** None.
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on something:** None
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
     -   (P1) Implement Ingredient Encyclopedia Page ().
+    -   (P1) Address the user's query about requirements for building an iOS app.
     -   (P2) Implement a UI notification for the ElevenLabs quota fallback.
 -   **Future Tasks:**
     -   (P2) Implement Ingredient Detail Page (dynamic route ).
@@ -86,83 +67,71 @@ To solve this, the agent has re-architected the speech logic into a singleton  t
     -   (Enhancement) Add a visual indicator for subscription feature refresh post-payment.
 
 **Completed work in this session**
--   **TTS Architectural Refactor:** Refactored all TTS logic from  into a robust, singleton  to decouple it from the React lifecycle.
--   **TTS Stability Fixes:** Implemented multiple strategies in  to fix TTS cut-offs, including a keep-alive timer, text chunking, and a global cancellation flag.
--   **Safari Race Condition Fix:** Identified and implemented a potential fix for a Safari-specific race condition between speech synthesis and recognition.
--   **Debug Logging:** Added extensive debug logging to  for further diagnosis of the Safari issue.
+-   **Incorrect Recipe Image Fix:** Modified  to add negative keywords (e.g., , ) to the image search query, which was successfully tested and resolved the issue of incorrect images being displayed.
 
 **Earlier issues found/mentioned but not fixed**
--   The low-priority task to add a UI notification (toast) informing the user about the ElevenLabs quota fallback remains unimplemented.
+-   A user query we have the required information for IOS app what all do you need for IOS APP was received but not addressed.
+-   The UI notification for the ElevenLabs quota fallback has not been implemented.
 
 **Known issue recurrence from previous fork**
--   The core problem of TTS instability has been a recurring theme, with the current focus being a Safari-specific manifestation of the issue.
+-   The TTS instability is a chronic, recurring problem that has been the focus of multiple sessions. The diagnosis has become progressively more accurate, pinpointing the orchestrator loop and engine conflicts as the true root cause.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Singleton Pattern:** The architecture used for the  to ensure a single, persistent instance manages all speech.
--   **Web Speech API:** The browser-native API used for  (TTS) and  (voice commands).
--   **Browser-Specific Quirks:** The current issue is a classic example of a bug specific to one browser (Safari), likely involving a race condition between APIs.
--   **Asynchronous JavaScript:** The coordination between TTS and voice recognition relies heavily on , Promises, and event callbacks.
-
-**key DB schema**
--   No database schema changes in this session.
-
-**changes in tech stack**
--   None.
+-   **Web Speech API:** The core browser technology for  and , which exhibits significant cross-browser inconsistencies (quirks), especially on Safari and mobile.
+-   **Race Conditions & Mutual Exclusion:** The central bug involves a race condition where the recognition and synthesis engines are not mutually exclusive, causing a destructive feedback loop.
+-   **State Management:** The primary challenge is managing the complex state of the speech engine (idle, listening, speaking, error) reliably outside of the React component lifecycle, which is why a singleton controller pattern is being used.
 
 **All files of reference**
--   : **(CRITICAL)** The core of the TTS fix. Contains the latest chunking and Safari workarounds.
--   : The main UI component, refactored to use the speech controller.
--   : The file to be modified to fix the incorrect image issue.
--   : Legacy file that still handles some voice command callbacks but is a potential source of conflicts.
+-   : **(CRITICAL)** This file must be refactored to house the new, isolated speech synthesis and recognition engines as per the user's instructions.
+-   : **(CRITICAL)** This component must be updated to remove automatic speech activation and implement a tap-to-start flow for mobile, simplifying its interaction with the speech controller.
+-   : A legacy file with overlapping responsibilities. Its functionality should be cleanly absorbed into the new  to eliminate conflicts.
+-   : This file was successfully modified to fix the image search issue. No further work is needed here.
 
 **Areas that need refactoring**:
--    remains a very large and complex component.
--    contains legacy code and direct  calls. Its remaining responsibilities should be fully absorbed into  to eliminate potential conflicts.
-
-**key api endpoints**
--   : Used for premium TTS (currently failing due to quota).
--   : Used for fetching recipe images (target of the image bug fix).
+-   **Speech Logic (, ):** The highest priority is to refactor the speech logic into two distinct, isolated engines for Synthesis and Recognition within , deprecating .
+-   **:** The component's  hooks and event handlers that trigger speech need to be simplified to prevent automatic, unintended  calls. The control flow must become explicit and user-driven.
 
 **Critical Info for New Agent**
--   Your work is split into two tasks, but the **Safari TTS bug is the absolute highest priority (P0)**.
--   **Do not proceed on the TTS bug until you get the console logs from the user.** Your first action should be to ask the user to test on Safari and provide the output from the developer console. The debug logs are designed to tell you exactly where it's failing.
--   While waiting for the user, you can work on the **P1 image issue** by editing  to add negative keywords to the image search.
--   The core of the TTS problem is a browser-specific quirk in Safari. Do not assume solutions that work on Chrome will work here. The race condition between starting speech and starting recognition is the most likely culprit.
+-   **Your primary directive is in the user's last two prompts (Chat messages 219 and 278).** Read them carefully. They provide a precise, step-by-step plan for fixing the voice issues. Your goal is to implement that plan without deviation.
+-   **The root cause is the  automatically calling  in a loop.** Your fix must sever this connection. Speech cancellation must only be triggered by explicit user actions (e.g., tapping Pause/Stop).
+-   **Mobile voice activation must be gated by a user tap.** Remove any and all code that attempts to auto-start voice recognition on mobile platforms.
+-   **Isolate the Synthesis and Recognition engines.** They are currently fighting each other. The refactor of  should ensure they can operate without causing mutual interference.
 
 **documents and test reports created in this job**
--    (updated with TTS refactor details)
+-    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
--   The user confirmed the TTS is still cutting off on Safari.
--   Provided critical details: it cuts off at the Beginning, Immediately, and on the Safari browser.
--   Shared a screenshot showing the incorrect crab dish image.
--   The last user message was yes work on that, giving the agent permission to work on the image issue while the user presumably tests the TTS fix.
+-   The user has transitioned from reporting a bug to providing expert-level debugging and a precise implementation plan.
+-   **User Message 278:** A detailed 10-phase plan for Mobile Voice Full Recovery. This is your primary task blueprint.
+-   **User Message 269:** A prompt to isolate TTS cancellation triggers and prevent the orchestrator from killing speech.
+-   **User Message 262:** A screenshot showing the console log spammed with , confirming the root cause.
+-   **User Message 216:** we have the required information for IOS app what all do you need for IOS APP - This question is pending and should be addressed after the critical bug fix.
+-   The messages clearly indicate the core problem is an architectural flaw, not a simple bug. Do not attempt small patches; a systematic refactor is required.
 
 **Project Health Check:**
 -   **Broken:**
-    -   **Text-to-Speech (TTS) on Safari:** Critically unstable and unusable. This is the P0 bug.
-    -   **Premium Voice Narration:** The ElevenLabs integration is non-functional due to an exhausted API quota.
--   **Mocked:**
-    -   None.
+    -   **Hands-Free Mode on Mobile:** Completely non-functional.
+    -   **TTS Narration on all platforms:** Critically unstable due to a logic loop that constantly cancels speech.
+-   **Mocked:** None.
 
 **3rd Party Integrations**
 -   **ElevenLabs:** For premium TTS. **(Functionally Disabled - Quota Exhausted)**
--   **@tensorflow/tfjs & @tensorflow-models/hand-pose-detection:** For gesture recognition. (Dormant)
--   **SerpApi:** Used for image search via the backend.
--   **Razorpay:** Payment provider.
--   **Capacitor:** For mobile app builds.
+-   **SerpApi:** Used for image search via the backend. **(Working)**
+-   Others (TensorFlow, Razorpay, Capacitor) are present but not relevant to the current critical task.
 
 **Testing status**
--   **Testing agent used after significant changes:** NO (for the latest Safari fix). Will be required after the fix is validated by the user.
+-   **Testing agent used after significant changes:** NO. Previous fixes were not adequately tested.
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** None.
--   **Known regressions:** TTS stability on Safari is the main regression.
+-   **Known regressions:** The core speech feature is in a regressed, non-functional state.
 
 **Credentials to test flow:**
 -   Standard User:  / 
 
 **What agent forgot to execute**
--   The low-priority task to add a UI notification (toast) for the ElevenLabs TTS quota fallback remains unimplemented.</analysis>
+-   The agent did not address the user's question about iOS app requirements.
+-   The agent did not implement the UI notification for the ElevenLabs quota fallback.
+-   The previous agent's implementation of the mobile fix was piecemeal and did not follow the user's directive for a systematic overhaul, leading to a messy and incomplete state.</analysis>
