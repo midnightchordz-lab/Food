@@ -22,6 +22,7 @@ import speechController, {
   stopRecognition as globalStopRecognition,
   setRecognitionCallbacks as globalSetRecognitionCallbacks,
   setStateChangeCallback as globalSetStateChangeCallback,
+  setSynthesisStateCallback as globalSetSynthesisStateCallback,
   getRecognitionState as globalGetRecognitionState,
   getEnvironment as globalGetEnvironment,
   isSessionArmed as globalIsSessionArmed,
