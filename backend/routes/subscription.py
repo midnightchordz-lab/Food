@@ -25,6 +25,8 @@ from services.entitlement_guard import (
     log_subscription_creation,
     log_security_event,
     run_bulk_premium_correction,
+    get_user_subscription_safe,
+    verify_payment_from_source_of_truth,
     SecurityEvent,
     EntitlementSource,
     VALID_PREMIUM_SOURCES
