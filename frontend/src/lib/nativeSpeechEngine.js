@@ -1,8 +1,8 @@
 /**
  * NATIVE SPEECH ENGINE - Capacitor Plugin Integration
  * 
- * This module provides native speech recognition and synthesis for mobile apps
- * using the @capgo/capacitor-speech-recognition plugin.
+ * This module provides native speech recognition for mobile apps
+ * using the @capacitor-community/speech-recognition plugin (Capacitor 5 compatible).
  * 
  * ARCHITECTURE:
  * - Mobile (Capacitor native): Uses native plugin for recognition, Web Speech API for TTS
@@ -54,7 +54,7 @@ async function initEnvironment() {
   // Check native plugin availability
   if (ENV.isNative) {
     try {
-      const module = await import('@capgo/capacitor-speech-recognition');
+      const module = await import('@capacitor-community/speech-recognition');
       SpeechRecognition = module.SpeechRecognition;
       ENV.hasNativePlugin = !!SpeechRecognition;
       console.log('[NativeSpeech] Native plugin loaded successfully');
@@ -94,10 +94,10 @@ export async function checkPermissions() {
     try {
       const result = await navigator.permissions.query({ name: 'microphone' });
       permissionState = result.state;
-      return { status: permissionState };
+      return { speechRecognition: permissionState };
     } catch {
       permissionState = 'unknown';
-      return { status: 'unknown' };
+      return { speechRecognition: 'unknown' };
     }
   }
   
@@ -109,7 +109,7 @@ export async function checkPermissions() {
   } catch (e) {
     console.error('[NativeSpeech] Permission check error:', e);
     permissionState = 'unknown';
-    return { status: 'unknown' };
+    return { speechRecognition: 'unknown' };
   }
 }
 
@@ -126,10 +126,10 @@ export async function requestPermissions() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
       permissionState = 'granted';
-      return { status: 'granted' };
+      return { speechRecognition: 'granted' };
     } catch (e) {
       permissionState = 'denied';
-      return { status: 'denied' };
+      return { speechRecognition: 'denied' };
     }
   }
   
@@ -141,7 +141,7 @@ export async function requestPermissions() {
   } catch (e) {
     console.error('[NativeSpeech] Permission request error:', e);
     permissionState = 'denied';
-    return { status: 'denied' };
+    return { speechRecognition: 'denied' };
   }
 }
 
@@ -162,7 +162,8 @@ let recognitionCallbacks = {
   onError: null,
   onPartialResult: null,
 };
-let recognitionListeners = [];
+let partialResultsListener = null;
+let listeningStateListener = null;
 
 /**
  * Check if recognition is currently active
@@ -198,7 +199,7 @@ export async function startRecognition(options = {}) {
   
   if (permissionState !== 'granted') {
     const status = await checkPermissions();
-    if (status.status !== 'granted') {
+    if (status.speechRecognition !== 'granted') {
       console.log('[NativeSpeech] Permission not granted');
       recognitionCallbacks.onError?.('permission-denied');
       return false;
@@ -209,62 +210,45 @@ export async function startRecognition(options = {}) {
   if (ENV.isNative && SpeechRecognition) {
     try {
       // Remove any existing listeners
-      cleanupListeners();
+      await cleanupListeners();
       
-      // Add event listeners
-      const startListener = await SpeechRecognition.addListener('start', () => {
-        console.log('[NativeSpeech] Recognition started');
-        isListening = true;
-        recognitionCallbacks.onStart?.();
-      });
-      recognitionListeners.push(startListener);
-      
-      const endListener = await SpeechRecognition.addListener('end', () => {
-        console.log('[NativeSpeech] Recognition ended');
-        isListening = false;
-        recognitionCallbacks.onEnd?.();
-        
-        // Auto-restart if shouldBeListening is still true
-        if (shouldBeListening && !isListening) {
-          setTimeout(() => {
-            if (shouldBeListening && !isListening) {
-              startRecognition(options);
-            }
-          }, 300);
-        }
-      });
-      recognitionListeners.push(endListener);
-      
-      const resultListener = await SpeechRecognition.addListener('result', (result) => {
-        console.log('[NativeSpeech] Result:', result);
-        if (result.value) {
-          const transcript = Array.isArray(result.value) ? result.value[0] : result.value;
+      // Add event listeners BEFORE starting (per plugin docs)
+      partialResultsListener = await SpeechRecognition.addListener('partialResults', (data) => {
+        console.log('[NativeSpeech] Partial results:', data.matches);
+        if (data.matches && data.matches.length > 0) {
+          const transcript = data.matches[0];
+          recognitionCallbacks.onPartialResult?.(transcript);
+          // Also treat as final result for command processing
           recognitionCallbacks.onResult?.(transcript);
         }
       });
-      recognitionListeners.push(resultListener);
       
-      const partialListener = await SpeechRecognition.addListener('partialResults', (result) => {
-        if (result.value && recognitionCallbacks.onPartialResult) {
-          const transcript = Array.isArray(result.value) ? result.value[0] : result.value;
-          recognitionCallbacks.onPartialResult(transcript);
+      listeningStateListener = await SpeechRecognition.addListener('listeningState', (data) => {
+        console.log('[NativeSpeech] Listening state:', data.status);
+        if (data.status === 'started') {
+          isListening = true;
+          recognitionCallbacks.onStart?.();
+        } else if (data.status === 'stopped') {
+          isListening = false;
+          recognitionCallbacks.onEnd?.();
+          
+          // Auto-restart if shouldBeListening is still true
+          if (shouldBeListening && !isListening) {
+            setTimeout(() => {
+              if (shouldBeListening && !isListening) {
+                startRecognition(options);
+              }
+            }, 300);
+          }
         }
       });
-      recognitionListeners.push(partialListener);
-      
-      const errorListener = await SpeechRecognition.addListener('error', (error) => {
-        console.log('[NativeSpeech] Error:', error);
-        isListening = false;
-        recognitionCallbacks.onError?.(error.message || 'unknown');
-      });
-      recognitionListeners.push(errorListener);
       
       // Start listening
       await SpeechRecognition.start({
         language: options.language || 'en-US',
         maxResults: options.maxResults || 3,
         partialResults: options.partialResults ?? true,
-        popup: false, // No popup on Android
+        popup: false, // No popup on Android - required for partialResults
       });
       
       shouldBeListening = true;
@@ -300,19 +284,33 @@ export async function stopRecognition() {
     }
   }
   
-  cleanupListeners();
+  await cleanupListeners();
 }
 
 /**
  * Clean up event listeners
  */
-function cleanupListeners() {
-  recognitionListeners.forEach(listener => {
+async function cleanupListeners() {
+  if (partialResultsListener) {
     try {
-      listener.remove();
+      await partialResultsListener.remove();
     } catch {}
-  });
-  recognitionListeners = [];
+    partialResultsListener = null;
+  }
+  
+  if (listeningStateListener) {
+    try {
+      await listeningStateListener.remove();
+    } catch {}
+    listeningStateListener = null;
+  }
+  
+  // Also remove all listeners as safety
+  if (ENV.isNative && SpeechRecognition) {
+    try {
+      await SpeechRecognition.removeAllListeners();
+    } catch {}
+  }
 }
 
 // ============================================
@@ -371,8 +369,8 @@ export async function isAvailable() {
 // CLEANUP
 // ============================================
 
-export function cleanup() {
-  stopRecognition();
+export async function cleanup() {
+  await stopRecognition();
   recognitionCallbacks = {
     onResult: null,
     onStart: null,
