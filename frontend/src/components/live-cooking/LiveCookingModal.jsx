@@ -812,14 +812,15 @@ export default function LiveCookingModal() {
     cameraStream,
     onSpeakStep: async (text) => {
       // CANCEL DISCIPLINE: Only stop if explicitly needed for new narration
-      // Use single speech lock in speakText instead of manual cancel
+      // Use single speech lock in globalSpeak instead of manual cancel
       await new Promise(resolve => setTimeout(resolve, 150));
-      // Simplified narration without mood detection
-      await narrateStep(text, currentStep + 1, instructions.length);
+      // GLOBAL CONTROLLER: Use singleton for narration
+      globalNarrateStep(text, currentStep + 1, instructions.length);
     },
     onStopSpeaking: () => {
       // CANCEL DISCIPLINE: This is called when user presses pause or step changes
-      stopSpeech();
+      // GLOBAL CONTROLLER: Cancel via singleton
+      globalCancelSpeech();
     },
     onStepChange: (direction) => {
       // This is called by orchestrator after gesture/voice navigation
