@@ -1606,3 +1606,71 @@ async def subscription_integrity_check():
         logging.error(f"Error checking subscription integrity: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/admin/audit-logs")
+async def get_audit_logs(
+    user_id: Optional[str] = None,
+    limit: int = 100
+):
+    """
+    ADMIN ENDPOINT: Get subscription plan change audit logs.
+    
+    Query params:
+        - user_id: Optional - filter by specific user
+        - limit: Max records to return (default 100)
+    
+    Returns audit log entries sorted by timestamp (newest first).
+    """
+    try:
+        query = {}
+        if user_id:
+            query["user_id"] = user_id
+        
+        cursor = db.audit_logs.find(
+            query,
+            {"_id": 0}
+        ).sort("timestamp", -1).limit(limit)
+        
+        logs = await cursor.to_list(length=limit)
+        
+        return {
+            "success": True,
+            "count": len(logs),
+            "audit_logs": logs
+        }
+        
+    except Exception as e:
+        logging.error(f"Error fetching audit logs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/admin/audit-logs/user/{user_id}")
+async def get_user_audit_logs(
+    user_id: str,
+    limit: int = 50
+):
+    """
+    ADMIN ENDPOINT: Get plan change history for a specific user.
+    
+    Path params:
+        - user_id: User ID to get history for
+    
+    Query params:
+        - limit: Max records (default 50)
+    
+    Returns chronological audit trail for debugging subscription issues.
+    """
+    try:
+        logs = await get_plan_change_history(db, user_id, limit)
+        
+        return {
+            "success": True,
+            "user_id": user_id,
+            "count": len(logs),
+            "plan_changes": logs
+        }
+        
+    except Exception as e:
+        logging.error(f"Error fetching user audit logs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
