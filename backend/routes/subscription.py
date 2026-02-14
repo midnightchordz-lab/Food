@@ -1395,21 +1395,26 @@ async def get_invoice(
 @router.post("/admin/fix-invalid-subscriptions")
 async def fix_invalid_subscriptions(
     hours_window: int = 24,
-    dry_run: bool = False
+    dry_run: bool = True
 ):
     """
-    DATA REPAIR SCRIPT (run once in production)
+    TARGETED DATA REPAIR SCRIPT (SAFE)
     
-    For all users:
-    IF plan = CHEF_PRO_ANNUAL (or any paid plan)
-    AND no valid payment record
-    → downgrade to FREE
-    → preserve user data
-    → LOG "BULK_PREMIUM_CORRECTION"
+    This script has two modes:
+    
+    1. RESTORE MODE: For users marked Free BUT having valid payment record
+       → Restore correct paid tier
+       → Log "PREMIUM_RESTORED_AFTER_FALSE_DOWNGRADE"
+    
+    2. CORRECTION MODE: For users with paid plan but NO payment anywhere
+       → Downgrade to FREE (only after source-of-truth verification)
+       → Log "BULK_PREMIUM_CORRECTION"
+    
+    SAFETY: Does NOT touch real free users or valid paid users.
     
     Query params:
     - hours_window: Only check subscriptions in last N hours (0 = all time)
-    - dry_run: If true, only report what would be fixed without making changes
+    - dry_run: If true (DEFAULT), only report without making changes
     """
     try:
         result = await run_bulk_premium_correction(
@@ -1420,12 +1425,15 @@ async def fix_invalid_subscriptions(
         
         return {
             "success": True,
-            "message": f"{'Would correct' if dry_run else 'Corrected'} {result['corrections_needed']} invalid subscriptions",
+            "message": (
+                f"{'Would restore' if dry_run else 'Restored'} {result['restorations_performed']} falsely downgraded users. "
+                f"{'Would correct' if dry_run else 'Corrected'} {result['corrections_performed']} invalid subscriptions."
+            ),
             **result
         }
         
     except Exception as e:
-        logging.error(f"Error fixing invalid subscriptions: {e}")
+        logging.error(f"Error in data repair script: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
