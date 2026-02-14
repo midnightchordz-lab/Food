@@ -572,20 +572,27 @@ function setRecognitionCallbacks(callbacks) {
  * @param {function} onComplete - Callback when narration finishes
  */
 function narrateStep(text, stepNumber, totalSteps, onComplete = null) {
-  if (!text) {
+  // TYPE ENFORCEMENT: Ensure text is a string
+  if (typeof text !== 'string' || !text.trim()) {
+    console.log('[SpeechController] narrateStep: Invalid or empty text');
     onComplete?.();
     return false;
   }
   
+  // Ensure stepNumber and totalSteps are numbers
+  const step = parseInt(stepNumber, 10) || 1;
+  const total = parseInt(totalSteps, 10) || 1;
+  
   let narrationText = '';
-  if (stepNumber === 1) {
-    narrationText = `Let's begin. Step ${stepNumber} of ${totalSteps}. ${text}`;
-  } else if (stepNumber === totalSteps) {
+  if (step === 1) {
+    narrationText = `Let's begin. Step ${step} of ${total}. ${text}`;
+  } else if (step === total) {
     narrationText = `Final step. ${text}`;
   } else {
-    narrationText = `Step ${stepNumber}. ${text}`;
+    narrationText = `Step ${step}. ${text}`;
   }
   
+  console.log('[SpeechController] narrateStep: Speaking:', narrationText.substring(0, 50) + '...');
   return speak(narrationText, onComplete);
 }
 
