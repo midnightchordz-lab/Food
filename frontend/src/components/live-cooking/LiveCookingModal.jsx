@@ -881,7 +881,7 @@ export default function LiveCookingModal() {
     if (handsFreeEnabled) {
       // Already enabled - disable it
       setHandsFreeEnabled(false);
-      setRecognitionState('idle');
+      setVoiceRecognitionState('idle');
       // GLOBAL CONTROLLER: Cancel speech for disabling hands-free
       globalCancelSpeech('disableHandsFree');
       globalStopRecognition();
@@ -908,7 +908,7 @@ export default function LiveCookingModal() {
       // Set up state change callback for UI sync
       globalSetStateChangeCallback((state) => {
         console.log('[LiveCooking] Recognition state changed:', state);
-        setRecognitionState(state);
+        setVoiceRecognitionState(state);
         setVoiceListening(state === 'listening');
       });
       
@@ -919,7 +919,7 @@ export default function LiveCookingModal() {
       // MOBILE: Use gesture-based start (will be triggered by mic button tap)
       if (env.isMobile) {
         console.log('[LiveCooking] Mobile detected - recognition will start on tap');
-        setRecognitionState('permission-needed');
+        setVoiceRecognitionState('permission-needed');
         toast.success('Tap the mic button to start voice control!');
       } else {
         // Desktop: Can auto-start
@@ -961,7 +961,7 @@ export default function LiveCookingModal() {
     
     // If already enabled, check if we need to start recognition (mobile)
     const env = globalGetEnvironment();
-    if (env.isMobile || recognitionState === 'permission-needed') {
+    if (env.isMobile || voiceRecognitionState === 'permission-needed') {
       console.log('[LiveCooking] Mic button tapped - starting recognition from user gesture');
       const started = globalStartRecognitionFromGesture();
       if (started) {
@@ -1053,12 +1053,12 @@ export default function LiveCookingModal() {
       } else {
         // Mobile: Wait for user gesture (tap on mic button)
         console.log('[LiveCooking] Mobile - waiting for user tap to start recognition');
-        setRecognitionState('permission-needed');
+        setVoiceRecognitionState('permission-needed');
       }
     } else {
       // GLOBAL CONTROLLER: Stop recognition when disabled or modal closes
       globalStopRecognition();
-      setRecognitionState('idle');
+      setVoiceRecognitionState('idle');
     }
     
     return () => {
@@ -1498,7 +1498,7 @@ export default function LiveCookingModal() {
                           className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
                             voiceListening 
                               ? 'bg-green-500/30 border-green-400/30'
-                              : recognitionState === 'permission-needed'
+                              : voiceRecognitionState === 'permission-needed'
                                 ? 'bg-amber-500/20 border-amber-400/30 animate-pulse'
                                 : handsFreeEnabled 
                                   ? 'bg-emerald-500/20' 
@@ -1515,7 +1515,7 @@ export default function LiveCookingModal() {
                             />
                           )}
                           {/* Tap to enable indicator */}
-                          {recognitionState === 'permission-needed' && !voiceListening && (
+                          {voiceRecognitionState === 'permission-needed' && !voiceListening && (
                             <motion.div
                               className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"
                               animate={{ scale: [1, 1.3, 1] }}
@@ -1530,7 +1530,7 @@ export default function LiveCookingModal() {
                               <Mic className={`w-3 h-3 ${
                                 voiceListening 
                                   ? 'text-green-400' 
-                                  : recognitionState === 'permission-needed'
+                                  : voiceRecognitionState === 'permission-needed'
                                     ? 'text-amber-400'
                                     : 'text-emerald-400'
                               }`} />
@@ -1541,7 +1541,7 @@ export default function LiveCookingModal() {
                           <span className={`text-xs hidden sm:inline ${
                             voiceListening 
                               ? 'text-green-400'
-                              : recognitionState === 'permission-needed'
+                              : voiceRecognitionState === 'permission-needed'
                                 ? 'text-amber-400'
                                 : handsFreeEnabled 
                                   ? 'text-emerald-400' 
@@ -1549,7 +1549,7 @@ export default function LiveCookingModal() {
                           }`}>
                             {voiceListening 
                               ? 'Listening' 
-                              : recognitionState === 'permission-needed'
+                              : voiceRecognitionState === 'permission-needed'
                                 ? 'Tap Mic'
                                 : handsFreeEnabled 
                                   ? 'Voice On' 
