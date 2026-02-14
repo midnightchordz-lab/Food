@@ -509,6 +509,148 @@ export default function LiveCookingModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, abortEmotionalNarration]);
 
+  // ============================================
+  // STEP COUNTDOWN TIMER LOGIC
+  // ============================================
+  
+  // Initialize/reset timer when step changes or play state changes
+  useEffect(() => {
+    // Clear any existing timer
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    setTimerComplete(false);
+    
+    // Only start timer if:
+    // 1. Modal is open
+    // 2. User has started cooking (isPlaying or hasUserStartedRef)
+    // 3. Step has a duration
+    if (!open || !isPlaying) {
+      setTimerSeconds(null);
+      setTimerInitialSeconds(null);
+      return;
+    }
+    
+    const stepDuration = instructions[currentStep]?.time;
+    const seconds = parseTimeToSeconds(stepDuration);
+    
+    if (seconds === null) {
+      setTimerSeconds(null);
+      setTimerInitialSeconds(null);
+      return;
+    }
+    
+    // Start the timer
+    setTimerSeconds(seconds);
+    setTimerInitialSeconds(seconds);
+    
+    console.log(`[Timer] Started countdown: ${seconds}s for step ${currentStep + 1}`);
+    
+    timerIntervalRef.current = setInterval(() => {
+      setTimerSeconds(prev => {
+        if (prev === null || prev <= 0) {
+          // Timer reached zero
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [open, isPlaying, currentStep, instructions]);
+  
+  // Handle timer completion - soft chime and voice cue
+  useEffect(() => {
+    if (timerSeconds === 0 && timerInitialSeconds !== null) {
+      setTimerComplete(true);
+      console.log('[Timer] Step timer complete!');
+      
+      // Soft chime using Web Audio API
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Pleasant chime sound
+        oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+        oscillator.type = 'sine';
+        
+        // Soft envelope
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.8);
+        
+        // Second chime (higher pitch)
+        setTimeout(() => {
+          const osc2 = audioContext.createOscillator();
+          const gain2 = audioContext.createGain();
+          osc2.connect(gain2);
+          gain2.connect(audioContext.destination);
+          osc2.frequency.setValueAtTime(659.25, audioContext.currentTime); // E5
+          osc2.type = 'sine';
+          gain2.gain.setValueAtTime(0, audioContext.currentTime);
+          gain2.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 0.05);
+          gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+          osc2.start(audioContext.currentTime);
+          osc2.stop(audioContext.currentTime + 0.6);
+        }, 200);
+      } catch (e) {
+        console.log('[Timer] Chime not available:', e.message);
+      }
+      
+      // Voice cue "Step complete" (only if not currently speaking)
+      if (!isSpeaking() && isSpeechSupported()) {
+        setTimeout(() => {
+          speakText("Step time complete");
+        }, 500);
+      }
+      
+      // Auto-clear glow after 3 seconds
+      setTimeout(() => setTimerComplete(false), 3000);
+    }
+  }, [timerSeconds, timerInitialSeconds]);
+  
+  // Reset timer on repeat
+  const resetStepTimer = useCallback(() => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    setTimerComplete(false);
+    
+    const stepDuration = instructions[currentStep]?.time;
+    const seconds = parseTimeToSeconds(stepDuration);
+    
+    if (seconds !== null && isPlaying) {
+      setTimerSeconds(seconds);
+      setTimerInitialSeconds(seconds);
+      
+      timerIntervalRef.current = setInterval(() => {
+        setTimerSeconds(prev => {
+          if (prev === null || prev <= 0) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+  }, [currentStep, instructions, isPlaying]);
+
   // Modified play handler - start voice AND enable hands-free on first play
   const handleTogglePlayWithVoice = useCallback(async () => {
     const newIsPlaying = !isPlaying;
