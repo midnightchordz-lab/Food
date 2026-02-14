@@ -1,0 +1,76 @@
+{
+  "summary": "Production Hotfix Testing Complete - Entitlement Guard for Subscription Plan Assignment. All 10 backend tests passed. Verified: (1) New users get FREE plan by default, (2) Demo subscriptions marked with source='demo', (3) Entitlement guard blocks demo subscriptions and returns FREE plan, (4) Admin integrity check endpoint works, (5) Admin fix endpoint corrects invalid subscriptions, (6) Feature checks respect entitlement guard.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "features_verified": {
+    "new_user_free_plan": "PASS - New users correctly assigned FREE plan on registration",
+    "demo_subscription_source_marker": "PASS - Demo subscriptions created via /create endpoint are marked with source='demo'",
+    "entitlement_guard_blocks_demo": "PASS - Entitlement guard correctly blocks demo subscriptions and returns FREE plan features",
+    "admin_integrity_check": "PASS - /api/subscription/admin/subscription-integrity-check returns proper report",
+    "admin_fix_invalid": "PASS - /api/subscription/admin/fix-invalid-subscriptions corrects invalid subscriptions",
+    "feature_check_respects_guard": "PASS - check-feature endpoints respect entitlement guard, returning FREE limits for demo users",
+    "premium_features_blocked": "PASS - Premium features (AI photo, etc.) correctly blocked for demo subscription users"
+  },
+
+  "integrity_report_snapshot": {
+    "total_active_paid_subscriptions": 25,
+    "subscriptions_with_valid_payment": 1,
+    "suspicious_subscriptions_no_payment": 24,
+    "integrity_status": "ISSUES_DETECTED",
+    "note": "24 suspicious subs are older than 24hr window and require manual correction or additional admin action"
+  },
+
+  "test_report_links": [
+    "/app/backend/tests/test_entitlement_guard_hotfix.py",
+    "/app/test_reports/pytest/pytest_entitlement_guard.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "POSITIVE: Entitlement guard logic in get_user_subscription() correctly validates subscription source",
+    "POSITIVE: Valid sources list includes: payment, trial, admin, razorpay, stripe",
+    "POSITIVE: razorpay_order_id presence also grants premium access (for real payments)",
+    "POSITIVE: Demo subscriptions are clearly marked with source='demo'",
+    "POSITIVE: Admin endpoints provide good visibility and correction tools",
+    "NOTE: 24 suspicious subscriptions older than 24hr window exist - may need manual review"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_entitlement_guard_hotfix.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (10/10 tests passed)",
+    "frontend": "N/A (backend-only testing as requested)"
+  },
+
+  "test_credentials": {
+    "test_users_created": "Multiple TEST_entitlement_* and TEST_e2e_* users created for testing"
+  },
+
+  "seed_data_creation": "Test users with prefix TEST_entitlement_ and TEST_e2e_ created during testing",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Production hotfix for entitlement guard verified working. Key points: (1) get_user_subscription() in /app/backend/routes/subscription.py (lines 273-335) implements the entitlement guard, (2) Valid sources for premium access: payment, trial, admin, razorpay, stripe OR presence of razorpay_order_id, (3) Demo subscriptions via /create endpoint are marked source='demo' and blocked by guard, (4) Admin endpoints at /api/subscription/admin/* provide integrity checking and fixing tools. Integrity report shows 24 older suspicious subscriptions that may need attention.",
+
+  "e2e_test_flow_verified": {
+    "step1_register": "New user gets FREE plan by default",
+    "step2_create_demo_sub": "Demo subscription created with source='demo'",
+    "step3_check_sub": "Entitlement guard returns FREE plan (blocks demo)",
+    "step4_feature_check": "Feature checks show FREE limits (5 recipes, no premium)"
+  }
+}
