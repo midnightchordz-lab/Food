@@ -89,6 +89,43 @@ Created `/app/frontend/src/utils/auth.js` with `isUserPremium(user)` function th
 
 **Test Status:** ✅ VERIFIED (iteration_77.json - 100% all verification points passed)
 
+#### Production Hotfix: Incorrect Default Plan Assignment ✅ NEW (Feb 14, 2026)
+**Fixed critical bug where new users were incorrectly assigned Chef Pro Annual instead of Free plan.**
+
+**Root Cause:**
+- `/api/subscription/create` endpoint created paid subscriptions without payment verification
+- No validation of subscription source before granting premium access
+- Missing guard to distinguish between demo/test subscriptions and real payments
+
+**Solution - Minimal Production-Safe Fix:**
+1. **Source Tracking:** Added `source` field to subscription creation:
+   - `source: "demo"` - Test subscriptions via `/create` endpoint
+   - `source: "payment"` - Real payments via Razorpay
+   - Valid sources: `payment`, `trial`, `admin`, `razorpay`, `stripe`
+
+2. **Entitlement Guard in `get_user_subscription()`:**
+   - Validates subscription has valid source OR `razorpay_order_id`
+   - Invalid subscriptions return FREE plan with warning
+   - Logs suspicious subscriptions for audit trail
+
+3. **Admin Endpoints for Correction:**
+   - `GET /api/subscription/admin/subscription-integrity-check` - Reports integrity status
+   - `POST /api/subscription/admin/fix-invalid-subscriptions` - Corrects invalid subs in last 24h
+
+**Files Changed:**
+- `backend/routes/subscription.py` - Lines 26-65: Entitlement guard in `get_user_subscription()`
+- `backend/routes/subscription.py` - Lines 437-528: `/create` endpoint marks `source: "demo"`
+- `backend/routes/subscription.py` - Lines 1362-1480: Admin fix and integrity endpoints
+
+**Safety Constraints Met:**
+- ✅ Free users remain restricted
+- ✅ Real paid users (with Razorpay payment) NOT affected
+- ✅ No hardcoded premium flags
+- ✅ No UI changes, no pricing changes, no business logic changes
+- ✅ Zero impact on existing valid paid users
+
+**Test Status:** ✅ VERIFIED (iteration_78.json - 100% backend tests passed)
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
