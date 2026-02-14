@@ -459,7 +459,7 @@ export default function LiveCookingModal() {
         
         // Sync check before fallback
         if (stepAtStart === currentStep && thisStepChangeId === stepChangeIdRef.current) {
-          await narrateStep(stepText, currentStep + 1, instructions.length);
+          globalNarrateStep(stepText, currentStep + 1, instructions.length);
         }
       }
     }
