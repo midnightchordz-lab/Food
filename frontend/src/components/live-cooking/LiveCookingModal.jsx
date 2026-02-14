@@ -1534,7 +1534,7 @@ export default function LiveCookingModal() {
 
                     {/* Right: Control buttons */}
                     <div className="flex items-center gap-2">
-                      {/* PHASE-1: Simplified Voice Control Button with listening indicator */}
+                      {/* PHASE 7: Voice Control Button with complete state management */}
                       <motion.div
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -1547,22 +1547,28 @@ export default function LiveCookingModal() {
                           size="sm"
                           onClick={handleMicButtonTap}
                           onTouchStart={(e) => {
-                            // Mobile: Also trigger on touchstart for better responsiveness
+                            // Mobile: Trigger on touchstart for better responsiveness
                             e.preventDefault();
                             handleMicButtonTap();
                           }}
+                          disabled={voiceRecognitionState === 'disabled'}
                           className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
-                            voiceListening 
-                              ? 'bg-green-500/30 border-green-400/30'
-                              : voiceRecognitionState === 'permission-needed'
-                                ? 'bg-amber-500/20 border-amber-400/30 animate-pulse'
-                                : handsFreeEnabled 
-                                  ? 'bg-emerald-500/20' 
-                                  : 'bg-black/30'
+                            voiceRecognitionState === 'disabled'
+                              ? 'bg-gray-500/20 border-gray-400/30 opacity-50'
+                              : voiceListening 
+                                ? 'bg-green-500/30 border-green-400/30'
+                                : voiceRecognitionState === 'permission-needed'
+                                  ? 'bg-amber-500/20 border-amber-400/30 animate-pulse'
+                                  : voiceRecognitionState === 'error'
+                                    ? 'bg-red-500/20 border-red-400/30'
+                                    : handsFreeEnabled 
+                                      ? 'bg-emerald-500/20' 
+                                      : 'bg-black/30'
                           }`}
                           data-testid="live-cooking-handsfree-btn"
                         >
-                          {/* Pulsing dot indicator when listening */}
+                          {/* PHASE 7: State indicators */}
+                          {/* Pulsing green dot when listening */}
                           {voiceListening && (
                             <motion.div
                               className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full"
@@ -1570,7 +1576,7 @@ export default function LiveCookingModal() {
                               transition={{ duration: 1, repeat: Infinity }}
                             />
                           )}
-                          {/* Tap to enable indicator */}
+                          {/* Pulsing amber dot when needs tap */}
                           {voiceRecognitionState === 'permission-needed' && !voiceListening && (
                             <motion.div
                               className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"
@@ -1578,7 +1584,15 @@ export default function LiveCookingModal() {
                               transition={{ duration: 0.8, repeat: Infinity }}
                             />
                           )}
-                          {handsFreeEnabled ? (
+                          {/* Red dot when error/disabled */}
+                          {(voiceRecognitionState === 'error' || voiceRecognitionState === 'disabled') && (
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-400 rounded-full" />
+                          )}
+                          
+                          {/* Mic icon */}
+                          {voiceRecognitionState === 'disabled' ? (
+                            <MicOff className="w-3 h-3 text-gray-400" />
+                          ) : handsFreeEnabled ? (
                             <motion.div
                               animate={voiceListening ? { scale: [1, 1.2, 1] } : {}}
                               transition={{ duration: 0.5, repeat: Infinity }}
@@ -1588,28 +1602,40 @@ export default function LiveCookingModal() {
                                   ? 'text-green-400' 
                                   : voiceRecognitionState === 'permission-needed'
                                     ? 'text-amber-400'
-                                    : 'text-emerald-400'
+                                    : voiceRecognitionState === 'error'
+                                      ? 'text-red-400'
+                                      : 'text-emerald-400'
                               }`} />
                             </motion.div>
                           ) : (
                             <MicOff className="w-3 h-3 text-white/60" />
                           )}
+                          
+                          {/* PHASE 7: State text */}
                           <span className={`text-xs hidden sm:inline ${
-                            voiceListening 
-                              ? 'text-green-400'
-                              : voiceRecognitionState === 'permission-needed'
-                                ? 'text-amber-400'
-                                : handsFreeEnabled 
-                                  ? 'text-emerald-400' 
-                                  : 'text-white/60'
+                            voiceRecognitionState === 'disabled'
+                              ? 'text-gray-400'
+                              : voiceListening 
+                                ? 'text-green-400'
+                                : voiceRecognitionState === 'permission-needed'
+                                  ? 'text-amber-400'
+                                  : voiceRecognitionState === 'error'
+                                    ? 'text-red-400'
+                                    : handsFreeEnabled 
+                                      ? 'text-emerald-400' 
+                                      : 'text-white/60'
                           }`}>
-                            {voiceListening 
-                              ? 'Listening' 
-                              : voiceRecognitionState === 'permission-needed'
-                                ? 'Tap Mic'
-                                : handsFreeEnabled 
-                                  ? 'Voice On' 
-                                  : 'Voice'}
+                            {voiceRecognitionState === 'disabled'
+                              ? 'Disabled'
+                              : voiceListening 
+                                ? 'Listening' 
+                                : voiceRecognitionState === 'permission-needed'
+                                  ? 'Tap Mic'
+                                  : voiceRecognitionState === 'error'
+                                    ? 'Error'
+                                    : handsFreeEnabled 
+                                      ? 'Voice On' 
+                                      : 'Voice'}
                           </span>
                         </Button>
                       </motion.div>
