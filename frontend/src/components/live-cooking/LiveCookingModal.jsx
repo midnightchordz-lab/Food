@@ -788,13 +788,14 @@ export default function LiveCookingModal() {
     videoRef: cameraVideoRef,
     cameraStream,
     onSpeakStep: async (text) => {
-      // Use browser speech for narration
-      stopSpeech();
+      // CANCEL DISCIPLINE: Only stop if explicitly needed for new narration
+      // Use single speech lock in speakText instead of manual cancel
       await new Promise(resolve => setTimeout(resolve, 150));
       // Simplified narration without mood detection
       await narrateStep(text, currentStep + 1, instructions.length);
     },
     onStopSpeaking: () => {
+      // CANCEL DISCIPLINE: This is called when user presses pause or step changes
       stopSpeech();
     },
     onStepChange: (direction) => {
