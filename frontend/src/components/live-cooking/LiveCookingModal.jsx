@@ -597,7 +597,11 @@ export default function LiveCookingModal() {
       setShowCamera(false);
       setGestureEnabled(false);
       setUseBrowserSpeech(false);
+      setVoiceListening(false);
+      setCommandFlash(false);
+      setLastCommand(null);
       stopSpeech();
+      stopVoiceControl(); // PHASE-1: Stop voice recognition
       resetOrchestrator();
       
       // PHASE-1: Only cleanup camera if it was enabled
