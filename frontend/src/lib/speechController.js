@@ -11,6 +11,7 @@
  * 3. Speech lock - prevents overlapping speak() calls
  * 4. MIC exclusion - recognition only after TTS completion + delay
  * 5. UI decoupled - no React state dependencies
+ * 6. Chrome workaround - keep-alive prevents 15s timeout
  */
 
 // ============================================
@@ -24,6 +25,12 @@ let currentUtterance = null;
 let isSpeaking = false;
 let speechQueue = [];
 let onSpeechEndCallback = null;
+
+// Chrome bug workaround: keep-alive timer
+// Chrome/WebKit cancels speechSynthesis after ~15 seconds of silence detection
+// This timer "pokes" the speech engine to keep it alive
+let keepAliveTimer = null;
+const KEEP_ALIVE_INTERVAL = 10000; // 10 seconds
 
 // Voice recognition state
 let recognition = null;
