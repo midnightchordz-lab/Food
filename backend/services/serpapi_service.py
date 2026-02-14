@@ -1022,8 +1022,8 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
         if cuisine:
             search_query = f"{search_query} {cuisine}"
         
-        # Add quality modifiers
-        search_query += " recipe photo"
+        # Add quality modifiers and negative keywords to filter out restaurant/dining scenes
+        search_query += " recipe photo close-up -restaurant -dining -patio -outdoor -table -setting -scene -people"
         
         logging.info(f"Image search: '{dish_name}' -> '{search_query}'")
         
