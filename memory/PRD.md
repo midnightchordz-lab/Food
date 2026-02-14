@@ -434,15 +434,17 @@ export const ENABLE_AI_OBSERVER = !PHASE_1_MODE;
 #### TTS Speech Orchestration Fix ✅ UPDATED (Feb 14, 2026)
 **Fixed Text-to-Speech cutting off mid-sentence in Hands-Free Cooking Mode**
 
-**Root Cause:** The Web Speech API (`window.speechSynthesis`) was tied to React component lifecycle. Timer state changes (ticking every second) caused re-renders that interrupted TTS.
+**Root Cause:** Two issues:
+1. Web Speech API (`window.speechSynthesis`) was tied to React component lifecycle - timer state changes caused re-renders that interrupted TTS
+2. **Chrome Bug:** Browser kills `speechSynthesis` after ~15 seconds of perceived silence
 
-**Final Solution - Global Singleton Controller:**
-Created `speechController.js` - a persistent speech engine that exists OUTSIDE React's component lifecycle.
+**Final Solution - Global Singleton Controller + Chrome Workaround:**
+Created `speechController.js` - a persistent speech engine that exists OUTSIDE React's component lifecycle, with a keep-alive timer to prevent Chrome's 15-second timeout.
 
 **Architecture:**
 ```
 speechController.js (Singleton)
-├── speak(text, onComplete)     - Single speech lock prevents overlapping
+├── speak(text, onComplete)     - Single speech lock + Chrome keep-alive
 ├── cancelSpeech()              - Explicit cancel only on user actions
 ├── isSpeaking()                - State check immune to re-renders
 ├── narrateStep()               - Step narration with context
@@ -455,26 +457,32 @@ speechController.js (Singleton)
 1. **Singleton Instance** - One controller for entire app
 2. **Persistent State** - Speech state (`isSpeaking`, `currentUtterance`) lives outside React
 3. **Speech Lock** - New `speak()` calls blocked if already speaking
-4. **MIC Exclusion** - Recognition only starts after TTS `onend` + 400ms delay
-5. **Cancel Discipline** - `cancelSpeech()` ONLY called on:
-   - User presses Pause
-   - Step changes (Next/Prev/Repeat)
-   - User exits hands-free mode
-   - Modal closes
+4. **Chrome Keep-Alive** - `pause()/resume()` every 10 seconds prevents browser timeout
+5. **MIC Exclusion** - Recognition only starts after TTS `onend` + 400ms delay
+6. **Cancel Discipline** - `cancelSpeech()` ONLY called on user actions
+
+**Chrome Workaround Implementation:**
+```javascript
+// In speak() onstart handler:
+keepAliveTimer = setInterval(() => {
+  if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+    window.speechSynthesis.pause();
+    window.speechSynthesis.resume();
+  }
+}, 10000); // Every 10 seconds
+```
 
 **Files Changed:**
-- `frontend/src/lib/speechController.js` - NEW: Global singleton TTS controller
-- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Refactored to use global controller:
-  - Import `globalSpeak`, `globalCancelSpeech`, `globalNarrateStep`, etc.
-  - All speech calls now go through singleton (immune to re-renders)
-  - Timer ticking does NOT affect TTS
+- `frontend/src/lib/speechController.js` - Global singleton TTS controller with Chrome workaround
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Refactored to use global controller
 
-**Success Conditions Met:**
+**Note:** ElevenLabs quota is exhausted, so app falls back to browser speech (Web Speech API).
+
+**Success Conditions:**
 ✔ Voice reads entire step without interruption
 ✔ Timer ticks every second without cutting off TTS
-✔ No mid-sentence cut-offs from re-renders
+✔ Chrome keep-alive prevents 15-second timeout
 ✔ Mobile + Web stable
-✔ Voice commands start only after narration ends
 
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
