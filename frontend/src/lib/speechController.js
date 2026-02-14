@@ -387,61 +387,51 @@ function splitIntoChunks(text) {
 }
 
 /**
- * Cancel current speech
+ * Cancel current speech - STRICT USER-ONLY CANCELLATION
  * 
  * PHASE-1 ISOLATION: SpeechController owns speech lifecycle.
- * Orchestrator is observer only - cannot cancel TTS.
+ * NO EXTERNAL SYSTEM MAY CANCEL SPEECH - ONLY USER ACTIONS.
  * 
- * ALLOWED CANCEL REASONS (User-initiated only):
+ * ALLOWED CANCEL REASONS (User-initiated ONLY):
  * - userPause: User pressed Pause button
- * - userNext: User pressed Next button
+ * - userNext: User pressed Next button  
  * - userBack: User pressed Back button  
  * - userRepeat: User pressed Repeat button
  * - modalClose: User closed the cooking modal
  * - disableHandsFree: User disabled hands-free mode
- * - stepChange: Step changed (triggers new narration)
- * - readCurrentStep: Starting new step narration
+ * - destroy: Controller being destroyed
  * 
- * BLOCKED CANCEL REASONS (Orchestrator/System):
+ * BLOCKED CANCEL REASONS (ALL System/Orchestrator):
  * - orchestratorStop: Orchestrator cleanup loop
- * - Any reason containing 'orchestrator', 'cleanup', 'gesture', 'recognition'
+ * - stepChange: Internal step change (handled by new narration starting)
+ * - readCurrentStep: Should not cancel, new speech will queue/replace
+ * - Any reason containing 'orchestrator', 'cleanup', 'gesture', 'recognition', 'camera', 'timer', 'auto', 'internal'
  * 
- * @param {string} reason - Why cancel was called
+ * @param {string} reason - Why cancel was called (REQUIRED for audit)
  */
 function cancelSpeech(reason = 'unknown') {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   
   // ========================================
-  // PHASE-1 ISOLATION: Block orchestrator cancels
-  // Only user-initiated actions may cancel speech
+  // STRICT USER-ONLY WHITELIST
+  // Only these exact reasons may cancel speech
   // ========================================
-  const allowedReasons = [
+  const userOnlyReasons = [
     'userPause',
     'userNext', 
     'userBack',
     'userRepeat',
     'modalClose',
     'disableHandsFree',
-    'stepChange',
-    'readCurrentStep'
+    'destroy'
   ];
   
-  const blockedPatterns = [
-    'orchestrator',
-    'cleanup',
-    'gesture',
-    'recognition',
-    'camera',
-    'timer'
-  ];
-  
-  // Check if reason is blocked
-  const reasonLower = reason.toLowerCase();
-  const isBlocked = blockedPatterns.some(pattern => reasonLower.includes(pattern));
-  const isAllowed = allowedReasons.includes(reason);
-  
-  if (isBlocked && !isAllowed) {
-    // Silently ignore orchestrator/system cancels
+  // Check if reason is in the strict whitelist
+  if (!userOnlyReasons.includes(reason)) {
+    // Log blocked attempts for debugging (silent in production)
+    if (reason !== 'unknown') {
+      console.log('[SpeechController] BLOCKED cancel attempt, reason:', reason);
+    }
     return;
   }
   
