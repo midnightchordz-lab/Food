@@ -55,6 +55,8 @@ export const AuthProvider = ({ children }) => {
       setToken(access_token);
       setUser(userData);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      // Trigger subscription refresh after successful registration
+      window.dispatchEvent(new CustomEvent('trigger-subscription-refresh'));
       toast.success('Welcome to Chef Feels!');
       return true;
     } catch (error) {
