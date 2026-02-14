@@ -881,8 +881,10 @@ export default function LiveCookingModal() {
     if (handsFreeEnabled) {
       // Already enabled - disable it
       setHandsFreeEnabled(false);
+      setRecognitionState('idle');
       // GLOBAL CONTROLLER: Cancel speech for disabling hands-free
       globalCancelSpeech('disableHandsFree');
+      globalStopRecognition();
       
       // PHASE-1: Skip camera/gesture cleanup
       if (!PHASE_1_MODE) {
@@ -903,12 +905,31 @@ export default function LiveCookingModal() {
       // Initialize the global speech controller
       speechController.init();
       
+      // Set up state change callback for UI sync
+      globalSetStateChangeCallback((state) => {
+        console.log('[LiveCooking] Recognition state changed:', state);
+        setRecognitionState(state);
+        setVoiceListening(state === 'listening');
+      });
+      
+      // Check environment
+      const env = globalGetEnvironment();
+      console.log('[LiveCooking] Environment:', env);
+      
+      // MOBILE: Use gesture-based start (will be triggered by mic button tap)
+      if (env.isMobile) {
+        console.log('[LiveCooking] Mobile detected - recognition will start on tap');
+        setRecognitionState('permission-needed');
+        toast.success('Tap the mic button to start voice control!');
+      } else {
+        // Desktop: Can auto-start
+        toast.success('Voice controls enabled! Say "next" or "back" to navigate.');
+      }
+      
       // Show voice tutorial on first enable (check localStorage)
       const hasSeenTutorial = localStorage.getItem(hasSeenTutorialKey);
       if (!hasSeenTutorial) {
         setShowVoiceTutorial(true);
-      } else {
-        toast.success('Voice controls enabled! Say "next" or "back" to navigate.');
       }
       
       console.log('[LiveCooking] Phase-1 hands-free enabled (voice only)');
