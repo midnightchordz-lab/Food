@@ -125,25 +125,67 @@ export function speakText(text) {
 
 // --------------------------------------------------
 // VOICE COMMAND RECOGNITION (Web + Mobile Support)
+// PHASE-1 RELIABILITY: Strict vocabulary + continuous loop
 // --------------------------------------------------
 
 let recognition = null;
 let isListening = false;
+let shouldBeListening = false; // Intent flag for auto-restart
+let lastCommandTime = 0;
+const COMMAND_COOLDOWN_MS = 800; // Prevent rapid double-triggers
+const COMMAND_CONFIRMATION_DELAY_MS = 400; // Delay before executing command
+let pendingCommandTimeout = null;
+
+/**
+ * Check if currently listening
+ * @returns {boolean}
+ */
+export function isVoiceListening() {
+  return isListening;
+}
 
 /**
  * Start listening for voice commands
+ * PHASE-1: Implements continuous listening with auto-restart
  */
 export function startVoiceControl() {
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
   // If not supported (some iOS browsers), silently skip
-  if (!SpeechRecognition || isListening) return;
+  if (!SpeechRecognition) {
+    console.log('[BrowserSpeech] Speech recognition not supported');
+    return false;
+  }
+  
+  // Already actively listening
+  if (isListening && recognition) {
+    console.log('[BrowserSpeech] Already listening');
+    return true;
+  }
+  
+  // CRITICAL: Stop any TTS before starting mic (mutual exclusion)
+  stopSpeech();
+
+  // Clean up existing recognition if any
+  if (recognition) {
+    try {
+      recognition.abort();
+    } catch {}
+    recognition = null;
+  }
 
   recognition = new SpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = false;
   recognition.lang = 'en-US';
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isListening = true;
+    console.log('[BrowserSpeech] Voice commands active');
+    visualCallbacks.onListeningStart?.();
+  };
 
   recognition.onresult = (event) => {
     const transcript =
@@ -151,40 +193,130 @@ export function startVoiceControl() {
         .trim()
         .toLowerCase();
 
-    handleCommand(transcript);
+    console.log('[BrowserSpeech] Heard:', transcript);
+    
+    // PHASE-1: Use strict command matching with confirmation delay
+    handleStrictCommand(transcript);
   };
 
-  recognition.onerror = () => {
-    stopVoiceControl();
-  };
-
-  recognition.onend = () => {
-    // Auto-restart to remain hands-free (important for mobile)
-    if (isListening) {
-      try {
-        recognition.start();
-      } catch {}
+  recognition.onerror = (event) => {
+    console.log('[BrowserSpeech] Error:', event.error);
+    isListening = false;
+    visualCallbacks.onListeningStop?.();
+    
+    // Don't auto-restart on "aborted" or "not-allowed" errors
+    if (event.error === 'aborted' || event.error === 'not-allowed') {
+      shouldBeListening = false;
+      return;
+    }
+    
+    // For recoverable errors (network, no-speech), try restart
+    if (shouldBeListening) {
+      setTimeout(() => {
+        if (shouldBeListening) {
+          startVoiceControl();
+        }
+      }, 500);
     }
   };
 
-  // iOS requires start inside user interaction
+  recognition.onend = () => {
+    isListening = false;
+    visualCallbacks.onListeningStop?.();
+    console.log('[BrowserSpeech] Recognition ended');
+    
+    // PHASE-1: Continuous listening loop - auto-restart
+    if (shouldBeListening) {
+      console.log('[BrowserSpeech] Auto-restarting for continuous listening');
+      setTimeout(() => {
+        if (shouldBeListening && !isListening) {
+          try {
+            // Stop TTS before restarting (mutual exclusion)
+            stopSpeech();
+            recognition?.start();
+          } catch (e) {
+            console.log('[BrowserSpeech] Restart failed, will retry:', e.message);
+            // Retry after a brief delay
+            setTimeout(() => {
+              if (shouldBeListening) startVoiceControl();
+            }, 300);
+          }
+        }
+      }, 100);
+    }
+  };
+
+  // Start listening
+  shouldBeListening = true;
   try {
     recognition.start();
-    isListening = true;
-    console.log('[BrowserSpeech] Voice commands active');
-  } catch {}
+    console.log('[BrowserSpeech] Starting voice control...');
+    return true;
+  } catch (e) {
+    console.log('[BrowserSpeech] Start failed:', e.message);
+    shouldBeListening = false;
+    return false;
+  }
 }
 
 /**
  * Stop listening for voice commands
  */
 export function stopVoiceControl() {
+  shouldBeListening = false;
+  isListening = false;
+  
+  // Clear any pending command
+  if (pendingCommandTimeout) {
+    clearTimeout(pendingCommandTimeout);
+    pendingCommandTimeout = null;
+  }
+  
   if (!recognition) return;
 
-  isListening = false;
-  recognition.stop();
+  try {
+    recognition.abort();
+  } catch {}
   recognition = null;
+  
+  visualCallbacks.onListeningStop?.();
   console.log('[BrowserSpeech] Voice commands stopped');
+}
+
+/**
+ * Pause recognition temporarily (for TTS playback)
+ * Use before starting TTS narration
+ */
+export function pauseVoiceControl() {
+  if (!recognition || !isListening) return;
+  
+  try {
+    recognition.stop(); // This triggers onend which auto-restarts
+    // Temporarily prevent auto-restart
+    const wasListening = shouldBeListening;
+    shouldBeListening = false;
+    
+    // Resume after a short delay (let TTS start)
+    setTimeout(() => {
+      if (wasListening) {
+        shouldBeListening = true;
+      }
+    }, 200);
+  } catch {}
+}
+
+/**
+ * Resume recognition after TTS ends
+ */
+export function resumeVoiceControl() {
+  if (!shouldBeListening || isListening) return;
+  
+  // Small delay to ensure TTS has stopped
+  setTimeout(() => {
+    if (shouldBeListening && !isListening) {
+      startVoiceControl();
+    }
+  }, 300);
 }
 
 // --------------------------------------------------
