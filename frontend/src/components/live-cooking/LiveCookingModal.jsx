@@ -922,6 +922,15 @@ export default function LiveCookingModal() {
   }, [isPlaying, playEncouragement]);
 
   // ============================================
+  // VOICE TUTORIAL DISMISS HANDLER
+  // ============================================
+  const dismissVoiceTutorial = useCallback(() => {
+    setShowVoiceTutorial(false);
+    localStorage.setItem(hasSeenTutorialKey, 'true');
+    toast.success('Voice controls ready! Start cooking.');
+  }, []);
+
+  // ============================================
   // END EXISTING LOGIC
   // ============================================
 
