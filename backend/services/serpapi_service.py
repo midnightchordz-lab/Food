@@ -1061,6 +1061,14 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
             if any(skip in source for skip in skip_sources):
                 continue
             
+            # Skip images with restaurant/dining related titles (not food close-ups)
+            title = img.get("title", "").lower()
+            skip_title_keywords = ["restaurant", "dining", "patio", "outdoor", "table setting", 
+                                   "chef", "kitchen staff", "waiter", "waitress", "menu",
+                                   "ambiance", "interior", "exterior", "seating"]
+            if any(keyword in title for keyword in skip_title_keywords):
+                continue
+            
             image_data = {
                 "url": img.get("original", img.get("thumbnail", "")),
                 "thumbnail": img.get("thumbnail", ""),
