@@ -148,7 +148,7 @@ def validate_subscription_entitlement(
         try:
             trial_end_dt = datetime.fromisoformat(trial_end.replace('Z', '+00:00'))
             is_active_trial = trial_end_dt > datetime.now(timezone.utc)
-        except:
+        except Exception:
             pass
     
     # VALIDATION RULES
