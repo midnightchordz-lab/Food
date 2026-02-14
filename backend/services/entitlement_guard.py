@@ -638,7 +638,6 @@ async def get_user_subscription_safe(
     is_valid, reason = validate_subscription_entitlement(subscription, user_id)
     
     # Check if subscription has trial active
-    trial_active = subscription.get("status") == "trialing"
     has_trial, _ = _check_trial_status(subscription)
     
     if is_valid:
