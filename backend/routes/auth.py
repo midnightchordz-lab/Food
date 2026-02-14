@@ -14,6 +14,10 @@ from .deps import (
     get_current_user, verify_password, get_password_hash, create_access_token,
     SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_DAYS
 )
+from ..services.entitlement_guard import (
+    log_security_event,
+    SecurityEvent
+)
 import jwt
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
