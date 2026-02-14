@@ -539,57 +539,53 @@ TTS start
 
 **Test Status:** ✅ VERIFIED (iteration_82.json, iteration_83.json, iteration_84.json)
 
-#### Hybrid Speech Architecture ✅ NEW (Dec 2025)
-**Implemented native Capacitor plugin integration for mobile with Web Speech API fallback**
+#### Speech Layer Reset ✅ NEW (Dec 2025)
+**Complete clean rebuild of speech controller module**
 
 **Problem Solved:**
-Mobile browsers have inconsistent Web Speech API support. Native apps require proper Capacitor plugin integration for reliable speech recognition.
+Previous implementation had grown too complex with multiple layers (speechController → hybridSpeechController → nativeSpeechEngine), causing stale references, detached listeners, and audio session conflicts. Engines were not entering RUNNING state reliably.
 
-**Solution - Hybrid Architecture:**
+**Solution - Clean Reset:**
+Rewrote `speechController.js` from ~900 lines to ~500 lines using pure Web Speech API:
+
 ```
-Platform Detection:
-├── iOS/Android Native App → Capacitor native plugin + Web TTS
-├── Desktop Browser → Web Speech API for both
-└── Mobile Browser (PWA) → Web Speech API with fallback
+Single Module Architecture:
+speechController.js
+├── initialize()        - One-time setup
+├── speak(text)         - TTS narration
+├── startListening()    - Voice recognition
+├── stopListening()     - Stop recognition
+└── destroy()           - Full cleanup
 ```
 
-**New Files Created:**
-1. `frontend/src/lib/nativeSpeechEngine.js` - Capacitor plugin wrapper
-   - Wraps `@capgo/capacitor-speech-recognition` plugin
-   - Handles native permissions (checkPermissions, requestPermissions)
-   - Event listeners: start, end, result, partialResults, error
-   - Language configuration and partial results support
+**Files Removed:**
+- `hybridSpeechController.js` - No longer needed
+- `nativeSpeechEngine.js` - No longer needed
 
-2. `frontend/src/lib/hybridSpeechController.js` - Native/Web bridge
-   - Same API interface regardless of platform
-   - Automatic engine selection based on environment
-   - Session arming for mobile one-time activation
-   - Turn-taking audio focus management
+**Key Implementation Details:**
+1. **Clean singleton pattern** with module-level state
+2. **TTS Engine** using `window.speechSynthesis`
+   - Chrome keep-alive workaround (pause/resume every 10s)
+   - Safari kick (resume stuck speech after 250ms)
+   - Proper voice loading with fallback
+3. **Recognition Engine** using `window.SpeechRecognition`
+   - Auto-restart loop when session armed
+   - Tab visibility handling
+   - Permission state tracking
+4. **Mobile Turn-Taking** preserved
+   - 400ms TTS_TO_RECOGNITION delay
+   - Session arming via user gesture
+   - Single audio owner rule
 
-**speechController.js Updates:**
-- Added platform detection via `Capacitor.isNativePlatform()`
-- Lazy-loads hybridSpeechController only on native platforms
-- SpeechController class delegates to hybrid when available
-- Async `init()` method for proper native initialization
+**Export Compatibility:**
+All existing named exports preserved for LiveCookingModal.jsx:
+- `speak`, `cancelSpeech`, `isSpeaking`
+- `narrateStep`, `speakThenListen`
+- `startRecognition`, `startRecognitionFromUserGesture`, `stopRecognition`
+- `setRecognitionCallbacks`, `setStateChangeCallback`, `setSynthesisStateCallback`
+- `getRecognitionState`, `getEnvironment`, `isSessionArmed`, `disarmSession`
 
-**Dependencies Added:**
-- `@capacitor-community/speech-recognition@5.1.0` - Native speech plugin (Capacitor 5 compatible)
-
-**Capacitor Config Updated:**
-- Added `SpeechRecognition` plugin configuration
-- Language: en-US, partialResults: true, popup: false
-
-**Key Features:**
-- ✅ Native iOS/Android recognition via Capacitor plugin
-- ✅ Web fallback for desktop and PWA
-- ✅ Same API interface across all platforms
-- ✅ Proper permission handling (native and web)
-- ✅ Turn-taking audio focus (TTS and recognition cannot overlap)
-- ✅ Session arming for mobile one-time user gesture
-- ✅ Auto-restart recognition after TTS ends
-- ✅ Graceful degradation when native unavailable
-
-**Test Status:** ✅ VERIFIED (iteration_85.json - Code review passed)
+**Test Status:** ✅ VERIFIED (iteration_86.json - Code review passed)
 
 #### Mobile Audio Focus Sequencing Fix ✅ (Dec 2025)
 **Stabilized mobile audio by implementing single audio owner and turn-taking sequence**
