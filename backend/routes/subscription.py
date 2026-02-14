@@ -922,6 +922,25 @@ async def verify_razorpay_payment(
         
         await db.payment_transactions.insert_one(transaction_doc)
         
+        # AUDIT LOG: Record plan change
+        # Get old plan (if any exists)
+        old_plan = "free"  # Default if no previous subscription
+        await log_plan_change(
+            db=db,
+            user_id=current_user.id,
+            old_plan=old_plan,
+            new_plan=request.plan_id,
+            reason="payment_verified",
+            metadata={
+                "subscription_id": subscription_id,
+                "payment_id": request.razorpay_payment_id,
+                "order_id": request.razorpay_order_id,
+                "payment_provider": "razorpay",
+                "amount": order["amount"],
+                "currency": order["currency"]
+            }
+        )
+        
         logging.info(f"Payment verified and subscription activated for user {current_user.id}, plan {request.plan_id}")
         
         subscription_doc.pop("_id", None)
