@@ -600,7 +600,7 @@ export default function LiveCookingModal() {
 
   // ============================================
   // HANDS-FREE ENABLE HANDLER
-  // Requests all permissions together on user tap
+  // PHASE-1: Voice commands only (no camera/gesture permissions)
   // ============================================
   
   // Track voice command active state for gesture priority
@@ -610,15 +610,29 @@ export default function LiveCookingModal() {
     if (handsFreeEnabled) {
       // Already enabled - disable it
       setHandsFreeEnabled(false);
-      setShowCamera(false);
-      setGestureEnabled(false);
-      stopCameraStream();
-      cleanupOrchestrator();
+      stopSpeech();
+      
+      // PHASE-1: Skip camera/gesture cleanup
+      if (!PHASE_1_MODE) {
+        setShowCamera(false);
+        setGestureEnabled(false);
+        stopCameraStream();
+        cleanupOrchestrator();
+      }
+      
       toast.info('Hands-free controls disabled');
       return;
     }
     
-    // Request permissions (camera + mic + speech) on explicit user action
+    // PHASE-1: No camera/mic permissions needed for basic voice
+    if (PHASE_1_MODE) {
+      setHandsFreeEnabled(true);
+      toast.success('Voice controls enabled! Say "next step" or use the buttons.');
+      console.log('[LiveCooking] Phase-1 hands-free enabled (voice only)');
+      return;
+    }
+    
+    // FULL MODE: Request all permissions (camera + mic + speech)
     console.log('[LiveCooking] Requesting hands-free permissions...');
     const granted = await requestPermissions();
     
@@ -626,9 +640,8 @@ export default function LiveCookingModal() {
       setHandsFreeEnabled(true);
       setShowCamera(true);
       toast.success('Hands-free mode enabled! Say "next step" or wave to navigate.');
-      console.log('[LiveCooking] Hands-free mode enabled with all permissions');
+      console.log('[LiveCooking] Full hands-free mode enabled');
     } else {
-      // Show error toast with the specific error message
       toast.error(permissionError || 'Could not enable hands-free mode. Please allow camera and microphone access.');
       console.log('[LiveCooking] Permissions denied, hands-free not enabled');
     }
