@@ -408,6 +408,15 @@ function splitIntoChunks(text) {
 function cancelSpeech(reason = 'unknown') {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   
+  // ========================================
+  // GUARD: Only cancel if actually speaking
+  // This prevents cleanup loops from killing speech
+  // ========================================
+  if (!isSpeaking && !window.speechSynthesis.speaking) {
+    // Nothing to cancel - ignore silently
+    return;
+  }
+  
   console.log('[SpeechController] Canceling speech, reason:', reason);
   
   // Set global cancel flag to stop chunk queue
