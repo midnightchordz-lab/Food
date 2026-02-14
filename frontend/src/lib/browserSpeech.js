@@ -119,7 +119,20 @@ export const stopSpeaking = stopSpeech;
  * @returns {boolean} - true if speech started, false if blocked
  */
 export function speakText(text, onComplete = null) {
-  if (!('speechSynthesis' in window) || !text) {
+  if (!('speechSynthesis' in window)) {
+    onComplete?.();
+    return false;
+  }
+
+  // TYPE ENFORCEMENT: Ensure text is a string
+  if (typeof text !== 'string') {
+    console.error('[BrowserSpeech] Invalid text type:', typeof text, '- must be string');
+    onComplete?.();
+    return false;
+  }
+
+  if (!text || text.trim() === '') {
+    console.log('[BrowserSpeech] Empty text, skipping');
     onComplete?.();
     return false;
   }
@@ -143,6 +156,7 @@ export function speakText(text, onComplete = null) {
   // Cancel any pending speech (but not if currently speaking - handled above)
   window.speechSynthesis.cancel();
   
+  // Create utterance - TYPE ENFORCEMENT
   currentUtterance = new SpeechSynthesisUtterance(text);
   speechCompletionCallback = onComplete;
 
