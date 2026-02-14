@@ -33,6 +33,12 @@
     "Keyboard": {
       "resize": "body",
       "resizeOnFullScreen": true
+    },
+    "SpeechRecognition": {
+      "language": "en-US",
+      "maxResults": 3,
+      "partialResults": true,
+      "popup": false
     }
   }
 }
