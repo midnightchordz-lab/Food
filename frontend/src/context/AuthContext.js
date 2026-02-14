@@ -76,6 +76,8 @@ export const AuthProvider = ({ children }) => {
       setToken(access_token);
       setUser(userData);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      // Trigger subscription refresh after successful login
+      window.dispatchEvent(new CustomEvent('trigger-subscription-refresh'));
       toast.success(`Welcome back, ${userData.name}!`);
       return true;
     } catch (error) {
