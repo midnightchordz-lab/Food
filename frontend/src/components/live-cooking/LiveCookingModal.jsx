@@ -935,10 +935,7 @@ export default function LiveCookingModal() {
     if (!PHASE_1_MODE) return; // Full mode uses engine orchestrator
     
     if (open && handsFreeEnabled) {
-      // MUTUAL EXCLUSION: Stop TTS before starting recognition
-      stopSpeech();
-      
-      // Start voice recognition
+      // Start voice recognition (will wait if TTS is speaking)
       const started = startVoiceControl();
       if (started) {
         console.log('[LiveCooking] Phase-1 voice recognition started');
