@@ -239,13 +239,21 @@ def _is_within_grace_period(subscription: Dict) -> Tuple[bool, str]:
 
 def _check_trial_status(subscription: Dict) -> Tuple[bool, str]:
     """
-    Check if subscription has an active, non-expired trial.
+    Check if subscription has an active, non-expired trial from a VALID source.
+    
+    IMPORTANT: Trials are only valid from legitimate sources (payment, trial, webhook).
+    Demo subscriptions do NOT get valid trials.
     
     Returns:
         Tuple[bool, str]: (is_active_trial, reason)
     """
     status = subscription.get("status", "")
     trial_end = subscription.get("trial_end")
+    source = subscription.get("source", "")
+    
+    # Trials must come from valid sources - demo trials are NOT valid
+    if source in INVALID_UPGRADE_SOURCES or source == "demo":
+        return False, f"trial_invalid_source:{source}"
     
     if status != "trialing":
         return False, "not_in_trial_status"
