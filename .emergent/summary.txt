@@ -1,137 +1,118 @@
 <analysis>**original_problem_statement**:
-The user's initial goal was to fix production bugs and add an audit log. The project then pivoted to enhancing the Hands-Free Cooking feature. The primary and persistent problem is the Text-to-Speech (TTS) narration being cut off mid-sentence, especially on Safari and mobile devices. After fixing a secondary issue with incorrect recipe images, the entire focus has been on stabilizing the speech engine. The user has provided very specific, technical instructions diagnosing the root cause: an orchestrator cleanup loop is repeatedly canceling speech, and the speech recognition and synthesis engines are conflicting with each other. The current task is a complete overhaul of the mobile voice functionality to make it stable.
+The user's initial goal was to fix production bugs, primarily an unstable Hands-Free Cooking feature where Text-to-Speech (TTS) narration was cut off mid-sentence. The problem, diagnosed as an orchestrator cleanup loop and conflicts between speech synthesis and recognition engines, has been the sole focus. The task has evolved through multiple user-guided pivots. The latest and current requirement is to repair the speech functionality following a native speech migration, as the previous fixes based on the Web Speech API were insufficient. The core feature remains non-functional, and the current task is to re-engineer the integration to work with a native speech plugin on mobile while ensuring the desktop experience remains functional.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application has a Hands-Free Cooking mode within  that uses the browser's Web Speech API for TTS and voice recognition. This feature is critically unstable. The core issue lies in the application's logic, where an engine orchestrator cleanup process gets into an infinite loop, repeatedly calling  and killing the narration. Furthermore, the speech recognition and synthesis systems are not mutually exclusive, causing recognition to hear the TTS output and trigger a cleanup, which in turn cancels the TTS. On mobile, the voice feature is completely non-functional as it fails to initialize correctly without an explicit user gesture.
-
-Previous attempts to patch this with speaking locks and conditional cancellations have failed. The last agent began a larger refactor based on detailed user instructions to implement a mobile-first, tap-to-activate voice flow, but the implementation is incomplete.
+The codebase has undergone several major, but now obsolete, refactors of  and . These files contain a complex turn-taking audio sequencing logic for the browser's Web Speech API. However, the user's latest instructions reveal that this approach is incorrect. The application is intended to use a native speech plugin on mobile, which is not currently implemented. The existing code does not reflect this native integration requirement, and the hands-free cooking feature is considered broken.
 
 **Last working item**:
--   **Last item agent was working:** Implementing a Mobile Voice Full Recovery based on a detailed, multi-phase plan provided by the user. The goal is to completely re-architect the mobile speech functionality by isolating the recognition and synthesis engines, adding robust environment detection (mobile, WebView, HTTPS), and strictly enforcing a user-initiated tap-to-start activation flow.
--   **Status:** IN PROGRESS
+-   **Last item agent was working:** The agent had just acknowledged and was about to begin investigating the user's latest, significantly pivoted instructions (from Chat Message 196) to repair the speech functionality after a native speech migration. This new task supersedes all previous work done in this session on the Web Speech API.
+-   **Status:** NOT STARTED
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** frontend testing agent. The fix is a complex, architectural change to a core feature. The test should simulate a mobile environment, verify that voice recognition only starts on a user tap, and confirm that full sentences are narrated without being cut off.
+-   **Which testing method agent to use?** frontend testing agent. This is a critical, architectural repair. The test plan should verify that desktop continues to work with Web Speech API, while mobile correctly initializes and uses the native plugin for both recognition and narration, or falls back gracefully if the plugin is unavailable.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** (P0 - CRITICAL) Voice is completely non-functional on mobile devices, and TTS narration is unstable (cuts off) on all platforms, especially Safari.
--   **Issue 2:** (P2) ElevenLabs TTS quota is exhausted, disabling the premium voice feature.
+-   **Issue 1:** (P0 - CRITICAL) The Hands-Free Cooking feature is non-functional. The specific problem has been redefined to be a failure in integrating a native speech plugin on mobile and restoring desktop recognition.
 
 **Issues Detail**:
--   **Issue 1: Mobile voice non-functional / TTS unstable.**
+-   **Issue 1: Repair speech engine after native migration.**
     -   **Attempted fixes:**
-        1.  **Stop Condition Filtering:** Added  parameters to  to ignore calls from the orchestrator. This was insufficient as the calls persisted.
-        2.  **Type Enforcement:** Fixed a runtime error by ensuring  receives a valid  object. This did not fix the underlying logic flaw.
-        3.  **Speaking Lock:** Added a boolean lock () which was ineffective against the aggressive, repeated  calls.
-        4.  **Mobile Activation Logic:** Started adding mobile detection and gesture-based handlers, but the implementation is partial and tangled with existing logic.
-    -   **Next debug checklist**:
-        1.  **Follow User's Plan:** Systematically implement the 10-phase plan from the user's last message (Chat Message 278).
-        2.  **Isolate Engines:** Refactor  to create two separate, isolated modules for  and . They must not automatically interfere with each other.
-        3.  **Enforce User Activation:** In , remove all automatic voice recognition startup logic for mobile. Recognition must *only* start after a direct user tap on the microphone button.
-        4.  **Remove Automatic Cancellation:** Scrutinize  and . Remove or guard any  or  calls triggered by timers, gesture engines, or cleanup cycles. Speech should only be cancelled by explicit user actions (Pause, Stop, Step Change).
-        5.  **Add Environment Guards:** In , add checks for mobile browsers, WebViews, and HTTPS secure context before attempting to initialize any speech functions, disabling the UI gracefully if conditions aren't met.
-    -   **Why fix this issue and what will be achieved with the fix?** The hands-free cooking mode is the app's key feature and is currently unusable. This fix will make it functional and stable.
-    -   **Status:** IN PROGRESS
+        1.  **Orchestrator Cancellation Fix:** The agent implemented a whitelist in  to prevent the orchestrator's cleanup loop from canceling TTS.
+        2.  **Engine Isolation Refactor:** The agent rewrote  to create isolated engines for synthesis and recognition based on a 10-phase user plan.
+        3.  **Turn-Taking Sequence Refactor:** The agent again rewrote  to implement a strict, turn-taking audio focus model for mobile Web Speech API.
+        *(Note: All these fixes were based on the Web Speech API and have been superseded by the new requirement to use a native plugin.)*
+    -   **Next debug checklist**: Based on the user's latest instructions (Chat Message 196):
+        1.  Examine  and  to understand the current state and identify if any stubs or references for a native plugin exist.
+        2.  Ensure desktop Web Speech Recognition is correctly initialized and its event listeners (, , ) are properly attached.
+        3.  Implement the mobile-specific logic: check for native plugin availability, request user permissions, and initialize the audio session.
+        4.  Ensure all calls to the native plugin are asynchronous and properly awaited.
+        5.  Wire up native plugin event listeners to trigger command routing (next, back, pause, etc.).
+        6.  Implement a safe fallback: if the native plugin fails, use Web TTS for narration and disable the microphone UI with a clear indicator.
+    -   **Why fix this issue and what will be achieved with the fix?** This will repair the application's core feature, making hands-free cooking functional and stable as intended.
+    -   **Status:** NOT STARTED
     -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** Frontend
     -   **Blocked on other issue:** None
 
--   **Issue 2: ElevenLabs TTS quota is exhausted.**
-    -   **Attempted fixes:** A fallback to the browser's standard voice is implemented.
-    -   **Next debug checklist**:
-        1.  As a low-priority task, add a UI notification (e.g., a toast using Sonner) in  to inform the user that a standard voice is being used.
-    -   **Why fix this issue and what will be achieved with the fix?** Manages user expectations regarding voice quality.
-    -   **Status:** NOT STARTED
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on other issue:** None. The feature itself is blocked on the user providing a new key.
-
 **In progress Task List**:
--   **Task 1: Mobile Voice Full Recovery (P0)**
-    -   **Where to resume:** Re-approach the task using the user's detailed 10-phase plan (Chat Message 278) as a blueprint. The current code in  and  is a mix of old and new logic; it should be refactored cleanly according to the user's specification for isolated engines and a user-gated activation flow.
-    -   **What will be achieved with this?** A stable, functional, and reliable hands-free cooking mode on mobile devices and all other platforms.
-    -   **Status:** IN PROGRESS
+-   **Task 1: Repair Native Speech Integration (P0)**
+    -   **Where to resume:** Begin by implementing the user's plan from Chat Message 196. The current code in  and  must be refactored to support the native plugin architecture on mobile while preserving the Web Speech API functionality on desktop.
+    -   **What will be achieved with this?** A stable and functional hands-free cooking mode that works on both desktop (via Web Speech) and mobile (via native plugin).
+    -   **Status:** NOT STARTED
     -   **Should Test frontend/backend/both after fix?** Frontend
     -   **Blocked on something:** None
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks:**
-    -   (P1) Implement Ingredient Encyclopedia Page ().
-    -   (P1) Address the user's query about requirements for building an iOS app.
-    -   (P2) Implement a UI notification for the ElevenLabs quota fallback.
--   **Future Tasks:**
-    -   (P2) Implement Ingredient Detail Page (dynamic route ).
-    -   (P2) Activate AI Observer (On hold indefinitely).
-    -   (Enhancement) Add a visual indicator for subscription feature refresh post-payment.
+-   **(P1)** Implement Ingredient Encyclopedia Page ().
+-   **(P1)** Address the user's query about requirements for building an iOS app.
+-   **(P2)** Implement a UI notification for the ElevenLabs TTS quota fallback.
+-   **(P2)** Implement Ingredient Detail Page (dynamic route ).
 
 **Completed work in this session**
--   **Incorrect Recipe Image Fix:** Modified  to add negative keywords (e.g., , ) to the image search query, which was successfully tested and resolved the issue of incorrect images being displayed.
+-   **Iterative Voice Engine Refactors (Obsolete):** Performed three major, tested, and subsequently superseded refactors of the voice functionality based on evolving user requirements, moving from a simple cancellation fix to a full turn-taking state machine for the Web Speech API. This work is now invalidated by the pivot to a native plugin.
 
 **Earlier issues found/mentioned but not fixed**
--   A user query we have the required information for IOS app what all do you need for IOS APP was received but not addressed.
--   The UI notification for the ElevenLabs quota fallback has not been implemented.
+-   The user's question, we have the required information for IOS app what all do you need for IOS APP, has not been addressed.
+-   The UI notification for the ElevenLabs TTS quota fallback has not been implemented.
 
 **Known issue recurrence from previous fork**
--   The TTS instability is a chronic, recurring problem that has been the focus of multiple sessions. The diagnosis has become progressively more accurate, pinpointing the orchestrator loop and engine conflicts as the true root cause.
+-   Yes, the instability of the speech engine is a chronic issue that has been the focus of this entire session. The root cause and required solution have been redefined multiple times by the user, with the latest pivot being towards fixing a native plugin integration.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Web Speech API:** The core browser technology for  and , which exhibits significant cross-browser inconsistencies (quirks), especially on Safari and mobile.
--   **Race Conditions & Mutual Exclusion:** The central bug involves a race condition where the recognition and synthesis engines are not mutually exclusive, causing a destructive feedback loop.
--   **State Management:** The primary challenge is managing the complex state of the speech engine (idle, listening, speaking, error) reliably outside of the React component lifecycle, which is why a singleton controller pattern is being used.
+-   **Web Speech API:** Used for  and  on desktop.
+-   **Native Speech Plugin:** A new requirement for mobile. The specific plugin and its API are unknown and must be determined.
+-   **Hybrid Architecture:** The solution will require a hybrid approach that detects the environment (mobile vs. desktop) and conditionally uses either the native plugin or the Web Speech API.
+-   **State Management:** Managing the complex state of the speech engine (idle, listening, speaking, error) across two different underlying technologies is the primary challenge.
 
 **All files of reference**
--   : **(CRITICAL)** This file must be refactored to house the new, isolated speech synthesis and recognition engines as per the user's instructions.
--   : **(CRITICAL)** This component must be updated to remove automatic speech activation and implement a tap-to-start flow for mobile, simplifying its interaction with the speech controller.
--   : A legacy file with overlapping responsibilities. Its functionality should be cleanly absorbed into the new  to eliminate conflicts.
--   : This file was successfully modified to fix the image search issue. No further work is needed here.
+-   : **(CRITICAL)** Must be rewritten to manage both the native mobile plugin and the desktop Web Speech API.
+-   : **(CRITICAL)** The UI logic, event handlers, and state management hooks must be updated to work with the new hybrid speech controller.
 
 **Areas that need refactoring**:
--   **Speech Logic (, ):** The highest priority is to refactor the speech logic into two distinct, isolated engines for Synthesis and Recognition within , deprecating .
--   **:** The component's  hooks and event handlers that trigger speech need to be simplified to prevent automatic, unintended  calls. The control flow must become explicit and user-driven.
+-   ** and :** These two files require a complete overhaul to implement the new hybrid speech architecture defined by the user in their latest message. The existing Web Speech API-only logic is now incorrect for mobile.
 
 **Critical Info for New Agent**
--   **Your primary directive is in the user's last two prompts (Chat messages 219 and 278).** Read them carefully. They provide a precise, step-by-step plan for fixing the voice issues. Your goal is to implement that plan without deviation.
--   **The root cause is the  automatically calling  in a loop.** Your fix must sever this connection. Speech cancellation must only be triggered by explicit user actions (e.g., tapping Pause/Stop).
--   **Mobile voice activation must be gated by a user tap.** Remove any and all code that attempts to auto-start voice recognition on mobile platforms.
--   **Isolate the Synthesis and Recognition engines.** They are currently fighting each other. The refactor of  should ensure they can operate without causing mutual interference.
+-   **Your primary directive is in the user's last prompt (Chat Message 196).** Read it carefully. It completely redefines the task. **Do not attempt to build upon the previous three fixes from this session, as they are now obsolete.**
+-   The core task is to create a hybrid speech system: native plugin for mobile, Web Speech API for desktop.
+-   Your first step should be to investigate the codebase for any clues about the native speech migration or the specific plugin being used. If none are found, you may need to ask the user for clarification.
+-   The main challenge is to repair the functionality without altering any business logic, UI design, or step navigation, as strictly instructed by the user.
 
 **documents and test reports created in this job**
--    (updated)
+-   : Test report for the first major refactor (engine isolation).
+-   : Test report for the second major refactor (turn-taking sequence).
+-   
+-   *Note: The test reports verified implementations that are now considered obsolete.*
 
 **Last 10 User Messages and any pending HUMAN messages**
--   The user has transitioned from reporting a bug to providing expert-level debugging and a precise implementation plan.
--   **User Message 278:** A detailed 10-phase plan for Mobile Voice Full Recovery. This is your primary task blueprint.
--   **User Message 269:** A prompt to isolate TTS cancellation triggers and prevent the orchestrator from killing speech.
--   **User Message 262:** A screenshot showing the console log spammed with , confirming the root cause.
--   **User Message 216:** we have the required information for IOS app what all do you need for IOS APP - This question is pending and should be addressed after the critical bug fix.
--   The messages clearly indicate the core problem is an architectural flaw, not a simple bug. Do not attempt small patches; a systematic refactor is required.
+The user messages show a pattern of providing increasingly specific, technical requirements, guiding the agent through multiple implementation pivots.
+-   **User Message 196:** This is the most critical and current message. It defines the new task: repair speech after a native speech migration, restore desktop recognition, and implement fallback safety. **This message supersedes all previous instructions.**
+-   **User Message 129:** This message defined the previous turn-taking audio focus model for the Web Speech API, which is now obsolete for mobile.
+-   **User Message 58:** This message defined the initial 10-phase refactor plan for the Web Speech API, which is also obsolete.
+-   **Pending User Question:** we have the required information for IOS app what all do you need for IOS APP remains unaddressed.
 
 **Project Health Check:**
 -   **Broken:**
-    -   **Hands-Free Mode on Mobile:** Completely non-functional.
-    -   **TTS Narration on all platforms:** Critically unstable due to a logic loop that constantly cancels speech.
--   **Mocked:** None.
+    -   **Hands-Free Mode:** The entire feature is non-functional. The mobile implementation does not use the required native plugin, and the desktop recognition may be broken after multiple mobile-focused refactors.
 
 **3rd Party Integrations**
--   **ElevenLabs:** For premium TTS. **(Functionally Disabled - Quota Exhausted)**
--   **SerpApi:** Used for image search via the backend. **(Working)**
--   Others (TensorFlow, Razorpay, Capacitor) are present but not relevant to the current critical task.
+-   **ElevenLabs:** For premium TTS. (Functionally Disabled - Quota Exhausted)
+-   **SerpApi:** Used for image search. (Working)
+-   **Native Speech Plugin:** (Required, but details are unknown and not implemented)
 
 **Testing status**
--   **Testing agent used after significant changes:** NO. Previous fixes were not adequately tested.
--   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Testing agent used after significant changes:** YES. The testing agent was used successfully to verify previous, now-obsolete implementations. It should be used again for the native plugin fix.
 -   **Test files created:** None.
--   **Known regressions:** The core speech feature is in a regressed, non-functional state.
+-   **Known regressions:** The entire Hands-Free Cooking feature is in a regressed state.
 
 **Credentials to test flow:**
 -   Standard User:  / 
 
 **What agent forgot to execute**
--   The agent did not address the user's question about iOS app requirements.
--   The agent did not implement the UI notification for the ElevenLabs quota fallback.
--   The previous agent's implementation of the mobile fix was piecemeal and did not follow the user's directive for a systematic overhaul, leading to a messy and incomplete state.</analysis>
+-   The agent has been repeatedly redirected by the user to focus on the critical voice issue. As a result, the following user requests remain pending:
+    -   Answering the user's question about iOS app development requirements.
+    -   Implementing a UI notification for when the ElevenLabs quota is exhausted and the app falls back to a standard voice.</analysis>
