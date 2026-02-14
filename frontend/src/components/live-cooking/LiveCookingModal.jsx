@@ -841,8 +841,9 @@ export default function LiveCookingModal() {
       setVoiceListening(false);
       setCommandFlash(false);
       setLastCommand(null);
-      stopSpeech();
-      stopVoiceControl(); // PHASE-1: Stop voice recognition
+      // GLOBAL CONTROLLER: Cancel speech and stop recognition via singleton
+      globalCancelSpeech();
+      globalStopRecognition();
       resetOrchestrator();
       
       // Clear step timer
