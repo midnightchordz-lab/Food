@@ -76,15 +76,34 @@ export function setVisualCallbacks(callbacks) {
 
 // --------------------------------------------------
 // FREE NARRATION using browser SpeechSynthesis (Web + Mobile)
+// PHASE-1 STABILITY: Single speech lock + completion guarantee
 // --------------------------------------------------
+
+// Speech lock to prevent multiple simultaneous speak() calls
+let currentUtterance = null;
+let speechCompletionCallback = null;
+
+/**
+ * Check if TTS is currently speaking
+ * @returns {boolean}
+ */
+export function isSpeaking() {
+  return 'speechSynthesis' in window && window.speechSynthesis.speaking;
+}
 
 /**
  * Stop any current speech immediately
- * CRITICAL: Always call before starting new speech
+ * CRITICAL: Only call on:
+ * - User presses Pause
+ * - Step changes
+ * - User exits hands-free mode
+ * DO NOT call on timer updates, UI re-renders, or listening indicator updates
  */
 export function stopSpeech() {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
+    currentUtterance = null;
+    speechCompletionCallback = null;
   }
 }
 
@@ -93,20 +112,33 @@ export const stopSpeaking = stopSpeech;
 
 /**
  * Speak text using browser's built-in TTS (FREE)
+ * SINGLE SPEECH LOCK: Won't start if already speaking
  * @param {string} text - Text to speak
+ * @param {function} onComplete - Optional callback when speech finishes
+ * @returns {boolean} - true if speech started, false if blocked
  */
-export function speakText(text) {
-  if (!('speechSynthesis' in window) || !text) return;
+export function speakText(text, onComplete = null) {
+  if (!('speechSynthesis' in window) || !text) {
+    onComplete?.();
+    return false;
+  }
 
-  // Always stop previous speech first (CRITICAL FIX)
-  stopSpeech();
+  // SINGLE SPEECH LOCK: Prevent multiple simultaneous speak() calls
+  if (window.speechSynthesis.speaking) {
+    console.log('[BrowserSpeech] Already speaking, ignoring new speak request');
+    return false;
+  }
 
-  const utterance = new SpeechSynthesisUtterance(text);
+  // Cancel any pending speech (but not if currently speaking - handled above)
+  window.speechSynthesis.cancel();
+  
+  currentUtterance = new SpeechSynthesisUtterance(text);
+  speechCompletionCallback = onComplete;
 
   // Natural pacing (non-robotic but still free)
-  utterance.rate = 0.95;
-  utterance.pitch = 1;
-  utterance.volume = 1;
+  currentUtterance.rate = 0.95;
+  currentUtterance.pitch = 1;
+  currentUtterance.volume = 1;
 
   // Try to use a natural-sounding voice if available
   const voices = window.speechSynthesis.getVoices();
@@ -117,10 +149,43 @@ export function speakText(text) {
     (v.lang.startsWith('en') && v.localService)
   );
   if (preferredVoice) {
-    utterance.voice = preferredVoice;
+    currentUtterance.voice = preferredVoice;
   }
 
-  window.speechSynthesis.speak(utterance);
+  // UTTERANCE COMPLETION GUARANTEE: Attach onend handler
+  currentUtterance.onend = () => {
+    console.log('[BrowserSpeech] Speech completed');
+    currentUtterance = null;
+    const callback = speechCompletionCallback;
+    speechCompletionCallback = null;
+    
+    // Call completion callback after a small delay
+    if (callback) {
+      setTimeout(callback, 100);
+    }
+    
+    // Resume voice control after TTS ends (with 400ms delay for stability)
+    if (shouldBeListening && !isListening) {
+      setTimeout(() => {
+        if (shouldBeListening && !isListening && !isSpeaking()) {
+          console.log('[BrowserSpeech] TTS ended, resuming voice control');
+          startVoiceControl();
+        }
+      }, 400);
+    }
+  };
+
+  currentUtterance.onerror = (event) => {
+    console.log('[BrowserSpeech] Speech error:', event.error);
+    currentUtterance = null;
+    const callback = speechCompletionCallback;
+    speechCompletionCallback = null;
+    callback?.();
+  };
+
+  window.speechSynthesis.speak(currentUtterance);
+  console.log('[BrowserSpeech] Started speaking:', text.substring(0, 50) + '...');
+  return true;
 }
 
 // --------------------------------------------------
