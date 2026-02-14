@@ -484,6 +484,61 @@ keepAliveTimer = setInterval(() => {
 ✔ Chrome keep-alive prevents 15-second timeout
 ✔ Mobile + Web stable
 
+#### Safari TTS Cut-off Fix ✅ NEW (Dec 2025)
+**Fixed critical bug where TTS was cutting off immediately on Safari**
+
+**Root Cause Identified:**
+Speech Recognition was listening while TTS was speaking, and recognition would hear the TTS output (e.g., "grapefruit"), triggering cleanup logic that cancelled the TTS. This created an infinite loop.
+
+**Solution - Strict TTS/Recognition Mutual Exclusion:**
+
+1. **Disable Recognition During TTS:**
+   - `disableRecognitionDuringTTS()` - Called BEFORE starting any TTS
+   - Aborts any active recognition session immediately
+   - Prevents recognition from hearing TTS output
+
+2. **Re-enable Recognition After TTS:**
+   - `enableRecognitionAfterTTS()` - Called when TTS completes
+   - 500ms delay before restarting recognition
+   - Only restarts if `shouldBeListening` flag is set
+
+3. **Stop Conditions Filtering:**
+   Speech should ONLY be cancelled for user-initiated actions:
+   - ✅ User presses Pause
+   - ✅ User presses Next/Back  
+   - ✅ Voice command recognized
+   - ✅ App exits cooking mode (modal closes)
+   
+   Speech should NOT be cancelled for:
+   - ❌ Timer starts/updates
+   - ❌ Recognition restarts
+   - ❌ Gestures idle
+   - ❌ Orchestrator automatic cleanup
+
+4. **Cancel Reason Logging:**
+   All `cancelSpeech()` calls now require a reason parameter for debugging:
+   - `globalCancelSpeech('userPause')` 
+   - `globalCancelSpeech('userNext')`
+   - `globalCancelSpeech('modalClose')`
+   - etc.
+
+**Ideal Flow (Now Implemented):**
+```
+TTS start 
+→ Disable recognition
+→ Speak fully  
+→ TTS end
+→ 500ms delay
+→ Enable recognition
+```
+
+**Files Changed:**
+- `frontend/src/lib/speechController.js` - Complete rewrite with strict mutual exclusion
+- `frontend/src/lib/browserSpeech.js` - Added recognition disable before TTS
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - All cancel calls now have reasons
+
+**Test Status:** Pending user validation on Safari
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
