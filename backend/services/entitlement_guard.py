@@ -194,18 +194,30 @@ def _has_direct_payment_markers(subscription: Dict) -> Tuple[bool, str]:
     Check if subscription has direct payment markers embedded.
     
     This is Priority 1 validation - most reliable.
+    
+    ONLY accepts real payment provider IDs:
+    - razorpay_payment_id: starts with "pay_"
+    - razorpay_order_id: starts with "order_"
+    - Stripe payment_intent: starts with "pi_"
+    
+    Demo/test IDs (sub_xxxx) are NOT valid payment markers.
     """
     payment_id = subscription.get("razorpay_payment_id") or subscription.get("payment_id")
     order_id = subscription.get("razorpay_order_id")
-    provider_id = subscription.get("payment_provider_id")
     
     markers_found = []
-    if payment_id:
-        markers_found.append(f"payment_id:{payment_id[:12]}...")
-    if order_id:
-        markers_found.append(f"order_id:{order_id[:12]}...")
-    if provider_id and provider_id.startswith(("pay_", "sub_", "order_")):
-        markers_found.append(f"provider_id:{provider_id[:12]}...")
+    
+    # Check razorpay_payment_id (must start with "pay_")
+    if payment_id and isinstance(payment_id, str) and payment_id.startswith("pay_"):
+        markers_found.append(f"razorpay_payment:{payment_id[:16]}...")
+    
+    # Check razorpay_order_id (must start with "order_")
+    if order_id and isinstance(order_id, str) and order_id.startswith("order_"):
+        markers_found.append(f"razorpay_order:{order_id[:16]}...")
+    
+    # Check for Stripe payment_intent
+    if payment_id and isinstance(payment_id, str) and payment_id.startswith("pi_"):
+        markers_found.append(f"stripe_payment:{payment_id[:16]}...")
     
     if markers_found:
         return True, f"has_payment_markers:[{','.join(markers_found)}]"
