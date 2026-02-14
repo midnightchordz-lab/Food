@@ -1633,17 +1633,25 @@ export default function LiveCookingModal() {
                     className="relative overflow-hidden rounded-3xl backdrop-blur-2xl border"
                     style={{ 
                       backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                      borderColor: theme.accent + '25',
-                      boxShadow: `0 0 60px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`,
+                      borderColor: timerComplete ? 'rgba(34, 197, 94, 0.4)' : theme.accent + '25',
+                      boxShadow: timerComplete 
+                        ? '0 0 80px rgba(34, 197, 94, 0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
+                        : `0 0 60px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`,
                     }}
-                    animate={{ 
+                    animate={timerComplete ? {
+                      boxShadow: [
+                        '0 0 60px rgba(34, 197, 94, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                        '0 0 100px rgba(34, 197, 94, 0.6), inset 0 1px 0 rgba(255,255,255,0.15)',
+                        '0 0 60px rgba(34, 197, 94, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                      ]
+                    } : { 
                       boxShadow: [
                         `0 0 40px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`,
                         `0 0 60px ${theme.glowStrong}, inset 0 1px 0 rgba(255,255,255,0.15)`,
                         `0 0 40px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.1)`,
                       ]
                     }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{ duration: timerComplete ? 1 : 4, repeat: Infinity, ease: "easeInOut" }}
                   >
                     {/* Progress bar (top edge) */}
                     <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
