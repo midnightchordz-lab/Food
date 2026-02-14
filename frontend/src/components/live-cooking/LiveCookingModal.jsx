@@ -1720,6 +1720,134 @@ export default function LiveCookingModal() {
                         </motion.p>
                       </AnimatePresence>
 
+                      {/* ============================================ */}
+                      {/* CENTERED COUNTDOWN TIMER - Prominent Display */}
+                      {/* ============================================ */}
+                      {timerSeconds !== null && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="flex justify-center mb-6"
+                        >
+                          <motion.div
+                            className={`flex items-center gap-4 px-6 py-3 rounded-2xl backdrop-blur-xl ${
+                              timerComplete 
+                                ? 'bg-green-500/20 border-2 border-green-400/50' 
+                                : timerSeconds <= 30 
+                                  ? 'bg-orange-500/15 border-2 border-orange-400/40' 
+                                  : 'bg-white/10 border border-white/20'
+                            }`}
+                            animate={timerComplete ? {
+                              scale: [1, 1.05, 1],
+                              boxShadow: [
+                                '0 0 20px rgba(34, 197, 94, 0.3)',
+                                '0 0 40px rgba(34, 197, 94, 0.5)',
+                                '0 0 20px rgba(34, 197, 94, 0.3)',
+                              ]
+                            } : timerSeconds <= 10 ? {
+                              scale: [1, 1.02, 1]
+                            } : {}}
+                            transition={{ 
+                              duration: timerComplete ? 0.8 : 1, 
+                              repeat: timerComplete ? 3 : timerSeconds <= 10 ? Infinity : 0 
+                            }}
+                          >
+                            {/* Large circular progress ring */}
+                            <div className="relative">
+                              <svg className="w-14 h-14 md:w-16 md:h-16 -rotate-90" viewBox="0 0 60 60">
+                                {/* Background circle */}
+                                <circle
+                                  cx="30"
+                                  cy="30"
+                                  r="26"
+                                  fill="none"
+                                  stroke="rgba(255,255,255,0.1)"
+                                  strokeWidth="4"
+                                />
+                                {/* Progress circle */}
+                                {!timerComplete && timerInitialSeconds && (
+                                  <motion.circle
+                                    cx="30"
+                                    cy="30"
+                                    r="26"
+                                    fill="none"
+                                    stroke={timerComplete ? '#22c55e' : timerSeconds <= 30 ? '#fb923c' : theme.accent}
+                                    strokeWidth="4"
+                                    strokeLinecap="round"
+                                    strokeDasharray={163.36}
+                                    strokeDashoffset={163.36 * (1 - timerSeconds / timerInitialSeconds)}
+                                    transition={{ duration: 0.5 }}
+                                  />
+                                )}
+                                {/* Complete checkmark circle */}
+                                {timerComplete && (
+                                  <circle
+                                    cx="30"
+                                    cy="30"
+                                    r="26"
+                                    fill="none"
+                                    stroke="#22c55e"
+                                    strokeWidth="4"
+                                  />
+                                )}
+                              </svg>
+                              {/* Timer icon in center */}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <motion.div
+                                  animate={timerComplete ? { 
+                                    scale: [1, 1.3, 1],
+                                    rotate: [0, 10, -10, 0]
+                                  } : timerSeconds <= 10 ? {
+                                    scale: [1, 1.15, 1]
+                                  } : {}}
+                                  transition={{ 
+                                    duration: timerComplete ? 0.5 : 0.8, 
+                                    repeat: timerComplete ? 3 : timerSeconds <= 10 ? Infinity : 0 
+                                  }}
+                                >
+                                  <Timer className={`w-6 h-6 md:w-7 md:h-7 ${
+                                    timerComplete 
+                                      ? 'text-green-400' 
+                                      : timerSeconds <= 30 
+                                        ? 'text-orange-400' 
+                                        : 'text-white/70'
+                                  }`} />
+                                </motion.div>
+                              </div>
+                            </div>
+                            
+                            {/* Time display */}
+                            <div className="flex flex-col items-start">
+                              <motion.span 
+                                className={`text-3xl md:text-4xl font-mono font-bold tracking-tight ${
+                                  timerComplete 
+                                    ? 'text-green-400' 
+                                    : timerSeconds <= 30 
+                                      ? 'text-orange-400' 
+                                      : 'text-white'
+                                }`}
+                                animate={timerSeconds <= 10 && !timerComplete ? { 
+                                  opacity: [1, 0.6, 1],
+                                  scale: [1, 1.05, 1]
+                                } : {}}
+                                transition={{ duration: 0.5, repeat: Infinity }}
+                              >
+                                {timerComplete ? '✓' : formatTime(timerSeconds)}
+                              </motion.span>
+                              <span className={`text-xs uppercase tracking-wider ${
+                                timerComplete 
+                                  ? 'text-green-400/70' 
+                                  : timerSeconds <= 30 
+                                    ? 'text-orange-400/70' 
+                                    : 'text-white/50'
+                              }`}>
+                                {timerComplete ? 'Step Complete' : timerSeconds <= 30 ? 'Almost done' : 'Time remaining'}
+                              </span>
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      )}
+
                       {/* Control buttons - PHASE-1: Large controls with Repeat */}
                       <div className="flex items-center justify-center gap-3 md:gap-4">
                         {/* Previous */}
