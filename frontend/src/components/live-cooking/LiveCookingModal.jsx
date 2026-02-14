@@ -1300,6 +1300,94 @@ export default function LiveCookingModal() {
                 )}
 
                 {/* ============================================ */}
+                {/* VOICE TUTORIAL OVERLAY - Shows on first enable */}
+                {/* ============================================ */}
+                <AnimatePresence>
+                  {showVoiceTutorial && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                      onClick={dismissVoiceTutorial}
+                    >
+                      <motion.div
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="relative max-w-sm mx-4 p-6 rounded-3xl backdrop-blur-2xl border"
+                        style={{ 
+                          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                          borderColor: 'rgba(34, 197, 94, 0.3)',
+                          boxShadow: '0 0 40px rgba(34, 197, 94, 0.2)',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Header with mic icon */}
+                        <div className="flex items-center gap-3 mb-4">
+                          <motion.div
+                            className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center"
+                            animate={{ scale: [1, 1.1, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <Mic className="w-6 h-6 text-green-400" />
+                          </motion.div>
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">Voice Commands</h3>
+                            <p className="text-xs text-white/60">Hands-free cooking is ready!</p>
+                          </div>
+                        </div>
+                        
+                        {/* Commands list */}
+                        <div className="space-y-2 mb-5">
+                          <p className="text-sm text-white/70 mb-3">Say these commands to control cooking:</p>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { cmd: '"Next"', desc: 'Go forward', icon: '→' },
+                              { cmd: '"Back"', desc: 'Go back', icon: '←' },
+                              { cmd: '"Repeat"', desc: 'Replay step', icon: '↺' },
+                              { cmd: '"Pause"', desc: 'Stop voice', icon: '⏸' },
+                              { cmd: '"Resume"', desc: 'Continue', icon: '▶' },
+                            ].map((item) => (
+                              <motion.div
+                                key={item.cmd}
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10"
+                                whileHover={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
+                              >
+                                <span className="text-lg">{item.icon}</span>
+                                <div>
+                                  <span className="text-sm font-medium text-green-400">{item.cmd}</span>
+                                  <p className="text-[10px] text-white/50">{item.desc}</p>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Tips */}
+                        <div className="bg-white/5 rounded-xl p-3 mb-4 border border-white/5">
+                          <p className="text-xs text-white/60">
+                            <span className="text-green-400 font-medium">Tip:</span> Speak clearly and wait for the green pulse before giving commands.
+                          </p>
+                        </div>
+                        
+                        {/* Dismiss button */}
+                        <Button
+                          onClick={dismissVoiceTutorial}
+                          className="w-full py-3 rounded-xl bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30"
+                          data-testid="voice-tutorial-dismiss-btn"
+                        >
+                          Got it, let's cook!
+                        </Button>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ============================================ */}
                 {/* FLOATING GLASS STEP CARD */}
                 {/* ============================================ */}
                 <motion.div
