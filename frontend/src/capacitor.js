@@ -46,9 +46,13 @@ export const initializeCapacitor = async () => {
       document.documentElement.style.setProperty('--keyboard-height', '0px');
     });
 
-    // Handle app state changes
+    // Handle app state changes - trigger entitlement refresh on foreground resume
     App.addListener('appStateChange', ({ isActive }) => {
       console.log('App state changed. Is active:', isActive);
+      if (isActive) {
+        // Dispatch event to refresh subscription when app returns to foreground
+        window.dispatchEvent(new CustomEvent('app-foreground-resume'));
+      }
     });
 
     // Handle back button on Android
