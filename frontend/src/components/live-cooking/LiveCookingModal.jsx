@@ -689,12 +689,13 @@ export default function LiveCookingModal() {
   }, [open, handsFreeEnabled, hasCameraAccess, hasMicrophoneAccess, cameraStream, initializeCamera, startGestures, startRecognition, cleanupOrchestrator]);
 
   // Gesture control state
-  const [gestureEnabled, setGestureEnabled] = useState(false);
+  // PHASE-1: Gesture detection is DORMANT
 
-  // Gesture controls (swipe left/right) - uses camera stream from permissions
-  // Now controlled by orchestrator for proper sequencing
+  // Gesture controls (swipe left/right) - DORMANT in PHASE-1
+  // Code exists but behind feature gate
   useGestureControl({
-    enabled: open && gestureEnabled && showCamera && cameraVideoReady && hasCameraAccess && isGestureReady,
+    // PHASE-1: Feature gate disables gesture detection
+    enabled: !PHASE_1_MODE && open && gestureEnabled && showCamera && cameraVideoReady && hasCameraAccess && isGestureReady,
     videoRef: cameraVideoRef,
     onNext: async () => {
       setVoiceCommandActive(true);
@@ -712,7 +713,11 @@ export default function LiveCookingModal() {
   });
 
   // Attach camera stream from permission hook to video element
+  // PHASE-1: Skipped via feature gate
   useEffect(() => {
+    // PHASE-1: Skip camera stream attachment
+    if (PHASE_1_MODE) return;
+    
     const videoEl = cameraVideoRef.current;
     if (videoEl && cameraStream && hasCameraAccess) {
       videoEl.srcObject = cameraStream;
