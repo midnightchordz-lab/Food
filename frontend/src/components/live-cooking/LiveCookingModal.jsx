@@ -1018,66 +1018,105 @@ export default function LiveCookingModal() {
                   <div className="flex items-center justify-between">
                     {/* Left: Voice Status Indicator (Phase-1 simplified) */}
                     <div className="flex items-center gap-3">
-                      {/* Status Ring */}
+                      {/* Status Ring - PHASE-1: Shows listening/command state */}
                       <motion.div
                         className="relative"
                         animate={
-                          isPlaying 
-                            ? { scale: [1, 1.1, 1] }
-                            : { scale: 1 }
+                          voiceListening 
+                            ? { scale: [1, 1.15, 1] } // Pulse when listening
+                            : isPlaying 
+                              ? { scale: [1, 1.1, 1] }
+                              : { scale: 1 }
                         }
                         transition={{ 
-                          duration: 2, 
+                          duration: voiceListening ? 1 : 2, 
                           repeat: Infinity, 
                           ease: "easeInOut" 
                         }}
                       >
-                        {/* Outer glow ring */}
+                        {/* Outer glow ring - PHASE-1: Changes color when listening */}
                         <motion.div
                           className="absolute -inset-2 rounded-full blur-md"
                           style={{ 
-                            backgroundColor: isPlaying ? theme.glowStrong : theme.glow,
+                            backgroundColor: voiceListening 
+                              ? 'rgba(34, 197, 94, 0.6)' // Green when listening
+                              : commandFlash 
+                                ? 'rgba(250, 204, 21, 0.8)' // Yellow flash on command
+                                : isPlaying ? theme.glowStrong : theme.glow,
                           }}
                           animate={{ 
-                            opacity: isPlaying ? [0.5, 0.8, 0.5] : [0.3, 0.5, 0.3],
+                            opacity: voiceListening 
+                              ? [0.5, 0.9, 0.5] // More pronounced pulse when listening
+                              : commandFlash 
+                                ? [1, 0.5, 1] // Quick flash
+                                : isPlaying ? [0.5, 0.8, 0.5] : [0.3, 0.5, 0.3],
                           }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          transition={{ 
+                            duration: voiceListening ? 0.8 : commandFlash ? 0.3 : 2, 
+                            repeat: Infinity, 
+                            ease: "easeInOut" 
+                          }}
                         />
-                        {/* Inner indicator */}
+                        {/* Inner indicator - PHASE-1: Shows mic icon when listening */}
                         <div 
-                          className="relative w-10 h-10 rounded-full backdrop-blur-xl border flex items-center justify-center"
+                          className={`relative w-10 h-10 rounded-full backdrop-blur-xl border flex items-center justify-center transition-colors ${
+                            commandFlash ? 'bg-yellow-500/30' : ''
+                          }`}
                           style={{ 
-                            borderColor: theme.accent + '40',
-                            backgroundColor: 'rgba(0,0,0,0.3)',
+                            borderColor: voiceListening 
+                              ? 'rgba(34, 197, 94, 0.5)' 
+                              : theme.accent + '40',
+                            backgroundColor: voiceListening 
+                              ? 'rgba(34, 197, 94, 0.2)' 
+                              : 'rgba(0,0,0,0.3)',
                           }}
                         >
-                          <motion.div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: theme.accent }}
-                            animate={{ 
-                              scale: isPlaying ? [1, 1.4, 1] : [1, 1.2, 1],
-                              opacity: isPlaying ? [0.8, 1, 0.8] : [0.6, 1, 0.6],
-                            }}
-                            transition={{ duration: isPlaying ? 1.5 : 3, repeat: Infinity }}
-                          />
+                          {voiceListening ? (
+                            <motion.div
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.8, repeat: Infinity }}
+                            >
+                              <Mic className="w-4 h-4 text-green-400" />
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: theme.accent }}
+                              animate={{ 
+                                scale: isPlaying ? [1, 1.4, 1] : [1, 1.2, 1],
+                                opacity: isPlaying ? [0.8, 1, 0.8] : [0.6, 1, 0.6],
+                              }}
+                              transition={{ duration: isPlaying ? 1.5 : 3, repeat: Infinity }}
+                            />
+                          )}
                         </div>
                       </motion.div>
                       
-                      {/* Status text */}
+                      {/* Status text - PHASE-1: Shows voice listening state */}
                       <div className="flex flex-col">
-                        <span className={`text-xs font-medium ${theme.text} opacity-80`}>
-                          {PHASE_1_MODE ? 'Voice Cooking' : (useBrowserSpeech ? 'Free Voice' : 'AI Observer')}
+                        <span className={`text-xs font-medium ${voiceListening ? 'text-green-400' : theme.text} opacity-80`}>
+                          {voiceListening 
+                            ? 'Listening...' 
+                            : PHASE_1_MODE 
+                              ? 'Voice Cooking' 
+                              : (useBrowserSpeech ? 'Free Voice' : 'AI Observer')}
                         </span>
                         <span className="text-[10px] text-white/50">
-                          {PHASE_1_MODE 
-                            ? (isPlaying ? 'Narrating...' : 'Press play to start')
-                            : (useBrowserSpeech 
-                              ? 'Browser TTS active' 
-                              : aiState === 'idle' 
-                                ? 'Watching' 
-                                : aiState === 'active' 
-                                  ? 'Activity detected' 
-                                  : 'Step ready?')}
+                          {voiceListening 
+                            ? 'Say: next, back, repeat, pause'
+                            : commandFlash 
+                              ? `"${lastCommand}" received!`
+                              : PHASE_1_MODE 
+                                ? (handsFreeEnabled 
+                                  ? (isPlaying ? 'Voice commands ready' : 'Press play to start') 
+                                  : 'Tap mic to enable voice')
+                                : (useBrowserSpeech 
+                                  ? 'Browser TTS active' 
+                                  : aiState === 'idle' 
+                                    ? 'Watching' 
+                                    : aiState === 'active' 
+                                      ? 'Activity detected' 
+                                      : 'Step ready?')}
                         </span>
                       </div>
                     </div>
