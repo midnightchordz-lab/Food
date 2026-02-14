@@ -539,6 +539,58 @@ TTS start
 
 **Test Status:** ✅ VERIFIED (iteration_82.json, iteration_83.json, iteration_84.json)
 
+#### Hybrid Speech Architecture ✅ NEW (Dec 2025)
+**Implemented native Capacitor plugin integration for mobile with Web Speech API fallback**
+
+**Problem Solved:**
+Mobile browsers have inconsistent Web Speech API support. Native apps require proper Capacitor plugin integration for reliable speech recognition.
+
+**Solution - Hybrid Architecture:**
+```
+Platform Detection:
+├── iOS/Android Native App → Capacitor native plugin + Web TTS
+├── Desktop Browser → Web Speech API for both
+└── Mobile Browser (PWA) → Web Speech API with fallback
+```
+
+**New Files Created:**
+1. `frontend/src/lib/nativeSpeechEngine.js` - Capacitor plugin wrapper
+   - Wraps `@capgo/capacitor-speech-recognition` plugin
+   - Handles native permissions (checkPermissions, requestPermissions)
+   - Event listeners: start, end, result, partialResults, error
+   - Language configuration and partial results support
+
+2. `frontend/src/lib/hybridSpeechController.js` - Native/Web bridge
+   - Same API interface regardless of platform
+   - Automatic engine selection based on environment
+   - Session arming for mobile one-time activation
+   - Turn-taking audio focus management
+
+**speechController.js Updates:**
+- Added platform detection via `Capacitor.isNativePlatform()`
+- Lazy-loads hybridSpeechController only on native platforms
+- SpeechController class delegates to hybrid when available
+- Async `init()` method for proper native initialization
+
+**Dependencies Added:**
+- `@capgo/capacitor-speech-recognition@8.0.8` - Native speech plugin
+
+**Capacitor Config Updated:**
+- Added `SpeechRecognition` plugin configuration
+- Language: en-US, partialResults: true, popup: false
+
+**Key Features:**
+- ✅ Native iOS/Android recognition via Capacitor plugin
+- ✅ Web fallback for desktop and PWA
+- ✅ Same API interface across all platforms
+- ✅ Proper permission handling (native and web)
+- ✅ Turn-taking audio focus (TTS and recognition cannot overlap)
+- ✅ Session arming for mobile one-time user gesture
+- ✅ Auto-restart recognition after TTS ends
+- ✅ Graceful degradation when native unavailable
+
+**Test Status:** ✅ VERIFIED (iteration_85.json - Code review passed)
+
 #### Mobile Audio Focus Sequencing Fix ✅ (Dec 2025)
 **Stabilized mobile audio by implementing single audio owner and turn-taking sequence**
 
