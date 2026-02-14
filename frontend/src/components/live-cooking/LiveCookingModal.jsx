@@ -986,15 +986,38 @@ export default function LiveCookingModal() {
   
   // Start/stop voice recognition based on handsFreeEnabled (Phase-1 only)
   // GLOBAL CONTROLLER: Uses singleton recognition (immune to re-renders)
+  // SAFARI FIX: Don't start recognition immediately - wait for speech to complete
   useEffect(() => {
     if (!PHASE_1_MODE) return; // Full mode uses engine orchestrator
     
     if (open && handsFreeEnabled) {
-      // GLOBAL CONTROLLER: Start recognition via singleton (will wait if TTS is speaking)
-      const started = globalStartRecognition();
-      if (started) {
-        console.log('[LiveCooking] Phase-1 global voice recognition started');
-      }
+      // SAFARI FIX: Mark that we WANT to be listening, but don't start immediately
+      // The speech controller will start recognition after TTS ends
+      // This prevents Safari from blocking speech synthesis
+      console.log('[LiveCooking] Hands-free enabled - recognition will start after speech');
+      // Set the flag so speechController knows to start recognition after TTS
+      globalSetRecognitionCallbacks({
+        onResult: (transcript) => {
+          const cmd = transcript.toLowerCase().trim();
+          if (cmd.includes('next')) handleNextWithVoice();
+          else if (cmd.includes('back') || cmd.includes('previous')) handlePrevWithVoice();
+          else if (cmd.includes('repeat') || cmd.includes('again')) handleRepeat();
+          else if (cmd.includes('pause') || cmd.includes('stop')) handleTogglePlayWithVoice();
+          else if (cmd.includes('resume') || cmd.includes('play') || cmd.includes('continue')) handleTogglePlayWithVoice();
+        },
+        onStart: () => {
+          setVoiceListening(true);
+          console.log('[LiveCooking] Global voice recognition started');
+        },
+        onEnd: () => {
+          setVoiceListening(false);
+          console.log('[LiveCooking] Global voice recognition ended');
+        },
+        onError: (error) => {
+          console.log('[LiveCooking] Global voice recognition error:', error);
+        },
+      });
+      // DON'T call globalStartRecognition() here - let it start after speech
     } else {
       // GLOBAL CONTROLLER: Stop recognition when disabled or modal closes
       globalStopRecognition();
@@ -1005,7 +1028,7 @@ export default function LiveCookingModal() {
         globalStopRecognition();
       }
     };
-  }, [open, handsFreeEnabled]);
+  }, [open, handsFreeEnabled, handleNextWithVoice, handlePrevWithVoice, handleTogglePlayWithVoice, handleRepeat]);
   
   // Setup recognition callbacks when they change
   useEffect(() => {
