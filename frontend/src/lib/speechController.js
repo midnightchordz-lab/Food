@@ -389,31 +389,66 @@ function splitIntoChunks(text) {
 /**
  * Cancel current speech
  * 
- * STOP CONDITIONS FILTERING:
- * This should ONLY be called from:
- * - User presses Pause button
- * - User presses Next/Back button
- * - Voice command recognized (user-initiated)
- * - App exits cooking mode (modal closes)
+ * PHASE-1 ISOLATION: SpeechController owns speech lifecycle.
+ * Orchestrator is observer only - cannot cancel TTS.
  * 
- * This should NEVER be called from:
- * - Timer starts/updates
- * - Recognition restarts
- * - Gestures idle
- * - Orchestrator automatic cleanup
- * - ANY non-user-initiated event
+ * ALLOWED CANCEL REASONS (User-initiated only):
+ * - userPause: User pressed Pause button
+ * - userNext: User pressed Next button
+ * - userBack: User pressed Back button  
+ * - userRepeat: User pressed Repeat button
+ * - modalClose: User closed the cooking modal
+ * - disableHandsFree: User disabled hands-free mode
+ * - stepChange: Step changed (triggers new narration)
+ * - readCurrentStep: Starting new step narration
  * 
- * @param {string} reason - For debugging: why cancel was called
+ * BLOCKED CANCEL REASONS (Orchestrator/System):
+ * - orchestratorStop: Orchestrator cleanup loop
+ * - Any reason containing 'orchestrator', 'cleanup', 'gesture', 'recognition'
+ * 
+ * @param {string} reason - Why cancel was called
  */
 function cancelSpeech(reason = 'unknown') {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   
   // ========================================
+  // PHASE-1 ISOLATION: Block orchestrator cancels
+  // Only user-initiated actions may cancel speech
+  // ========================================
+  const allowedReasons = [
+    'userPause',
+    'userNext', 
+    'userBack',
+    'userRepeat',
+    'modalClose',
+    'disableHandsFree',
+    'stepChange',
+    'readCurrentStep'
+  ];
+  
+  const blockedPatterns = [
+    'orchestrator',
+    'cleanup',
+    'gesture',
+    'recognition',
+    'camera',
+    'timer'
+  ];
+  
+  // Check if reason is blocked
+  const reasonLower = reason.toLowerCase();
+  const isBlocked = blockedPatterns.some(pattern => reasonLower.includes(pattern));
+  const isAllowed = allowedReasons.includes(reason);
+  
+  if (isBlocked && !isAllowed) {
+    // Silently ignore orchestrator/system cancels
+    return;
+  }
+  
+  // ========================================
   // GUARD: Only cancel if actually speaking
-  // This prevents cleanup loops from killing speech
   // ========================================
   if (!isSpeaking && !window.speechSynthesis.speaking) {
-    // Nothing to cancel - ignore silently
     return;
   }
   
