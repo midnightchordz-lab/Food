@@ -966,57 +966,69 @@ export default function LiveCookingModal() {
     }
   }, [handsFreeEnabled, requestPermissions, stopCameraStream, permissionError, cleanupOrchestrator]);
   
-  // Handler for mic button tap - PHASE 2 & 7: Mobile activation point
+  // Handler for mic button tap - MOBILE: One-time session activation
+  // After first tap, continuous speak-listen loop without additional taps
   const handleMicButtonTap = useCallback(() => {
     const env = globalGetEnvironment();
-    console.log('[LiveCooking] Mic button tapped - env:', env);
+    console.log('[LiveCooking] Mic tap - Mobile:', env.isMobile, 'Armed:', globalIsSessionArmed());
     
     if (!handsFreeEnabled) {
-      // First tap enables hands-free
       handleEnableHandsFree();
       return;
     }
     
-    // PHASE 7: UI state management based on current state
     if (voiceRecognitionState === 'disabled') {
       toast.error('Voice control unavailable on this device');
       return;
     }
     
-    if (voiceRecognitionState === 'error') {
-      // Try to recover
-      console.log('[LiveCooking] Attempting to recover from error state');
-      setVoiceRecognitionState('idle');
-    }
-    
-    // PHASE 2: Mobile/WebView - ALWAYS require tap to start
-    if (env.isMobile || env.isWebView || voiceRecognitionState === 'permission-needed' || voiceRecognitionState === 'idle') {
-      console.log('[LiveCooking] PHASE 2 - Starting recognition from user tap');
-      const started = globalStartRecognitionFromGesture();
-      if (started) {
-        setVoiceListening(true);
-        toast.success('Listening! Say "next", "back", "repeat", or "pause"');
-      } else {
-        // Check if it's a permission issue
-        const currentEnv = globalGetEnvironment();
-        if (currentEnv.micPermissionState === 'denied') {
-          toast.error('Microphone permission denied. Please allow access in settings.');
-          setVoiceRecognitionState('disabled');
+    // MOBILE: One-time activation arms the session
+    if (env.isMobile || env.isWebView) {
+      if (!globalIsSessionArmed()) {
+        // First tap - arm session for continuous loop
+        console.log('[LiveCooking] ARMING session for continuous hands-free');
+        const started = globalStartRecognitionFromGesture();
+        
+        if (started || globalIsSpeaking()) {
+          // Session armed - if TTS is speaking, recognition will start after
+          setVoiceListening(!globalIsSpeaking());
+          toast.success('Hands-free active! Say "next", "back", "repeat", or "pause"');
         } else {
-          toast.info('Tap again to start voice control');
-          setVoiceRecognitionState('permission-needed');
+          const currentEnv = globalGetEnvironment();
+          if (currentEnv.micPermissionState === 'denied') {
+            toast.error('Microphone permission denied. Please allow access in settings.');
+            setVoiceRecognitionState('disabled');
+          } else {
+            toast.info('Tap mic to start voice control');
+            setVoiceRecognitionState('permission-needed');
+          }
         }
+        return;
+      }
+      
+      // Session already armed - toggle listening
+      if (voiceListening) {
+        globalStopRecognition();
+        setVoiceListening(false);
+        globalDisarmSession();
+        toast.info('Voice control paused. Tap to resume.');
+      } else {
+        // Re-arm and start
+        globalStartRecognitionFromGesture();
+        setVoiceListening(true);
+        toast.success('Voice control resumed!');
       }
       return;
     }
     
-    // If listening, stop. If not, start.
+    // DESKTOP: Standard toggle behavior
     if (voiceListening) {
       globalStopRecognition();
       setVoiceListening(false);
-      toast.info('Voice control paused. Tap mic to resume.');
+      toast.info('Voice control paused.');
     } else {
       globalStartRecognition();
+      setVoiceListening(true);
     }
   }, [handsFreeEnabled, handleEnableHandsFree, voiceRecognitionState, voiceListening]);
   
