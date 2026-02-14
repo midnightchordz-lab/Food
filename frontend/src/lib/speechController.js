@@ -440,6 +440,7 @@ function stopRecognition() {
 
 /**
  * Set recognition callbacks
+ * Also sets shouldBeListening flag so recognition starts after TTS
  */
 function setRecognitionCallbacks(callbacks) {
   recognitionCallbacks = {
@@ -448,6 +449,13 @@ function setRecognitionCallbacks(callbacks) {
     onEnd: callbacks.onEnd || null,
     onError: callbacks.onError || null,
   };
+  
+  // If callbacks are being set, it means the user wants recognition
+  // Set the flag so it starts after TTS completes
+  if (callbacks.onResult) {
+    shouldBeListening = true;
+    console.log('[SpeechController] shouldBeListening set to true');
+  }
 }
 
 // ============================================
