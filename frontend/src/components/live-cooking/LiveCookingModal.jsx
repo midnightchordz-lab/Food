@@ -530,8 +530,8 @@ export default function LiveCookingModal() {
 
   // ============================================
   // ENGINE ORCHESTRATOR - Phase 1 Synchronization
-  // Coordinates TTS, recognition, gestures
-  // MUST be declared before any effects that use its values
+  // DORMANT when PHASE_1_MODE is true (camera/gesture disabled)
+  // Voice command portion remains active
   // ============================================
   const {
     cameraState,
@@ -556,14 +556,16 @@ export default function LiveCookingModal() {
     cleanup: cleanupOrchestrator,
     reset: resetEngineOrchestrator,
   } = useEngineOrchestrator({
-    enabled: open && handsFreeEnabled,
+    // PHASE-1: Disable camera-dependent features via feature gate
+    enabled: open && handsFreeEnabled && !PHASE_1_MODE,
     videoRef: cameraVideoRef,
     cameraStream,
     onSpeakStep: async (text) => {
       // Use browser speech for narration
       stopSpeech();
       await new Promise(resolve => setTimeout(resolve, 150));
-      narrateCurrentStep(text, true);
+      // Simplified narration without mood detection
+      await narrateStep(text, currentStep + 1, instructions.length);
     },
     onStopSpeaking: () => {
       stopSpeech();
