@@ -1,41 +1,37 @@
 /**
  * GLOBAL SPEECH CONTROLLER - Singleton Pattern
  * 
- * MOBILE VOICE FULL RECOVERY - 10 Phase Implementation
+ * MOBILE AUDIO FOCUS SEQUENCING
  * 
- * This module provides a persistent speech engine that exists OUTSIDE
- * of React's component lifecycle. Speech synthesis objects are never
- * recreated on UI updates, timer changes, or state transitions.
+ * SINGLE AUDIO OWNER RULE:
+ * Mobile OS allows only ONE audio owner at a time.
+ * TTS and Recognition CANNOT run simultaneously.
  * 
- * DESIGN PRINCIPLES:
- * 1. Singleton instance - one controller for entire app
- * 2. Persistent utterance - not recreated on re-renders
- * 3. Speech lock - prevents overlapping speak() calls
- * 4. ISOLATED ENGINES - Recognition and Synthesis are separate
- * 5. UI decoupled - no React state dependencies
- * 6. Chrome workaround - keep-alive prevents 15s timeout
- * 7. MOBILE-FIRST - Tap-to-activate, no auto-start
+ * TURN-TAKING SEQUENCE (Mobile):
+ * 1. User taps Start Cooking (arms session)
+ * 2. TTS narrates full step
+ * 3. TTS onend fires
+ * 4. Delay 400ms (audio focus buffer)
+ * 5. Start Recognition
+ * 6. Command detected → callback fires
+ * 7. Stop Recognition
+ * 8. Delay 200ms
+ * 9. Speak next step
+ * 10. Repeat from step 2
  * 
- * STRICT STOP RULES:
- * Speech ONLY stops when:
- * - User presses Pause
- * - User presses Stop
- * - User presses Next/Back (step navigation)
- * - User closes modal
- * 
- * Speech NEVER stops from:
- * - Timer updates
- * - Gesture engine
- * - Recognition events
- * - Orchestrator cleanup
- * - Any automatic system event
+ * STRICT RULES:
+ * - Recognition NEVER starts while TTS is speaking
+ * - TTS NEVER starts while Recognition is active
+ * - One initial tap arms the session
+ * - After armed, continuous speak-listen loop
+ * - Only cancel on: user pause, step change, exit cooking mode
  */
 
 // Singleton instance
 let instance = null;
 
 // ============================================
-// PHASE 1: MOBILE ENVIRONMENT DETECTION
+// ENVIRONMENT DETECTION
 // ============================================
 
 let isMobile = false;
@@ -44,13 +40,8 @@ let isSecureContext = true;
 let isPWA = false;
 let environmentChecked = false;
 
-/**
- * Comprehensive environment detection
- * Must run BEFORE any speech initialization
- */
 function detectEnvironment() {
   if (typeof window === 'undefined') {
-    console.log('[SpeechController] No window - SSR environment');
     return { isMobile: false, isWebView: false, isSecureContext: false, isPWA: false, isSupported: false };
   }
   
@@ -58,14 +49,12 @@ function detectEnvironment() {
     return { isMobile, isWebView, isSecureContext, isPWA, isSupported: isSecureContext };
   }
   
-  // Mobile detection - comprehensive check
   const userAgent = navigator.userAgent || '';
   isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) ||
     ('ontouchstart' in window) ||
     (navigator.maxTouchPoints && navigator.maxTouchPoints > 2) ||
     (window.innerWidth <= 768 && 'ontouchstart' in window);
   
-  // WebView/Capacitor/Cordova detection
   isWebView = !!(
     window.Capacitor ||
     window.cordova ||
@@ -76,11 +65,9 @@ function detectEnvironment() {
     (window.webkit && window.webkit.messageHandlers)
   );
   
-  // PWA detection
   isPWA = window.matchMedia?.('(display-mode: standalone)').matches ||
     window.navigator?.standalone === true;
   
-  // Secure context check (required for Web Speech API on mobile)
   isSecureContext = window.isSecureContext === true || 
     window.location.protocol === 'https:' || 
     window.location.hostname === 'localhost' ||
@@ -88,66 +75,76 @@ function detectEnvironment() {
   
   environmentChecked = true;
   
-  console.log(`[SpeechController] PHASE 1 - Environment Detection:`);
-  console.log(`  - Mobile: ${isMobile}`);
-  console.log(`  - WebView: ${isWebView}`);
-  console.log(`  - PWA: ${isPWA}`);
-  console.log(`  - Secure Context: ${isSecureContext}`);
-  console.log(`  - User Agent: ${userAgent.substring(0, 80)}...`);
+  console.log(`[SpeechController] Environment: Mobile=${isMobile}, WebView=${isWebView}, Secure=${isSecureContext}`);
   
   return { isMobile, isWebView, isSecureContext, isPWA, isSupported: isSecureContext };
 }
 
-/**
- * Get current environment (for external use)
- */
 function getEnvironment() {
   if (!environmentChecked) detectEnvironment();
   return { isMobile, isWebView, isSecureContext, isPWA, micPermissionState };
 }
 
 // ============================================
-// PHASE 2: USER ACTIVATION STATE
+// AUDIO FOCUS MANAGEMENT (MOBILE)
 // ============================================
 
-let hasUserGesture = false;
-let userActivationTime = 0;
-const USER_GESTURE_TIMEOUT = 5000; // 5 seconds - gesture validity window
+// Audio owner states
+const AUDIO_OWNER = {
+  NONE: 'none',
+  TTS: 'tts',
+  RECOGNITION: 'recognition'
+};
+
+let currentAudioOwner = AUDIO_OWNER.NONE;
+let sessionArmed = false; // One-time activation flag
+
+// Audio focus delay buffers (ms)
+const AUDIO_DELAYS = {
+  TTS_TO_RECOGNITION: 400, // After TTS ends, before recognition starts
+  RECOGNITION_TO_TTS: 200, // After recognition stops, before TTS starts
+  RECOGNITION_COOLDOWN: 100 // Brief cooldown after stopping recognition
+};
 
 /**
- * Check if user gesture is valid (recent enough)
+ * Check if we can acquire audio focus for an engine
  */
-function hasValidUserGesture() {
-  if (!isMobile) return true; // Desktop doesn't require gesture
-  if (!hasUserGesture) return false;
+function canAcquireAudioFocus(requestedOwner) {
+  if (!isMobile) return true; // Desktop: no restrictions
   
-  // Check if gesture is still valid (within timeout window)
-  const elapsed = Date.now() - userActivationTime;
-  return elapsed < USER_GESTURE_TIMEOUT;
+  // Single audio owner rule
+  if (currentAudioOwner === AUDIO_OWNER.NONE) return true;
+  if (currentAudioOwner === requestedOwner) return true;
+  
+  console.log(`[AudioFocus] BLOCKED: ${requestedOwner} cannot start while ${currentAudioOwner} is active`);
+  return false;
 }
 
 /**
- * Record user gesture (called on tap/click)
+ * Acquire audio focus
  */
-function recordUserGesture() {
-  hasUserGesture = true;
-  userActivationTime = Date.now();
-  console.log('[SpeechController] PHASE 2 - User gesture recorded');
+function acquireAudioFocus(owner) {
+  if (isMobile && currentAudioOwner !== AUDIO_OWNER.NONE && currentAudioOwner !== owner) {
+    console.log(`[AudioFocus] WARNING: Forcing ${owner}, releasing ${currentAudioOwner}`);
+  }
+  currentAudioOwner = owner;
+  console.log(`[AudioFocus] Acquired by: ${owner}`);
 }
 
 /**
- * Clear user gesture (for security)
+ * Release audio focus
  */
-function clearUserGesture() {
-  hasUserGesture = false;
-  userActivationTime = 0;
+function releaseAudioFocus(owner) {
+  if (currentAudioOwner === owner) {
+    currentAudioOwner = AUDIO_OWNER.NONE;
+    console.log(`[AudioFocus] Released by: ${owner}`);
+  }
 }
 
 // ============================================
-// PHASE 3: ISOLATED SYNTHESIS ENGINE
+// SYNTHESIS ENGINE (TTS)
 // ============================================
 
-// Synthesis state (ISOLATED from recognition)
 let synthesisInstance = null;
 let currentUtterance = null;
 let isSpeaking = false;
@@ -157,92 +154,61 @@ let keepAliveTimer = null;
 let selectedVoice = null;
 let voicesLoaded = false;
 let voiceLoadAttempts = 0;
-const MAX_VOICE_LOAD_ATTEMPTS = 2;
 
-// Synthesis state for UI
-let synthesisState = 'idle'; // 'idle', 'speaking', 'paused', 'error'
+let synthesisState = 'idle';
 let synthesisStateCallback = null;
 
 const SYNTHESIS_CONFIG = {
   SPEECH_RATE: 0.95,
   SPEECH_PITCH: 1,
   SPEECH_VOLUME: 1,
-  KEEP_ALIVE_INTERVAL: 10000, // Chrome bug workaround
+  KEEP_ALIVE_INTERVAL: 10000,
   CHUNK_MAX_LENGTH: 180,
-  SAFETY_TIMEOUT: 5000,
+  SAFETY_TIMEOUT: 8000,
 };
 
-/**
- * Set synthesis state and notify UI
- */
 function setSynthesisState(state) {
   synthesisState = state;
-  console.log('[SpeechController] Synthesis state:', state);
+  console.log('[TTS] State:', state);
   synthesisStateCallback?.(state);
 }
 
-/**
- * Initialize synthesis engine (PHASE 5 - Fallback voices)
- */
 function initSynthesis() {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-    console.log('[SpeechController] Speech synthesis not supported');
+    console.log('[TTS] Not supported');
     setSynthesisState('error');
     return false;
   }
   
   synthesisInstance = window.speechSynthesis;
-  
-  // Load voices (PHASE 5)
   loadVoices();
-  
-  // Chrome needs voiceschanged event
   synthesisInstance.onvoiceschanged = loadVoices;
   
-  console.log('[SpeechController] PHASE 3 - Synthesis engine initialized');
+  console.log('[TTS] Initialized');
   return true;
 }
 
-/**
- * PHASE 5: Load and select fallback voice
- */
 function loadVoices() {
-  if (voicesLoaded || voiceLoadAttempts >= MAX_VOICE_LOAD_ATTEMPTS) return;
+  if (voicesLoaded || voiceLoadAttempts >= 2) return;
   voiceLoadAttempts++;
   
   const voices = window.speechSynthesis?.getVoices() || [];
-  
-  if (voices.length === 0) {
-    console.log('[SpeechController] No voices available yet, attempt:', voiceLoadAttempts);
-    return;
-  }
+  if (voices.length === 0) return;
   
   voicesLoaded = true;
-  
-  // Select best voice (prefer Google/Samantha/Alex, fallback to any English)
   selectedVoice = voices.find(v => 
-    v.name.includes('Google') || 
-    v.name.includes('Samantha') || 
-    v.name.includes('Alex')
-  ) || voices.find(v => 
-    v.lang.startsWith('en') && v.localService
-  ) || voices.find(v => 
-    v.lang.startsWith('en')
+    v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Alex')
+  ) || voices.find(v => v.lang.startsWith('en') && v.localService
+  ) || voices.find(v => v.lang.startsWith('en')
   ) || voices[0];
   
-  console.log(`[SpeechController] PHASE 5 - Voice selected: ${selectedVoice?.name || 'default'} (${voices.length} available)`);
+  console.log(`[TTS] Voice: ${selectedVoice?.name || 'default'}`);
 }
 
-/**
- * Check if synthesis is currently speaking
- */
 function checkIsSpeaking() {
   return isSpeaking || (synthesisInstance?.speaking === true);
 }
 
-/**
- * Split text into chunks for Chrome compatibility
- */
 function splitIntoChunks(text) {
   const MAX = SYNTHESIS_CONFIG.CHUNK_MAX_LENGTH;
   if (text.length <= MAX) return [text];
@@ -266,18 +232,15 @@ function splitIntoChunks(text) {
 }
 
 /**
- * PHASE 3 & 6: Speak text (ISOLATED from recognition)
- * Recognition state is NOT checked or modified here
+ * Speak text with SINGLE AUDIO OWNER enforcement
+ * On mobile: Stops recognition first, acquires TTS focus
  */
 function speak(text, onComplete = null) {
-  // Environment check
   if (!synthesisInstance && !initSynthesis()) {
-    console.log('[SpeechController] Synthesis not available');
     onComplete?.();
     return false;
   }
   
-  // Text sanitization
   if (text === null || text === undefined) {
     onComplete?.();
     return false;
@@ -289,65 +252,71 @@ function speak(text, onComplete = null) {
     return false;
   }
   
-  console.log('[SpeechController] speak() called, length:', cleanText.length);
-  
-  // Speaking lock - block if already speaking
+  // Already speaking - block
   if (isSpeaking) {
-    console.log('[SpeechController] Already speaking, blocking new request');
+    console.log('[TTS] Already speaking, blocking');
     return false;
   }
   
-  // PHASE 5: Ensure voices are loaded
-  if (!voicesLoaded) {
-    loadVoices();
-    // Force a voice reload on first speak
-    const voices = window.speechSynthesis?.getVoices() || [];
-    if (voices.length > 0 && !selectedVoice) {
-      selectedVoice = voices[0];
-    }
+  // MOBILE: Single audio owner - stop recognition first
+  if (isMobile && isListening) {
+    console.log('[TTS] Mobile: Stopping recognition before TTS');
+    forceStopRecognition();
   }
   
-  // Acquire lock
+  // Check audio focus
+  if (!canAcquireAudioFocus(AUDIO_OWNER.TTS)) {
+    console.log('[TTS] Cannot acquire audio focus');
+    onComplete?.();
+    return false;
+  }
+  
+  // Ensure voices loaded
+  if (!voicesLoaded) {
+    loadVoices();
+    const voices = window.speechSynthesis?.getVoices() || [];
+    if (voices.length > 0 && !selectedVoice) selectedVoice = voices[0];
+  }
+  
+  // Acquire focus and lock
+  acquireAudioFocus(AUDIO_OWNER.TTS);
   isSpeaking = true;
   speechCancelled = false;
   onSpeechEndCallback = onComplete;
   setSynthesisState('speaking');
   
+  console.log(`[TTS] Speaking: "${cleanText.substring(0, 50)}..."`);
+  
   // Safety timeout
   const safetyTimeout = setTimeout(() => {
     if (isSpeaking && !synthesisInstance?.speaking) {
-      console.log('[SpeechController] Safety timeout - releasing stuck lock');
+      console.log('[TTS] Safety timeout - releasing');
       releaseSpeechLock();
       onComplete?.();
     }
   }, SYNTHESIS_CONFIG.SAFETY_TIMEOUT);
   
-  // PHASE 3: Do NOT touch recognition here - they are isolated
-  // Recognition will naturally pause itself if it's listening
-  
-  // Clear keep-alive
   if (keepAliveTimer) {
     clearInterval(keepAliveTimer);
     keepAliveTimer = null;
   }
   
-  // Chunk and speak
   const chunks = splitIntoChunks(cleanText);
-  console.log(`[SpeechController] Speaking ${chunks.length} chunk(s)`);
-  
   let chunkIndex = 0;
   
   const speakNextChunk = () => {
     clearTimeout(safetyTimeout);
     
     if (speechCancelled || chunkIndex >= chunks.length) {
-      console.log('[SpeechController] Speech', speechCancelled ? 'cancelled' : 'completed');
+      console.log('[TTS]', speechCancelled ? 'Cancelled' : 'Completed');
       releaseSpeechLock();
       
       if (!speechCancelled && onSpeechEndCallback) {
         const cb = onSpeechEndCallback;
         onSpeechEndCallback = null;
-        setTimeout(() => cb(), 50);
+        // MOBILE: Audio focus buffer before callback
+        const delay = isMobile ? AUDIO_DELAYS.TTS_TO_RECOGNITION : 50;
+        setTimeout(() => cb(), delay);
       }
       return;
     }
@@ -356,18 +325,13 @@ function speak(text, onComplete = null) {
     const utterance = new SpeechSynthesisUtterance(chunkText);
     currentUtterance = utterance;
     
-    // Configure
     utterance.rate = SYNTHESIS_CONFIG.SPEECH_RATE;
     utterance.pitch = SYNTHESIS_CONFIG.SPEECH_PITCH;
     utterance.volume = SYNTHESIS_CONFIG.SPEECH_VOLUME;
-    
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
+    if (selectedVoice) utterance.voice = selectedVoice;
     
     utterance.onstart = () => {
-      console.log('[SpeechController] >>> SPEECH STARTED');
-      // Chrome keep-alive
+      console.log('[TTS] >>> AUDIO PLAYING');
       if (!keepAliveTimer) {
         keepAliveTimer = setInterval(() => {
           if (synthesisInstance?.speaking && !synthesisInstance?.paused) {
@@ -379,13 +343,12 @@ function speak(text, onComplete = null) {
     };
     
     utterance.onend = () => {
-      console.log(`[SpeechController] Chunk ${chunkIndex + 1}/${chunks.length} done`);
       chunkIndex++;
       setTimeout(speakNextChunk, 100);
     };
     
     utterance.onerror = (event) => {
-      console.log('[SpeechController] Speech error:', event.error);
+      console.log('[TTS] Error:', event.error);
       releaseSpeechLock();
       onSpeechEndCallback?.();
       onSpeechEndCallback = null;
@@ -405,12 +368,10 @@ function speak(text, onComplete = null) {
   return true;
 }
 
-/**
- * Release speech lock (internal helper)
- */
 function releaseSpeechLock() {
   isSpeaking = false;
   currentUtterance = null;
+  releaseAudioFocus(AUDIO_OWNER.TTS);
   setSynthesisState('idle');
   
   if (keepAliveTimer) {
@@ -420,50 +381,30 @@ function releaseSpeechLock() {
 }
 
 /**
- * PHASE 6: Cancel speech - STRICT USER-ONLY
- * 
- * ALLOWED REASONS (User actions ONLY):
- * - userPause, userNext, userBack, userRepeat
- * - modalClose, disableHandsFree, destroy
- * 
- * BLOCKED (ALL automatic/system events):
- * - Everything else
+ * Cancel speech - USER ACTIONS ONLY
  */
 function cancelSpeech(reason = 'unknown') {
   if (!synthesisInstance) return;
   
-  // STRICT USER-ONLY WHITELIST
-  const userOnlyReasons = [
-    'userPause',
-    'userNext', 
-    'userBack',
-    'userRepeat',
-    'modalClose',
-    'disableHandsFree',
-    'destroy'
-  ];
+  // Strict user-only whitelist
+  const userOnlyReasons = ['userPause', 'userNext', 'userBack', 'userRepeat', 'modalClose', 'disableHandsFree', 'destroy'];
   
   if (!userOnlyReasons.includes(reason)) {
-    // PHASE 6: Block ALL non-user cancellations silently
     if (reason !== 'unknown') {
-      console.log('[SpeechController] PHASE 6 - BLOCKED cancel:', reason);
+      console.log('[TTS] BLOCKED cancel:', reason);
     }
     return;
   }
   
   if (!isSpeaking && !synthesisInstance?.speaking) return;
   
-  console.log('[SpeechController] Canceling speech, reason:', reason);
-  
+  console.log('[TTS] Canceling:', reason);
   speechCancelled = true;
   synthesisInstance.cancel();
   releaseSpeechLock();
   onSpeechEndCallback = null;
 }
 
-/**
- * Narrate a step with context
- */
 function narrateStep(text, stepNumber, totalSteps, onComplete = null) {
   if (typeof text !== 'string' || !text.trim()) {
     onComplete?.();
@@ -482,18 +423,17 @@ function narrateStep(text, stepNumber, totalSteps, onComplete = null) {
     narration = `Step ${step}. ${text}`;
   }
   
-  console.log('[SpeechController] narrateStep:', narration.substring(0, 50) + '...');
   return speak(narration, onComplete);
 }
 
 // ============================================
-// PHASE 3: ISOLATED RECOGNITION ENGINE
+// RECOGNITION ENGINE
 // ============================================
 
-// Recognition state (ISOLATED from synthesis)
 let recognitionInstance = null;
 let isListening = false;
 let shouldBeListening = false;
+let pendingRecognitionStart = false;
 let recognitionCallbacks = {
   onResult: null,
   onStart: null,
@@ -501,30 +441,20 @@ let recognitionCallbacks = {
   onError: null,
 };
 
-// Recognition state for UI
-let recognitionState = 'idle'; // 'idle', 'starting', 'listening', 'error', 'permission-needed', 'disabled'
+let recognitionState = 'idle';
 let recognitionStateCallback = null;
-let micPermissionState = 'unknown'; // 'unknown', 'granted', 'denied', 'prompt'
+let micPermissionState = 'unknown';
 
-/**
- * Set recognition state and notify UI (PHASE 7)
- */
 function setRecognitionState(state) {
   recognitionState = state;
-  console.log('[SpeechController] Recognition state:', state);
+  console.log('[Recognition] State:', state);
   recognitionStateCallback?.(state);
 }
 
-/**
- * Get recognition state (for UI)
- */
 function getRecognitionState() {
   return recognitionState;
 }
 
-/**
- * Check microphone permission
- */
 async function checkMicPermission() {
   try {
     if (navigator.permissions) {
@@ -532,10 +462,7 @@ async function checkMicPermission() {
       micPermissionState = result.state;
       result.onchange = () => {
         micPermissionState = result.state;
-        console.log('[SpeechController] Mic permission:', micPermissionState);
-        if (micPermissionState === 'denied') {
-          setRecognitionState('disabled');
-        }
+        if (micPermissionState === 'denied') setRecognitionState('disabled');
       };
     }
   } catch (e) {
@@ -544,32 +471,20 @@ async function checkMicPermission() {
   return micPermissionState;
 }
 
-/**
- * PHASE 4: Initialize recognition engine (ISOLATED)
- * Does NOT auto-start - waits for explicit user action
- */
 function initRecognition() {
   detectEnvironment();
   
-  // PHASE 1: Security check
   if (!isSecureContext) {
-    console.log('[SpeechController] PHASE 1 - Not secure context, recognition disabled');
+    console.log('[Recognition] Not secure context');
     setRecognitionState('disabled');
     return false;
   }
   
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  
   if (!SpeechRecognition) {
-    console.log('[SpeechController] Speech recognition not supported');
+    console.log('[Recognition] Not supported');
     setRecognitionState('disabled');
     return false;
-  }
-  
-  // PHASE 8: WebView check
-  if (isWebView) {
-    console.log('[SpeechController] PHASE 8 - WebView detected, manual mic only');
-    // Don't auto-disable, but require manual activation
   }
   
   recognitionInstance = new SpeechRecognition();
@@ -580,64 +495,47 @@ function initRecognition() {
   
   recognitionInstance.onstart = () => {
     isListening = true;
+    pendingRecognitionStart = false;
     setRecognitionState('listening');
-    console.log('[SpeechController] Recognition started');
+    console.log('[Recognition] >>> LISTENING');
     recognitionCallbacks.onStart?.();
   };
   
   recognitionInstance.onresult = (event) => {
-    const transcript = event.results[event.results.length - 1][0].transcript
-      .trim()
-      .toLowerCase();
-    console.log('[SpeechController] Heard:', transcript);
+    const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+    console.log('[Recognition] Heard:', transcript);
     recognitionCallbacks.onResult?.(transcript);
   };
   
   recognitionInstance.onerror = (event) => {
-    console.log('[SpeechController] Recognition error:', event.error);
+    console.log('[Recognition] Error:', event.error);
     isListening = false;
+    pendingRecognitionStart = false;
+    releaseAudioFocus(AUDIO_OWNER.RECOGNITION);
     
-    // PHASE 9: Error handling - don't crash
     if (event.error === 'not-allowed') {
       micPermissionState = 'denied';
       setRecognitionState('permission-needed');
       shouldBeListening = false;
+      sessionArmed = false;
       recognitionCallbacks.onError?.(event.error);
       return;
     }
     
     if (event.error === 'aborted') {
-      // Aborted is normal (e.g., when we stop it)
-      if (shouldBeListening) {
-        setRecognitionState('idle');
-      }
       recognitionCallbacks.onError?.(event.error);
       return;
     }
     
     setRecognitionState('error');
     recognitionCallbacks.onError?.(event.error);
-    
-    // PHASE 2: Mobile - no auto-retry, wait for user gesture
-    if (isMobile) {
-      shouldBeListening = false;
-      setRecognitionState('idle');
-      return;
-    }
-    
-    // Desktop: Limited retry
-    if (shouldBeListening) {
-      setTimeout(() => {
-        if (shouldBeListening && !isListening) {
-          safeStartRecognition();
-        }
-      }, 1000);
-    }
   };
   
   recognitionInstance.onend = () => {
+    const wasListening = isListening;
     isListening = false;
-    console.log('[SpeechController] Recognition ended');
+    releaseAudioFocus(AUDIO_OWNER.RECOGNITION);
+    console.log('[Recognition] Ended');
     
     if (recognitionState !== 'permission-needed' && recognitionState !== 'disabled') {
       setRecognitionState('idle');
@@ -645,20 +543,15 @@ function initRecognition() {
     
     recognitionCallbacks.onEnd?.();
     
-    // PHASE 2: Mobile - NO auto-restart
-    if (isMobile) {
-      console.log('[SpeechController] Mobile - not auto-restarting');
-      shouldBeListening = false;
-      return;
-    }
-    
-    // Desktop: Auto-restart if intended
-    if (shouldBeListening) {
+    // MOBILE: If session armed and should be listening, restart after delay
+    // But ONLY if TTS is not speaking
+    if (isMobile && sessionArmed && shouldBeListening && wasListening && !isSpeaking) {
+      console.log('[Recognition] Mobile: Will restart after buffer');
       setTimeout(() => {
-        if (shouldBeListening && !isListening) {
+        if (shouldBeListening && !isListening && !isSpeaking) {
           safeStartRecognition();
         }
-      }, 300);
+      }, AUDIO_DELAYS.RECOGNITION_COOLDOWN);
     }
   };
   
@@ -666,123 +559,129 @@ function initRecognition() {
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && isListening) {
-        console.log('[SpeechController] Tab hidden - pausing recognition');
-        safeStopRecognition();
+        console.log('[Recognition] Tab hidden - pausing');
+        forceStopRecognition();
       }
-      // Don't auto-restart on return - wait for user
     });
   }
   
-  console.log('[SpeechController] PHASE 4 - Recognition initialized (waiting for user activation)');
+  console.log('[Recognition] Initialized');
   return true;
 }
 
-/**
- * PHASE 4: Safe start recognition (internal)
- * Handles errors gracefully
- */
 function safeStartRecognition() {
   if (!recognitionInstance) return false;
-  if (isListening) return true;
+  if (isListening || pendingRecognitionStart) return true;
+  
+  // MOBILE: Single audio owner - cannot start while TTS is speaking
+  if (isMobile && isSpeaking) {
+    console.log('[Recognition] BLOCKED: TTS is speaking');
+    return false;
+  }
+  
+  if (!canAcquireAudioFocus(AUDIO_OWNER.RECOGNITION)) {
+    return false;
+  }
   
   try {
+    pendingRecognitionStart = true;
+    acquireAudioFocus(AUDIO_OWNER.RECOGNITION);
     recognitionInstance.start();
     return true;
   } catch (e) {
-    // PHASE 9: Handle errors, don't crash
+    pendingRecognitionStart = false;
+    releaseAudioFocus(AUDIO_OWNER.RECOGNITION);
+    
     if (e.name === 'InvalidStateError') {
-      // Already started or in transition
-      console.log('[SpeechController] Recognition in transition, retrying...');
+      console.log('[Recognition] Already starting, retry later');
       setTimeout(() => {
-        if (shouldBeListening && !isListening) {
-          try { recognitionInstance?.start(); } catch (e2) {}
+        if (shouldBeListening && !isListening && !isSpeaking) {
+          safeStartRecognition();
         }
       }, 200);
       return true;
     }
-    console.log('[SpeechController] Start failed:', e.message);
+    console.log('[Recognition] Start failed:', e.message);
     setRecognitionState('error');
     return false;
   }
 }
 
-/**
- * PHASE 4: Safe stop recognition (internal)
- */
-function safeStopRecognition() {
+function forceStopRecognition() {
   if (!recognitionInstance) return;
+  
+  pendingRecognitionStart = false;
   
   try {
     recognitionInstance.abort();
-  } catch (e) {
-    // Ignore stop errors
-  }
+  } catch (e) {}
+  
   isListening = false;
+  releaseAudioFocus(AUDIO_OWNER.RECOGNITION);
 }
 
 /**
- * PHASE 2 & 4: Start recognition (requires user activation on mobile)
+ * Start recognition - PUBLIC API
+ * MOBILE: Only starts if TTS not speaking
  */
 function startRecognition() {
   detectEnvironment();
   
-  // PHASE 1: Security check
   if (!isSecureContext) {
-    console.log('[SpeechController] Not secure - cannot start recognition');
     setRecognitionState('disabled');
     return false;
   }
   
-  // Initialize if needed
-  if (!recognitionInstance) {
-    if (!initRecognition()) return false;
-  }
+  if (!recognitionInstance && !initRecognition()) return false;
   
   if (isListening) {
-    console.log('[SpeechController] Already listening');
+    console.log('[Recognition] Already listening');
     return true;
   }
   
-  // PHASE 2: Mobile requires user gesture
-  if (isMobile && !hasValidUserGesture()) {
-    console.log('[SpeechController] PHASE 2 - Mobile needs user gesture');
-    setRecognitionState('permission-needed');
+  // MOBILE: Block if TTS is speaking (single audio owner)
+  if (isMobile && isSpeaking) {
+    console.log('[Recognition] Mobile: TTS speaking, will start after TTS ends');
     shouldBeListening = true;
     return false;
   }
   
-  // PHASE 8: WebView - only manual activation
-  if (isWebView && !hasUserGesture) {
-    console.log('[SpeechController] PHASE 8 - WebView needs explicit tap');
+  // MOBILE: Require session armed (initial user tap)
+  if (isMobile && !sessionArmed) {
+    console.log('[Recognition] Mobile: Session not armed, need user tap');
     setRecognitionState('permission-needed');
-    shouldBeListening = true;
     return false;
   }
   
   shouldBeListening = true;
   setRecognitionState('starting');
   
-  console.log('[SpeechController] Starting recognition...');
   return safeStartRecognition();
 }
 
 /**
- * PHASE 2: Start recognition from user gesture (mobile entry point)
- * This is THE mobile activation point
+ * Start recognition from user gesture - ARMS SESSION
+ * This is THE mobile activation entry point
  */
 function startRecognitionFromUserGesture() {
-  console.log('[SpeechController] PHASE 2 - User gesture activation');
-  recordUserGesture();
+  console.log('[Recognition] User gesture - arming session');
+  sessionArmed = true;
   
   // Reset error states
-  if (micPermissionState === 'denied') {
-    micPermissionState = 'prompt';
-  }
+  if (micPermissionState === 'denied') micPermissionState = 'prompt';
   if (recognitionState === 'error' || recognitionState === 'permission-needed') {
     setRecognitionState('idle');
   }
   
-  return startRecognition();
+  // MOBILE: If TTS is speaking, just arm the session - recognition will start after TTS ends
+  if (isMobile && isSpeaking) {
+    console.log('[Recognition] TTS speaking - armed for later');
+    shouldBeListening = true;
+    return true;
+  }
+  
+  shouldBeListening = true;
+  return safeStartRecognition();
 }
 
 /**
@@ -790,17 +689,21 @@ function startRecognitionFromUserGesture() {
  */
 function stopRecognition() {
   shouldBeListening = false;
-  isListening = false;
-  clearUserGesture(); // Reset gesture for next activation
-  
-  safeStopRecognition();
+  forceStopRecognition();
   setRecognitionState('idle');
-  console.log('[SpeechController] Recognition stopped');
+  console.log('[Recognition] Stopped');
 }
 
 /**
- * Set recognition callbacks
+ * Disable session - clears armed state
  */
+function disarmSession() {
+  sessionArmed = false;
+  shouldBeListening = false;
+  forceStopRecognition();
+  console.log('[Recognition] Session disarmed');
+}
+
 function setRecognitionCallbacks(callbacks) {
   recognitionCallbacks = {
     onResult: callbacks.onResult || null,
@@ -810,28 +713,59 @@ function setRecognitionCallbacks(callbacks) {
   };
   
   if (callbacks.onResult) {
-    shouldBeListening = true;
-    console.log('[SpeechController] Recognition callbacks set');
+    console.log('[Recognition] Callbacks set');
   }
 }
 
-/**
- * Set state change callback for UI
- */
 function setStateChangeCallback(callback) {
   recognitionStateCallback = callback;
 }
 
-/**
- * Set synthesis state callback for UI
- */
 function setSynthesisStateCallback(callback) {
   synthesisStateCallback = callback;
 }
 
 // ============================================
-// PHASE 10: SINGLETON CONTROLLER CLASS
-// (Non-goals preserved - no recipe/timer/subscription logic)
+// TURN-TAKING HELPERS
+// ============================================
+
+/**
+ * Start recognition after TTS completes (mobile turn-taking)
+ * Called automatically when TTS ends and session is armed
+ */
+function startRecognitionAfterTTS() {
+  if (!sessionArmed || !shouldBeListening) return;
+  if (isListening) return;
+  
+  // Audio focus buffer delay
+  setTimeout(() => {
+    if (shouldBeListening && !isListening && !isSpeaking) {
+      console.log('[TurnTaking] TTS ended -> Starting recognition');
+      safeStartRecognition();
+    }
+  }, AUDIO_DELAYS.TTS_TO_RECOGNITION);
+}
+
+/**
+ * Speak and auto-start recognition after (mobile turn-taking)
+ */
+function speakThenListen(text, stepNumber, totalSteps) {
+  return narrateStep(text, stepNumber, totalSteps, () => {
+    if (isMobile && sessionArmed) {
+      startRecognitionAfterTTS();
+    }
+  });
+}
+
+/**
+ * Check if session is armed
+ */
+function isSessionArmed() {
+  return sessionArmed;
+}
+
+// ============================================
+// SINGLETON CONTROLLER CLASS
 // ============================================
 
 class SpeechController {
@@ -846,29 +780,35 @@ class SpeechController {
     
     detectEnvironment();
     initSynthesis();
-    // Don't auto-init recognition - wait for user action
     
     this.initialized = true;
-    console.log('[SpeechController] Controller initialized');
+    console.log('[SpeechController] Ready');
     return this;
   }
   
-  // Synthesis methods
+  // Synthesis
   speak(text, onComplete) { return speak(text, onComplete); }
   cancel(reason) { cancelSpeech(reason); }
   isSpeaking() { return checkIsSpeaking(); }
   narrateStep(text, stepNumber, totalSteps, onComplete) {
     return narrateStep(text, stepNumber, totalSteps, onComplete);
   }
+  speakThenListen(text, stepNumber, totalSteps) {
+    return speakThenListen(text, stepNumber, totalSteps);
+  }
   
-  // Recognition methods
+  // Recognition
   startListening() { return startRecognition(); }
   startListeningFromGesture() { return startRecognitionFromUserGesture(); }
   stopListening() { stopRecognition(); }
   isListening() { return isListening; }
   setRecognitionCallbacks(callbacks) { setRecognitionCallbacks(callbacks); }
   
-  // State methods
+  // Session
+  isSessionArmed() { return sessionArmed; }
+  disarmSession() { disarmSession(); }
+  
+  // State
   setStateChangeCallback(callback) { setStateChangeCallback(callback); }
   setSynthesisStateCallback(callback) { setSynthesisStateCallback(callback); }
   getRecognitionState() { return getRecognitionState(); }
@@ -878,7 +818,7 @@ class SpeechController {
   // Cleanup
   destroy() {
     cancelSpeech('destroy');
-    stopRecognition();
+    disarmSession();
     recognitionInstance = null;
     instance = null;
     this.initialized = false;
@@ -897,6 +837,7 @@ export {
   cancelSpeech,
   checkIsSpeaking as isSpeaking,
   narrateStep,
+  speakThenListen,
   startRecognition,
   startRecognitionFromUserGesture,
   stopRecognition,
@@ -904,6 +845,8 @@ export {
   setStateChangeCallback,
   getRecognitionState,
   getEnvironment,
+  isSessionArmed,
+  disarmSession,
 };
 
 export default speechController;
