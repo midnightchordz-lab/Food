@@ -142,87 +142,103 @@ function enableRecognitionAfterTTS() {
 
 /**
  * Speak text with completion guarantee
- * SPEECH LOCK: Will not start if already speaking
- * CHROME/SAFARI WORKAROUND: Uses text chunking for long text
+ * 
+ * BULLETPROOF SPEECH EXECUTION:
+ * 1. Always creates NEW SpeechSynthesisUtterance immediately before speak()
+ * 2. Speaking lock prevents double triggers
+ * 3. Cancel existing speech before starting new
+ * 4. Text sanitization (null/undefined/HTML removal)
+ * 5. onend/onerror handlers release lock
  * 
  * @param {string} text - Text to speak
  * @param {function} onComplete - Callback when speech finishes
  * @returns {boolean} - true if speech started, false if blocked
  */
 function speak(text, onComplete = null) {
-  console.log('[SpeechController] speak() called with text length:', text?.length);
-  
+  // ========================================
+  // SAFETY GUARD 1: Check environment
+  // ========================================
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     console.log('[SpeechController] Speech not supported');
     onComplete?.();
     return false;
   }
   
-  // TYPE ENFORCEMENT: Ensure text is a string
-  if (typeof text !== 'string') {
-    console.error('[SpeechController] Invalid text type:', typeof text, '- must be string');
+  // ========================================
+  // SAFETY GUARD 2: Text sanitization
+  // ========================================
+  // Convert to string if not already
+  let cleanText = '';
+  if (text === null || text === undefined) {
+    console.log('[SpeechController] Null/undefined text, skipping');
     onComplete?.();
     return false;
   }
   
-  if (!text || text.trim() === '') {
-    console.log('[SpeechController] Empty text, skipping');
+  // Force string conversion
+  cleanText = String(text);
+  
+  // Remove HTML tags if any
+  cleanText = cleanText.replace(/<[^>]*>/g, '');
+  
+  // Trim whitespace
+  cleanText = cleanText.trim();
+  
+  if (cleanText === '') {
+    console.log('[SpeechController] Empty text after sanitization, skipping');
     onComplete?.();
     return false;
   }
   
-  // SAFARI FIX: Check if voices are loaded, if not wait for them
-  const voices = window.speechSynthesis.getVoices();
-  console.log('[SpeechController] Available voices:', voices.length);
+  console.log('[SpeechController] speak() called, text length:', cleanText.length);
   
-  // SPEECH LOCK: Prevent new speak() if already speaking
-  const currentlySpeaking = checkIsSpeaking();
-  console.log('[SpeechController] Currently speaking:', currentlySpeaking, 'isSpeaking var:', isSpeaking, 'synth.speaking:', window.speechSynthesis.speaking);
-  
-  if (currentlySpeaking) {
-    console.log('[SpeechController] Already speaking, blocking new request');
+  // ========================================
+  // SAFETY GUARD 3: Speaking lock
+  // ========================================
+  if (isSpeaking) {
+    console.log('[SpeechController] Speaking lock active, blocking new request');
     return false;
   }
   
-  // CRITICAL: Disable recognition BEFORE starting TTS
-  // This prevents recognition from hearing TTS output
+  // ========================================
+  // SAFETY GUARD 4: Cancel any existing speech
+  // ========================================
+  try {
+    window.speechSynthesis.cancel();
+  } catch (e) {
+    console.log('[SpeechController] Cancel error (ignored):', e.message);
+  }
+  
+  // ========================================
+  // ACQUIRE LOCK
+  // ========================================
+  isSpeaking = true;
+  speechCancelled = false;
+  onSpeechEndCallback = onComplete;
+  
+  // Disable recognition during TTS
   disableRecognitionDuringTTS();
   
-  // Reset cancel flag for new speech
-  speechCancelled = false;
-  
-  // Clear any keep-alive timer from previous speech
+  // Clear any keep-alive timer
   if (keepAliveTimer) {
     clearInterval(keepAliveTimer);
     keepAliveTimer = null;
   }
   
-  // SAFARI FIX: Don't cancel before speaking - Safari might not restart properly
-  // Only cancel if we're 100% sure something is stuck
-  if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-    console.log('[SpeechController] Cancelling stuck speech');
-    window.speechSynthesis.cancel();
-    // Small delay after cancel for Safari
-    setTimeout(() => speakInternal(text, onComplete), 100);
-    return true;
-  }
-  
-  return speakInternal(text, onComplete);
-}
-
-/**
- * Internal speak function after safety checks
- */
-function speakInternal(text, onComplete) {
-  // CHROME WORKAROUND: Split long text into chunks to prevent 15s timeout
-  const chunks = splitIntoChunks(text);
-  console.log(`[SpeechController] Speaking ${chunks.length} chunk(s), first chunk: "${chunks[0]?.substring(0, 50)}..."`);
+  // ========================================
+  // EXECUTE SPEECH with chunking for long text
+  // ========================================
+  const chunks = splitIntoChunks(cleanText);
+  console.log(`[SpeechController] Speaking ${chunks.length} chunk(s)`);
   
   let chunkIndex = 0;
   
   const speakNextChunk = () => {
-    // Check global cancel flag
+    // Check cancel flag or completion
     if (speechCancelled || chunkIndex >= chunks.length) {
+      // ========================================
+      // RELEASE LOCK on completion/cancel
+      // ========================================
       console.log('[SpeechController] Speech ' + (speechCancelled ? 'cancelled' : 'completed'));
       isSpeaking = false;
       currentUtterance = null;
@@ -232,44 +248,46 @@ function speakInternal(text, onComplete) {
         keepAliveTimer = null;
       }
       
-      if (!speechCancelled) {
-        const callback = onSpeechEndCallback;
+      if (!speechCancelled && onSpeechEndCallback) {
+        const cb = onSpeechEndCallback;
         onSpeechEndCallback = null;
-        if (callback) setTimeout(callback, 50);
-        
-        // CRITICAL: Re-enable recognition after TTS ends
-        enableRecognitionAfterTTS();
+        setTimeout(() => cb(), 50);
       }
+      
+      enableRecognitionAfterTTS();
       return;
     }
     
-    const chunk = chunks[chunkIndex];
-    console.log(`[SpeechController] Chunk ${chunkIndex + 1}/${chunks.length}: "${chunk.substring(0, 40)}..."`);
+    const chunkText = chunks[chunkIndex];
+    console.log(`[SpeechController] Chunk ${chunkIndex + 1}/${chunks.length}: "${chunkText.substring(0, 40)}..."`);
     
-    currentUtterance = new SpeechSynthesisUtterance(chunk);
-    onSpeechEndCallback = onComplete;
+    // ========================================
+    // CRITICAL: Create NEW utterance HERE
+    // Never reuse or pass external objects
+    // ========================================
+    const utterance = new SpeechSynthesisUtterance(chunkText);
+    currentUtterance = utterance;
     
-    // Configure utterance
-    currentUtterance.rate = CONFIG.SPEECH_RATE;
-    currentUtterance.pitch = CONFIG.SPEECH_PITCH;
-    currentUtterance.volume = CONFIG.SPEECH_VOLUME;
+    // Configure
+    utterance.rate = CONFIG.SPEECH_RATE;
+    utterance.pitch = CONFIG.SPEECH_PITCH;
+    utterance.volume = CONFIG.SPEECH_VOLUME;
     
-    // SAFARI FIX: Use a specific voice if available
-    const preferredVoice = getPreferredVoice();
-    if (preferredVoice) {
-      currentUtterance.voice = preferredVoice;
-      console.log('[SpeechController] Using voice:', preferredVoice.name);
+    // Set voice if available
+    const voice = getPreferredVoice();
+    if (voice) {
+      utterance.voice = voice;
     }
     
-    currentUtterance.onstart = () => {
-      isSpeaking = true;
-      console.log('[SpeechController] onstart fired - Speech actually started!');
-      
-      // CHROME WORKAROUND: Start keep-alive timer for long chunks
+    // ========================================
+    // EVENT HANDLERS - Release lock on end/error
+    // ========================================
+    utterance.onstart = () => {
+      console.log('[SpeechController] onstart fired');
+      // Start keep-alive for Chrome
       if (!keepAliveTimer) {
         keepAliveTimer = setInterval(() => {
           if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-            console.log('[SpeechController] Keep-alive poke');
             window.speechSynthesis.pause();
             window.speechSynthesis.resume();
           }
@@ -277,55 +295,55 @@ function speakInternal(text, onComplete) {
       }
     };
     
-    currentUtterance.onend = () => {
-      console.log(`[SpeechController] onend fired - Chunk ${chunkIndex + 1} completed`);
+    utterance.onend = () => {
+      console.log(`[SpeechController] onend - Chunk ${chunkIndex + 1} done`);
       chunkIndex++;
       setTimeout(speakNextChunk, 100);
     };
     
-    currentUtterance.onerror = (event) => {
-      console.log('[SpeechController] onerror fired:', event.error);
-      // SAFARI: "interrupted" error is common when user navigates or cancels
-      if (event.error !== 'canceled' && event.error !== 'interrupted' && !speechCancelled) {
-        chunkIndex++;
-        setTimeout(speakNextChunk, 100);
-      } else {
+    utterance.onerror = (event) => {
+      console.log('[SpeechController] onerror:', event.error);
+      if (event.error === 'canceled' || event.error === 'interrupted' || speechCancelled) {
+        // Full stop
         isSpeaking = false;
         currentUtterance = null;
         if (keepAliveTimer) {
           clearInterval(keepAliveTimer);
           keepAliveTimer = null;
         }
-        // Re-enable recognition even on error
         enableRecognitionAfterTTS();
+      } else {
+        // Try next chunk on other errors
+        chunkIndex++;
+        setTimeout(speakNextChunk, 100);
       }
     };
     
-    // SAFARI FIX: Small delay before speak to ensure audio context is ready
-    setTimeout(() => {
-      // TYPE ENFORCEMENT: Ensure currentUtterance is a valid SpeechSynthesisUtterance
-      if (!currentUtterance || !(currentUtterance instanceof SpeechSynthesisUtterance)) {
-        console.error('[SpeechController] Invalid utterance - must be SpeechSynthesisUtterance instance');
-        isSpeaking = false;
-        enableRecognitionAfterTTS();
-        return;
-      }
+    // ========================================
+    // FINAL EXECUTION - speak() with fresh utterance
+    // ========================================
+    try {
+      window.speechSynthesis.speak(utterance);
+      console.log('[SpeechController] speechSynthesis.speak() called');
       
-      console.log('[SpeechController] Calling speechSynthesis.speak()');
-      window.speechSynthesis.speak(currentUtterance);
-      
-      // SAFARI FIX: Sometimes Safari needs a "kick" to start speaking
-      // Check if speaking started after 200ms, if not try to resume
+      // Safari kick - sometimes needs resume
       setTimeout(() => {
-        if (!window.speechSynthesis.speaking && !speechCancelled && currentUtterance) {
-          console.log('[SpeechController] SAFARI FIX: Speech not started, trying resume...');
+        if (!window.speechSynthesis.speaking && !speechCancelled && currentUtterance === utterance) {
+          console.log('[SpeechController] Safari kick - calling resume');
           window.speechSynthesis.resume();
         }
       }, 200);
-    }, 50);
+    } catch (e) {
+      console.error('[SpeechController] speak() threw:', e.message);
+      isSpeaking = false;
+      currentUtterance = null;
+      enableRecognitionAfterTTS();
+      onComplete?.();
+      return;
+    }
   };
   
-  // Start speaking first chunk
+  // Start speaking
   speakNextChunk();
   return true;
 }
