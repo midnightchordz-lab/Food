@@ -126,60 +126,77 @@ Created `/app/frontend/src/utils/auth.js` with `isUserPremium(user)` function th
 
 **Test Status:** ✅ VERIFIED (iteration_78.json - 100% backend tests passed)
 
-#### Production Entitlement Guard - Comprehensive Backend Hotfix ✅ (Feb 14, 2026)
-**Complete server-side entitlement validation system to prevent unauthorized premium access.**
+#### Production Entitlement Guard - PERMANENT SAFE FIX ✅ (Feb 14, 2026)
+**Priority-based entitlement resolution that NEVER incorrectly downgrades paid users.**
 
-**Implementation Details:**
+**CORE FIX: Previous guard was over-aggressive and downgraded users during:**
+- Payment lookup temporary failures
+- Webhook delays
+- Cache/DB sync lag
 
-**1. AUTHORITATIVE_ENTITLEMENT_GUARD (services/entitlement_guard.py)**
+**NEW SOLUTION - Priority-Based Entitlement Resolution:**
 ```
-IF subscription has:
-  - no valid payment_id (razorpay_payment_id, razorpay_order_id)
-  - AND no active trial flag
-THEN:
-  → BLOCK premium access → return FREE plan
-  → LOG security event "INVALID_PREMIUM_BLOCKED"
+Priority 1 → Valid payment markers (razorpay_payment_id, razorpay_order_id)
+Priority 2 → Active trial not expired
+Priority 3 → Valid subscription source (razorpay, stripe, payment, webhook)
+Priority 4 → Grace period protection (10 min for new/renewed subs)
+Else → Free plan
+
+NEVER downgrade if ANY priority is met.
 ```
-- Runs in `get_user_subscription()` on EVERY subscription fetch
-- Validates source is in: `payment`, `trial`, `admin`, `razorpay`, `stripe`
 
-**2. WEBHOOK_SAFETY_FILTER**
-- `validate_webhook_event()` checks event type and payment_id presence
-- Valid events: `payment.captured`, `order.paid`, `subscription.activated`, etc.
-- Invalid events → REJECT and LOG "WEBHOOK_REJECTED_NO_PAYMENT"
+**Key Safety Features:**
 
-**3. SIGNUP_HARD_DEFAULT (routes/auth.py)**
-- New registrations set: `default_plan="free"`, `subscription_status="none"`
-- Logged as SecurityEvent.SUBSCRIPTION_CREATED
+**1. SOURCE OF TRUTH VALIDATION (before any downgrade)**
+Before downgrading, system checks in order:
+- Local payments table
+- Razorpay orders table
+- Recent webhook events (last 10 min)
+If ANY confirms payment → KEEP premium
 
-**4. PRODUCTION_LOGGING (SecurityEvent enum)**
-- INVALID_PREMIUM_BLOCKED
-- WEBHOOK_REJECTED_NO_PAYMENT
-- ILLEGAL_POST_SIGNUP_UPGRADE
-- BULK_PREMIUM_CORRECTION
-- SUBSCRIPTION_CREATED / SUBSCRIPTION_VALIDATED
+**2. GRACE PERIOD PROTECTION (10 minutes)**
+- New/renewed subscriptions protected from immediate downgrade
+- Handles webhook delay, DB replication lag, background sync timing
 
-**5. DATA_REPAIR_SCRIPT (Admin Endpoints)**
-- `GET /api/subscription/admin/subscription-integrity-check` - Reports integrity status
-- `POST /api/subscription/admin/fix-invalid-subscriptions?hours_window=24&dry_run=true`
+**3. ACCOUNT AGE CHECK (5 minutes minimum)**
+- Prevents race condition downgrades for new accounts
+- Account must be > 5 min old before downgrade allowed
+
+**4. DATA REPAIR SCRIPT (with RESTORE)**
+- `POST /api/subscription/admin/fix-invalid-subscriptions`
+- TWO modes: RESTORE falsely downgraded users AND CORRECT invalid subs
+- Dry run by default (safe)
+
+**5. STRICT PAYMENT MARKER VALIDATION**
+- Only accepts real Razorpay prefixes: `pay_`, `order_`
+- Demo/test IDs (`sub_xxx`) NOT treated as payment markers
 
 **Files Changed:**
-- `backend/services/entitlement_guard.py` - NEW: Complete entitlement guard module
-- `backend/routes/subscription.py` - Updated: get_user_subscription(), webhook handler, admin endpoints
-- `backend/routes/auth.py` - Updated: Signup hard default
+- `backend/services/entitlement_guard.py` - Complete rewrite with priority resolution
+- `backend/routes/subscription.py` - Uses new safe resolver
+- `backend/tests/test_entitlement_scenarios.py` - 13 scenario tests
 
-**Scenario Tests (All 9 Passed):**
+**Scenario Tests (All 13 Passed):**
 1. ✅ New signup → FREE plan
-2. ✅ Demo subscription → source='demo'
-3. ✅ Entitlement guard blocks demo → FREE plan
-4. ✅ Failed payment → remains FREE
-5. ✅ Real payment → premium retained
-6. ✅ Webhook replay protection
-7. ✅ Admin integrity check
-8. ✅ Admin fix endpoint (dry_run)
-9. ✅ Cron sync protection
+2. ✅ Real paid user with payment markers → Premium retained
+3. ✅ Real paid user with order_id only → Premium retained
+4. ✅ Real paid user with valid source → Premium retained
+5. ✅ Webhook delay (in grace period) → Protected
+6. ✅ Outside grace period without payment → Requires verification
+7. ✅ Demo subscription without payment → Invalid
+8. ✅ Expired trial → FREE plan
+9. ✅ Active trial → Premium valid
+10. ✅ Grace period duration = 10 min
+11. ✅ Min account age = 5 min
+12. ✅ Edge of grace period handling
+13. ✅ Free plan always valid
 
-**Test Status:** ✅ VERIFIED (iteration_79.json - 17/17 backend tests passed)
+**SUCCESS CRITERIA MET:**
+✔ New users → Free
+✔ Paid users → Always Premium (never incorrectly downgraded)
+✔ No automatic false downgrades
+✔ Downgrade only when truly unpaid (after source-of-truth check)
+✔ Safe for production deploy
 
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
