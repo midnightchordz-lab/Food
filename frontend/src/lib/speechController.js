@@ -843,6 +843,7 @@ export {
   stopRecognition,
   setRecognitionCallbacks,
   setStateChangeCallback,
+  setSynthesisStateCallback,
   getRecognitionState,
   getEnvironment,
   isSessionArmed,
