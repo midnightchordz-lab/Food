@@ -616,7 +616,9 @@ async def get_user_subscription_safe(
             "trial_active": False
         }
     
-    plan_id = subscription.get("plan_id", "free")
+    # STEP 0: Enforce FREE default for null/undefined plans
+    raw_plan_id = subscription.get("plan_id")
+    plan_id = enforce_free_default(raw_plan_id, user_id)
     
     # Free plan - no validation needed
     if plan_id == "free":
@@ -624,8 +626,10 @@ async def get_user_subscription_safe(
         return {
             "plan_id": "free",
             "status": "active",
-            "features": free_plan["features"],
-            "plan": free_plan
+            "features": free_plan["features"] if free_plan else {},
+            "plan": free_plan,
+            "entitlement_tier": "free",
+            "trial_active": False
         }
     
     # ============================================================
@@ -633,11 +637,40 @@ async def get_user_subscription_safe(
     # ============================================================
     is_valid, reason = validate_subscription_entitlement(subscription, user_id)
     
+    # Check if subscription has trial active
+    trial_active = subscription.get("status") == "trialing"
+    has_trial, _ = _check_trial_status(subscription)
+    
     if is_valid:
+        # SAFETY CHECK: Before returning premium, verify payment or trial exists
+        has_payment, _ = _has_direct_payment_markers(subscription)
+        can_have_premium, safety_reason = safety_check_before_premium(
+            payment_exists=has_payment,
+            trial_active=has_trial,
+            user_id=user_id,
+            requested_plan=plan_id
+        )
+        
+        if not can_have_premium:
+            # Safety check failed - return FREE
+            free_plan = get_plan_by_id_func("free")
+            return {
+                "plan_id": "free",
+                "status": "active",
+                "features": free_plan["features"] if free_plan else {},
+                "plan": free_plan,
+                "entitlement_tier": "free",
+                "trial_active": False,
+                "_safety_blocked": True,
+                "_blocked_reason": safety_reason
+            }
+        
         # Subscription is valid - return with full features
         plan = get_plan_by_id_func(subscription["plan_id"])
         subscription["features"] = plan["features"] if plan else {}
         subscription["plan"] = plan
+        subscription["entitlement_tier"] = plan_id
+        subscription["trial_active"] = has_trial
         return subscription
     
     # ============================================================
@@ -658,6 +691,8 @@ async def get_user_subscription_safe(
         subscription["features"] = plan["features"] if plan else {}
         subscription["plan"] = plan
         subscription["_payment_verified_from_source"] = True
+        subscription["entitlement_tier"] = plan_id
+        subscription["trial_active"] = has_trial
         return subscription
     
     # ============================================================
