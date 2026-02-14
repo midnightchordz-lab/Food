@@ -746,11 +746,14 @@ export default function LiveCookingModal() {
     stopSpeech(); // Also stop browser speech
     narrationAbortRef.current = true;
     
+    // Reset the step timer when repeating
+    resetStepTimer();
+    
     // EMOTIONAL: Play reassurance when user requests repeat
     await playReassurance('repeat_requested');
     readCurrentStep();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playReassurance]);
+  }, [playReassurance, resetStepTimer]);
 
   // ============================================
   // ENGINE ORCHESTRATOR - Phase 1 Synchronization
