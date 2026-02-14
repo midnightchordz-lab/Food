@@ -1440,14 +1440,19 @@ async def fix_invalid_subscriptions(
 @router.get("/admin/subscription-integrity-check")
 async def subscription_integrity_check():
     """
-    ADMIN ENDPOINT: Check for subscription integrity issues.
+    ADMIN ENDPOINT: Comprehensive subscription integrity report.
     
-    Returns a report of:
+    Returns:
     - Total active paid subscriptions
-    - Subscriptions with valid payment records
-    - Subscriptions without payment (potential issues)
+    - Subscriptions with valid payment markers
+    - Subscriptions protected by grace period
+    - Subscriptions needing verification
+    - Falsely downgraded users (have payment but on free)
     """
     try:
+        now = datetime.now(timezone.utc)
+        grace_cutoff = now - timedelta(minutes=10)
+        
         # Count all active paid subscriptions
         total_paid = await db.user_subscriptions.count_documents({
             "status": {"$in": ["active", "trialing"]},
@@ -1459,35 +1464,74 @@ async def subscription_integrity_check():
             "status": {"$in": ["active", "trialing"]},
             "plan_id": {"$ne": "free"},
             "$or": [
+                {"razorpay_payment_id": {"$exists": True, "$ne": None}},
                 {"razorpay_order_id": {"$exists": True, "$ne": None}},
-                {"source": {"$in": ["payment", "admin", "razorpay", "stripe"]}}
+                {"source": {"$in": ["payment", "admin", "razorpay", "stripe", "webhook"]}}
             ]
         })
         
-        # Count suspicious subscriptions (no payment record)
-        suspicious = await db.user_subscriptions.count_documents({
+        # Count subscriptions in grace period
+        in_grace_period = await db.user_subscriptions.count_documents({
             "status": {"$in": ["active", "trialing"]},
             "plan_id": {"$ne": "free"},
-            "$and": [
-                {"$or": [
-                    {"razorpay_order_id": {"$exists": False}},
-                    {"razorpay_order_id": None}
-                ]},
-                {"$or": [
-                    {"source": {"$exists": False}},
-                    {"source": "demo"},
-                    {"source": ""}
-                ]}
+            "$or": [
+                {"created_at": {"$gte": grace_cutoff.isoformat()}},
+                {"updated_at": {"$gte": grace_cutoff.isoformat()}}
             ]
         })
+        
+        # Count blocked/corrected subscriptions
+        blocked_count = await db.user_subscriptions.count_documents({
+            "status": {"$in": ["invalid_blocked", "bulk_corrected"]}
+        })
+        
+        # Check for falsely downgraded users (have payment but on free/blocked)
+        paid_users = await db.payment_transactions.distinct("user_id", {
+            "status": "completed",
+            "$or": [
+                {"source": {"$ne": "demo"}},
+                {"source": {"$exists": False}}
+            ]
+        })
+        
+        falsely_downgraded = 0
+        for user_id in paid_users:
+            sub = await db.user_subscriptions.find_one({
+                "user_id": user_id,
+                "$or": [
+                    {"plan_id": "free"},
+                    {"status": "invalid_blocked"},
+                    {"status": "bulk_corrected"}
+                ]
+            })
+            if sub:
+                falsely_downgraded += 1
+        
+        # Determine status
+        if falsely_downgraded > 0:
+            status = "CRITICAL_FALSE_DOWNGRADES"
+        elif blocked_count > 0:
+            status = "HAS_BLOCKED_SUBSCRIPTIONS"
+        elif total_paid == valid_paid:
+            status = "OK"
+        else:
+            status = "NEEDS_REVIEW"
         
         return {
             "success": True,
             "integrity_report": {
                 "total_active_paid_subscriptions": total_paid,
                 "subscriptions_with_valid_payment": valid_paid,
-                "suspicious_subscriptions_no_payment": suspicious,
-                "integrity_status": "OK" if suspicious == 0 else "ISSUES_DETECTED"
+                "subscriptions_in_grace_period": in_grace_period,
+                "blocked_or_corrected_subscriptions": blocked_count,
+                "falsely_downgraded_users": falsely_downgraded,
+                "integrity_status": status,
+                "recommendation": (
+                    "Run POST /admin/fix-invalid-subscriptions?dry_run=true to preview fixes"
+                    if falsely_downgraded > 0 else
+                    "System healthy" if status == "OK" else
+                    "Review blocked subscriptions"
+                )
             }
         }
         
