@@ -1105,6 +1105,21 @@ async def razorpay_webhook(request: Request):
                                 }
                             )
                             
+                            # AUDIT LOG: Record plan change from webhook
+                            await log_plan_change(
+                                db=db,
+                                user_id=user_id,
+                                old_plan="free",
+                                new_plan=plan_id,
+                                reason="webhook_payment_captured",
+                                metadata={
+                                    "subscription_id": subscription_id,
+                                    "payment_id": payment_id,
+                                    "order_id": order_id,
+                                    "webhook_event": event_type
+                                }
+                            )
+                            
                             # Update order status
                             await db.razorpay_orders.update_one(
                                 {"id": order_id},
