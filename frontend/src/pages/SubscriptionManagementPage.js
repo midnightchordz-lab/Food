@@ -206,7 +206,7 @@ const SubscriptionManagementPage = () => {
   const isCancelling = subscription?.cancel_at_period_end;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white" data-testid="subscription-management-page">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white pt-16 md:pt-20" data-testid="subscription-management-page">
       {/* Header */}
       <div className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-4 py-6">
