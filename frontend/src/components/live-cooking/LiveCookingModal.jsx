@@ -11,7 +11,13 @@ import axios from "axios";
 import { 
   narrateStep, 
   stopSpeech, 
-  isSpeechSupported, 
+  isSpeechSupported,
+  startVoiceControl,
+  stopVoiceControl,
+  setHandlers as setVoiceHandlers,
+  setVisualCallbacks,
+  isVoiceListening,
+  isSpeaking,
 } from "@/lib/browserSpeech";
 // Phase-1 Feature Gate
 import {
