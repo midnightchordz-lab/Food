@@ -398,10 +398,10 @@ export default function LiveCookingModal() {
     
     if (!stepText) return;
     
-    // If browser speech mode is active, use FREE browser TTS
+    // If browser speech mode is active, use FREE browser TTS via GLOBAL CONTROLLER
     if (useBrowserSpeech) {
-      console.log('[VoiceSync] Using FREE browser speech');
-      await narrateStep(stepText, currentStep + 1, instructions.length);
+      console.log('[VoiceSync] Using FREE browser speech via global controller');
+      globalNarrateStep(stepText, currentStep + 1, instructions.length);
       return;
     }
     
