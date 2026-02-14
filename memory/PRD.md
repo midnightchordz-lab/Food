@@ -539,6 +539,40 @@ TTS start
 
 **Test Status:** Pending user validation on Safari
 
+#### TTS Cut-off Complete Fix ✅ NEW (Dec 2025)
+**Fixed persistent bug where TTS narration was being cut off mid-sentence due to orchestrator loop**
+
+**Root Cause (Final Diagnosis):**
+The `useEngineOrchestrator` hook's internal logic was repeatedly calling `onStopSpeaking` callback, which in turn called `globalCancelSpeech('orchestratorStop')`. Even with pattern-based blocking, the calls persisted because `stepChange` and `readCurrentStep` were still in the allowed reasons list.
+
+**Solution - Strict User-Only Whitelist:**
+1. **Absolute whitelist enforcement in `cancelSpeech()`:**
+   - Only these exact reasons can cancel speech: `userPause`, `userNext`, `userBack`, `userRepeat`, `modalClose`, `disableHandsFree`, `destroy`
+   - ALL other reasons are blocked and logged silently
+   - Removed `stepChange` and `readCurrentStep` from allowed reasons
+
+2. **Removed internal cancel calls:**
+   - `readCurrentStep()` no longer calls `globalCancelSpeech()` - new speech will queue via speaking lock
+   - Step change useEffect no longer cancels speech - stepChangeIdRef invalidates in-flight requests instead
+   - Orchestrator's `onStopSpeaking` callback now logs but does not cancel
+
+3. **Console evidence of fix:**
+   - `[LiveCooking] Orchestrator stop signal ignored (speech owned by user)`
+   - `[SpeechController] BLOCKED cancel attempt, reason: orchestratorStop`
+
+**Files Changed:**
+- `frontend/src/lib/speechController.js` - Strict whitelist in `cancelSpeech()` (lines 411-480)
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Removed cancel calls from `readCurrentStep()` and step change effect, orchestrator callback no longer cancels
+
+**Test Status:** ✅ VERIFIED (iteration_82.json - 100% frontend tests passed)
+- Live Cooking Modal opens: PASS
+- Play button starts narration: PASS
+- Next/Back navigation: PASS
+- Step timer countdown: PASS
+- Voice commands UI: PASS
+- Modal close: PASS
+- No JS errors: PASS
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
