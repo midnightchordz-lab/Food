@@ -17,8 +17,12 @@ import speechController, {
   isSpeaking as globalIsSpeaking,
   narrateStep as globalNarrateStep,
   startRecognition as globalStartRecognition,
+  startRecognitionFromUserGesture as globalStartRecognitionFromGesture,
   stopRecognition as globalStopRecognition,
   setRecognitionCallbacks as globalSetRecognitionCallbacks,
+  setStateChangeCallback as globalSetStateChangeCallback,
+  getRecognitionState as globalGetRecognitionState,
+  getEnvironment as globalGetEnvironment,
 } from "@/lib/speechController";
 
 // Legacy browserSpeech exports for backwards compatibility (will be phased out)
