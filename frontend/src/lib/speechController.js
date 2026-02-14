@@ -205,6 +205,17 @@ function speak(text, onComplete = null) {
   speechCancelled = false;
   onSpeechEndCallback = onComplete;
   
+  // Safety timeout - release lock if speech doesn't start within 5 seconds
+  const safetyTimeout = setTimeout(() => {
+    if (isSpeaking && !window.speechSynthesis.speaking) {
+      console.log('[SpeechController] Safety timeout - releasing stuck lock');
+      isSpeaking = false;
+      currentUtterance = null;
+      enableRecognitionAfterTTS();
+      onComplete?.();
+    }
+  }, 5000);
+  
   // Disable recognition during TTS
   disableRecognitionDuringTTS();
   
@@ -223,6 +234,8 @@ function speak(text, onComplete = null) {
   let chunkIndex = 0;
   
   const speakNextChunk = () => {
+    // Clear safety timeout once speech starts progressing
+    clearTimeout(safetyTimeout);
     // Check cancel flag or completion
     if (speechCancelled || chunkIndex >= chunks.length) {
       // ========================================
