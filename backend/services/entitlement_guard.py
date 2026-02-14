@@ -156,7 +156,7 @@ def _is_within_grace_period(subscription: Dict) -> Tuple[bool, str]:
         return False, f"outside_grace_period_{minutes_since:.1f}_min"
     except Exception as e:
         logging.error(f"[ENTITLEMENT_GUARD] Grace period check error: {e}")
-        return False, f"timestamp_parse_error"
+        return False, "timestamp_parse_error"
 
 
 def _check_trial_status(subscription: Dict) -> Tuple[bool, str]:
@@ -280,7 +280,7 @@ def validate_subscription_entitlement(
             source=subscription.get("source", "unknown"),
             payment_id=subscription.get("razorpay_payment_id"),
             plan_id=plan_id,
-            details={"decision_reason": f"PRIORITY_1_PAYMENT_MARKERS", "checks": validation_checks}
+            details={"decision_reason": "PRIORITY_1_PAYMENT_MARKERS", "checks": validation_checks}
         )
         return True, f"valid_priority_1_payment:{payment_reason}"
     
@@ -297,7 +297,7 @@ def validate_subscription_entitlement(
             source=subscription.get("source", "unknown"),
             trial_flag=True,
             plan_id=plan_id,
-            details={"decision_reason": f"PRIORITY_2_ACTIVE_TRIAL", "checks": validation_checks}
+            details={"decision_reason": "PRIORITY_2_ACTIVE_TRIAL", "checks": validation_checks}
         )
         return True, f"valid_priority_2_trial:{trial_reason}"
     
@@ -313,7 +313,7 @@ def validate_subscription_entitlement(
             user_id=user_id,
             source=subscription.get("source", "unknown"),
             plan_id=plan_id,
-            details={"decision_reason": f"PRIORITY_3_VALID_SOURCE", "checks": validation_checks}
+            details={"decision_reason": "PRIORITY_3_VALID_SOURCE", "checks": validation_checks}
         )
         return True, f"valid_priority_3_source:{source_reason}"
     
@@ -330,7 +330,7 @@ def validate_subscription_entitlement(
             source=subscription.get("source", "unknown"),
             plan_id=plan_id,
             details={
-                "decision_reason": f"PRIORITY_4_GRACE_PERIOD",
+                "decision_reason": "PRIORITY_4_GRACE_PERIOD",
                 "checks": validation_checks,
                 "subscription_id": sub_id
             }
@@ -415,7 +415,7 @@ async def verify_payment_from_source_of_truth(
                 "subscription_id": sub_id
             }
         )
-        return True, f"payment_verified_source_1:transactions_table"
+        return True, "payment_verified_source_1:transactions_table"
     
     # ============================================================
     # SOURCE 2: Check Razorpay orders table
@@ -439,7 +439,7 @@ async def verify_payment_from_source_of_truth(
                 "subscription_id": sub_id
             }
         )
-        return True, f"payment_verified_source_2:razorpay_orders"
+        return True, "payment_verified_source_2:razorpay_orders"
     
     # ============================================================
     # SOURCE 3: Check recent webhook events (last 10 minutes)
@@ -472,7 +472,7 @@ async def verify_payment_from_source_of_truth(
                 "subscription_id": sub_id
             }
         )
-        return True, f"payment_verified_source_3:recent_subscription"
+        return True, "payment_verified_source_3:recent_subscription"
     
     # All sources exhausted - payment not found
     return False, "no_payment_found_in_any_source"
