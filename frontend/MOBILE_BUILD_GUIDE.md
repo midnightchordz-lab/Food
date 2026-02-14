@@ -127,7 +127,7 @@ Configured in `capacitor.config.json`:
 ### API URL
 The app connects to the backend at:
 - **Production**: Set in `.env` file
-- **Current**: `https://voice-reliability-1.preview.emergentagent.com`
+- **Current**: `https://tts-refactor.preview.emergentagent.com`
 
 For production, update `frontend/.env`:
 ```

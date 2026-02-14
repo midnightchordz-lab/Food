@@ -1,162 +1,145 @@
 <analysis>**original_problem_statement**:
-The user's initial problem was to fix critical production bugs related to subscription entitlements, harden the logic to be bulletproof, and add an audit log for all subscription changes.
+The user's initial goal was to fix production bugs and add an audit log. After completing that, the project pivoted to enhancing the Hands-Free Cooking feature. The work has progressed through several stages: stabilizing the feature by disabling AI components (Phase 1), improving voice command reliability, adding a voice tutorial, implementing a step countdown timer, and iterating on bug fixes for the Text-to-Speech (TTS) system.
 
-After completing that, the user pivoted to a new set of requirements for the Hands-Free Cooking feature:
-
-1.  **Phase 1 Stabilization (Completed):** Immediately stabilize the Hands-Free mode by disabling all AI, camera, and gesture recognition features. The feature should be reduced to its core functionality: TTS narration and basic on-screen controls. The underlying code for the advanced features must be kept but made dormant behind a feature flag.
-2.  **Phase 1 Voice Reliability (In Progress):** Improve the reliability of the simplified voice commands within the new Phase-1 mode. This includes limiting the command vocabulary, implementing a continuous listening loop, adding a command confirmation delay, preventing overlap between TTS and speech recognition, and providing visual feedback for the listening state.
+The current and most critical task is to resolve a persistent issue where the TTS narration is cut off mid-sentence. The user has directed the agent to re-architect the speech functionality by creating a global, persistent speech controller that is completely decoupled from the React component lifecycle.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The agent has successfully implemented two major features in this session:
-1.  **Subscription Audit Log:** A complete backend system to log all subscription plan changes. This includes a new , integration into all plan modification points, a new MongoDB collection (), and a new admin API endpoint () to view the logs. This feature is fully tested with pytest.
-2.  **Hands-Free Cooking Phase 1:** The Hands-Free mode has been stabilized as per user requirements. A global feature flag, , was created in  and used throughout  to disable all camera, gesture, and AI-related functionalities at runtime, while preserving the code. The UI was simplified to match the reduced feature set.
+The application has a Hands-Free Cooking mode within a  component. This mode features voice commands (Next, Back, etc.), TTS narration of recipe steps, and a new countdown timer for steps with specified durations.
+
+However, the TTS implementation is unstable. It's managed within the React component, causing UI re-renders (like the timer ticking) to interrupt and cancel the speech. Previous fixes have been insufficient, leading to the current architectural refactor. The agent has just created a new file, , to begin this work.
 
 **Last working item**:
--   **Last item agent was working:** The agent started working on the user's latest request to improve the voice command reliability for the Hands-Free Cooking Phase-1 mode. It began by exploring the main component file, , to understand the existing voice implementation.
+-   **Last item agent was working:** The agent began implementing the user's latest and most critical request: to fix the TTS cut-off issue by creating a persistent, singleton speech controller. This controller will live outside the React render cycle to prevent UI updates from interrupting speech. The first step taken was creating the file for this new controller.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** frontend testing agent. The agent should be instructed to test the following in a noisy environment (if possible via simulation) or by verifying the logic:
-    1.  Only exact phrases (Next, Back, Repeat, Pause, Resume) trigger actions.
-    2.  Speech recognition automatically restarts after stopping.
-    3.  TTS narration pauses before speech recognition starts.
-    4.  Visual feedback for listening and command received states appears correctly.
+-   **Which testing method agent to use?** frontend testing agent. The agent should be instructed to test for the following success conditions:
+    1.  Voice reads entire step instructions without any mid-sentence interruptions.
+    2.  The countdown timer can run without affecting the TTS narration.
+    3.  User actions like changing steps or pausing cooking correctly interrupt the speech as expected.
+    4.  Voice commands (speech recognition) only begin listening *after* the TTS has completely finished speaking.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** Improve voice command reliability in Hands-Free Cooking Phase-1. (P0 - HIGHEST)
+-   **Issue 1:** TTS narration is interrupted by UI re-renders. (P0 - HIGHEST)
 -   **Issue 2:** ElevenLabs TTS quota is exhausted, disabling the premium voice feature. (P1)
 
 **Issues Detail**:
--   **Issue 1: Improve voice command reliability in Hands-Free Cooking Phase-1.**
-    -   **Attempted fixes:** None. The task has just begun.
-    -   **Next debug checklist**: Modify  to:
-        1.  Implement a strict vocabulary filter for the Web Speech API results, accepting only Next, Back, Repeat, Pause, Resume.
-        2.  Use the  event of the speech recognition instance to automatically restart listening, creating a continuous loop.
-        3.  Implement a  of 300-500ms after a valid command is received before executing the corresponding action to prevent accidental triggers.
-        4.  Create a state management system (e.g., ) to ensure TTS playback is stopped before listening begins, and vice-versa (mutual exclusion).
-        5.  Add new state variables to track the listening status and render simple UI elements (e.g., a pulsing dot for listening, a quick flash for command received).
-    -   **Why fix this issue and what will be achieved with the fix?** To make the core voice command feature of the stabilized Hands-Free mode reliable and usable, which is the user's current top priority.
+-   **Issue 1: TTS narration is interrupted by UI re-renders.**
+    -   **Attempted fixes:** Previous attempts to fix this with  discipline and state management within the React component failed because the root cause is the  instance being tied to the component's lifecycle. The current fix is a complete re-architecture. The agent has created the file .
+    -   **Next debug checklist**:
+        1.  Implement a singleton pattern in  to manage a single, persistent instance of the speech engine.
+        2.  The controller should expose methods like , , , and , and manage an internal state ().
+        3.  Refactor  to remove all direct  API calls and instead import and use the singleton controller.
+        4.  Refactor  to coordinate with the new controller, ensuring the microphone for voice commands only activates after the controller confirms TTS is finished.
+    -   **Why fix this issue and what will be achieved with the fix?** This will provide a stable and reliable hands-free cooking experience, which is the core of the current feature set. It will fix a recurring and disruptive bug.
     -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
+    -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 
 -   **Issue 2: ElevenLabs TTS quota is exhausted.**
-    -   **Attempted fixes:** A temporary fallback to the browser's free Web Speech API was implemented in a previous session.
+    -   **Attempted fixes:** A fallback to the browser's standard voice is already implemented.
     -   **Next debug checklist**:
-        1.  Inform the user that the quota is still exhausted.
-        2.  Add a UI element (e.g., a toast notification using Sonner) when the hands-free mode is activated to inform users that the premium voice is unavailable and a standard voice is being used.
-    -   **Why fix this issue and what will be achieved with the fix?** Manages user expectations by clearly communicating why a premium feature is degraded.
-    -   **Status:** BLOCKED (on user providing a new ElevenLabs API key). The UI notification task has not been started.
+        1.  As a low-priority task, add a UI notification (e.g., a toast) on entering hands-free mode to inform the user that a standard voice is being used due to the premium voice being unavailable.
+    -   **Why fix this issue and what will be achieved with the fix?** To manage user expectations regarding the voice quality.
+    -   **Status:** NOT STARTED (The UI notification part is pending). Blocked on user providing a new ElevenLabs key to restore premium functionality.
     -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on other issue:** None.
 
 **In progress Task List**:
--   **Task 1: Voice Command Reliability Improvement**
-    -   **Where to resume:** The agent has viewed . The next step is to begin modifying the component's state and effects to implement the logic described in the Next debug checklist for Issue 1.
-    -   **What will be achieved with this?** A stable, reliable, and user-friendly voice control experience for the Phase-1 Hands-Free mode.
+-   **Task 1: Implement the Global Speech Controller**
+    -   **Where to resume:** The agent has created . The immediate next step is to write the singleton logic and the core speech management methods (, , etc.) within that file.
+    -   **What will be achieved with this?** A stable TTS system that is immune to UI re-renders, fixing the core stability issue of the hands-free mode.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** Frontend.
     -   **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   (P1) Implement Ingredient Encyclopedia Page: Create the  page.
+    -   (P1) Implement Ingredient Encyclopedia Page ().
 -   **Future Tasks:**
-    -   (P2) Implement Ingredient Detail Page: Create a dynamic route ().
-    -   (P2) Activate AI Observer: This is now on hold indefinitely due to the Phase-1 stabilization, which explicitly disables this system.
-    -   (Enhancement) Add a visual indicator in the UI that shows when subscription features are being refreshed post-payment.
+    -   (P2) Implement Ingredient Detail Page (dynamic route ).
+    -   (P2) Activate AI Observer (On hold indefinitely).
+    -   (Enhancement) Add a visual indicator for subscription feature refresh post-payment.
 
 **Completed work in this session**
--   **Subscription Audit Log (DONE):**
-    -   Created  with a  function.
-    -   Integrated logging into , , and .
-    -   Created  with comprehensive unit tests.
-    -   Updated  with documentation for the new feature.
--   **Hands-Free Cooking Phase-1 Stabilization (DONE):**
-    -   Created  to house the  feature flag.
-    -   Heavily modified  to conditionally disable all camera, gesture, and AI features based on the flag.
-    -   Simplified the Hands-Free UI, removing camera/AI controls and adding a Repeat button.
-    -   Updated  to document the new Phase-1 scope.
+-   **Voice Command Reliability (DONE):** Implemented a strict vocabulary, continuous listening loop, and visual feedback in  and .
+-   **Voice Tutorial Overlay (DONE):** Added a one-time modal to show available voice commands when hands-free mode is first enabled.
+-   **Step Countdown Timer (DONE):** Implemented and styled an automatic timer for recipe steps with specified durations in .
+-   **Multiple Voice/TTS Bug Fixes (DONE):** Addressed several bugs related to voice interruptions, which culminated in the need for the current architectural refactor.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: ElevenLabs TTS quota exhausted.** The task to add a UI notification about the fallback has been consistently deprioritized in favor of more urgent user requests.
+-   **Issue 1:** The task to add a UI notification for the ElevenLabs TTS quota fallback remains pending. It has been consistently deprioritized by more urgent requests.
 
 **Known issue recurrence from previous fork**
--   None. The previous core issue of subscription downgrades was resolved in the last fork and further hardened with audit logs in this one.
+-   The core problem of TTS instability has been a recurring theme. The current task to create a singleton controller is the definitive attempt to solve it architecturally.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   Production Hotfixing & Safety Guards
--   Centralized Entitlement and Subscription Management
--   Backend Auditing and Logging
--   **Feature Gating / Feature Flags for phased rollouts**
--   **Web Speech API Orchestration (current task)**
+-   **Singleton Pattern:** The chosen architecture for the new, persistent speech controller to decouple it from the React lifecycle.
+-   **UI/State Decoupling:** The fundamental principle driving the current refactoring effort.
+-   **Web Speech API:** The browser-native API used for both  (TTS) and  (voice commands).
+-   **React Hooks (, ):** Used extensively for state management and side effects within the main component.
 
 **key DB schema**
--   **users**: No changes this session.
--   **subscriptions**: No changes this session.
--   **audit_logs (NEW):** 
+-   No database schema changes in this session.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : The primary file for the current task. It was heavily modified to implement Phase-1 stabilization.
--   : The new file containing the  feature flag.
--   : The new service created for logging.
--   : The new test file for the audit service.
--   , , : All were modified to call the new audit service.
--   : Updated twice to document the audit log and Phase-1 features.
+-   : **(NEW & CURRENT)** The file for the new singleton speech manager.
+-   : The primary component that needs to be refactored.
+-   : The voice recognition module that also needs to be refactored to work with the new controller.
+-   : Has been updated throughout the session to reflect completed work.
 
 **Areas that need refactoring**:
--   : This component continues to grow in complexity. While it was just modified for feature gating, the new voice reliability logic will be added here as well, making it a prime candidate for future refactoring into smaller, more focused hooks and components.
+-    is currently undergoing a major refactor to use the new . It remains a very large component.
+-    will need to be refactored to integrate with the new controller for proper mutual exclusion between speaking and listening.
 
 **key api endpoints**
--   : **(NEW)** Fetches all subscription change audit logs for admin review.
+-   No new API endpoints have been created in this session.
 
 **Critical Info for New Agent**
--   You are working within a strictly defined Phase-1 for the Hands-Free mode. **Do not** attempt to re-enable or modify any of the dormant AI, camera, or gesture code. The  flag in  should be considered immutable for now.
--   Your entire focus is on improving the voice command reliability within  as per the user's latest request. All other tasks are of lower priority.
--   The backend audit log feature is complete and tested. Do not modify it unless a bug is found.
+-   Your entire focus is on fixing the TTS instability by implementing a **singleton speech controller** in .
+-   This controller must be completely independent of the React component lifecycle. All direct calls to  within  must be removed and replaced with calls to your new controller.
+-   This is an architectural fix for a recurring problem. Do not attempt another solution within the React component itself. The goal is total decoupling.
+-   The user has been clear: the controller must prevent interruptions from UI updates, manage TTS and microphone exclusivity, and handle speech cancellation correctly.
 
 **documents and test reports created in this job**
 -    (updated)
--    (created)
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User Request (LATEST & IN PROGRESS):** Provided detailed requirements to improve voice command reliability for Hands-Free Phase-1 (limit vocabulary, continuous listening, confirmation delay, TTS/mic exclusion, visual feedback).
-2.  **User Request (COMPLETED):** Provided detailed requirements for Hands-Free Phase-1 stabilization (disable AI/camera/gestures, simplify UI, keep code dormant).
-3.  **User Approval (COMPLETED):** User approved starting the P0 task, which was the audit log implementation.
-The remaining messages relate to the agent's successful implementation of the audit log and Phase-1 stabilization.
+-   The most recent user message is a detailed mission brief to fix the TTS interruption issue by creating a global, persistent singleton speech controller, explicitly stating that it must be decoupled from the UI lifecycle. The preceding messages detail the discovery and failed attempts to fix the same bug with less robust methods.
 
 **Project Health Check:**
 -   **Broken:**
-    -   **Premium Voice Narration:** The ElevenLabs TTS integration is non-functional due to an exhausted API quota. The app falls back to the standard browser voice.
+    -   **Text-to-Speech (TTS):** Critically unstable. Narration is frequently cut off, which is the P0 task to resolve.
+    -   **Premium Voice Narration:** The ElevenLabs integration is non-functional due to an exhausted API quota. The app uses a standard browser voice as a fallback.
 -   **Mocked:**
     -   None.
 
 **3rd Party Integrations**
--   **ElevenLabs:** Text-to-Speech provider. **(DISABLED - QUOTA EXHAUSTED)**
--   **@tensorflow/tfjs & @tensorflow-models/hand-pose-detection:** For frontend gesture recognition. **(DORMANT - Disabled by  flag)**
+-   **ElevenLabs:** For premium TTS. **(Functionally Disabled - Quota Exhausted)**
+-   **@tensorflow/tfjs & @tensorflow-models/hand-pose-detection:** For gesture recognition. **(Dormant - Disabled by  flag)**
 -   **Razorpay:** Payment provider.
 -   **Capacitor:** For mobile app builds.
 
 **Testing status**
--   **Testing agent used after significant changes:** NO.
--   **Troubleshoot agent used after agent stuck in loop:** NO.
--   **Test files created:**
-    -    was created and successfully run.
--   **Known regressions:** None.
+-   **Testing agent used after significant changes:** YES, for previous features. It will be needed again after this refactor.
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None in this session.
+-   **Known regressions:** TTS stability has significantly regressed, leading to the current P0 refactoring task.
 
 **Credentials to test flow:**
 -   Standard User:  / 
--   Newly Registered Test User:  / 
 
 **What agent forgot to execute**
--   The agent has not forgotten, but has been consistently redirected by higher-priority user requests. The task to create a UI notification for the ElevenLabs TTS quota fallback remains pending from the initial handoff.</analysis>
+-   The low-priority task to add a UI notification (toast) informing the user about the ElevenLabs quota fallback remains unimplemented.</analysis>
