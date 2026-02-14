@@ -271,6 +271,7 @@ export default function LiveCookingModal() {
   
   // PHASE-1 VOICE RELIABILITY: Visual feedback states
   const [voiceListening, setVoiceListening] = useState(false);
+  const [recognitionState, setRecognitionState] = useState('idle'); // 'idle', 'starting', 'listening', 'error', 'permission-needed'
   const [lastCommand, setLastCommand] = useState(null); // For flash feedback
   const [commandFlash, setCommandFlash] = useState(false);
   
