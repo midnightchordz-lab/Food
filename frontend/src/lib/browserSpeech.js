@@ -556,7 +556,7 @@ export function narrateCurrentStep(stepText, isPlaying = true) {
  * @param {string} stepText - The step instruction text
  * @param {number} stepNumber - Current step number (1-based)
  * @param {number} totalSteps - Total number of steps
- * @param {Function} onEnd - Optional callback when narration ends (not reliable with browser TTS)
+ * @param {Function} onEnd - Optional callback when narration ends
  */
 export function narrateStep(stepText, stepNumber, totalSteps, onEnd) {
   if (!stepText) return Promise.resolve(false);
@@ -572,16 +572,24 @@ export function narrateStep(stepText, stepNumber, totalSteps, onEnd) {
     narrationText = `Step ${stepNumber}. ${stepText}`;
   }
 
-  // Clear pending and speak
+  // Clear pending narration
   if (narrationTimeout) clearTimeout(narrationTimeout);
   
   return new Promise((resolve) => {
     narrationTimeout = setTimeout(() => {
-      speakText(narrationText);
-      // Note: Browser SpeechSynthesis doesn't reliably fire 'end' events
-      // so we resolve immediately after starting
-      resolve(true);
-      onEnd?.();
+      // Use speakText with completion callback for proper orchestration
+      const started = speakText(narrationText, () => {
+        console.log('[BrowserSpeech] Step narration completed');
+        resolve(true);
+        onEnd?.();
+      });
+      
+      if (!started) {
+        // If speech didn't start (was blocked), resolve anyway
+        console.log('[BrowserSpeech] Speech blocked, resolving');
+        resolve(false);
+        onEnd?.();
+      }
     }, 150);
   });
 }
