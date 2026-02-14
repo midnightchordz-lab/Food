@@ -283,12 +283,16 @@ def get_plan_by_id(plan_id: str) -> Optional[Dict]:
 
 async def get_user_subscription(user_id: str) -> Dict:
     """
-    Get user's current subscription with entitlement validation.
+    Get user's current subscription with AUTHORITATIVE ENTITLEMENT VALIDATION.
     
     PRODUCTION ENTITLEMENT GUARD:
-    - Only subscriptions with valid source (payment, trial, admin) are honored
-    - Subscriptions without proper source or payment record default to FREE
-    - This prevents accidental paid plan assignment from bugs, seed data, or API misuse
+    - Runs validate_subscription_entitlement() on every request
+    - Only subscriptions with valid payment/trial are honored
+    - Invalid subscriptions return FREE plan
+    - All checks are logged for audit trail
+    
+    This guard runs on EVERY subscription fetch to ensure premium access
+    is IMPOSSIBLE without valid payment or trial.
     """
     subscription = await db.user_subscriptions.find_one(
         {"user_id": user_id, "status": {"$in": ["active", "trialing"]}},
@@ -296,8 +300,15 @@ async def get_user_subscription(user_id: str) -> Dict:
     )
     
     if not subscription:
-        # Return free plan
+        # Return free plan - this is the correct default state
         free_plan = get_plan_by_id("free")
+        log_security_event(
+            event_type=SecurityEvent.ENTITLEMENT_CHECK,
+            user_id=user_id,
+            source="subscription_fetch",
+            plan_id="free",
+            details={"reason": "no_active_subscription"}
+        )
         return {
             "plan_id": "free",
             "status": "active",
@@ -305,40 +316,27 @@ async def get_user_subscription(user_id: str) -> Dict:
             "plan": free_plan
         }
     
-    # PRODUCTION ENTITLEMENT GUARD
-    # Validate subscription has proper source or payment record
-    subscription_source = subscription.get("source", "")
-    plan_id = subscription.get("plan_id", "free")
+    # AUTHORITATIVE ENTITLEMENT GUARD
+    is_valid, reason = validate_subscription_entitlement(subscription, user_id)
     
-    # If subscription is for a paid plan, verify it has valid source
-    if plan_id != "free":
-        valid_sources = ["payment", "trial", "admin", "razorpay", "stripe"]
+    if not is_valid:
+        # BLOCK PREMIUM ACCESS - Return FREE plan
+        logging.warning(
+            f"[ENTITLEMENT_GUARD] BLOCKED premium for user {user_id}: {reason}. "
+            f"Subscription: {subscription.get('id')}, Plan: {subscription.get('plan_id')}"
+        )
         
-        # Check for payment provider (indicates real payment flow)
-        has_payment_provider = bool(subscription.get("razorpay_order_id") or 
-                                     subscription.get("payment_provider_id", "").startswith("pay_"))
-        
-        # Check for valid source marker
-        is_valid_source = subscription_source in valid_sources or has_payment_provider
-        
-        if not is_valid_source:
-            # Log suspicious subscription without payment
-            logging.warning(
-                f"[ENTITLEMENT GUARD] User {user_id} has paid subscription '{plan_id}' "
-                f"without valid payment source. Reverting to FREE plan. "
-                f"Source: '{subscription_source}', Payment Provider ID: '{subscription.get('payment_provider_id')}'"
-            )
-            
-            # Return free plan for subscriptions without valid payment
-            free_plan = get_plan_by_id("free")
-            return {
-                "plan_id": "free",
-                "status": "active",
-                "features": free_plan["features"],
-                "plan": free_plan,
-                "_entitlement_warning": "Subscription requires valid payment verification"
-            }
+        free_plan = get_plan_by_id("free")
+        return {
+            "plan_id": "free",
+            "status": "active",
+            "features": free_plan["features"],
+            "plan": free_plan,
+            "_entitlement_blocked": True,
+            "_blocked_reason": reason
+        }
     
+    # Valid subscription - return with full features
     plan = get_plan_by_id(subscription["plan_id"])
     subscription["features"] = plan["features"] if plan else {}
     subscription["plan"] = plan
