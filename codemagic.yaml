@@ -15,7 +15,7 @@ workflows:
       - name: Build web assets
         script: |
           cd frontend
-          export REACT_APP_BACKEND_URL=https://premium-checker-1.preview.emergentagent.com
+          export REACT_APP_BACKEND_URL=https://voice-fallback-ui.preview.emergentagent.com
           CI=false npm run build
       - name: Sync Capacitor
         script: |
@@ -46,7 +46,7 @@ workflows:
       - name: Build web assets
         script: |
           cd frontend
-          export REACT_APP_BACKEND_URL=https://premium-checker-1.preview.emergentagent.com
+          export REACT_APP_BACKEND_URL=https://voice-fallback-ui.preview.emergentagent.com
           CI=false npm run build
       - name: Sync Capacitor
         script: |
@@ -106,7 +106,7 @@ workflows:
       - name: Build web assets
         script: |
           cd frontend
-          export REACT_APP_BACKEND_URL=https://premium-checker-1.preview.emergentagent.com
+          export REACT_APP_BACKEND_URL=https://voice-fallback-ui.preview.emergentagent.com
           CI=false npm run build
       - name: Sync Capacitor
         script: |
