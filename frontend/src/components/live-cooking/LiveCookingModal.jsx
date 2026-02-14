@@ -121,11 +121,30 @@ const VOICE_TIMING = {
 };
 
 /**
- * LiveCookingModal - Futuristic Mood-Adaptive AI Interface
- * Full-screen cinematic camera experience with glassmorphism UI
- * Preserves all existing cooking logic, voice behavior, and navigation
+ * LiveCookingModal - Phase-1 Stable Hands-Free Cooking
+ * 
+ * PHASE-1 FEATURES (ACTIVE):
+ * ✓ Voice Narration - Read current step via TTS
+ * ✓ Voice Commands - "next", "previous", "repeat", "pause", "resume"
+ * ✓ Large On-Screen Controls - Play/Pause, Next, Previous buttons
+ * ✓ Tap step card to repeat narration
+ * 
+ * DORMANT FEATURES (code exists, not executed):
+ * ○ Camera Preview
+ * ○ Gesture Detection
+ * ○ AI Observer
+ * ○ Motion Tracking
+ * 
+ * No NLP, no AI intent parsing, no auto-step detection.
  */
 export default function LiveCookingModal() {
+  // Log feature status on mount (debug)
+  useEffect(() => {
+    if (PHASE_1_MODE) {
+      logFeatureStatus();
+    }
+  }, []);
+
   const { 
     open, 
     closeModal, 
@@ -146,16 +165,16 @@ export default function LiveCookingModal() {
   const hasUserStartedRef = useRef(false);
   
   // ============================================
-  // PERMISSION ORCHESTRATION LAYER
-  // Handles camera + mic + speech permissions together
-  // Only activates after explicit user interaction
+  // PHASE-1: CAMERA/GESTURE SYSTEMS DORMANT
+  // Code exists but behind feature gate
   // ============================================
+  
+  // Only initialize permission system if camera features are enabled
   const {
     status: permissionStatus,
     isFullyGranted: hasAllPermissions,
     hasCameraAccess,
     hasMicrophoneAccess,
-    hasSpeechRecognition,
     cameraStream,
     errorMessage: permissionError,
     requestPermissions,
@@ -163,13 +182,14 @@ export default function LiveCookingModal() {
     reset: resetPermissions,
   } = useHandsFreePermissions();
   
-  // Hands-free mode state
+  // Phase-1: Camera and gesture states default to disabled
   const [handsFreeEnabled, setHandsFreeEnabled] = useState(false);
-  const [showCamera, setShowCamera] = useState(false); // Start hidden, enable after permissions
+  const [showCamera, setShowCamera] = useState(false);
   const [cameraVideoReady, setCameraVideoReady] = useState(false);
+  const [gestureEnabled, setGestureEnabled] = useState(false);
   
-  // AI Observer visual states (presentation only)
-  const [aiState, setAiState] = useState('idle'); // idle, active, completion
+  // AI Observer visual states (dormant in Phase-1)
+  const [aiState, setAiState] = useState('idle');
   const [whisperText, setWhisperText] = useState('');
   const [showWhisper, setShowWhisper] = useState(false);
 
