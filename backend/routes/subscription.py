@@ -289,65 +289,25 @@ def get_plan_by_id(plan_id: str) -> Optional[Dict]:
 
 async def get_user_subscription(user_id: str) -> Dict:
     """
-    Get user's current subscription with AUTHORITATIVE ENTITLEMENT VALIDATION.
+    Get user's current subscription with SAFE ENTITLEMENT RESOLUTION.
     
-    PRODUCTION ENTITLEMENT GUARD:
-    - Runs validate_subscription_entitlement() on every request
-    - Only subscriptions with valid payment/trial are honored
-    - Invalid subscriptions return FREE plan
-    - All checks are logged for audit trail
+    PERMANENT SAFE FIX - Priority-Based Entitlement Resolution:
     
-    This guard runs on EVERY subscription fetch to ensure premium access
-    is IMPOSSIBLE without valid payment or trial.
+    Priority 1 → Valid successful payment record (payment markers)
+    Priority 2 → Active trial not expired
+    Priority 3 → Existing active subscription with valid source
+    Priority 4 → Grace period protection (10 min for new/renewed subs)
+    Else → Free plan
+    
+    NEVER downgrades if ANY priority is met.
+    NEVER incorrectly downgrades paid users.
+    
+    Uses source-of-truth validation before any downgrade:
+    - Checks local payments table
+    - Checks Razorpay orders table
+    - Checks recent webhook events
     """
-    subscription = await db.user_subscriptions.find_one(
-        {"user_id": user_id, "status": {"$in": ["active", "trialing"]}},
-        {"_id": 0}
-    )
-    
-    if not subscription:
-        # Return free plan - this is the correct default state
-        free_plan = get_plan_by_id("free")
-        log_security_event(
-            event_type=SecurityEvent.ENTITLEMENT_CHECK,
-            user_id=user_id,
-            source="subscription_fetch",
-            plan_id="free",
-            details={"reason": "no_active_subscription"}
-        )
-        return {
-            "plan_id": "free",
-            "status": "active",
-            "features": free_plan["features"],
-            "plan": free_plan
-        }
-    
-    # AUTHORITATIVE ENTITLEMENT GUARD
-    is_valid, reason = validate_subscription_entitlement(subscription, user_id)
-    
-    if not is_valid:
-        # BLOCK PREMIUM ACCESS - Return FREE plan
-        logging.warning(
-            f"[ENTITLEMENT_GUARD] BLOCKED premium for user {user_id}: {reason}. "
-            f"Subscription: {subscription.get('id')}, Plan: {subscription.get('plan_id')}"
-        )
-        
-        free_plan = get_plan_by_id("free")
-        return {
-            "plan_id": "free",
-            "status": "active",
-            "features": free_plan["features"],
-            "plan": free_plan,
-            "_entitlement_blocked": True,
-            "_blocked_reason": reason
-        }
-    
-    # Valid subscription - return with full features
-    plan = get_plan_by_id(subscription["plan_id"])
-    subscription["features"] = plan["features"] if plan else {}
-    subscription["plan"] = plan
-    
-    return subscription
+    return await get_user_subscription_safe(db, user_id, get_plan_by_id)
 
 
 async def check_feature_access(user_id: str, feature_name: str, increment: bool = False) -> Dict:
