@@ -25,6 +25,7 @@ let currentUtterance = null;
 let isSpeaking = false;
 let speechQueue = [];
 let onSpeechEndCallback = null;
+let speechCancelled = false; // Global cancel flag for chunked speech
 
 // Chrome bug workaround: keep-alive timer
 // Chrome/WebKit cancels speechSynthesis after ~15 seconds of silence detection
