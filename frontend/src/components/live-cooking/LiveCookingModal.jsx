@@ -876,8 +876,8 @@ export default function LiveCookingModal() {
     if (handsFreeEnabled) {
       // Already enabled - disable it
       setHandsFreeEnabled(false);
-      // GLOBAL CONTROLLER: Cancel speech via singleton
-      globalCancelSpeech();
+      // GLOBAL CONTROLLER: Cancel speech for disabling hands-free
+      globalCancelSpeech('disableHandsFree');
       
       // PHASE-1: Skip camera/gesture cleanup
       if (!PHASE_1_MODE) {
