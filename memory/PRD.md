@@ -1709,6 +1709,33 @@ The app uses **Capacitor** hybrid framework - all web features are automatically
 
 ## Backlog
 
+### App Logo & Splash Screens ✅ COMPLETED (Feb 14, 2026)
+**Generated all app icons and splash screens for Android and iOS builds using the existing web app icon**
+
+**Android Assets Generated:**
+- 15 launcher icons (ic_launcher.png, ic_launcher_foreground.png, ic_launcher_round.png) across 5 density buckets (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi)
+- 11 splash screens for portrait and landscape orientations across all density buckets
+- Updated adaptive icon background to match app theme (#F8FAF6)
+
+**iOS Assets Generated:**
+- 1024x1024 AppIcon-512@2x.png for App Store and device icon
+- 2732x2732 splash screens (3 files for universal display)
+
+**Theme Consistency:**
+- Background color: #F8FAF6 (off-white matching app theme)
+- Icon uses the existing sage green MoodFood logo
+- All assets generated from the high-quality 1024x1024 original source
+
+**Files Changed:**
+- `android/app/src/main/res/mipmap-*/` - All launcher icons
+- `android/app/src/main/res/drawable*/splash.png` - All splash screens
+- `android/app/src/main/res/drawable/ic_launcher_background.xml` - Solid theme color
+- `android/app/src/main/res/values/ic_launcher_background.xml` - Color value updated
+- `ios/App/App/Assets.xcassets/AppIcon.appiconset/` - iOS app icon
+- `ios/App/App/Assets.xcassets/Splash.imageset/` - iOS splash screens
+
+**Note:** These assets will take effect on the next native build. User needs to rebuild Android/iOS to see the new icons.
+
 ### P1 - Next Priority
 - **Ingredient Encyclopedia Page** - Create `/pages/IngredientEncyclopedia.jsx` to browse/search all ingredients from the database
 - **Ingredient Detail Page** - Create dynamic route `/ingredients/:id` for individual ingredient details
