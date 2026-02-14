@@ -360,9 +360,9 @@ export default function LiveCookingModal() {
     return fadeInterval;
   }, []);
 
-  // Voice narration for current step - SYNC PERFECTED
+  // Voice narration for current step - MOBILE AUDIO FOCUS SEQUENCING
   // Single authoritative source: reads ONLY from currentStep at moment of playback
-  // With FREE browser speech fallback when ElevenLabs fails
+  // MOBILE: Uses turn-taking (TTS -> delay -> Recognition)
   const readCurrentStep = async () => {
     if (!instructions.length || currentStep >= instructions.length) return;
     
@@ -376,20 +376,16 @@ export default function LiveCookingModal() {
     }
     
     // HARD SYNC: Stop any currently playing ElevenLabs audio INSTANTLY
-    // NOTE: Do NOT cancel browser speech here - the new speak() call will
-    // naturally wait via the speaking lock. This prevents the cut-off issue.
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      audioRef.current.volume = 1; // Reset volume
+      audioRef.current.volume = 1;
     }
-    // REMOVED: globalCancelSpeech('readCurrentStep') - was causing cut-off
-    // New speech will start after current speech completes (speaking lock)
     
     // Mark any pending narration as aborted
     narrationAbortRef.current = true;
     
-    // EMOTIONAL TIMING: Warm start delay (makes it feel natural, not robotic)
+    // EMOTIONAL TIMING: Warm start delay
     await new Promise(resolve => setTimeout(resolve, VOICE_TIMING.WARM_START_DELAY));
     
     // SYNC CHECK: Abort if step changed during warm-up
@@ -400,7 +396,7 @@ export default function LiveCookingModal() {
     
     narrationAbortRef.current = false;
     
-    // Capture current step at start of this request (authoritative read)
+    // Capture current step at start
     const stepAtStart = currentStep;
     const stepText = typeof instructions[currentStep] === 'string' 
       ? instructions[currentStep] 
@@ -408,10 +404,21 @@ export default function LiveCookingModal() {
     
     if (!stepText) return;
     
-    // If browser speech mode is active, use FREE browser TTS via GLOBAL CONTROLLER
+    // Get environment for mobile-specific behavior
+    const env = globalGetEnvironment();
+    
+    // If browser speech mode is active, use GLOBAL CONTROLLER
     if (useBrowserSpeech) {
-      console.log('[VoiceSync] Using FREE browser speech via global controller');
-      globalNarrateStep(stepText, currentStep + 1, instructions.length);
+      console.log('[VoiceSync] Using browser speech');
+      
+      // MOBILE TURN-TAKING: Use speakThenListen for automatic recognition after TTS
+      if (env.isMobile && handsFreeEnabled && globalIsSessionArmed()) {
+        console.log('[VoiceSync] Mobile turn-taking: TTS -> Recognition');
+        globalSpeakThenListen(stepText, currentStep + 1, instructions.length);
+      } else {
+        // Desktop or session not armed: just narrate
+        globalNarrateStep(stepText, currentStep + 1, instructions.length);
+      }
       return;
     }
     
@@ -445,31 +452,32 @@ export default function LiveCookingModal() {
         
         audioRef.current.src = fullUrl;
         
-        // EMOTIONAL TIMING: Small delay before play (creates cinematic feel)
         await new Promise(resolve => setTimeout(resolve, 50));
         
-        // Final sync check before playing
         if (narrationAbortRef.current || 
             stepAtStart !== currentStep ||
             thisStepChangeId !== stepChangeIdRef.current) {
           return;
         }
         
-        // SMOOTH FADE-IN: Volume ramps up instead of abrupt start
         fadeInAudio(audioRef.current);
         audioRef.current.play().catch(e => console.error('Play failed:', e));
       }
     } catch (error) {
       console.error('ElevenLabs error, falling back to browser speech:', error);
       
-      // FALLBACK: Use FREE browser speech when ElevenLabs fails
+      // FALLBACK: Use browser speech when ElevenLabs fails
       if (isSpeechSupported()) {
-        console.log('[VoiceSync] Auto-switching to FREE browser speech');
+        console.log('[VoiceSync] Fallback to browser speech');
         setUseBrowserSpeech(true);
         
-        // Sync check before fallback
         if (stepAtStart === currentStep && thisStepChangeId === stepChangeIdRef.current) {
-          globalNarrateStep(stepText, currentStep + 1, instructions.length);
+          // MOBILE TURN-TAKING for fallback too
+          if (env.isMobile && handsFreeEnabled && globalIsSessionArmed()) {
+            globalSpeakThenListen(stepText, currentStep + 1, instructions.length);
+          } else {
+            globalNarrateStep(stepText, currentStep + 1, instructions.length);
+          }
         }
       }
     }
