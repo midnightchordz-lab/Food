@@ -537,27 +537,82 @@ TTS start
 - `frontend/src/lib/browserSpeech.js` - Added recognition disable before TTS
 - `frontend/src/components/live-cooking/LiveCookingModal.jsx` - All cancel calls now have reasons
 
-**Test Status:** ✅ VERIFIED (iteration_82.json, iteration_83.json)
+**Test Status:** ✅ VERIFIED (iteration_82.json, iteration_83.json, iteration_84.json)
 
-#### Mobile Voice Full Recovery - 10 Phase Implementation ✅ (Dec 2025)
-**Complete re-architecture of mobile voice functionality to make it stable and functional**
+#### Mobile Audio Focus Sequencing Fix ✅ (Dec 2025)
+**Stabilized mobile audio by implementing single audio owner and turn-taking sequence**
 
-**Root Cause (Final Diagnosis):**
-1. Voice engine never entering active state on mobile
-2. Orchestration killing both recognition and synthesis
-3. No tap-to-activate flow - mobile browsers require user gesture for speech APIs
-4. Recognition and Synthesis engines were interfering with each other
+**Root Cause:**
+Mobile OS allows only ONE audio owner at a time. Previous implementation attempted simultaneous TTS + Recognition, causing:
+- TTS muted (recognition held audio focus)
+- Delayed mic activation (orange icon stuck)
+- Forced user to tap repeatedly
+- Loss of hands-free feel
 
-**10-Phase Solution Implementation:**
+**Solution - Single Audio Owner Rule:**
+At any moment, only one engine may hold audio focus:
+| State | Allowed Engine |
+|-------|----------------|
+| Narrating | TTS only |
+| Listening | Recognition only |
 
-**PHASE 1 - Mobile Environment Detection**
-- Comprehensive detection: isMobile, isWebView, isPWA, isSecureContext
-- Guards speech initialization based on environment
-- Gracefully disables voice UI if not secure context
-- File: `speechController.js` lines 41-98
+**Turn-Taking Sequence (Mobile):**
+```
+1. User taps Start Cooking (arms session)
+2. TTS narrates full step
+3. TTS onend fires
+4. Delay 400ms (audio focus buffer)
+5. Start Recognition
+6. Command detected -> callback fires
+7. Stop Recognition
+8. Delay 200ms
+9. Speak next step
+10. Repeat
+```
 
-**PHASE 2 - Explicit User Activation Layer**
-- Mobile speech NEVER auto-starts
+**Implementation Details:**
+
+1. **Audio Focus Management:**
+   - `AUDIO_OWNER` states: NONE, TTS, RECOGNITION
+   - `canAcquireAudioFocus()` - checks single owner rule
+   - `acquireAudioFocus()` / `releaseAudioFocus()` - manage ownership
+
+2. **Audio Focus Delay Buffers:**
+   - `TTS_TO_RECOGNITION`: 400ms (after TTS ends)
+   - `RECOGNITION_TO_TTS`: 200ms (after recognition stops)
+   - `RECOGNITION_COOLDOWN`: 100ms (brief cooldown)
+
+3. **One-Time Session Arming:**
+   - `sessionArmed` flag - set on first user tap
+   - After armed, continuous speak-listen loop
+   - `startRecognitionFromUserGesture()` arms the session
+
+4. **Turn-Taking Helpers:**
+   - `speakThenListen()` - narrate then auto-start recognition
+   - `startRecognitionAfterTTS()` - called after TTS with delay
+
+5. **UI State Synchronization:**
+   - Speaking (blue) - during TTS
+   - Listening (green) - during recognition
+   - Tap Mic (amber) - waiting for activation
+   - Voice On (emerald) - armed but idle
+
+**Files Changed:**
+- `frontend/src/lib/speechController.js` - Complete rewrite with single audio owner
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Turn-taking integration, UI state sync
+
+**Success Conditions Met:**
+- ✅ Narration audible on mobile (no longer muted)
+- ✅ Mic activates immediately after narration ends
+- ✅ No repeated tapping required (one-time arm)
+- ✅ Continuous hands-free cycle after first tap
+- ✅ No overlapping audio engines
+- ✅ Desktop behavior unchanged
+- ✅ No business logic altered
+
+**Test Status:** ✅ VERIFIED (iteration_84.json - 100% frontend tests passed)
+
+#### Mobile Voice Full Recovery - Previous Implementation (Superseded)
 - `hasUserGesture` tracking with 5-second validity window
 - Voice only starts after: Tap mic, Tap play, Tap "Start Cooking"
 - `startRecognitionFromUserGesture()` is THE mobile activation entry point
