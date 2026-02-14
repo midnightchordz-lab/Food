@@ -720,8 +720,8 @@ export default function LiveCookingModal() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
-    // GLOBAL CONTROLLER: Cancel speech via singleton
-    globalCancelSpeech();
+    // GLOBAL CONTROLLER: Cancel speech for user pressing Next
+    globalCancelSpeech('userNext');
     narrationAbortRef.current = true;
     abortEmotionalNarration();
     
