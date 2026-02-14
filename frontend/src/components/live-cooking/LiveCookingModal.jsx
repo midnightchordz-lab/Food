@@ -955,29 +955,59 @@ export default function LiveCookingModal() {
     }
   }, [handsFreeEnabled, requestPermissions, stopCameraStream, permissionError, cleanupOrchestrator]);
   
-  // Handler for mic button tap - triggers recognition on mobile
+  // Handler for mic button tap - PHASE 2 & 7: Mobile activation point
   const handleMicButtonTap = useCallback(() => {
+    const env = globalGetEnvironment();
+    console.log('[LiveCooking] Mic button tapped - env:', env);
+    
     if (!handsFreeEnabled) {
       // First tap enables hands-free
       handleEnableHandsFree();
       return;
     }
     
-    // If already enabled, check if we need to start recognition (mobile)
-    const env = globalGetEnvironment();
-    if (env.isMobile || voiceRecognitionState === 'permission-needed') {
-      console.log('[LiveCooking] Mic button tapped - starting recognition from user gesture');
+    // PHASE 7: UI state management based on current state
+    if (voiceRecognitionState === 'disabled') {
+      toast.error('Voice control unavailable on this device');
+      return;
+    }
+    
+    if (voiceRecognitionState === 'error') {
+      // Try to recover
+      console.log('[LiveCooking] Attempting to recover from error state');
+      setVoiceRecognitionState('idle');
+    }
+    
+    // PHASE 2: Mobile/WebView - ALWAYS require tap to start
+    if (env.isMobile || env.isWebView || voiceRecognitionState === 'permission-needed' || voiceRecognitionState === 'idle') {
+      console.log('[LiveCooking] PHASE 2 - Starting recognition from user tap');
       const started = globalStartRecognitionFromGesture();
       if (started) {
-        toast.success('Voice control active! Say "next" or "back"');
+        setVoiceListening(true);
+        toast.success('Listening! Say "next", "back", "repeat", or "pause"');
       } else {
-        toast.error('Could not start voice control. Please check microphone permissions.');
+        // Check if it's a permission issue
+        const currentEnv = globalGetEnvironment();
+        if (currentEnv.micPermissionState === 'denied') {
+          toast.error('Microphone permission denied. Please allow access in settings.');
+          setVoiceRecognitionState('disabled');
+        } else {
+          toast.info('Tap again to start voice control');
+          setVoiceRecognitionState('permission-needed');
+        }
       }
-    } else if (!voiceListening) {
-      // Desktop: Restart if stopped
+      return;
+    }
+    
+    // If listening, stop. If not, start.
+    if (voiceListening) {
+      globalStopRecognition();
+      setVoiceListening(false);
+      toast.info('Voice control paused. Tap mic to resume.');
+    } else {
       globalStartRecognition();
     }
-  }, [handsFreeEnabled, handleEnableHandsFree, recognitionState, voiceListening]);
+  }, [handsFreeEnabled, handleEnableHandsFree, voiceRecognitionState, voiceListening]);
   
   // ============================================
   // PHASE-1: Voice Command Setup & Cleanup
