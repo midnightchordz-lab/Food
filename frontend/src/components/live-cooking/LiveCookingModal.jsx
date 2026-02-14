@@ -1489,13 +1489,20 @@ export default function LiveCookingModal() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={handleEnableHandsFree}
+                          onClick={handleMicButtonTap}
+                          onTouchStart={(e) => {
+                            // Mobile: Also trigger on touchstart for better responsiveness
+                            e.preventDefault();
+                            handleMicButtonTap();
+                          }}
                           className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 ${
                             voiceListening 
                               ? 'bg-green-500/30 border-green-400/30'
-                              : handsFreeEnabled 
-                                ? 'bg-emerald-500/20' 
-                                : 'bg-black/30'
+                              : recognitionState === 'permission-needed'
+                                ? 'bg-amber-500/20 border-amber-400/30 animate-pulse'
+                                : handsFreeEnabled 
+                                  ? 'bg-emerald-500/20' 
+                                  : 'bg-black/30'
                           }`}
                           data-testid="live-cooking-handsfree-btn"
                         >
@@ -1507,12 +1514,26 @@ export default function LiveCookingModal() {
                               transition={{ duration: 1, repeat: Infinity }}
                             />
                           )}
+                          {/* Tap to enable indicator */}
+                          {recognitionState === 'permission-needed' && !voiceListening && (
+                            <motion.div
+                              className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"
+                              animate={{ scale: [1, 1.3, 1] }}
+                              transition={{ duration: 0.8, repeat: Infinity }}
+                            />
+                          )}
                           {handsFreeEnabled ? (
                             <motion.div
                               animate={voiceListening ? { scale: [1, 1.2, 1] } : {}}
                               transition={{ duration: 0.5, repeat: Infinity }}
                             >
-                              <Mic className={`w-3 h-3 ${voiceListening ? 'text-green-400' : 'text-emerald-400'}`} />
+                              <Mic className={`w-3 h-3 ${
+                                voiceListening 
+                                  ? 'text-green-400' 
+                                  : recognitionState === 'permission-needed'
+                                    ? 'text-amber-400'
+                                    : 'text-emerald-400'
+                              }`} />
                             </motion.div>
                           ) : (
                             <MicOff className="w-3 h-3 text-white/60" />
@@ -1520,11 +1541,19 @@ export default function LiveCookingModal() {
                           <span className={`text-xs hidden sm:inline ${
                             voiceListening 
                               ? 'text-green-400'
-                              : handsFreeEnabled 
-                                ? 'text-emerald-400' 
-                                : 'text-white/60'
+                              : recognitionState === 'permission-needed'
+                                ? 'text-amber-400'
+                                : handsFreeEnabled 
+                                  ? 'text-emerald-400' 
+                                  : 'text-white/60'
                           }`}>
-                            {voiceListening ? 'Listening' : handsFreeEnabled ? 'Voice On' : 'Voice'}
+                            {voiceListening 
+                              ? 'Listening' 
+                              : recognitionState === 'permission-needed'
+                                ? 'Tap Mic'
+                                : handsFreeEnabled 
+                                  ? 'Voice On' 
+                                  : 'Voice'}
                           </span>
                         </Button>
                       </motion.div>
