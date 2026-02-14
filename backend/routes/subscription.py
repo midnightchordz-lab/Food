@@ -578,6 +578,7 @@ async def cancel_subscription(
             raise HTTPException(status_code=400, detail="No active subscription found")
         
         now = datetime.now(timezone.utc)
+        old_plan = subscription.get("plan_id", "unknown")
         
         if request.cancel_immediately:
             await db.user_subscriptions.update_one(
@@ -591,6 +592,18 @@ async def cancel_subscription(
                 }
             )
             message = "Subscription canceled immediately"
+            
+            # AUDIT LOG: Immediate cancellation
+            await log_plan_change(
+                db=db,
+                user_id=current_user.id,
+                old_plan=old_plan,
+                new_plan="free",
+                reason="user_canceled_immediately",
+                metadata={
+                    "subscription_id": subscription.get("id")
+                }
+            )
         else:
             await db.user_subscriptions.update_one(
                 {"id": subscription["id"]},
@@ -602,6 +615,19 @@ async def cancel_subscription(
                 }
             )
             message = "Subscription will cancel at end of billing period"
+            
+            # AUDIT LOG: Scheduled cancellation
+            await log_plan_change(
+                db=db,
+                user_id=current_user.id,
+                old_plan=old_plan,
+                new_plan=old_plan,  # Still on same plan until period ends
+                reason="user_scheduled_cancellation",
+                metadata={
+                    "subscription_id": subscription.get("id"),
+                    "cancel_at_period_end": True
+                }
+            )
         
         return {
             "success": True,
