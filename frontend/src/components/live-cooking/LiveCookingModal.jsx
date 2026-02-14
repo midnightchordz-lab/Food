@@ -198,6 +198,11 @@ export default function LiveCookingModal() {
   const [aiState, setAiState] = useState('idle');
   const [whisperText, setWhisperText] = useState('');
   const [showWhisper, setShowWhisper] = useState(false);
+  
+  // PHASE-1 VOICE RELIABILITY: Visual feedback states
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [lastCommand, setLastCommand] = useState(null); // For flash feedback
+  const [commandFlash, setCommandFlash] = useState(false);
 
   // Get mood from store or localStorage fallback
   const mood = storeMood || localStorage.getItem('selectedMood') || 'calm';
