@@ -622,9 +622,10 @@ export default function LiveCookingModal() {
       }
       
       // Voice cue "Step complete" (only if not currently speaking)
-      if (!isSpeaking() && isSpeechSupported()) {
+      // GLOBAL CONTROLLER: Use singleton isSpeaking check (immune to re-renders)
+      if (!globalIsSpeaking() && isSpeechSupported()) {
         setTimeout(() => {
-          speakText("Step time complete");
+          globalSpeak("Step time complete");
         }, 500);
       }
       
