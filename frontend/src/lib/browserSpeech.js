@@ -595,18 +595,28 @@ export function narrateCurrentStep(stepText, isPlaying = true, onEnd = null) {
  * @param {Function} onEnd - Optional callback when narration ends
  */
 export function narrateStep(stepText, stepNumber, totalSteps, onEnd) {
-  if (!stepText) return Promise.resolve(false);
+  // TYPE ENFORCEMENT: Ensure stepText is a string
+  if (typeof stepText !== 'string' || !stepText.trim()) {
+    console.log('[BrowserSpeech] narrateStep: Invalid or empty text');
+    return Promise.resolve(false);
+  }
+
+  // Ensure stepNumber and totalSteps are numbers
+  const step = parseInt(stepNumber, 10) || 1;
+  const total = parseInt(totalSteps, 10) || 1;
 
   // Build the narration text with step context
   let narrationText = '';
   
-  if (stepNumber === 1) {
-    narrationText = `Let's begin. Step ${stepNumber} of ${totalSteps}. ${stepText}`;
-  } else if (stepNumber === totalSteps) {
+  if (step === 1) {
+    narrationText = `Let's begin. Step ${step} of ${total}. ${stepText}`;
+  } else if (step === total) {
     narrationText = `Final step. ${stepText}`;
   } else {
-    narrationText = `Step ${stepNumber}. ${stepText}`;
+    narrationText = `Step ${step}. ${stepText}`;
   }
+
+  console.log('[BrowserSpeech] narrateStep: Speaking:', narrationText.substring(0, 50) + '...');
 
   // Clear pending narration
   if (narrationTimeout) clearTimeout(narrationTimeout);
