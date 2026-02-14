@@ -630,14 +630,6 @@ export function isSpeechSupported() {
   return 'speechSynthesis' in window;
 }
 
-/**
- * Check if currently speaking
- * @returns {boolean}
- */
-export function isSpeaking() {
-  return 'speechSynthesis' in window && window.speechSynthesis.speaking;
-}
-
 // Load voices on page load (needed for some browsers)
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   // Chrome needs this event to populate voices
