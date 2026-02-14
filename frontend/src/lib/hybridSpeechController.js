@@ -549,9 +549,9 @@ async function startRecognitionFromUserGesture() {
   if (STATE.usingNative) {
     // Request permissions first
     const permStatus = await nativeCheckPermissions();
-    if (permStatus.status !== 'granted') {
+    if (permStatus.speechRecognition !== 'granted') {
       const reqStatus = await nativeRequestPermissions();
-      if (reqStatus.status !== 'granted') {
+      if (reqStatus.speechRecognition !== 'granted') {
         stateChangeCallback?.('permission-needed');
         return false;
       }
