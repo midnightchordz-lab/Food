@@ -226,13 +226,34 @@ export function startVoiceControl() {
     console.log('[BrowserSpeech] Recognition ended');
     
     // PHASE-1: Continuous listening loop - auto-restart
+    // BUT only if TTS is not currently speaking (mutual exclusion)
     if (shouldBeListening) {
       console.log('[BrowserSpeech] Auto-restarting for continuous listening');
       setTimeout(() => {
         if (shouldBeListening && !isListening) {
+          // Check if TTS is speaking - if so, delay restart
+          if (isSpeaking()) {
+            console.log('[BrowserSpeech] TTS speaking, delaying restart');
+            // Wait for TTS to finish, then restart
+            const checkAndRestart = () => {
+              if (!isSpeaking() && shouldBeListening && !isListening) {
+                try {
+                  recognition?.start();
+                } catch (e) {
+                  console.log('[BrowserSpeech] Restart failed:', e.message);
+                  setTimeout(() => {
+                    if (shouldBeListening) startVoiceControl();
+                  }, 300);
+                }
+              } else if (shouldBeListening && isSpeaking()) {
+                setTimeout(checkAndRestart, 500);
+              }
+            };
+            setTimeout(checkAndRestart, 500);
+            return;
+          }
+          
           try {
-            // Stop TTS before restarting (mutual exclusion)
-            stopSpeech();
             recognition?.start();
           } catch (e) {
             console.log('[BrowserSpeech] Restart failed, will retry:', e.message);
