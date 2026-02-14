@@ -146,9 +146,8 @@ function enableRecognitionAfterTTS() {
  * BULLETPROOF SPEECH EXECUTION:
  * 1. Always creates NEW SpeechSynthesisUtterance immediately before speak()
  * 2. Speaking lock prevents double triggers
- * 3. Cancel existing speech before starting new
- * 4. Text sanitization (null/undefined/HTML removal)
- * 5. onend/onerror handlers release lock
+ * 3. Text sanitization (null/undefined/HTML removal)
+ * 4. onend/onerror handlers release lock
  * 
  * @param {string} text - Text to speak
  * @param {function} onComplete - Callback when speech finishes
@@ -167,7 +166,6 @@ function speak(text, onComplete = null) {
   // ========================================
   // SAFETY GUARD 2: Text sanitization
   // ========================================
-  // Convert to string if not already
   let cleanText = '';
   if (text === null || text === undefined) {
     console.log('[SpeechController] Null/undefined text, skipping');
@@ -201,16 +199,7 @@ function speak(text, onComplete = null) {
   }
   
   // ========================================
-  // SAFETY GUARD 4: Cancel any existing speech
-  // ========================================
-  try {
-    window.speechSynthesis.cancel();
-  } catch (e) {
-    console.log('[SpeechController] Cancel error (ignored):', e.message);
-  }
-  
-  // ========================================
-  // ACQUIRE LOCK
+  // ACQUIRE LOCK FIRST
   // ========================================
   isSpeaking = true;
   speechCancelled = false;
