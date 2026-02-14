@@ -372,14 +372,16 @@ export default function LiveCookingModal() {
       postNarrationTimerRef.current = null;
     }
     
-    // HARD SYNC: Stop any currently playing audio INSTANTLY
+    // HARD SYNC: Stop any currently playing ElevenLabs audio INSTANTLY
+    // NOTE: Do NOT cancel browser speech here - the new speak() call will
+    // naturally wait via the speaking lock. This prevents the cut-off issue.
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       audioRef.current.volume = 1; // Reset volume
     }
-    // GLOBAL CONTROLLER: Cancel speech for new step narration (user-initiated step read)
-    globalCancelSpeech('readCurrentStep');
+    // REMOVED: globalCancelSpeech('readCurrentStep') - was causing cut-off
+    // New speech will start after current speech completes (speaking lock)
     
     // Mark any pending narration as aborted
     narrationAbortRef.current = true;
