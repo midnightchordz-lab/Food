@@ -813,48 +813,139 @@ class SpeechController {
     instance = this;
   }
   
-  init() {
+  async init() {
     if (this.initialized) return this;
     
     detectEnvironment();
+    
+    // Check if we should use hybrid controller (native platform)
+    if (isNativePlatform && !hybridController) {
+      await initHybridController();
+    }
+    
+    // Always initialize web synthesis as fallback
     initSynthesis();
     
     this.initialized = true;
-    console.log('[SpeechController] Ready');
+    console.log('[SpeechController] Ready', useHybridController ? '(hybrid mode)' : '(web mode)');
     return this;
   }
   
-  // Synthesis
-  speak(text, onComplete) { return speak(text, onComplete); }
-  cancel(reason) { cancelSpeech(reason); }
-  isSpeaking() { return checkIsSpeaking(); }
+  // Synthesis (always use web - better voice quality)
+  speak(text, onComplete) { 
+    if (useHybridController && hybridController) {
+      return hybridController.speak(text, onComplete);
+    }
+    return speak(text, onComplete); 
+  }
+  cancel(reason) { 
+    if (useHybridController && hybridController) {
+      return hybridController.cancel(reason);
+    }
+    cancelSpeech(reason); 
+  }
+  isSpeaking() { 
+    if (useHybridController && hybridController) {
+      return hybridController.isSpeaking();
+    }
+    return checkIsSpeaking(); 
+  }
   narrateStep(text, stepNumber, totalSteps, onComplete) {
+    if (useHybridController && hybridController) {
+      return hybridController.narrateStep(text, stepNumber, totalSteps, onComplete);
+    }
     return narrateStep(text, stepNumber, totalSteps, onComplete);
   }
   speakThenListen(text, stepNumber, totalSteps) {
+    if (useHybridController && hybridController) {
+      return hybridController.speakThenListen(text, stepNumber, totalSteps);
+    }
     return speakThenListen(text, stepNumber, totalSteps);
   }
   
-  // Recognition
-  startListening() { return startRecognition(); }
-  startListeningFromGesture() { return startRecognitionFromUserGesture(); }
-  stopListening() { stopRecognition(); }
-  isListening() { return isListening; }
-  setRecognitionCallbacks(callbacks) { setRecognitionCallbacks(callbacks); }
+  // Recognition (delegate to hybrid on native)
+  startListening() { 
+    if (useHybridController && hybridController) {
+      return hybridController.startListening();
+    }
+    return startRecognition(); 
+  }
+  startListeningFromGesture() { 
+    if (useHybridController && hybridController) {
+      return hybridController.startListeningFromGesture();
+    }
+    return startRecognitionFromUserGesture(); 
+  }
+  stopListening() { 
+    if (useHybridController && hybridController) {
+      return hybridController.stopListening();
+    }
+    stopRecognition(); 
+  }
+  isListening() { 
+    if (useHybridController && hybridController) {
+      return hybridController.isListening();
+    }
+    return isListening; 
+  }
+  setRecognitionCallbacks(callbacks) { 
+    if (useHybridController && hybridController) {
+      return hybridController.setRecognitionCallbacks(callbacks);
+    }
+    setRecognitionCallbacks(callbacks); 
+  }
   
   // Session
-  isSessionArmed() { return sessionArmed; }
-  disarmSession() { disarmSession(); }
+  isSessionArmed() { 
+    if (useHybridController && hybridController) {
+      return hybridController.isSessionArmed();
+    }
+    return sessionArmed; 
+  }
+  disarmSession() { 
+    if (useHybridController && hybridController) {
+      return hybridController.disarmSession();
+    }
+    disarmSession(); 
+  }
   
   // State
-  setStateChangeCallback(callback) { setStateChangeCallback(callback); }
-  setSynthesisStateCallback(callback) { setSynthesisStateCallback(callback); }
-  getRecognitionState() { return getRecognitionState(); }
-  getSynthesisState() { return synthesisState; }
-  getEnvironment() { return getEnvironment(); }
+  setStateChangeCallback(callback) { 
+    if (useHybridController && hybridController) {
+      return hybridController.setStateChangeCallback(callback);
+    }
+    setStateChangeCallback(callback); 
+  }
+  setSynthesisStateCallback(callback) { 
+    if (useHybridController && hybridController) {
+      return hybridController.setSynthesisStateCallback(callback);
+    }
+    setSynthesisStateCallback(callback); 
+  }
+  getRecognitionState() { 
+    if (useHybridController && hybridController) {
+      return hybridController.getRecognitionState();
+    }
+    return getRecognitionState(); 
+  }
+  getSynthesisState() { 
+    if (useHybridController && hybridController) {
+      return hybridController.getSynthesisState();
+    }
+    return synthesisState; 
+  }
+  getEnvironment() { 
+    if (useHybridController && hybridController) {
+      return hybridController.getEnvironment();
+    }
+    return getEnvironment(); 
+  }
   
   // Cleanup
   destroy() {
+    if (useHybridController && hybridController) {
+      hybridController.destroy();
+    }
     cancelSpeech('destroy');
     disarmSession();
     recognitionInstance = null;
