@@ -1077,13 +1077,14 @@ async def razorpay_webhook(request: Request):
                                 {"$set": {"status": "canceled", "canceled_at": now.isoformat()}}
                             )
                             
-                            # Create new subscription
+                            # Create new subscription with VALID PAYMENT SOURCE
                             subscription_id = str(uuid.uuid4())
                             subscription_doc = {
                                 "id": subscription_id,
                                 "user_id": user_id,
                                 "plan_id": plan_id,
                                 "status": "active",
+                                "source": EntitlementSource.RAZORPAY.value,  # VALID SOURCE
                                 "current_period_start": now.isoformat(),
                                 "current_period_end": period_end.isoformat(),
                                 "trial_start": None,
@@ -1092,10 +1093,25 @@ async def razorpay_webhook(request: Request):
                                 "payment_provider": "razorpay",
                                 "payment_provider_id": payment_id,
                                 "razorpay_order_id": order_id,
+                                "razorpay_payment_id": payment_id,  # REQUIRED for entitlement guard
                                 "created_at": now.isoformat(),
                                 "updated_at": now.isoformat()
                             }
                             await db.user_subscriptions.insert_one(subscription_doc)
+                            
+                            # LOG SUBSCRIPTION CREATION
+                            log_subscription_creation(
+                                user_id=user_id,
+                                subscription_id=subscription_id,
+                                plan_id=plan_id,
+                                source="webhook",
+                                payment_id=payment_id,
+                                trial_flag=False,
+                                additional_data={
+                                    "razorpay_order_id": order_id,
+                                    "webhook_event": event_type
+                                }
+                            )
                             
                             # Update order status
                             await db.razorpay_orders.update_one(
