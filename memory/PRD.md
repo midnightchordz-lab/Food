@@ -61,6 +61,34 @@ Created `/app/frontend/src/utils/auth.js` with `isUserPremium(user)` function th
 - Subscription context loading: PASS
 - Premium badge shows for premium users: PASS
 
+#### Production Entitlement Hotfix ✅ NEW (Feb 13, 2026)
+**Added robust entitlement refresh for mobile apps.**
+
+**Problem Solved:**
+- Mobile app was not refreshing subscription on load, causing UI to fall back to free state
+- Paid users saw locked features despite active subscriptions
+- Inconsistent behavior between web and mobile
+
+**Solution - Minimal Isolated Changes:**
+1. **Force refresh on app start:** `loadSubscription(true)` on mount instead of lazy load
+2. **Offline caching:** `localStorage.cached_subscription` stores last known valid entitlement
+3. **App foreground resume:** `app-foreground-resume` event triggers subscription refresh
+4. **Auth-triggered refresh:** All auth methods (login, register, loginWithToken) dispatch `trigger-subscription-refresh`
+
+**Files Changed:**
+- `frontend/src/components/FeatureGate.jsx` - Added forceRefresh on mount, localStorage caching, foreground listener
+- `frontend/src/context/AuthContext.js` - Added subscription refresh trigger after all auth methods
+- `frontend/src/capacitor.js` - Added `app-foreground-resume` event dispatch on active state
+
+**Safety Constraints Met:**
+- ✅ Free users remain restricted
+- ✅ Paid tiers only access allowed features
+- ✅ No hardcoded premium flags
+- ✅ Works offline using cached entitlement
+- ✅ No UI changes, no pricing changes, no business logic changes
+
+**Test Status:** ✅ VERIFIED (iteration_77.json - 100% all verification points passed)
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
