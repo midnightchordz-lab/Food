@@ -16,6 +16,7 @@ import speechController, {
   cancelSpeech as globalCancelSpeech,
   isSpeaking as globalIsSpeaking,
   narrateStep as globalNarrateStep,
+  speakThenListen as globalSpeakThenListen,
   startRecognition as globalStartRecognition,
   startRecognitionFromUserGesture as globalStartRecognitionFromGesture,
   stopRecognition as globalStopRecognition,
@@ -23,6 +24,8 @@ import speechController, {
   setStateChangeCallback as globalSetStateChangeCallback,
   getRecognitionState as globalGetRecognitionState,
   getEnvironment as globalGetEnvironment,
+  isSessionArmed as globalIsSessionArmed,
+  disarmSession as globalDisarmSession,
 } from "@/lib/speechController";
 
 // Legacy browserSpeech exports for backwards compatibility (will be phased out)
