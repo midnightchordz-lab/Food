@@ -853,6 +853,7 @@ class SpeechController {
     if (this.initialized) return this;
     
     initSpeechSynthesis();
+    detectEnvironment();
     this.initialized = true;
     console.log('[SpeechController] Controller initialized');
     return this;
@@ -881,9 +882,15 @@ class SpeechController {
   
   // Recognition methods
   startListening() { return startRecognition(); }
+  startListeningFromGesture() { return startRecognitionFromUserGesture(); }
   stopListening() { stopRecognition(); }
   isListening() { return isListening; }
   setRecognitionCallbacks(callbacks) { setRecognitionCallbacks(callbacks); }
+  
+  // State methods (for UI synchronization)
+  setStateChangeCallback(callback) { setStateChangeCallback(callback); }
+  getRecognitionState() { return getRecognitionState(); }
+  getEnvironment() { return getEnvironment(); }
   
   // Cleanup
   destroy() {
@@ -910,8 +917,12 @@ export {
   checkIsSpeaking as isSpeaking,
   narrateStep,
   startRecognition,
+  startRecognitionFromUserGesture,
   stopRecognition,
   setRecognitionCallbacks,
+  setStateChangeCallback,
+  getRecognitionState,
+  getEnvironment,
 };
 
 // Default export is the singleton
