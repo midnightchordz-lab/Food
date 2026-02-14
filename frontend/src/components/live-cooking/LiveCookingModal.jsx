@@ -1019,10 +1019,22 @@ export default function LiveCookingModal() {
           console.log('[LiveCooking] Global voice recognition error:', error);
         },
       });
-      // DON'T call globalStartRecognition() here - let it start after speech
+      
+      // Check environment and start recognition appropriately
+      const env = globalGetEnvironment();
+      if (!env.isMobile) {
+        // Desktop: Auto-start recognition (after TTS if speaking)
+        console.log('[LiveCooking] Desktop - starting recognition');
+        globalStartRecognition();
+      } else {
+        // Mobile: Wait for user gesture (tap on mic button)
+        console.log('[LiveCooking] Mobile - waiting for user tap to start recognition');
+        setRecognitionState('permission-needed');
+      }
     } else {
       // GLOBAL CONTROLLER: Stop recognition when disabled or modal closes
       globalStopRecognition();
+      setRecognitionState('idle');
     }
     
     return () => {
