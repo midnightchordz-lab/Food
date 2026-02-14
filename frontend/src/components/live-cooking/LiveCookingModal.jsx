@@ -14,7 +14,7 @@ import axios from "axios";
 import speechController, {
   speak as globalSpeak,
   cancelSpeech as globalCancelSpeech,
-  checkIsSpeaking as globalIsSpeaking,
+  isSpeaking as globalIsSpeaking,
   narrateStep as globalNarrateStep,
   startRecognition as globalStartRecognition,
   stopRecognition as globalStopRecognition,
