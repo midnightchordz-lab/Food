@@ -277,6 +277,7 @@ export default function LiveCookingModal() {
   const [voiceRecognitionState, setVoiceRecognitionState] = useState('idle'); // 'idle', 'starting', 'listening', 'error', 'permission-needed'
   const [lastCommand, setLastCommand] = useState(null); // For flash feedback
   const [commandFlash, setCommandFlash] = useState(false);
+  const [isTTSActive, setIsTTSActive] = useState(false); // Track TTS narration state
   
   // VOICE TUTORIAL: Show available commands on first enable
   const [showVoiceTutorial, setShowVoiceTutorial] = useState(false);
