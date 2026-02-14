@@ -931,7 +931,7 @@ export default function LiveCookingModal() {
                 </div>
 
                 {/* ============================================ */}
-                {/* TOP BAR - AI INDICATOR & CONTROLS */}
+                {/* TOP BAR - PHASE-1 SIMPLIFIED CONTROLS */}
                 {/* ============================================ */}
                 <motion.div
                   initial={{ y: -30, opacity: 0 }}
@@ -940,20 +940,18 @@ export default function LiveCookingModal() {
                   className="absolute top-0 left-0 right-0 z-20 p-4 md:p-6"
                 >
                   <div className="flex items-center justify-between">
-                    {/* Left: AI Awareness Indicator */}
+                    {/* Left: Voice Status Indicator (Phase-1 simplified) */}
                     <div className="flex items-center gap-3">
-                      {/* AI Ring Indicator */}
+                      {/* Status Ring */}
                       <motion.div
                         className="relative"
                         animate={
-                          aiState === 'completion' 
-                            ? { scale: [1, 1.2, 1] }
-                            : aiState === 'active'
-                            ? { scale: [1, 1.05, 1] }
+                          isPlaying 
+                            ? { scale: [1, 1.1, 1] }
                             : { scale: 1 }
                         }
                         transition={{ 
-                          duration: aiState === 'completion' ? 1.5 : 2, 
+                          duration: 2, 
                           repeat: Infinity, 
                           ease: "easeInOut" 
                         }}
@@ -962,10 +960,10 @@ export default function LiveCookingModal() {
                         <motion.div
                           className="absolute -inset-2 rounded-full blur-md"
                           style={{ 
-                            backgroundColor: aiState === 'idle' ? theme.glow : theme.glowStrong,
+                            backgroundColor: isPlaying ? theme.glowStrong : theme.glow,
                           }}
                           animate={{ 
-                            opacity: aiState === 'idle' ? [0.3, 0.5, 0.3] : [0.5, 0.8, 0.5],
+                            opacity: isPlaying ? [0.5, 0.8, 0.5] : [0.3, 0.5, 0.3],
                           }}
                           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         />
@@ -981,10 +979,10 @@ export default function LiveCookingModal() {
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: theme.accent }}
                             animate={{ 
-                              scale: aiState === 'idle' ? [1, 1.2, 1] : [1, 1.4, 1],
-                              opacity: aiState === 'idle' ? [0.6, 1, 0.6] : [0.8, 1, 0.8],
+                              scale: isPlaying ? [1, 1.4, 1] : [1, 1.2, 1],
+                              opacity: isPlaying ? [0.8, 1, 0.8] : [0.6, 1, 0.6],
                             }}
-                            transition={{ duration: aiState === 'idle' ? 3 : 1.5, repeat: Infinity }}
+                            transition={{ duration: isPlaying ? 1.5 : 3, repeat: Infinity }}
                           />
                         </div>
                       </motion.div>
@@ -992,16 +990,18 @@ export default function LiveCookingModal() {
                       {/* Status text */}
                       <div className="flex flex-col">
                         <span className={`text-xs font-medium ${theme.text} opacity-80`}>
-                          {useBrowserSpeech ? 'Free Voice' : 'AI Observer'}
+                          {PHASE_1_MODE ? 'Voice Cooking' : (useBrowserSpeech ? 'Free Voice' : 'AI Observer')}
                         </span>
                         <span className="text-[10px] text-white/50">
-                          {useBrowserSpeech 
-                            ? 'Browser TTS active' 
-                            : aiState === 'idle' 
-                              ? 'Watching' 
-                              : aiState === 'active' 
-                                ? 'Activity detected' 
-                                : 'Step ready?'}
+                          {PHASE_1_MODE 
+                            ? (isPlaying ? 'Narrating...' : 'Press play to start')
+                            : (useBrowserSpeech 
+                              ? 'Browser TTS active' 
+                              : aiState === 'idle' 
+                                ? 'Watching' 
+                                : aiState === 'active' 
+                                  ? 'Activity detected' 
+                                  : 'Step ready?')}
                         </span>
                       </div>
                     </div>
