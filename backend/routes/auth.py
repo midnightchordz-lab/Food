@@ -36,14 +36,16 @@ TWILIO_FROM_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '+19064011655')
 @router.post("/register", response_model=Token)
 async def register(user: UserRegister):
     """
-    SIGNUP HARD DEFAULT
+    USER CREATION - HARD DEFAULTS (MANDATORY)
     
-    Immediately after user creation:
-    SET:
-        plan = FREE
-        subscription_status = NONE
+    On every new user registration, hard-set:
+        plan = "free"
+        subscription_status = "inactive"
+        trial_active = false
+        entitlement_tier = "free"
     
-    User starts with NO subscription - premium requires payment.
+    Values must NEVER be null or undefined.
+    Premium requires payment or explicit trial activation.
     """
     # Check if user exists
     existing = await db.users.find_one({"email": user.email})
@@ -55,6 +57,7 @@ async def register(user: UserRegister):
     hashed_password = get_password_hash(user.password)
     now = datetime.now(timezone.utc)
     
+    # HARD DEFAULTS - NEVER NULL/UNDEFINED
     user_data = {
         "id": user_id,
         "email": user.email,
@@ -63,9 +66,12 @@ async def register(user: UserRegister):
         "dietary_restrictions": user.dietary_restrictions,
         "cuisine_preferences": user.cuisine_preferences,
         "created_at": now.isoformat(),
-        # SIGNUP HARD DEFAULT: User starts with FREE plan, NO subscription
-        "default_plan": "free",
-        "subscription_status": "none"
+        # === MANDATORY ENTITLEMENT DEFAULTS ===
+        "default_plan": "free",           # ALWAYS "free"
+        "subscription_status": "inactive", # ALWAYS "inactive" 
+        "trial_active": False,            # ALWAYS False
+        "entitlement_tier": "free",       # ALWAYS "free"
+        # === END MANDATORY DEFAULTS ===
     }
     
     await db.users.insert_one(user_data)
@@ -80,7 +86,9 @@ async def register(user: UserRegister):
             "email": user.email,
             "action": "user_registered",
             "default_plan": "free",
-            "subscription_status": "none"
+            "subscription_status": "inactive",
+            "trial_active": False,
+            "entitlement_tier": "free"
         }
     )
     
