@@ -658,6 +658,66 @@ export default function LiveCookingModal() {
     }
   }, [handsFreeEnabled, requestPermissions, stopCameraStream, permissionError, cleanupOrchestrator]);
   
+  // ============================================
+  // PHASE-1: Voice Command Setup & Cleanup
+  // Separate from engine orchestrator (which is disabled in Phase-1)
+  // ============================================
+  useEffect(() => {
+    if (!PHASE_1_MODE) return; // Full mode uses engine orchestrator
+    
+    // Set up voice handlers
+    setVoiceHandlers({
+      onNext: handleNextWithVoice,
+      onPrev: handlePrevWithVoice,
+      onTogglePlay: handleTogglePlayWithVoice,
+      onRepeat: handleRepeat,
+    });
+    
+    // Set up visual callbacks for UI feedback
+    setVisualCallbacks({
+      onListeningStart: () => {
+        setVoiceListening(true);
+        console.log('[LiveCooking] Voice listening started');
+      },
+      onListeningStop: () => {
+        setVoiceListening(false);
+        console.log('[LiveCooking] Voice listening stopped');
+      },
+      onCommandReceived: (command) => {
+        setLastCommand(command);
+        setCommandFlash(true);
+        console.log('[LiveCooking] Command received:', command);
+        // Auto-clear flash after 500ms
+        setTimeout(() => setCommandFlash(false), 500);
+      },
+    });
+  }, [handleNextWithVoice, handlePrevWithVoice, handleTogglePlayWithVoice, handleRepeat]);
+  
+  // Start/stop voice recognition based on handsFreeEnabled (Phase-1 only)
+  useEffect(() => {
+    if (!PHASE_1_MODE) return; // Full mode uses engine orchestrator
+    
+    if (open && handsFreeEnabled) {
+      // MUTUAL EXCLUSION: Stop TTS before starting recognition
+      stopSpeech();
+      
+      // Start voice recognition
+      const started = startVoiceControl();
+      if (started) {
+        console.log('[LiveCooking] Phase-1 voice recognition started');
+      }
+    } else {
+      // Stop voice recognition when disabled or modal closes
+      stopVoiceControl();
+    }
+    
+    return () => {
+      if (!open) {
+        stopVoiceControl();
+      }
+    };
+  }, [open, handsFreeEnabled]);
+  
   // Setup recognition callbacks when they change
   useEffect(() => {
     // PHASE-1: Skip if using feature gate
