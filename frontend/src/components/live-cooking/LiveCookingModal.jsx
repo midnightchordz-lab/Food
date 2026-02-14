@@ -203,6 +203,10 @@ export default function LiveCookingModal() {
   const [voiceListening, setVoiceListening] = useState(false);
   const [lastCommand, setLastCommand] = useState(null); // For flash feedback
   const [commandFlash, setCommandFlash] = useState(false);
+  
+  // VOICE TUTORIAL: Show available commands on first enable
+  const [showVoiceTutorial, setShowVoiceTutorial] = useState(false);
+  const hasSeenTutorialKey = 'moodfood_voice_tutorial_seen';
 
   // Get mood from store or localStorage fallback
   const mood = storeMood || localStorage.getItem('selectedMood') || 'calm';
