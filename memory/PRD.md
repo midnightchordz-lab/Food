@@ -355,6 +355,26 @@ export const ENABLE_AI_OBSERVER = !PHASE_1_MODE;
 - Step navigation: PASS
 - Browser speech fallback: PASS
 
+#### Voice Commands Tutorial Overlay ✅ NEW (Feb 14, 2026)
+**First-time user tutorial showing available voice commands**
+
+**Features:**
+- Shows automatically on first voice enable (localStorage persisted)
+- Displays all 5 voice commands with icons: "Next", "Back", "Repeat", "Pause", "Resume"
+- Helpful tip about speaking clearly
+- Glassmorphic design matching the Live Cooking modal aesthetic
+- Dismissible with "Got it, let's cook!" button
+- Toast notification shown after dismissal
+
+**Implementation:**
+- `showVoiceTutorial` state controls visibility
+- `hasSeenTutorialKey` localStorage key persists preference
+- Tutorial overlay with AnimatePresence for smooth animations
+- `dismissVoiceTutorial` callback saves preference and shows confirmation toast
+
+**Files Changed:**
+- `frontend/src/components/live-cooking/LiveCookingModal.jsx` - Added tutorial overlay and dismiss logic
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
