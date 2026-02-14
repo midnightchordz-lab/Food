@@ -320,9 +320,95 @@ export function resumeVoiceControl() {
 }
 
 // --------------------------------------------------
-// COMMAND PARSING (does NOT change app logic)
+// COMMAND PARSING (PHASE-1: Strict vocabulary matching)
 // --------------------------------------------------
 
+/**
+ * PHASE-1 STRICT COMMAND MATCHING
+ * Only exact phrases from STRICT_COMMANDS trigger actions
+ * Includes confirmation delay to prevent accidental triggers
+ */
+function handleStrictCommand(transcript) {
+  if (!transcript) return;
+
+  // Check cooldown to prevent rapid double-triggers
+  const now = Date.now();
+  if (now - lastCommandTime < COMMAND_COOLDOWN_MS) {
+    console.log('[BrowserSpeech] Command ignored (cooldown)');
+    return;
+  }
+
+  // Normalize transcript - remove punctuation, extra spaces
+  const normalized = transcript
+    .replace(/[.,!?]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Find matching command using strict vocabulary
+  let matchedAction = null;
+  let matchedCommand = null;
+
+  for (const [action, phrases] of Object.entries(STRICT_COMMANDS)) {
+    for (const phrase of phrases) {
+      // Check if transcript matches exactly OR ends with the phrase
+      // This handles "okay next" matching "next"
+      if (normalized === phrase || normalized.endsWith(phrase)) {
+        matchedAction = action;
+        matchedCommand = phrase;
+        break;
+      }
+    }
+    if (matchedAction) break;
+  }
+
+  if (!matchedAction) {
+    console.log('[BrowserSpeech] No matching command for:', normalized);
+    return;
+  }
+
+  console.log('[BrowserSpeech] Matched command:', matchedAction, 'from phrase:', matchedCommand);
+  
+  // Visual feedback: command received
+  visualCallbacks.onCommandReceived?.(matchedAction);
+
+  // Clear any pending command
+  if (pendingCommandTimeout) {
+    clearTimeout(pendingCommandTimeout);
+  }
+
+  // PHASE-1: Confirmation delay before executing
+  pendingCommandTimeout = setTimeout(() => {
+    lastCommandTime = Date.now();
+    
+    // Execute the matched action
+    switch (matchedAction) {
+      case 'next':
+        handlers.next();
+        break;
+      case 'back':
+        handlers.prev();
+        break;
+      case 'repeat':
+        handlers.repeat();
+        break;
+      case 'pause':
+        handlers.pause();
+        break;
+      case 'resume':
+        handlers.play();
+        break;
+      default:
+        break;
+    }
+    
+    pendingCommandTimeout = null;
+  }, COMMAND_CONFIRMATION_DELAY_MS);
+}
+
+/**
+ * Legacy command handler (kept for backwards compatibility)
+ * @deprecated Use handleStrictCommand for Phase-1
+ */
 function handleCommand(text) {
   if (!text) return;
 
