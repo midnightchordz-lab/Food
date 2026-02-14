@@ -204,6 +204,53 @@ REPLACED WITH: "if undefined → FREE"
 ✔ No regression to downgrade paid users
 ✔ Production safe - DEPLOYED
 
+#### Subscription Audit Log System ✅ NEW (Feb 14, 2026)
+**Simple audit log for tracking all subscription plan changes.**
+
+**Purpose:**
+- Track all subscription plan changes (upgrades, downgrades, cancellations)
+- Provide visibility into why and when user plans changed
+- Reduce future debugging time from hours to minutes
+- Create permanent, append-only audit trail for compliance
+
+**Audit Log Entry Fields:**
+```json
+{
+  "id": "uuid",
+  "user_id": "user_id",
+  "old_plan": "free",
+  "new_plan": "premium_monthly",
+  "reason": "payment_verified",
+  "timestamp": "ISO 8601 timestamp",
+  "metadata": {
+    "subscription_id": "sub_123",
+    "payment_id": "pay_456",
+    "payment_provider": "razorpay"
+  }
+}
+```
+
+**Tracked Events (reason field):**
+| Reason | When Logged |
+|--------|-------------|
+| `payment_verified` | User upgrades via Razorpay payment verification |
+| `webhook_payment_captured` | Payment captured via webhook |
+| `user_canceled_immediately` | User cancels subscription immediately |
+| `user_scheduled_cancellation` | User schedules cancellation for period end |
+| `admin_bulk_restoration` | Admin restores falsely downgraded user |
+| `admin_bulk_correction` | Admin corrects invalid subscription |
+
+**API Endpoints:**
+- `GET /api/subscription/admin/audit-logs?user_id=&limit=100` - Get all audit logs (optionally filter by user)
+- `GET /api/subscription/admin/audit-logs/user/{user_id}` - Get plan change history for specific user
+
+**Files Changed:**
+- `backend/services/entitlement_guard.py` - Added `log_plan_change()` and `get_plan_change_history()` functions
+- `backend/routes/subscription.py` - Added audit logging to payment verification, webhooks, cancellation, and admin endpoints
+- `backend/tests/test_audit_log.py` - 8 test cases for audit log functionality
+
+**Test Status:** ✅ VERIFIED (8/8 tests passed)
+
 ### 1. Mood-Based Recipe Generation
 - Users select their current mood (Happy, Sad, Stressed, Tired, Cozy, Energetic, etc.)
 - Select meal type (Breakfast, Lunch, Dinner)
