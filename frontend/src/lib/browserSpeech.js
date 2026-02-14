@@ -4,7 +4,25 @@
  * Phase 1: Hands-Free Speech Control + Free Narration (Web + Mobile)
  * STRICT RULE: Does NOT modify existing recipe logic or UI.
  * It only LISTENS for commands and CALLS already-existing handlers.
+ * 
+ * PHASE-1 VOICE RELIABILITY IMPROVEMENTS:
+ * 1. Strict vocabulary filter - Only exact phrases trigger actions
+ * 2. Continuous listening loop - Auto-restart via onend event
+ * 3. Command confirmation delay - 400ms buffer before action
+ * 4. TTS/Mic mutual exclusion - Stop TTS before listening starts
+ * 5. Visual feedback callbacks - For UI state updates
  */
+
+// --------------------------------------------------
+// PHASE-1 STRICT VOCABULARY - Only these exact phrases work
+// --------------------------------------------------
+const STRICT_COMMANDS = {
+  next: ['next', 'next step', 'forward'],
+  back: ['back', 'previous', 'go back', 'previous step'],
+  repeat: ['repeat', 'again', 'say again', 'repeat step'],
+  pause: ['pause', 'stop'],
+  resume: ['resume', 'play', 'continue'],
+};
 
 // --------------------------------------------------
 // CONFIG: map voice commands → existing app functions
@@ -22,6 +40,13 @@ let handlers = {
   repeat: () => window?.moodfood?.onRepeatStep?.(),
 };
 
+// Visual feedback callbacks
+let visualCallbacks = {
+  onListeningStart: null,
+  onListeningStop: null,
+  onCommandReceived: null,
+};
+
 /**
  * Set custom handlers (called from LiveCookingModal)
  */
@@ -35,6 +60,17 @@ export function setHandlers(customHandlers) {
     },
     play: customHandlers.onTogglePlay || handlers.play,
     repeat: customHandlers.onRepeat || handlers.repeat,
+  };
+}
+
+/**
+ * Set visual feedback callbacks for UI state
+ */
+export function setVisualCallbacks(callbacks) {
+  visualCallbacks = {
+    onListeningStart: callbacks.onListeningStart || null,
+    onListeningStop: callbacks.onListeningStop || null,
+    onCommandReceived: callbacks.onCommandReceived || null,
   };
 }
 
