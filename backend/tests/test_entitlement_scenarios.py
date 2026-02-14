@@ -59,8 +59,8 @@ class TestScenario2RealPaidUser:
             "user_id": "paid_user",
             "plan_id": "chef_pro_annual",
             "status": "active",
-            "razorpay_payment_id": "pay_abc123xyz",
-            "razorpay_order_id": "order_xyz789",
+            "razorpay_payment_id": "pay_abc123xyz789def",  # Real Razorpay format
+            "razorpay_order_id": "order_xyz789abc123",  # Real Razorpay format
             "created_at": (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
         }
         is_valid, reason = validate_subscription_entitlement(subscription, "paid_user")
@@ -74,7 +74,7 @@ class TestScenario2RealPaidUser:
             "user_id": "paid_user2",
             "plan_id": "premium_annual",
             "status": "active",
-            "razorpay_order_id": "order_abc456",
+            "razorpay_order_id": "order_abc456def789",  # Real Razorpay format
             "created_at": (datetime.now(timezone.utc) - timedelta(days=15)).isoformat()
         }
         is_valid, reason = validate_subscription_entitlement(subscription, "paid_user2")
