@@ -1359,3 +1359,156 @@ async def get_invoice(
         logging.error(f"Error getting invoice: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ============== ADMIN/MIGRATION ENDPOINTS ==============
+
+@router.post("/admin/fix-invalid-subscriptions")
+async def fix_invalid_subscriptions():
+    """
+    ADMIN ENDPOINT: Fix subscriptions created without valid payment.
+    
+    This migration script:
+    1. Finds all paid subscriptions created in the last 24 hours
+    2. Checks if they have valid payment records (razorpay_order_id or proper source)
+    3. Reverts invalid subscriptions to FREE plan
+    4. Does NOT affect users with valid payment records
+    
+    This is a one-time correction script for the default plan assignment bug.
+    """
+    try:
+        now = datetime.now(timezone.utc)
+        twenty_four_hours_ago = now - timedelta(hours=24)
+        
+        # Find all paid subscriptions without proper payment source
+        invalid_subscriptions = await db.user_subscriptions.find({
+            "status": {"$in": ["active", "trialing"]},
+            "plan_id": {"$ne": "free"},
+            "created_at": {"$gte": twenty_four_hours_ago.isoformat()},
+            # Missing payment verification markers
+            "$and": [
+                {"$or": [
+                    {"razorpay_order_id": {"$exists": False}},
+                    {"razorpay_order_id": None}
+                ]},
+                {"$or": [
+                    {"source": {"$exists": False}},
+                    {"source": "demo"},
+                    {"source": ""}
+                ]}
+            ]
+        }).to_list(length=1000)
+        
+        corrected_count = 0
+        affected_users = []
+        
+        for sub in invalid_subscriptions:
+            user_id = sub["user_id"]
+            old_plan = sub["plan_id"]
+            
+            # Verify no valid payment exists for this subscription
+            payment = await db.payment_transactions.find_one({
+                "subscription_id": sub["id"],
+                "status": "completed",
+                "source": {"$ne": "demo"}
+            })
+            
+            if payment:
+                # Has valid payment - skip correction
+                logging.info(f"[FIX] Skipping user {user_id} - has valid payment record")
+                continue
+            
+            # Cancel invalid subscription
+            await db.user_subscriptions.update_one(
+                {"id": sub["id"]},
+                {
+                    "$set": {
+                        "status": "invalid_reverted",
+                        "reverted_at": now.isoformat(),
+                        "revert_reason": "No valid payment record found"
+                    }
+                }
+            )
+            
+            corrected_count += 1
+            affected_users.append({
+                "user_id": user_id,
+                "old_plan": old_plan,
+                "subscription_id": sub["id"]
+            })
+            
+            logging.warning(
+                f"[FIX] Reverted invalid subscription for user {user_id}: "
+                f"'{old_plan}' -> 'free' (no payment verification)"
+            )
+        
+        return {
+            "success": True,
+            "message": f"Corrected {corrected_count} invalid subscriptions",
+            "corrected_count": corrected_count,
+            "affected_users": affected_users,
+            "check_window_hours": 24
+        }
+        
+    except Exception as e:
+        logging.error(f"Error fixing invalid subscriptions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/admin/subscription-integrity-check")
+async def subscription_integrity_check():
+    """
+    ADMIN ENDPOINT: Check for subscription integrity issues.
+    
+    Returns a report of:
+    - Total active paid subscriptions
+    - Subscriptions with valid payment records
+    - Subscriptions without payment (potential issues)
+    """
+    try:
+        # Count all active paid subscriptions
+        total_paid = await db.user_subscriptions.count_documents({
+            "status": {"$in": ["active", "trialing"]},
+            "plan_id": {"$ne": "free"}
+        })
+        
+        # Count subscriptions with valid payment markers
+        valid_paid = await db.user_subscriptions.count_documents({
+            "status": {"$in": ["active", "trialing"]},
+            "plan_id": {"$ne": "free"},
+            "$or": [
+                {"razorpay_order_id": {"$exists": True, "$ne": None}},
+                {"source": {"$in": ["payment", "admin", "razorpay", "stripe"]}}
+            ]
+        })
+        
+        # Count suspicious subscriptions (no payment record)
+        suspicious = await db.user_subscriptions.count_documents({
+            "status": {"$in": ["active", "trialing"]},
+            "plan_id": {"$ne": "free"},
+            "$and": [
+                {"$or": [
+                    {"razorpay_order_id": {"$exists": False}},
+                    {"razorpay_order_id": None}
+                ]},
+                {"$or": [
+                    {"source": {"$exists": False}},
+                    {"source": "demo"},
+                    {"source": ""}
+                ]}
+            ]
+        })
+        
+        return {
+            "success": True,
+            "integrity_report": {
+                "total_active_paid_subscriptions": total_paid,
+                "subscriptions_with_valid_payment": valid_paid,
+                "suspicious_subscriptions_no_payment": suspicious,
+                "integrity_status": "OK" if suspicious == 0 else "ISSUES_DETECTED"
+            }
+        }
+        
+    except Exception as e:
+        logging.error(f"Error checking subscription integrity: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
