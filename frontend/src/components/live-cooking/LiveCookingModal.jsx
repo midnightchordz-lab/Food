@@ -646,7 +646,15 @@ export default function LiveCookingModal() {
     // PHASE-1: No camera/mic permissions needed for basic voice
     if (PHASE_1_MODE) {
       setHandsFreeEnabled(true);
-      toast.success('Voice controls enabled! Say "next step" or use the buttons.');
+      
+      // Show voice tutorial on first enable (check localStorage)
+      const hasSeenTutorial = localStorage.getItem(hasSeenTutorialKey);
+      if (!hasSeenTutorial) {
+        setShowVoiceTutorial(true);
+      } else {
+        toast.success('Voice controls enabled! Say "next" or "back" to navigate.');
+      }
+      
       console.log('[LiveCooking] Phase-1 hands-free enabled (voice only)');
       return;
     }
