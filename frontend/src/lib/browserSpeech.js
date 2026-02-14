@@ -164,8 +164,23 @@ export function startVoiceControl() {
     return true;
   }
   
-  // CRITICAL: Stop any TTS before starting mic (mutual exclusion)
-  stopSpeech();
+  // If TTS is currently speaking, don't start recognition yet
+  // The onend handler will start it when TTS finishes
+  if (isSpeaking()) {
+    console.log('[BrowserSpeech] TTS speaking, will start listening when done');
+    shouldBeListening = true;
+    
+    // Set up a check to start when TTS finishes
+    const checkAndStart = () => {
+      if (!isSpeaking() && shouldBeListening && !isListening) {
+        startVoiceControl();
+      } else if (isSpeaking() && shouldBeListening) {
+        setTimeout(checkAndStart, 500);
+      }
+    };
+    setTimeout(checkAndStart, 500);
+    return true;
+  }
 
   // Clean up existing recognition if any
   if (recognition) {
