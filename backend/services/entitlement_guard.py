@@ -574,16 +574,21 @@ async def get_user_subscription_safe(
     get_plan_by_id_func
 ) -> Dict:
     """
-    SAFE ENTITLEMENT RESOLUTION WITH SOURCE OF TRUTH VALIDATION
+    SAFE ENTITLEMENT RESOLUTION - VALIDATOR ONLY, NOT CREATOR
     
-    This is the MAIN entry point for getting user subscription with full safety.
+    CORE RULES:
+    1. Resolver may ONLY: confirm premium, restore premium, downgrade expired
+    2. Resolver must NOT: upgrade free users to premium
+    3. if (!payment && !trialActive) return FREE
+    4. if (plan == null || undefined) return FREE
     
     Flow:
     1. Fetch subscription from DB
-    2. Run priority-based validation
-    3. If validation fails, do SOURCE OF TRUTH re-verification
-    4. Only downgrade if re-verification also fails
-    5. Respect grace periods and account age
+    2. Apply enforce_free_default() for null/undefined plans
+    3. Run priority-based validation
+    4. Run safety_check_before_premium()
+    5. If validation fails, do SOURCE OF TRUTH re-verification
+    6. Only downgrade if re-verification also fails
     
     Returns subscription dict with plan features.
     """
@@ -600,13 +605,15 @@ async def get_user_subscription_safe(
             user_id=user_id,
             source="subscription_fetch",
             plan_id="free",
-            details={"decision_reason": "no_active_subscription"}
+            details={"decision_reason": "NO_ACTIVE_SUBSCRIPTION_DEFAULT_FREE"}
         )
         return {
             "plan_id": "free",
             "status": "active",
-            "features": free_plan["features"],
-            "plan": free_plan
+            "features": free_plan["features"] if free_plan else {},
+            "plan": free_plan,
+            "entitlement_tier": "free",
+            "trial_active": False
         }
     
     plan_id = subscription.get("plan_id", "free")
