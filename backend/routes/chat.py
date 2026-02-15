@@ -1463,6 +1463,7 @@ async def get_recipe_for_ai_chef(
     """
     Fetch a recipe from any collection for AI Chef mode
     Searches multiple collections to find the recipe
+    Parses instructions from full_content if not present
     """
     try:
         recipe = None
@@ -1487,6 +1488,22 @@ async def get_recipe_for_ai_chef(
         
         # Ensure id is set
         recipe['id'] = recipe_id
+        
+        # Parse instructions from full_content if instructions array is empty
+        if not recipe.get('instructions') or len(recipe.get('instructions', [])) == 0:
+            full_content = recipe.get('full_content', '')
+            if full_content:
+                instructions = parse_instructions_from_markdown(full_content)
+                if instructions:
+                    recipe['instructions'] = instructions
+        
+        # Parse ingredients from full_content if needed
+        if not recipe.get('ingredients') or len(recipe.get('ingredients', [])) == 0:
+            full_content = recipe.get('full_content', '')
+            if full_content:
+                ingredients = parse_ingredients_from_markdown(full_content)
+                if ingredients:
+                    recipe['ingredients'] = ingredients
         
         return recipe
         
