@@ -161,6 +161,9 @@ const Navigation = () => {
           </Link>
           
           <div className="flex items-center gap-2">
+            {/* Trial Status Indicator - Mobile (compact) */}
+            {isAuthenticated && <TrialStatusIndicator variant="compact" />}
+            
             {isAuthenticated && (
               <button
                 onClick={() => setShowSearchHub(true)}
