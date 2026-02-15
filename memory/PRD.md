@@ -36,6 +36,15 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
   - Changed from incorrect `model=`, `system_prompt=` to correct `system_message=`, `.with_model()`
 - **TESTED**: Recipe generation endpoint working (6 recipes returned)
 
+### 2026-02-15 - AI Chef Feature Complete
+- **IMPLEMENTED**: Secure backend AI Chef endpoints
+  - `/api/chat/ai-chef/chat` - Handles voice commands and AI conversations
+  - `/api/chat/ai-chef/recipe/{id}` - Fetches recipes with markdown instruction parsing
+- **IMPLEMENTED**: Frontend AI Chef button in RecipeDetailModal (violet, Mic icon)
+- **IMPLEMENTED**: ConversationEngine now uses backend API (secure, no frontend keys)
+- **TESTED**: All flows working - step navigation, AI questions, recipe loading
+- **PARSING**: Added markdown parsing for instructions from `full_content` field
+
 ### Previous Session Completions
 - App Logo Implementation (Android/iOS icons and splash screens)
 - Mobile Voice Compatibility Layer (`mobileVoiceCompat.js`, `mobileSpeechRecognition.js`)
