@@ -570,7 +570,7 @@ class VoiceRecognition {
     return this.continuousMode;
   }
 
-  stop() {
+  async stop() {
     this.shouldAutoRestart = false;
     this.continuousMode = false;
     
@@ -579,7 +579,10 @@ class VoiceRecognition {
       this.restartTimer = null;
     }
 
-    if (this.recognition && this.isListening) {
+    // Stop Capacitor if using it
+    if (this.useCapacitor) {
+      await this.stopCapacitorRecognition();
+    } else if (this.recognition && this.isListening) {
       try {
         this.recognition.stop();
       } catch (e) {
@@ -595,7 +598,7 @@ class VoiceRecognition {
   /**
    * Temporarily pause continuous listening (e.g., while AI is speaking)
    */
-  pause() {
+  async pause() {
     console.log('[VoiceRecognition] Pausing continuous mode');
     this.shouldAutoRestart = false;
     
@@ -604,7 +607,10 @@ class VoiceRecognition {
       this.restartTimer = null;
     }
 
-    if (this.recognition && this.isListening) {
+    // Stop Capacitor if using it
+    if (this.useCapacitor) {
+      await this.stopCapacitorRecognition();
+    } else if (this.recognition && this.isListening) {
       try {
         this.recognition.stop();
       } catch (e) {
