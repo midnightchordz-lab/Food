@@ -234,9 +234,33 @@ function AIChefMode() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handsFreeMode, isReady, showVoiceNotification, addMessage]);
 
+  // Schedule small talk after period of inactivity
+  const scheduleSmallTalk = useCallback(() => {
+    // Clear any existing timer
+    if (smallTalkTimer.current) {
+      clearTimeout(smallTalkTimer.current);
+    }
+    
+    smallTalkTimer.current = setTimeout(async () => {
+      // Only do small talk if not speaking, not processing, and ready
+      if (!isSpeaking && !isProcessing && isReady && handsFreeMode) {
+        const smallTalk = await conversationEngine.getSmallTalk();
+        if (smallTalk) {
+          addMessage('assistant', smallTalk.text);
+          await emotionalNarrator.speak(smallTalk.text, smallTalk.emotion);
+          // Schedule next small talk
+          scheduleSmallTalk();
+        }
+      }
+    }, SMALL_TALK_DELAY);
+  }, [isSpeaking, isProcessing, isReady, handsFreeMode, addMessage]);
+
   // Handle user message (voice or text)
   const handleUserMessage = useCallback(async (message) => {
     if (!message.trim() || isProcessing) return;
+    
+    // Reset small talk timer on user activity
+    scheduleSmallTalk();
     
     // Pause listening while processing (don't fully stop in hands-free mode)
     voiceRecognition.pause();
@@ -271,7 +295,7 @@ function AIChefMode() {
         }, 500);
       }
     }
-  }, [addMessage, isProcessing, isReady, handsFreeMode]);
+  }, [addMessage, isProcessing, isReady, handsFreeMode, scheduleSmallTalk]);
 
   // Start AI Chef mode
   const handleStart = async () => {
