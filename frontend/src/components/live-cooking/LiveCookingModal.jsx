@@ -201,6 +201,45 @@ const VOICE_TIMING = {
 };
 
 /**
+ * Generate natural, conversational step narration text
+ * Creates varied, friendly transitions instead of robotic "Step X: ..."
+ */
+function generateNaturalNarration(stepText, stepNumber, totalSteps) {
+  const step = stepText.toLowerCase();
+  
+  // First step - enthusiastic start
+  if (stepNumber === 1) {
+    const starts = [
+      `Alright! Let's get started. First thing, ${step}`,
+      `Okay! So first up, ${step}`,
+      `Perfect! Let's begin with ${step}`,
+      `Great! First step: ${step}`
+    ];
+    return starts[Math.floor(Math.random() * starts.length)];
+  }
+  
+  // Last step - celebratory
+  if (stepNumber === totalSteps) {
+    const endings = [
+      `Awesome! Final step: ${stepText}. Almost done!`,
+      `Great job! Last thing: ${stepText}. You're almost there!`,
+      `Perfect! One more step: ${stepText}. Nearly finished!`
+    ];
+    return endings[Math.floor(Math.random() * endings.length)];
+  }
+  
+  // Middle steps - varied transitions
+  const transitions = [
+    `Great! Now, ${step}`,
+    `Perfect! Next, ${step}`,
+    `Awesome! Alright, ${step}`,
+    `Nice! Now, ${step}`,
+    `Good! Next up, ${step}`
+  ];
+  return transitions[Math.floor(Math.random() * transitions.length)];
+}
+
+/**
  * LiveCookingModal - Phase-1 Stable Hands-Free Cooking
  * 
  * PHASE-1 FEATURES (ACTIVE):
