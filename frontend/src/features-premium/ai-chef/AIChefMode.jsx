@@ -271,8 +271,13 @@ function AIChefMode() {
         await emotionalNarrator.speak(stepText, 'informative');
       }
       
-      // Start listening
-      await voiceRecognition.start();
+      // Start CONTINUOUS listening for hands-free mode
+      if (handsFreeMode) {
+        await voiceRecognition.startContinuous();
+        addMessage('system', '🎤 Hands-free mode active - Just speak naturally!');
+      } else {
+        await voiceRecognition.start();
+      }
       setIsReady(true);
       
     } catch (err) {
