@@ -1602,6 +1602,7 @@ const convertStructuredRecipes = (structuredRecipes) => {
   structuredRecipes.forEach((recipe, idx) => {
     const timeMinutes = extractTimeMinutes(recipe.cooking_time || recipe.cookingTime || '30 min');
     const frontendRecipe = {
+      id: recipe.id,  // Include recipe ID for AI Chef
       title: recipe.title,
       description: recipe.description,
       cookingTime: recipe.cooking_time || recipe.cookingTime || '30 min',
