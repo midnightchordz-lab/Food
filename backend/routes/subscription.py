@@ -394,6 +394,26 @@ async def check_feature_access(user_id: str, feature_name: str, increment: bool 
         result["allowed"] = features.get("ai_photo_recognition_enabled", False)
         result["upgrade_required"] = not result["allowed"]
     
+    elif feature_name == "voice_cooking":
+        result["allowed"] = features.get("voice_guided_cooking", False)
+        result["upgrade_required"] = not result["allowed"]
+    
+    elif feature_name == "video_import":
+        result["allowed"] = features.get("video_import", False)
+        result["upgrade_required"] = not result["allowed"]
+    
+    elif feature_name == "export_pdf":
+        result["allowed"] = features.get("export_to_pdf", False)
+        result["upgrade_required"] = not result["allowed"]
+    
+    elif feature_name == "advanced_filters":
+        result["allowed"] = features.get("advanced_filters", False)
+        result["upgrade_required"] = not result["allowed"]
+    
+    elif feature_name == "meal_planner_extended":
+        result["allowed"] = features.get("meal_planner_weeks", 1) > 4
+        result["upgrade_required"] = not result["allowed"]
+    
     return result
 
 
