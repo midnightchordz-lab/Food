@@ -1,5 +1,6 @@
 /**
  * Platform Detector - Detects current platform (Web, iOS, Android)
+ * Cross-platform compatible for Capacitor native apps
  * 100% isolated - no dependencies on existing code
  */
 
@@ -7,6 +8,7 @@ class PlatformDetector {
   constructor() {
     this.userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
     this.platform = this.detectPlatform();
+    this.capabilities = null; // Lazy loaded
   }
 
   detectPlatform() {
@@ -17,10 +19,11 @@ class PlatformDetector {
       (window.Capacitor?.isNative || window.Capacitor?.platform);
     
     if (isCapacitor) {
-      if (/iphone|ipad|ipod/.test(ua)) {
+      const capacitorPlatform = window.Capacitor?.getPlatform?.();
+      if (capacitorPlatform === 'ios' || /iphone|ipad|ipod/.test(ua)) {
         return 'ios-native';
       }
-      if (/android/.test(ua)) {
+      if (capacitorPlatform === 'android' || /android/.test(ua)) {
         return 'android-native';
       }
     }
@@ -51,20 +54,64 @@ class PlatformDetector {
   isAndroid() {
     return this.platform.includes('android');
   }
+  
+  isWeb() {
+    return this.platform === 'desktop' || this.platform.includes('web');
+  }
 
   getPlatform() {
     return this.platform;
   }
+  
+  /**
+   * Get simplified platform name for API calls
+   * @returns {'web' | 'ios' | 'android'}
+   */
+  getSimplePlatform() {
+    if (this.platform.includes('ios')) return 'ios';
+    if (this.platform.includes('android')) return 'android';
+    return 'web';
+  }
 
   getCapabilities() {
-    return {
-      speechSynthesis: 'speechSynthesis' in window,
-      speechRecognition: 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window,
-      mediaDevices: 'mediaDevices' in navigator,
-      audioContext: 'AudioContext' in window || 'webkitAudioContext' in window
+    if (this.capabilities) return this.capabilities;
+    
+    const hasCapacitor = typeof window !== 'undefined' && !!window.Capacitor;
+    
+    this.capabilities = {
+      // Web APIs
+      speechSynthesis: typeof window !== 'undefined' && 'speechSynthesis' in window,
+      speechRecognition: typeof window !== 'undefined' && 
+        ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window),
+      mediaDevices: typeof navigator !== 'undefined' && 'mediaDevices' in navigator,
+      audioContext: typeof window !== 'undefined' && 
+        ('AudioContext' in window || 'webkitAudioContext' in window),
+      
+      // Capacitor plugins (check if available)
+      capacitor: hasCapacitor,
+      capacitorSpeechRecognition: hasCapacitor && !!window.Capacitor?.Plugins?.SpeechRecognition,
+      capacitorTextToSpeech: hasCapacitor && !!window.Capacitor?.Plugins?.TextToSpeech,
+      
+      // Platform info
+      platform: this.platform,
+      isNative: this.isNative(),
+      isMobile: this.isMobile()
     };
+    
+    return this.capabilities;
+  }
+  
+  /**
+   * Log all capabilities for debugging
+   */
+  logCapabilities() {
+    const caps = this.getCapabilities();
+    console.log('[PlatformDetector] Platform:', this.platform);
+    console.log('[PlatformDetector] Capabilities:', caps);
+    return caps;
   }
 }
 
 export const platformDetector = new PlatformDetector();
 export default platformDetector;
+
