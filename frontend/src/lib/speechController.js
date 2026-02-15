@@ -488,13 +488,30 @@ function initRecognition() {
 }
 
 function safeStartRecognition() {
-  if (!recognition || isListening || destroyed) return false;
+  if (destroyed) return false;
   
   // MOBILE: Block if TTS speaking
   if (isMobile && isSpeaking) {
     console.log('[Recognition] Blocked - TTS speaking');
     return false;
   }
+  
+  // MOBILE: Use mobile speech recognition for better reliability
+  if (isMobile && mobileSpeechRecognition.isSupported()) {
+    if (mobileSpeechRecognition.getIsListening()) return true;
+    
+    try {
+      mobileSpeechRecognition.start();
+      return true;
+    } catch (e) {
+      console.log('[Recognition] Mobile start failed:', e.message);
+      onRecognitionStateChange?.('error');
+      return false;
+    }
+  }
+  
+  // Desktop: Use standard Web Speech API
+  if (!recognition || isListening) return false;
   
   try {
     recognition.start();
@@ -516,11 +533,17 @@ function safeStartRecognition() {
 }
 
 function forceStopRecognition() {
-  if (!recognition) return;
+  // Stop mobile recognition
+  if (isMobile && mobileSpeechRecognition.isSupported()) {
+    mobileSpeechRecognition.abort();
+  }
   
-  try {
-    recognition.abort();
-  } catch {}
+  // Stop desktop recognition
+  if (recognition) {
+    try {
+      recognition.abort();
+    } catch {}
+  }
   
   isListening = false;
 }
