@@ -381,6 +381,49 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Voice Notification (transient) */
+.voice-notification {
+  margin: 8px 20px;
+  padding: 10px 16px;
+  background: rgba(255, 152, 0, 0.15);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s ease-out;
+  cursor: pointer;
+}
+
+.voice-notification:hover {
+  background: rgba(255, 152, 0, 0.25);
+}
+
+.voice-notification .notification-icon {
+  font-size: 16px;
+}
+
+.voice-notification .notification-text {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.voice-notification .notification-dismiss {
+  font-size: 18px;
+  opacity: 0.6;
+  padding: 0 4px;
+}
+
+.voice-notification .notification-dismiss:hover {
+  opacity: 1;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 /* Listening Indicator */
 .listening-indicator {
   margin: 8px 20px;
