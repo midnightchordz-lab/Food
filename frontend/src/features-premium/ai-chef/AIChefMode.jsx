@@ -214,8 +214,8 @@ function AIChefMode() {
   const handleUserMessage = useCallback(async (message) => {
     if (!message.trim() || isProcessing) return;
     
-    // Stop listening while processing
-    voiceRecognition.stop();
+    // Pause listening while processing (don't fully stop in hands-free mode)
+    voiceRecognition.pause();
     setIsProcessing(true);
     
     // Add user message
@@ -240,14 +240,14 @@ function AIChefMode() {
     } finally {
       setIsProcessing(false);
       
-      // Resume listening if ready
-      if (isReady) {
+      // Resume continuous listening in hands-free mode
+      if (isReady && handsFreeMode) {
         setTimeout(() => {
-          voiceRecognition.start().catch(console.error);
+          voiceRecognition.resume().catch(console.error);
         }, 500);
       }
     }
-  }, [addMessage, isProcessing, isReady]);
+  }, [addMessage, isProcessing, isReady, handsFreeMode]);
 
   // Start AI Chef mode
   const handleStart = async () => {
