@@ -1328,6 +1328,29 @@ Do NOT repeat these recipes: {', '.join([r['title'] for r in serpapi_recipes])}
         
         logging.info(f"Hybrid recipe generation: {len(serpapi_recipes)} from SerpAPI, {len(ai_recipes)} from AI")
         
+        # Save combined recipes to library for AI Chef access
+        try:
+            for recipe in combined[:request.limit]:
+                recipe_to_save = {
+                    "title": recipe.get("title", ""),
+                    "description": recipe.get("description", ""),
+                    "cooking_time": recipe.get("cooking_time", "30 min"),
+                    "difficulty": recipe.get("difficulty", "Medium"),
+                    "cuisine": recipe.get("cuisine", request.cuisines[0] if request.cuisines else ""),
+                    "dietary": request.dietary_preference or "",
+                    "ingredients": recipe.get("ingredients", []),
+                    "full_content": recipe.get("description", ""),  # SerpAPI recipes don't have full content
+                }
+                await save_recipes_to_library(
+                    db, [recipe_to_save],
+                    mood=request.mood,
+                    meal_type=request.meal_type or "",
+                    dietary=request.dietary_preference or "",
+                    cuisine=request.cuisines[0] if request.cuisines else ""
+                )
+        except Exception as save_error:
+            logging.warning(f"Failed to save hybrid recipes to library: {save_error}")
+        
         return HybridRecipeResponse(
             session_id=session_id,
             serpapi_recipes=serpapi_recipes,
