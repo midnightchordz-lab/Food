@@ -46,6 +46,88 @@ class AccessCheckResponse(BaseModel):
     status: dict
 
 
+class AutoStartTrialResult(BaseModel):
+    """Result of auto-starting trial"""
+    started: bool
+    reason: str
+    trial_ends: Optional[str] = None
+    days_remaining: int = 0
+
+
+async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> dict:
+    """
+    Auto-start trial for new users
+    Safe to call multiple times - only starts once
+    
+    Args:
+        user_id: The user's ID
+        platform: 'web', 'ios', or 'android'
+    
+    Returns:
+        dict with started, reason, trial_ends, days_remaining
+    """
+    try:
+        # Get user data
+        user_data = await db.users.find_one({"id": user_id})
+        
+        if not user_data:
+            return {"started": False, "reason": "User not found", "days_remaining": 0}
+        
+        # Already has used trial
+        if user_data.get("has_used_trial"):
+            return {"started": False, "reason": "Already used trial", "days_remaining": 0}
+        
+        # Paid user - doesn't need trial
+        plan = user_data.get("default_plan", "free")
+        if plan in ["pro", "team", "chef_pro"]:
+            return {"started": False, "reason": "Paid user", "days_remaining": 0}
+        
+        # Trial already active
+        trial_end = user_data.get("trial_end_date")
+        if trial_end:
+            if isinstance(trial_end, str):
+                trial_end = datetime.fromisoformat(trial_end.replace('Z', '+00:00'))
+            if datetime.now(timezone.utc) < trial_end:
+                days = max(1, int((trial_end - datetime.now(timezone.utc)).total_seconds() / 86400) + 1)
+                return {
+                    "started": False, 
+                    "reason": "Trial already active",
+                    "trial_ends": trial_end.isoformat(),
+                    "days_remaining": days
+                }
+        
+        # Start the trial
+        now = datetime.now(timezone.utc)
+        end_date = now + timedelta(days=7)
+        
+        await db.users.update_one(
+            {"id": user_id},
+            {
+                "$set": {
+                    "trial_start_date": now.isoformat(),
+                    "trial_end_date": end_date.isoformat(),
+                    "has_used_trial": True,
+                    "last_platform": platform,
+                    "trial_active": True,
+                    "entitlement_tier": "trial"
+                }
+            }
+        )
+        
+        logger.info(f"✅ Trial auto-started for user {user_id} from platform {platform}")
+        
+        return {
+            "started": True,
+            "reason": "Trial started",
+            "trial_ends": end_date.isoformat(),
+            "days_remaining": 7
+        }
+        
+    except Exception as e:
+        logger.error(f"⚠️ Trial auto-start failed for {user_id}: {e}")
+        return {"started": False, "reason": str(e), "days_remaining": 0}
+
+
 def get_trial_status(user_data: dict) -> dict:
     """
     Get current trial status for a user
