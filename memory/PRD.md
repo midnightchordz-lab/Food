@@ -587,6 +587,58 @@ All existing named exports preserved for LiveCookingModal.jsx:
 
 **Test Status:** ✅ VERIFIED (iteration_86.json - Code review passed)
 
+#### Mobile Voice Compatibility Layer ✅ NEW (Feb 2026)
+**Implemented drop-in mobile compatibility fix for iOS and Android voice mode**
+
+**Root Causes Fixed:**
+1. iOS Safari blocks Web Speech API in certain contexts
+2. Voices don't load immediately on mobile
+3. AudioContext needs user interaction to start
+4. Mobile browsers have stricter autoplay policies
+5. Android speech recognition needs auto-restart
+
+**Solution - Two Compatibility Layers:**
+
+1. **`utils/mobileVoiceCompat.js`** - Speech Synthesis Wrapper
+   - `initAudioContext()` - Creates AudioContext from user interaction (iOS requirement)
+   - `prewarm()` - Pre-warms speech synthesis (iOS requirement)
+   - `ensureVoicesReady()` - Waits up to 1.5s for voices to load on mobile
+   - `speak()` - Enhanced speak with local voice preference for iOS
+   - `speakInChunks()` - Auto-splits long text for iOS (>200 chars)
+
+2. **`utils/mobileSpeechRecognition.js`** - Speech Recognition Wrapper
+   - `requestPermission()` - Explicit microphone permission request
+   - `start()` - Mobile-optimized start with permission check
+   - Auto-restart on Android (continuous=false for reliability)
+   - Error handling: no-speech auto-restart, permission denied callback
+
+**Integration into speechController.js:**
+- `initMobileVoice()` - One-time mobile initialization from user gesture
+- `initializeFromUserGesture()` - Full init including mobile compat
+- `startListeningFromGesture()` - Now requests mic permission on mobile first
+- `safeStartRecognition()` - Uses mobile recognition on mobile devices
+- iOS: Uses `speakWithMobileCompat()` for long text (>200 chars)
+- iOS: Prefers local voices for better reliability
+
+**Files Created:**
+- `frontend/src/utils/mobileVoiceCompat.js` - Speech synthesis mobile compat
+- `frontend/src/utils/mobileSpeechRecognition.js` - Speech recognition mobile compat
+
+**Files Modified:**
+- `frontend/src/lib/speechController.js` - Integrated mobile compatibility layers
+
+**Key Mobile Requirements Handled:**
+- ✅ HTTPS only (http:// won't work)
+- ✅ User interaction required (button tap/click)
+- ✅ Voice loading wait on iOS (up to 1.5s)
+- ✅ Microphone permission request
+- ✅ AudioContext initialization from gesture
+- ✅ Speech synthesis prewarm
+- ✅ Long text chunking for iOS
+- ✅ Auto-restart recognition on Android
+
+**Test Status:** Code implementation complete. Requires real device testing.
+
 #### Mobile Audio Focus Sequencing Fix ✅ (Dec 2025)
 **Stabilized mobile audio by implementing single audio owner and turn-taking sequence**
 
