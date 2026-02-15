@@ -303,18 +303,26 @@ function AIChefMode() {
     hasInitialized.current = true;
 
     try {
-      // Welcome message
-      const welcomeText = `Welcome! I'm your AI chef assistant. Let's cook ${recipe.title} together! 
-        We have ${recipe.instructions?.length || 0} steps. Say "next" to continue, "back" to go back, 
-        or ask me any cooking questions. Ready? Let's start with step 1!`;
+      // Natural, friendly welcome message
+      const welcomeMessages = [
+        `Hey! I'm so excited to cook ${recipe.title} with you today! We've got ${recipe.instructions?.length || 0} steps, but don't worry - we'll take it nice and easy. Just say "next" when you're ready to move on, or ask me anything along the way!`,
+        `Alright! Let's make some ${recipe.title}! This is gonna be fun. We have ${recipe.instructions?.length || 0} steps total. I'm here the whole time - just talk to me like a friend. Say "next" to continue, "back" if you need to rewind, or just ask me whatever!`,
+        `Hey there, chef! Ready to make some amazing ${recipe.title}? I've got ${recipe.instructions?.length || 0} steps for us. Take your time, no rush at all. Just say "next" when you're ready, and feel free to ask me anything!`
+      ];
+      const welcomeText = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
       
       addMessage('assistant', welcomeText);
-      await emotionalNarrator.speak(welcomeText, 'encouraging');
+      await emotionalNarrator.speak(welcomeText, 'enthusiastic');
       
-      // Speak first step
+      // Speak first step naturally
       const firstStep = recipe.instructions?.[0];
       if (firstStep) {
-        const stepText = `Step 1: ${firstStep}`;
+        const stepIntros = [
+          `Okay, first things first - ${firstStep}`,
+          `So let's get started! ${firstStep}`,
+          `Alright, here we go! ${firstStep}`
+        ];
+        const stepText = stepIntros[Math.floor(Math.random() * stepIntros.length)];
         addMessage('assistant', stepText);
         await emotionalNarrator.speak(stepText, 'informative');
       }
@@ -327,6 +335,9 @@ function AIChefMode() {
         await voiceRecognition.start();
       }
       setIsReady(true);
+      
+      // Start small talk timer
+      scheduleSmallTalk();
       
     } catch (err) {
       console.error('[AIChef] Start failed:', err);
