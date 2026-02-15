@@ -562,6 +562,23 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   >
                     <Play size={14} fill="white" /> Cook
                   </Button>
+                  <Button
+                    onClick={() => {
+                      const recipeId = recipe?.id || recipe?._id || recipe?.recipe_id;
+                      if (recipeId) {
+                        onClose();
+                        setTimeout(() => navigate(`/recipes/${recipeId}/ai-chef`), 100);
+                      } else {
+                        toast.error('Recipe ID not found');
+                      }
+                    }}
+                    className="bg-violet-500 hover:bg-violet-600 text-white gap-2"
+                    size="sm"
+                    disabled={!parsedRecipe?.instructions?.length}
+                    data-testid="ai-chef-mode-btn"
+                  >
+                    <Mic size={14} /> AI Chef
+                  </Button>
                   <Button onClick={() => setIsBuySheetOpen(true)} variant="outline" size="sm" className="gap-2">
                     <ShoppingCart size={14} /> Groceries
                   </Button>
