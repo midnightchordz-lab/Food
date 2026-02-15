@@ -97,6 +97,9 @@ const Navigation = () => {
                 </button>
               )}
               
+              {/* Trial Status Indicator - Desktop */}
+              {isAuthenticated && <TrialStatusIndicator />}
+              
               {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
