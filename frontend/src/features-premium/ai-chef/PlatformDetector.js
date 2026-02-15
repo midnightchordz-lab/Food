@@ -14,12 +14,16 @@ class PlatformDetector {
   detectPlatform() {
     const ua = this.userAgent.toLowerCase();
     
-    // Check for Capacitor native
-    const isCapacitor = typeof window !== 'undefined' && 
-      (window.Capacitor?.isNative || window.Capacitor?.platform);
+    // Check for Capacitor native - multiple ways to detect
+    const isCapacitor = typeof window !== 'undefined' && (
+      window.Capacitor?.isNativePlatform?.() || 
+      window.Capacitor?.isNative === true ||
+      window.Capacitor?.platform === 'ios' ||
+      window.Capacitor?.platform === 'android'
+    );
     
     if (isCapacitor) {
-      const capacitorPlatform = window.Capacitor?.getPlatform?.();
+      const capacitorPlatform = window.Capacitor?.getPlatform?.() || window.Capacitor?.platform;
       if (capacitorPlatform === 'ios' || /iphone|ipad|ipod/.test(ua)) {
         return 'ios-native';
       }
