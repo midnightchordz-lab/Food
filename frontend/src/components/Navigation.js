@@ -4,6 +4,7 @@ import { MessageCircle, Heart, ShoppingCart, Calendar, User, LogOut, Home, Activ
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from './AuthModal';
 import SearchHub from './SearchHub';
+import TrialStatusIndicator from './TrialStatusIndicator';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
