@@ -238,6 +238,7 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
     # Check if user exists
     existing_user = await db.users.find_one({"phone_number": phone}, {"_id": 0, "hashed_password": 0})
     is_new_user = False
+    trial_result = None
     
     if existing_user:
         user_data = existing_user
@@ -256,8 +257,8 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
             # === MANDATORY ENTITLEMENT DEFAULTS ===
             "default_plan": "free",           # ALWAYS "free"
             "subscription_status": "inactive", # ALWAYS "inactive"
-            "trial_active": False,            # ALWAYS False
-            "entitlement_tier": "free",       # ALWAYS "free"
+            "trial_active": False,            # ALWAYS False (will be updated by auto-start)
+            "entitlement_tier": "free",       # ALWAYS "free" (will be updated by auto-start)
             # === END MANDATORY DEFAULTS ===
         }
         await db.users.insert_one(new_user)
@@ -279,6 +280,20 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
                 "entitlement_tier": "free"
             }
         )
+        
+        # ============ AUTO-START TRIAL FOR NEW PHONE USERS ============
+        try:
+            # Detect platform from request if available
+            platform = getattr(request, 'platform', 'mobile') or 'mobile'
+            trial_result = await auto_start_trial_if_eligible(user_id, platform)
+            if trial_result.get("started"):
+                logging.info(f"✅ Trial auto-started for new phone user: {phone[-4:]}")
+                # Re-fetch user to get updated trial fields
+                user_data = await db.users.find_one({"id": user_id}, {"_id": 0, "hashed_password": 0})
+        except Exception as trial_error:
+            logging.error(f"⚠️ Trial auto-start failed for phone user: {trial_error}")
+            # Don't fail registration if trial fails
+        # ==========================================
     
     # Generate JWT token
     token_data = {
@@ -287,12 +302,25 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
     }
     access_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
     
-    return PhoneLoginResponse(
+    # Build response
+    response = PhoneLoginResponse(
         access_token=access_token,
         token_type="bearer",
         user=user_data,
         is_new_user=is_new_user
     )
+    
+    # Add trial info to response for new users if trial started
+    if is_new_user and trial_result and trial_result.get("started"):
+        # Add trial info as extra data (PhoneLoginResponse doesn't have trial field)
+        response.user["trial"] = {
+            "active": True,
+            "endsAt": trial_result.get("trial_ends"),
+            "daysRemaining": trial_result.get("days_remaining", 7),
+            "message": "🎉 Your 7-day premium trial has started!"
+        }
+    
+    return response
 
 
 @router.get("/me", response_model=User)
