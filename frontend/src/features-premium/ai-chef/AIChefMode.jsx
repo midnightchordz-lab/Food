@@ -86,6 +86,7 @@ function AIChefMode() {
       voiceRecognition.destroy();
       conversationEngine.reset();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Add message to chat
