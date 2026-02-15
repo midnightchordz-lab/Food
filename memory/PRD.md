@@ -99,6 +99,7 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - [x] Recipe generation bug fix
 - [x] AI Chef Error Handling Production Fix
 - [x] AI Chef Recipe ID Integration Fix
+- [x] **Hands-Free Continuous Listening** - No more tap-to-speak!
 
 ### P1 - High Priority
 - [ ] Android build verification
