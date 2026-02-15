@@ -159,6 +159,22 @@ function AIChefMode() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Add message to chat
+  const addMessage = useCallback((role, text) => {
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      role,
+      text,
+      timestamp: new Date()
+    }]);
+  }, []);
+
+  // Show transient voice notification (auto-dismisses)
+  const showVoiceNotification = useCallback((text, duration = 5000) => {
+    setVoiceNotification(text);
+    setTimeout(() => setVoiceNotification(null), duration);
+  }, []);
+
   // Setup callbacks
   useEffect(() => {
     emotionalNarrator.setOnSpeakingChange((speaking) => {
@@ -214,23 +230,7 @@ function AIChefMode() {
       conversationEngine.reset();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handsFreeMode, isReady, showVoiceNotification]);
-
-  // Add message to chat
-  const addMessage = useCallback((role, text) => {
-    setMessages(prev => [...prev, {
-      id: Date.now(),
-      role,
-      text,
-      timestamp: new Date()
-    }]);
-  }, []);
-
-  // Show transient voice notification (auto-dismisses)
-  const showVoiceNotification = useCallback((text, duration = 5000) => {
-    setVoiceNotification(text);
-    setTimeout(() => setVoiceNotification(null), duration);
-  }, []);
+  }, [handsFreeMode, isReady, showVoiceNotification, addMessage]);
 
   // Handle user message (voice or text)
   const handleUserMessage = useCallback(async (message) => {
