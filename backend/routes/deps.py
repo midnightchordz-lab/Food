@@ -136,6 +136,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user: dict
+    trial: Optional[dict] = None  # Trial info for new users
 
 class ChatMessage(BaseModel):
     session_id: str
