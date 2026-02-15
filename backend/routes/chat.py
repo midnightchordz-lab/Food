@@ -1452,3 +1452,46 @@ YOUR PERSONALITY:
             step=request.current_step,
             navigation=None
         )
+
+
+
+@router.get("/ai-chef/recipe/{recipe_id}")
+async def get_recipe_for_ai_chef(
+    recipe_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Fetch a recipe from any collection for AI Chef mode
+    Searches multiple collections to find the recipe
+    """
+    try:
+        recipe = None
+        
+        # Try recipe_library first (most common)
+        recipe = await db.recipe_library.find_one({"id": recipe_id}, {"_id": 0})
+        
+        if not recipe:
+            # Try saved_recipes
+            recipe = await db.saved_recipes.find_one({"id": recipe_id}, {"_id": 0})
+        
+        if not recipe:
+            # Try detailed_recipes
+            recipe = await db.detailed_recipes.find_one({"id": recipe_id}, {"_id": 0})
+        
+        if not recipe:
+            # Try recipes collection
+            recipe = await db.recipes.find_one({"id": recipe_id}, {"_id": 0})
+        
+        if not recipe:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        # Ensure id is set
+        recipe['id'] = recipe_id
+        
+        return recipe
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error fetching recipe for AI Chef: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch recipe")
