@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Heart, Clock, ChefHat, Utensils, Users, Flame, Printer, 
   Share2, Star, ShoppingCart, BookOpen, X, ChevronRight, ChevronLeft,
   Timer, Leaf, AlertCircle, Check, Plus, Loader2, RefreshCw,
   Thermometer, Package, Info, AlertTriangle, Wine, GlassWater, Sparkles,
-  DollarSign, Volume2, HelpCircle, Play, Settings, ChevronDown
+  DollarSign, Volume2, HelpCircle, Play, Settings, ChevronDown, Mic
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
