@@ -32,6 +32,19 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-15 - Trial Status Indicator in Header ✅
+- **COMPLETED**: Trial days remaining indicator in navigation header
+  - Shows "X days left" with sparkle icon for active trials
+  - Shows "Xd" compact version on mobile
+  - Urgent state (orange, pulsing) when 2 days or less remaining
+  - "UPGRADE" CTA links to pricing page
+  - Hides for paid users and non-authenticated users
+- **FILES CREATED**:
+  - `frontend/src/components/TrialStatusIndicator.jsx` - Component
+  - `frontend/src/components/TrialStatusIndicator.css` - Styles
+- **FILES MODIFIED**:
+  - `frontend/src/components/Navigation.js` - Integrated indicator
+
 ### 2026-02-15 - Trial Auto-Start Feature Complete ✅
 - **COMPLETED**: Auto-start 7-day trial on new user registration
   - Backend: `auto_start_trial_if_eligible()` function added to trial.py
