@@ -30,6 +30,21 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-15 - Hands-Free Continuous Listening Feature ✅
+- **COMPLETED**: Implemented continuous voice recognition for truly hands-free cooking
+  - Added `startContinuous()` method to `VoiceRecognition.js` for auto-restart on speech end
+  - Added `pause()` and `resume()` methods to control listening during AI speech
+  - UI shows hands-free toggle switch (default ON)
+  - Listening indicator displays different states: listening, hearing, restarting, paused
+  - Progressive backoff for auto-restart (300ms → 1500ms max)
+  - Auto-pause when AI is speaking to avoid feedback
+- **FILES MODIFIED**:
+  - `frontend/src/features-premium/ai-chef/VoiceRecognition.js`
+  - `frontend/src/features-premium/ai-chef/AIChefMode.jsx`
+  - `frontend/src/features-premium/ai-chef/AIChef.css`
+- **TESTED**: Code review verified by testing agent (iteration_91.json)
+  - Note: Full UI testing requires real browser with microphone hardware
+
 ### 2026-02-15 - AI Chef Complete Integration Fix
 - **FIXED**: Critical bug where AI Chef couldn't find newly generated chat recipes
   - Root cause: `detailed_recipes` were saved by `title_lower` key but AI Chef searched by `id`
