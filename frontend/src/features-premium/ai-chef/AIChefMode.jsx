@@ -326,13 +326,54 @@ function AIChefMode() {
   // Toggle listening
   const toggleListening = async () => {
     if (isListening) {
-      voiceRecognition.stop();
+      voiceRecognition.pause();
     } else {
       try {
-        await voiceRecognition.start();
+        if (handsFreeMode) {
+          await voiceRecognition.resume();
+        } else {
+          await voiceRecognition.start();
+        }
       } catch (err) {
         addMessage('system', 'Could not start listening: ' + err.message);
       }
+    }
+  };
+
+  // Toggle hands-free mode
+  const toggleHandsFreeMode = async () => {
+    const newMode = !handsFreeMode;
+    setHandsFreeMode(newMode);
+    
+    if (isReady) {
+      voiceRecognition.stop();
+      if (newMode) {
+        await voiceRecognition.startContinuous();
+        addMessage('system', '🎤 Hands-free mode enabled - Just speak naturally!');
+      } else {
+        addMessage('system', '🎤 Tap-to-speak mode enabled');
+      }
+    }
+  };
+
+  // Get voice status text
+  const getVoiceStatusText = () => {
+    if (isSpeaking) return '🔊 AI Speaking...';
+    if (isProcessing) return '⏳ Processing...';
+    
+    switch (voiceState) {
+      case 'listening':
+        return handsFreeMode ? '🎤 Listening... (hands-free)' : '🎤 Listening...';
+      case 'hearing':
+        return '🎤 Hearing you...';
+      case 'restarting':
+        return '🎤 Ready to listen...';
+      case 'paused':
+        return '⏸️ Paused';
+      case 'waiting':
+        return '🎤 Waiting for voice...';
+      default:
+        return handsFreeMode ? '🎤 Speak anytime' : '🎤 Tap to speak';
     }
   };
 
