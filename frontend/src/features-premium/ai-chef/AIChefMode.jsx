@@ -347,6 +347,9 @@ function AIChefMode() {
 
   // Toggle listening
   const toggleListening = async () => {
+    // Clear any notification when user taps
+    setVoiceNotification(null);
+    
     if (isListening) {
       voiceRecognition.pause();
     } else {
@@ -357,7 +360,7 @@ function AIChefMode() {
           await voiceRecognition.start();
         }
       } catch (err) {
-        addMessage('system', 'Could not start listening: ' + err.message);
+        showVoiceNotification('Could not start listening. Tap to retry.', 5000);
       }
     }
   };
