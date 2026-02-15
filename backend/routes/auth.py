@@ -47,6 +47,9 @@ async def register(user: UserRegister):
     
     Values must NEVER be null or undefined.
     Premium requires payment or explicit trial activation.
+    
+    AUTO-START TRIAL:
+    After registration, automatically start 7-day trial for new users.
     """
     # Check if user exists
     existing = await db.users.find_one({"email": user.email})
@@ -70,8 +73,8 @@ async def register(user: UserRegister):
         # === MANDATORY ENTITLEMENT DEFAULTS ===
         "default_plan": "free",           # ALWAYS "free"
         "subscription_status": "inactive", # ALWAYS "inactive" 
-        "trial_active": False,            # ALWAYS False
-        "entitlement_tier": "free",       # ALWAYS "free"
+        "trial_active": False,            # ALWAYS False (will be updated by auto-start)
+        "entitlement_tier": "free",       # ALWAYS "free" (will be updated by auto-start)
         # === END MANDATORY DEFAULTS ===
     }
     
@@ -93,14 +96,43 @@ async def register(user: UserRegister):
         }
     )
     
+    # ============ AUTO-START TRIAL ============
+    trial_result = None
+    try:
+        # Get platform from request if available (default to 'web')
+        platform = getattr(user, 'platform', 'web') or 'web'
+        trial_result = await auto_start_trial_if_eligible(user_id, platform)
+        if trial_result.get("started"):
+            logging.info(f"✅ Trial auto-started for new user: {user.email}")
+    except Exception as trial_error:
+        logging.error(f"⚠️ Trial auto-start failed for {user.email}: {trial_error}")
+        # Don't fail registration if trial fails
+    # ==========================================
+    
     # Create token
     access_token = create_access_token({"sub": user_id})
     
     # Return user without password
-    user_response = {k: v for k, v in user_data.items() if k != "hashed_password"}
-    user_response.pop('_id', None)
+    # Re-fetch user to get updated trial fields
+    updated_user = await db.users.find_one({"id": user_id}, {"_id": 0, "hashed_password": 0})
     
-    return Token(access_token=access_token, token_type="bearer", user=user_response)
+    # Build response with trial info
+    response_data = {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": updated_user,
+    }
+    
+    # Add trial info to response if trial was started
+    if trial_result and trial_result.get("started"):
+        response_data["trial"] = {
+            "active": True,
+            "endsAt": trial_result.get("trial_ends"),
+            "daysRemaining": trial_result.get("days_remaining", 7),
+            "message": "🎉 Your 7-day premium trial has started!"
+        }
+    
+    return response_data
 
 
 @router.post("/login", response_model=Token)
