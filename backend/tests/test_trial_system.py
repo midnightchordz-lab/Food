@@ -17,12 +17,8 @@ import os
 import uuid
 from datetime import datetime
 
-# Use production URL for testing
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
-if not BASE_URL:
-    # Fallback for local testing
-    BASE_URL = "https://hands-free-cook.preview.emergentagent.com"
-
+# Use local backend URL for testing (supervisor runs on localhost:8001)
+BASE_URL = "http://localhost:8001"
 print(f"Testing against: {BASE_URL}")
 
 # Test credentials provided
