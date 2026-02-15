@@ -363,6 +363,10 @@ function AIChefMode() {
 
   // Close and go back
   const handleClose = () => {
+    // Clear small talk timer
+    if (smallTalkTimer.current) {
+      clearTimeout(smallTalkTimer.current);
+    }
     emotionalNarrator.stop();
     voiceRecognition.stop();
     navigate(-1);
