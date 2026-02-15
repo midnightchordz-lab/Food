@@ -180,7 +180,7 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
         await db.user_subscriptions.insert_one(subscription_doc)
         
         logger.info(f"✅ Trial auto-started for user {user_id} from platform {platform}")
-        logger.info(f"✅ Created trial subscription with premium features")
+        logger.info("✅ Created trial subscription with premium features")
         
         return {
             "started": True,
