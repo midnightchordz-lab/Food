@@ -32,6 +32,21 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-15 - Trial Feature Access Fix ✅
+- **BUG FIXED**: Trial users now have full access to ALL premium features
+  - Root cause: Trial auto-start was only updating user document, not creating subscription record
+  - Fix: `auto_start_trial_if_eligible()` now creates `user_subscriptions` record with full premium features
+  - Fix: Entitlement guard preserves trial features instead of overwriting with plan features
+  - Added missing feature checks: voice_cooking, video_import, export_pdf, advanced_filters, meal_planner_extended
+- **IMPACT**: All trial users (new and existing) now have access to:
+  - Recipe Import, Video Import, AI Photo Recognition, Fridge Scanner
+  - Diabetes Module, Voice Cooking, Premium Recipes
+  - PDF Export, Advanced Filters, Extended Meal Planner
+- **FILES MODIFIED**:
+  - `backend/routes/trial.py` - Creates subscription record with all premium features
+  - `backend/routes/subscription.py` - Added missing feature access checks
+  - `backend/services/entitlement_guard.py` - Preserve trial features in subscription
+
 ### 2026-02-15 - Trial Status Indicator in Header ✅
 - **COMPLETED**: Trial days remaining indicator in navigation header
   - Shows "X days left" with sparkle icon for active trials
