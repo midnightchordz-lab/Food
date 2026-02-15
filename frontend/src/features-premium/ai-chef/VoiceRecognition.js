@@ -165,6 +165,9 @@ class VoiceRecognition {
     }
   }
 
+  /**
+   * Start listening in TAP-TO-SPEAK mode (original behavior)
+   */
   async start() {
     if (!this.recognition) {
       throw new Error('Speech recognition not supported');
@@ -179,11 +182,68 @@ class VoiceRecognition {
     }
 
     this.shouldAutoRestart = true;
+    this.continuousMode = false;
     this.onStateChange?.('starting');
     return this.startInternal();
   }
 
+  /**
+   * Start CONTINUOUS HANDS-FREE listening mode
+   * Automatically restarts after speech ends or silence detected
+   */
+  async startContinuous() {
+    if (!this.recognition) {
+      throw new Error('Speech recognition not supported');
+    }
+
+    // Request permission
+    const hasPermission = await this.requestPermission();
+    if (!hasPermission) {
+      throw new Error('Microphone permission required');
+    }
+
+    console.log('[VoiceRecognition] Starting CONTINUOUS hands-free mode');
+    this.shouldAutoRestart = true;
+    this.continuousMode = true;
+    this.restartAttempts = 0;
+    this.onStateChange?.('continuous-starting');
+    return this.startInternal();
+  }
+
+  /**
+   * Check if in continuous hands-free mode
+   */
+  isContinuousMode() {
+    return this.continuousMode;
+  }
+
   stop() {
+    this.shouldAutoRestart = false;
+    this.continuousMode = false;
+    
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+
+    if (this.recognition && this.isListening) {
+      try {
+        this.recognition.stop();
+      } catch (e) {
+        // Ignore
+      }
+    }
+    
+    this.isListening = false;
+    this.restartAttempts = 0;
+    this.onStateChange?.('idle');
+  }
+
+  /**
+   * Temporarily pause continuous listening (e.g., while AI is speaking)
+   */
+  pause() {
+    console.log('[VoiceRecognition] Pausing continuous mode');
     this.shouldAutoRestart = false;
     
     if (this.restartTimer) {
@@ -200,7 +260,28 @@ class VoiceRecognition {
     }
     
     this.isListening = false;
-    this.onStateChange?.('idle');
+    this.onStateChange?.('paused');
+  }
+
+  /**
+   * Resume continuous listening after pause
+   */
+  async resume() {
+    if (!this.continuousMode) {
+      console.log('[VoiceRecognition] Not in continuous mode, using regular start');
+      return this.start();
+    }
+
+    console.log('[VoiceRecognition] Resuming continuous mode');
+    this.shouldAutoRestart = true;
+    this.restartAttempts = 0;
+    this.onStateChange?.('resuming');
+    
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(this.startInternal());
+      }, 300);
+    });
   }
 
   setOnResult(callback) {
