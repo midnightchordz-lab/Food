@@ -1304,3 +1304,151 @@ Do NOT repeat these recipes: {', '.join([r['title'] for r in serpapi_recipes])}
     except Exception as e:
         logging.error(f"Hybrid recipe generation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+# ============================================================================
+# AI CHEF CONVERSATION ENDPOINT
+# ============================================================================
+
+class AIChefMessage(BaseModel):
+    """Single message in AI Chef conversation"""
+    role: str  # 'user', 'assistant', 'system'
+    content: str
+
+class AIChefRequest(BaseModel):
+    """Request for AI Chef conversation"""
+    message: str
+    recipe_context: Dict[str, Any]  # Recipe title, ingredients, instructions
+    conversation_history: List[AIChefMessage] = []
+    current_step: int = 0
+
+class AIChefResponse(BaseModel):
+    """Response from AI Chef"""
+    text: str
+    emotion: str = "neutral"
+    step: int
+    navigation: Optional[str] = None  # 'next', 'back', 'repeat', 'complete', None
+
+@router.post("/ai-chef/chat", response_model=AIChefResponse)
+async def ai_chef_chat(
+    request: AIChefRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    AI Chef conversation endpoint - handles cooking assistant chat
+    Processes navigation commands locally, sends questions to AI
+    """
+    try:
+        message = request.message.lower().strip()
+        recipe = request.recipe_context
+        instructions = recipe.get('instructions', [])
+        current_step = request.current_step
+        
+        # Handle navigation commands locally (no AI needed)
+        if 'next' in message or 'continue' in message:
+            if current_step < len(instructions) - 1:
+                new_step = current_step + 1
+                return AIChefResponse(
+                    text=f"Great job! Step {new_step + 1}: {instructions[new_step]}",
+                    emotion="encouraging",
+                    step=new_step,
+                    navigation="next"
+                )
+            else:
+                return AIChefResponse(
+                    text="You've completed all the steps! Amazing work, chef! Your dish is ready!",
+                    emotion="celebratory",
+                    step=current_step,
+                    navigation="complete"
+                )
+        
+        if 'back' in message or 'previous' in message:
+            if current_step > 0:
+                new_step = current_step - 1
+                return AIChefResponse(
+                    text=f"No problem, let's go back. Step {new_step + 1}: {instructions[new_step]}",
+                    emotion="supportive",
+                    step=new_step,
+                    navigation="back"
+                )
+            else:
+                return AIChefResponse(
+                    text=f"We're already at the first step. Here it is again: {instructions[0] if instructions else 'No instructions available'}",
+                    emotion="helpful",
+                    step=current_step,
+                    navigation="stay"
+                )
+        
+        if 'repeat' in message or 'again' in message:
+            step_text = instructions[current_step] if current_step < len(instructions) else "No current step"
+            return AIChefResponse(
+                text=f"Of course! Step {current_step + 1}: {step_text}",
+                emotion="patient",
+                step=current_step,
+                navigation="repeat"
+            )
+        
+        # For questions and other messages, use AI
+        system_prompt = f"""You are a warm, friendly AI chef assistant helping someone cook "{recipe.get('title', 'a delicious dish')}". 
+
+RECIPE CONTEXT:
+- Title: {recipe.get('title', 'Unknown')}
+- Servings: {recipe.get('servings', 'Not specified')}
+- Current Step: {current_step + 1} of {len(instructions)}
+
+INGREDIENTS:
+{chr(10).join(['- ' + str(i) for i in recipe.get('ingredients', [])[:15]])}
+
+CURRENT STEP:
+{instructions[current_step] if current_step < len(instructions) else 'Completed'}
+
+YOUR PERSONALITY:
+- Be warm, encouraging, and patient
+- Use casual, friendly language
+- Add cooking tips when relevant
+- Keep responses concise (2-3 sentences max)
+- Answer cooking questions helpfully"""
+
+        # Build conversation for AI
+        chat = LlmChat(
+            api_key=os.environ.get('EMERGENT_LLM_KEY'),
+            session_id=f"ai-chef-{current_user.id}-{uuid.uuid4().hex[:8]}",
+            system_message=system_prompt
+        )
+        chat.with_model("openai", "gpt-4o-mini")
+        
+        # Add conversation history
+        for msg in request.conversation_history[-6:]:  # Last 6 messages for context
+            if msg.role == 'user':
+                await chat.send_message(UserMessage(text=msg.content))
+        
+        # Send current message
+        ai_response = await chat.send_message(UserMessage(text=request.message))
+        
+        # Detect emotion from response
+        emotion = "neutral"
+        lower_response = ai_response.lower()
+        if any(w in lower_response for w in ['great', 'perfect', 'excellent', 'wonderful']):
+            emotion = "encouraging"
+        elif any(w in lower_response for w in ['tip', 'trick', 'try', 'suggest']):
+            emotion = "informative"
+        elif any(w in lower_response for w in ['careful', 'watch', 'attention', 'don\'t']):
+            emotion = "cautioning"
+        
+        return AIChefResponse(
+            text=ai_response,
+            emotion=emotion,
+            step=current_step,
+            navigation=None
+        )
+        
+    except Exception as e:
+        logging.error(f"AI Chef error: {e}")
+        # Fallback response
+        return AIChefResponse(
+            text="I understand. Let me know if you need help with this step!",
+            emotion="supportive",
+            step=request.current_step,
+            navigation=None
+        )
