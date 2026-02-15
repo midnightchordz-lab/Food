@@ -518,17 +518,25 @@ export default function LiveCookingModal() {
     } catch (error) {
       console.error('ElevenLabs error, falling back to browser speech:', error);
       
-      // FALLBACK: Use browser speech when ElevenLabs fails
+      // FALLBACK: Use browser speech with NATURAL narration when ElevenLabs fails
       if (isSpeechSupported()) {
-        console.log('[VoiceSync] Fallback to browser speech');
+        console.log('[VoiceSync] Fallback to browser speech with natural narration');
         setUseBrowserSpeech(true);
         
         if (stepAtStart === currentStep && thisStepChangeId === stepChangeIdRef.current) {
+          // Use natural narration text for fallback
+          const fallbackNaturalText = generateNaturalNarration(stepText, currentStep + 1, instructions.length);
+          
           // MOBILE TURN-TAKING for fallback too
           if (env.isMobile && handsFreeEnabled && globalIsSessionArmed()) {
-            globalSpeakThenListen(stepText, currentStep + 1, instructions.length);
+            globalSpeak(fallbackNaturalText);
+            setTimeout(() => {
+              if (globalIsSessionArmed()) {
+                globalStartRecognition();
+              }
+            }, 2000);
           } else {
-            globalNarrateStep(stepText, currentStep + 1, instructions.length);
+            globalSpeak(fallbackNaturalText);
           }
         }
       }
