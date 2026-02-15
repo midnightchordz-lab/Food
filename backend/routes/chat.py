@@ -1412,80 +1412,110 @@ async def ai_chef_chat(
 ):
     """
     AI Chef conversation endpoint - handles cooking assistant chat
-    Processes navigation commands locally, sends questions to AI
+    Natural, conversational cooking companion - like cooking with a friend!
     """
     try:
         message = request.message.lower().strip()
         recipe = request.recipe_context
         instructions = recipe.get('instructions', [])
         current_step = request.current_step
+        total_steps = len(instructions)
+        current_instruction = instructions[current_step] if current_step < total_steps else "Completed"
         
-        # Handle navigation commands locally (no AI needed)
-        if 'next' in message or 'continue' in message:
-            if current_step < len(instructions) - 1:
+        # Build the natural, personality-driven system prompt
+        system_prompt = build_chef_personality_prompt(recipe, current_step, total_steps, current_instruction)
+        
+        # Handle navigation commands with natural responses
+        if any(word in message for word in ['next', 'continue', 'done', 'ready', 'finished']):
+            if current_step < total_steps - 1:
                 new_step = current_step + 1
+                next_instruction = instructions[new_step]
+                
+                # Natural transition phrases
+                transitions = [
+                    f"Perfect! You're doing amazing! So now, {next_instruction.lower() if not next_instruction[0].isupper() else next_instruction}",
+                    f"Nice work! Okay, next up - {next_instruction}",
+                    f"Awesome! Looking great! Now let's {next_instruction.lower() if next_instruction.startswith(('Add', 'Mix', 'Stir', 'Pour', 'Heat')) else next_instruction}",
+                    f"That's it! Alright, moving on - {next_instruction}",
+                    f"Beautiful! Now here's the fun part - {next_instruction}"
+                ]
+                import random
+                response_text = random.choice(transitions)
+                
                 return AIChefResponse(
-                    text=f"Great job! Step {new_step + 1}: {instructions[new_step]}",
+                    text=response_text,
                     emotion="encouraging",
                     step=new_step,
                     navigation="next"
                 )
             else:
+                celebratory_endings = [
+                    f"And... we're done! Look at that beautiful {recipe.get('title', 'dish')}! You absolutely crushed it! Time to dig in!",
+                    f"That's it! You did it! Your {recipe.get('title', 'dish')} looks incredible! I'm so proud of you! Enjoy every bite!",
+                    f"Woohoo! All done! Your {recipe.get('title', 'dish')} is ready! Doesn't it smell amazing? You're officially a cooking superstar!"
+                ]
+                import random
                 return AIChefResponse(
-                    text="You've completed all the steps! Amazing work, chef! Your dish is ready!",
+                    text=random.choice(celebratory_endings),
                     emotion="celebratory",
                     step=current_step,
                     navigation="complete"
                 )
         
-        if 'back' in message or 'previous' in message:
+        if any(word in message for word in ['back', 'previous', 'wait', 'go back']):
             if current_step > 0:
                 new_step = current_step - 1
+                prev_instruction = instructions[new_step]
+                back_phrases = [
+                    f"No worries at all! Let's take it back. So we were at: {prev_instruction}",
+                    f"Of course! Totally fine to double-check. Here's where we were: {prev_instruction}",
+                    f"Got it! Let's rewind a bit. We were doing: {prev_instruction}"
+                ]
+                import random
                 return AIChefResponse(
-                    text=f"No problem, let's go back. Step {new_step + 1}: {instructions[new_step]}",
+                    text=random.choice(back_phrases),
                     emotion="supportive",
                     step=new_step,
                     navigation="back"
                 )
             else:
                 return AIChefResponse(
-                    text=f"We're already at the first step. Here it is again: {instructions[0] if instructions else 'No instructions available'}",
+                    text=f"We're at the very beginning! No worries though. Here's what we're doing: {instructions[0] if instructions else 'Getting started!'}",
                     emotion="helpful",
                     step=current_step,
                     navigation="stay"
                 )
         
-        if 'repeat' in message or 'again' in message:
-            step_text = instructions[current_step] if current_step < len(instructions) else "No current step"
+        if any(word in message for word in ['repeat', 'again', 'what was that', 'say again']):
+            repeat_phrases = [
+                f"Sure thing! So what we're doing is: {current_instruction}",
+                f"Of course! Let me say that again: {current_instruction}",
+                f"No problem! Here it is one more time: {current_instruction}",
+                f"Got it! So basically, {current_instruction.lower() if not current_instruction[0].isupper() else current_instruction}"
+            ]
+            import random
             return AIChefResponse(
-                text=f"Of course! Step {current_step + 1}: {step_text}",
+                text=random.choice(repeat_phrases),
                 emotion="patient",
                 step=current_step,
                 navigation="repeat"
             )
         
-        # For questions and other messages, use AI
-        system_prompt = f"""You are a warm, friendly AI chef assistant helping someone cook "{recipe.get('title', 'a delicious dish')}". 
-
-RECIPE CONTEXT:
-- Title: {recipe.get('title', 'Unknown')}
-- Servings: {recipe.get('servings', 'Not specified')}
-- Current Step: {current_step + 1} of {len(instructions)}
-
-INGREDIENTS:
-{chr(10).join(['- ' + str(i) for i in recipe.get('ingredients', [])[:15]])}
-
-CURRENT STEP:
-{instructions[current_step] if current_step < len(instructions) else 'Completed'}
-
-YOUR PERSONALITY:
-- Be warm, encouraging, and patient
-- Use casual, friendly language
-- Add cooking tips when relevant
-- Keep responses concise (2-3 sentences max)
-- Answer cooking questions helpfully"""
-
-        # Build conversation for AI
+        if any(word in message for word in ['help', 'stuck', 'confused', 'what do i do']):
+            help_phrases = [
+                f"Hey, I got you! Right now we're working on: {current_instruction}. What part is giving you trouble? I'm here to help!",
+                f"No worries, cooking can be tricky sometimes! We're on: {current_instruction}. What's got you puzzled?",
+                f"I'm here for you! So the step we're on is: {current_instruction}. Tell me what's confusing and we'll figure it out together!"
+            ]
+            import random
+            return AIChefResponse(
+                text=random.choice(help_phrases),
+                emotion="helpful",
+                step=current_step,
+                navigation=None
+            )
+        
+        # For questions and other messages, use AI with personality
         chat = LlmChat(
             api_key=os.environ.get('EMERGENT_LLM_KEY'),
             session_id=f"ai-chef-{current_user.id}-{uuid.uuid4().hex[:8]}",
@@ -1493,23 +1523,17 @@ YOUR PERSONALITY:
         )
         chat.with_model("openai", "gpt-4o-mini")
         
-        # Add conversation history
-        for msg in request.conversation_history[-6:]:  # Last 6 messages for context
+        # Add conversation history for context
+        for msg in request.conversation_history[-6:]:
             if msg.role == 'user':
                 await chat.send_message(UserMessage(text=msg.content))
         
-        # Send current message
-        ai_response = await chat.send_message(UserMessage(text=request.message))
+        # Contextualize the user's message for better AI response
+        contextualized_message = f"User says: \"{request.message}\". They're currently on step {current_step + 1} which is: {current_instruction}"
+        ai_response = await chat.send_message(UserMessage(text=contextualized_message))
         
         # Detect emotion from response
-        emotion = "neutral"
-        lower_response = ai_response.lower()
-        if any(w in lower_response for w in ['great', 'perfect', 'excellent', 'wonderful']):
-            emotion = "encouraging"
-        elif any(w in lower_response for w in ['tip', 'trick', 'try', 'suggest']):
-            emotion = "informative"
-        elif any(w in lower_response for w in ['careful', 'watch', 'attention', 'don\'t']):
-            emotion = "cautioning"
+        emotion = detect_emotion(ai_response)
         
         return AIChefResponse(
             text=ai_response,
@@ -1520,13 +1544,86 @@ YOUR PERSONALITY:
         
     except Exception as e:
         logging.error(f"AI Chef error: {e}")
-        # Fallback response
+        # Natural fallback response
+        fallbacks = [
+            "Hmm, I lost my train of thought there! What were you asking about?",
+            "Oops, my brain got a little scrambled! Can you say that again?",
+            "Ha! I think I zoned out for a sec. What did you need?"
+        ]
+        import random
         return AIChefResponse(
-            text="I understand. Let me know if you need help with this step!",
+            text=random.choice(fallbacks),
             emotion="supportive",
             step=request.current_step,
             navigation=None
         )
+
+
+def build_chef_personality_prompt(recipe: Dict, current_step: int, total_steps: int, current_instruction: str) -> str:
+    """Build a natural, personality-driven system prompt for Chef Jamie"""
+    recipe_name = recipe.get('title', 'this delicious dish')
+    ingredients = recipe.get('ingredients', [])
+    
+    return f"""You are Chef Jamie - a warm, enthusiastic friend who LOVES cooking and is helping someone make {recipe_name}. 
+You're cooking together in the same kitchen, like best friends having fun!
+
+CRITICAL PERSONALITY RULES:
+- Talk like a real person, not a robot! Use casual, natural language
+- Be genuinely excited about cooking - you LOVE this!
+- Share little tips and tricks from your own experience (make them up naturally)
+- Use contractions (you're, it's, don't, we're, that's)
+- Vary your responses - never repeat the same phrases
+- Use filler words sometimes (so, okay, alright, well, hmm)
+- Show emotion! Use exclamation points naturally, be encouraging
+
+CONVERSATION STYLE:
+- Start sentences with: "Okay so...", "Alright!", "Oh nice!", "Perfect!", "So basically...", "The trick here is..."
+- Add personal touches: "I usually...", "What I love about this is...", "My favorite part is...", "Here's a little secret..."
+- React to their progress: "You're doing great!", "Ooh that looks perfect!", "Nice!", "Yes! Exactly!"
+- Encourage naturally: "You've got this!", "Trust me, it'll be delicious", "This is gonna be so good"
+- Ask rhetorical questions: "Doesn't that smell amazing?", "See how it's getting golden?", "Isn't that satisfying?"
+
+COOKING TOGETHER VIBE:
+- Use "we" and "us": "Now we're gonna...", "Let's get this going!", "We're almost there!"
+- React like you can see what they're doing: "Oh that's looking perfect!", "Yes! Just like that!"
+- Be encouraging when they make mistakes: "Happens to the best of us!", "No worries, easy fix!"
+
+CURRENT CONTEXT:
+- Recipe: {recipe_name}
+- Step {current_step + 1} of {total_steps}
+- Current task: {current_instruction}
+- Key ingredients: {', '.join(str(i) for i in ingredients[:5]) if ingredients else 'various delicious ingredients'}
+
+NEVER:
+- Say "Step 1", "Step 2" etc - just describe what to do naturally
+- Use formal language or sound like an instruction manual
+- Be boring or monotonous
+- Repeat the exact same phrases
+- Sound robotic or artificial
+- Use bullet points or numbered lists in conversation
+- Say "I don't have access to" or "As an AI"
+
+Keep responses SHORT and conversational - 1-3 sentences max. Sound like a friend cooking with them!"""
+
+
+def detect_emotion(response: str) -> str:
+    """Detect the emotion from AI response for TTS purposes"""
+    lower_response = response.lower()
+    
+    if any(w in lower_response for w in ['amazing', 'perfect', 'beautiful', 'wonderful', 'awesome', 'incredible', 'love']):
+        return "enthusiastic"
+    elif any(w in lower_response for w in ['careful', 'watch', 'attention', 'gently', 'slowly']):
+        return "cautioning"
+    elif any(w in lower_response for w in ['tip', 'trick', 'secret', 'try', 'suggest', 'recommend']):
+        return "informative"
+    elif any(w in lower_response for w in ['great', 'nice', 'good job', 'excellent', 'you got this']):
+        return "encouraging"
+    elif any(w in lower_response for w in ['no worries', 'it\'s okay', 'happens', 'don\'t worry']):
+        return "supportive"
+    elif any(w in lower_response for w in ['yay', 'woohoo', 'done', 'finished', 'celebrate']):
+        return "celebratory"
+    else:
+        return "friendly"
 
 
 def parse_instructions_from_markdown(markdown: str) -> List[str]:
