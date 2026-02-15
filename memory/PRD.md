@@ -7,6 +7,7 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - Fridge scanner for ingredient detection
 - Meal planning with dietary preferences
 - Premium AI Chef feature
+- **7-Day Trial System** for premium features (cross-platform)
 
 ## User Personas
 - Home cooks wanting recipe inspiration
@@ -18,6 +19,7 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 2. Hands-free voice-controlled cooking
 3. User authentication and preferences
 4. Subscription/entitlement system (free/premium)
+5. **7-Day Trial System** (Web, iOS, Android compatible)
 
 ## Tech Stack
 - **Frontend**: React + Capacitor (hybrid mobile app)
@@ -29,6 +31,35 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 ---
 
 ## Changelog
+
+### 2026-02-15 - 7-Day Trial System (Cross-Platform) ✅
+- **COMPLETED**: Implemented full trial subscription system
+  - Backend APIs: `/api/trial/status`, `/api/trial/start`, `/api/trial/check-access`
+  - Premium access middleware for gating features
+  - Frontend `trialService.js` for API communication
+  - `TrialBanner.jsx` component (shows trial CTA, active status, or expired)
+  - `PremiumFeatureGate.jsx` component for wrapping premium features
+  - `useTrialStatus.js` hook for reactive trial state
+  - Cross-platform support: Detects web/iOS/Android via Capacitor
+- **FILES CREATED**:
+  - `backend/routes/trial.py` - Trial API routes
+  - `backend/middleware/premium_access.py` - Premium access checker
+  - `frontend/src/services/trialService.js` - Trial service
+  - `frontend/src/components/TrialBanner.jsx` - Trial banner UI
+  - `frontend/src/components/PremiumFeatureGate.jsx` - Feature gate
+  - `frontend/src/hooks/useTrialStatus.js` - Trial hook
+- **TESTED**: All 15 backend tests passed (iteration_92.json)
+
+### 2026-02-15 - Cross-Platform Voice Recognition Updates ✅
+- **COMPLETED**: Enhanced voice recognition for mobile platforms
+  - Updated `VoiceRecognition.js` with Capacitor native plugin support
+  - Enhanced `PlatformDetector.js` with better capability detection
+  - iOS-specific continuous mode settings
+  - Android short-burst + auto-restart pattern
+  - Dynamic Capacitor plugin detection
+- **FILES MODIFIED**:
+  - `frontend/src/features-premium/ai-chef/VoiceRecognition.js`
+  - `frontend/src/features-premium/ai-chef/PlatformDetector.js`
 
 ### 2026-02-15 - Hands-Free Continuous Listening Feature ✅
 - **COMPLETED**: Implemented continuous voice recognition for truly hands-free cooking
