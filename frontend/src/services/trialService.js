@@ -126,15 +126,21 @@ class TrialService {
 
   /**
    * Get platform identifier (for Capacitor apps)
-   * @returns {string} Platform name
+   * @returns {string} Platform name: 'web', 'ios', or 'android'
    */
   getPlatform() {
     // Check if running in Capacitor
     if (window.Capacitor) {
-      const platform = window.Capacitor.getPlatform();
+      const platform = window.Capacitor.getPlatform?.();
       if (platform === 'ios') return 'ios';
       if (platform === 'android') return 'android';
     }
+    
+    // Fallback: detect from user agent for mobile web
+    const ua = navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(ua)) return 'ios';
+    if (/android/.test(ua)) return 'android';
+    
     return 'web';
   }
 
