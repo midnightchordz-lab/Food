@@ -11,6 +11,7 @@ import { Mail, Phone, Loader2, ArrowRight, CheckCircle, ArrowLeft } from 'lucide
 import axios from 'axios';
 import { toast } from 'sonner';
 import ExclusionOnboarding from './ExclusionOnboarding';
+import TrialWelcomeModal from './TrialWelcomeModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
