@@ -374,6 +374,8 @@ function AIChefMode() {
         return '🎤 Hearing you...';
       case 'restarting':
         return '🎤 Ready to listen...';
+      case 'reconnecting':
+        return '🔄 Reconnecting...';
       case 'paused':
         return '⏸️ Paused';
       case 'waiting':
