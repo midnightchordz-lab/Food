@@ -149,10 +149,192 @@ class VoiceRecognition {
     }
   }
   
-  setupCapacitorHandlers() {
-    // Capacitor speech recognition event setup
-    // Will be called when using native Capacitor plugin
+  async setupCapacitorHandlers() {
+    // Capacitor speech recognition event setup for native iOS/Android
     console.log('[VoiceRecognition] Setting up Capacitor handlers');
+    
+    if (!CapacitorSpeechRecognition) {
+      console.error('[VoiceRecognition] Capacitor plugin not available');
+      return;
+    }
+    
+    try {
+      // Remove any existing listeners
+      if (this.capacitorListener) {
+        await this.capacitorListener.remove();
+        this.capacitorListener = null;
+      }
+      
+      // Add partial results listener for real-time feedback
+      this.capacitorListener = await CapacitorSpeechRecognition.addListener(
+        'partialResults',
+        (data) => {
+          if (data.matches && data.matches.length > 0) {
+            const interim = data.matches[0];
+            console.log('[VoiceRecognition] Capacitor interim:', interim);
+            if (interim.length > 0) {
+              this.onStateChange?.('hearing');
+            }
+          }
+        }
+      );
+      
+      console.log('[VoiceRecognition] Capacitor handlers setup complete');
+    } catch (e) {
+      console.error('[VoiceRecognition] Failed to setup Capacitor handlers:', e);
+    }
+  }
+  
+  /**
+   * Request permission for native Capacitor speech recognition
+   */
+  async requestCapacitorPermission() {
+    if (!CapacitorSpeechRecognition) return false;
+    
+    try {
+      // Check current permission status
+      const permStatus = await CapacitorSpeechRecognition.checkPermissions();
+      console.log('[VoiceRecognition] Capacitor permission status:', permStatus);
+      
+      if (permStatus.speechRecognition === 'granted') {
+        return true;
+      }
+      
+      // Request permission if not granted
+      const result = await CapacitorSpeechRecognition.requestPermissions();
+      console.log('[VoiceRecognition] Capacitor permission result:', result);
+      
+      return result.speechRecognition === 'granted';
+    } catch (e) {
+      console.error('[VoiceRecognition] Capacitor permission error:', e);
+      return false;
+    }
+  }
+  
+  /**
+   * Start Capacitor native speech recognition
+   */
+  async startCapacitorRecognition() {
+    if (!CapacitorSpeechRecognition) {
+      throw new Error('Capacitor speech recognition not available');
+    }
+    
+    try {
+      // Stop any existing session
+      try {
+        await CapacitorSpeechRecognition.stop();
+      } catch (e) {
+        // Ignore - might not be running
+      }
+      
+      this.isListening = true;
+      this.onStateChange?.('listening');
+      
+      // Platform-specific settings
+      const isIOS = platformDetector.isIOS();
+      const isAndroid = platformDetector.isAndroid();
+      
+      // Start recognition with platform-optimized settings
+      const options = {
+        language: 'en-US',
+        maxResults: 3,
+        prompt: 'Speak now...', // Android only
+        partialResults: true,
+        popup: false // Don't show system popup
+      };
+      
+      console.log('[VoiceRecognition] Starting Capacitor recognition with options:', options);
+      
+      const result = await CapacitorSpeechRecognition.start(options);
+      
+      console.log('[VoiceRecognition] Capacitor result:', result);
+      
+      this.isListening = false;
+      this.restartAttempts = 0;
+      
+      // Process results
+      if (result.matches && result.matches.length > 0) {
+        const transcript = result.matches[0].trim().toLowerCase();
+        const confidence = 0.9; // Capacitor doesn't provide confidence
+        
+        console.log('[VoiceRecognition] Capacitor heard:', transcript);
+        this.onResult?.(transcript, confidence);
+      }
+      
+      // Handle continuous mode - auto-restart after getting results
+      if (this.continuousMode && this.shouldAutoRestart) {
+        this.onStateChange?.('restarting');
+        this.restartTimer = setTimeout(() => {
+          if (this.shouldAutoRestart && this.continuousMode) {
+            this.startCapacitorRecognition().catch(e => {
+              console.error('[VoiceRecognition] Capacitor restart failed:', e);
+              this.handleCapacitorError(e);
+            });
+          }
+        }, 300);
+      } else {
+        this.onStateChange?.('idle');
+      }
+      
+      return true;
+    } catch (e) {
+      this.isListening = false;
+      console.error('[VoiceRecognition] Capacitor recognition error:', e);
+      this.handleCapacitorError(e);
+      return false;
+    }
+  }
+  
+  /**
+   * Handle Capacitor-specific errors
+   */
+  handleCapacitorError(error) {
+    const errorMessage = error.message || error.toString();
+    
+    if (errorMessage.includes('permission') || errorMessage.includes('denied')) {
+      this.shouldAutoRestart = false;
+      this.continuousMode = false;
+      this.onError?.('permission-denied');
+    } else if (errorMessage.includes('No match') || errorMessage.includes('no speech')) {
+      // No speech detected - normal in continuous mode
+      if (this.continuousMode && this.shouldAutoRestart) {
+        this.restartAttempts++;
+        if (this.restartAttempts < this.maxRestartAttempts) {
+          this.onStateChange?.('waiting');
+          this.restartTimer = setTimeout(() => {
+            if (this.shouldAutoRestart && this.continuousMode) {
+              this.startCapacitorRecognition().catch(console.error);
+            }
+          }, 500);
+        }
+      }
+    } else if (errorMessage.includes('canceled') || errorMessage.includes('aborted')) {
+      // User or system canceled - don't treat as error
+      this.onStateChange?.('idle');
+    } else if (errorMessage.includes('network') || errorMessage.includes('offline')) {
+      this.onError?.('network-error');
+    } else if (errorMessage.includes('audio') || errorMessage.includes('microphone')) {
+      this.onError?.('audio-capture-error');
+    } else {
+      this.onError?.(errorMessage);
+    }
+  }
+  
+  /**
+   * Stop Capacitor speech recognition
+   */
+  async stopCapacitorRecognition() {
+    if (!CapacitorSpeechRecognition) return;
+    
+    try {
+      await CapacitorSpeechRecognition.stop();
+      console.log('[VoiceRecognition] Capacitor recognition stopped');
+    } catch (e) {
+      // Ignore - might not be running
+      console.log('[VoiceRecognition] Capacitor stop (may have already stopped):', e.message);
+    }
+    
+    this.isListening = false;
   }
 
   setupEventHandlers() {
