@@ -166,14 +166,15 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
             "user_id": user_id,
             "plan_id": "premium_monthly",  # Trial gives premium features
             "status": "trialing",
-            "source": "trial_autostart",  # Valid source for entitlement
+            "source": "trial",  # Use standard 'trial' source for entitlement validation
             "trial_start": now.isoformat(),
             "trial_end": end_date.isoformat(),
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
             "platform": platform,
             "features": trial_features,
-            "is_trial": True
+            "is_trial": True,
+            "auto_started": True  # Mark as auto-started for tracking
         }
         
         await db.user_subscriptions.insert_one(subscription_doc)
