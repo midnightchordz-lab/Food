@@ -16,7 +16,7 @@ import re
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://speech-reset-preview.preview.emergentagent.com"
+    BASE_URL = "https://recipe-loader-1.preview.emergentagent.com"
 
 # Test credentials
 TEST_EMAIL = "test_recipe_1770442035@test.com"

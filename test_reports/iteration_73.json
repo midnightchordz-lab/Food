@@ -94,7 +94,7 @@
   
   "test_environment": {
     "viewport": {"width": 1920, "height": 1080, "device": "Desktop"},
-    "url": "https://speech-reset-preview.preview.emergentagent.com",
+    "url": "https://recipe-loader-1.preview.emergentagent.com",
     "browser_automation": "Playwright"
   },
   
