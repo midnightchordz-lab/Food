@@ -32,6 +32,27 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-15 - Trial Auto-Start Feature Complete ✅
+- **COMPLETED**: Auto-start 7-day trial on new user registration
+  - Backend: `auto_start_trial_if_eligible()` function added to trial.py
+  - Registration endpoints (email and phone) now auto-start trial
+  - Trial info returned in registration response (active, endsAt, daysRemaining, message)
+  - User fields updated: trial_active=true, entitlement_tier="trial"
+- **FRONTEND**: Trial Welcome Modal component
+  - New `TrialWelcomeModal.jsx` component shows after registration
+  - Displays trial benefits (Voice Cooking, AI Chef, Unlimited Recipes, Mobile Access)
+  - Shows trial end date and "Start Cooking!" CTA
+  - AuthModal updated to integrate TrialWelcomeModal
+- **TESTING**: 14 backend tests passed, UI flow verified
+- **FILES MODIFIED**:
+  - `backend/routes/trial.py` - Added auto_start_trial_if_eligible function
+  - `backend/routes/auth.py` - Register and phone OTP endpoints auto-start trial
+  - `backend/routes/deps.py` - Token model updated with trial field
+  - `frontend/src/components/TrialWelcomeModal.jsx` - New component
+  - `frontend/src/components/TrialWelcomeModal.css` - Styles
+  - `frontend/src/components/AuthModal.js` - Integrates TrialWelcomeModal
+  - `frontend/src/context/AuthContext.js` - Returns trial info from register
+
 ### 2026-02-15 - Mobile Voice Compatibility Complete ✅
 - **COMPLETED**: Full Capacitor native speech recognition integration
   - Enhanced VoiceRecognition.js with native iOS/Android support via @capacitor-community/speech-recognition
