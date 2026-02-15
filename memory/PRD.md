@@ -114,6 +114,25 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - Recipe ID consistency fix
 - App Logo Implementation
 - Mobile Voice Compatibility Layer
+
+---
+
+## Roadmap / Backlog
+
+### P0 (Completed)
+- ✅ Blue (Relaxed) App Icon Implementation
+- ✅ 7-Day Trial System
+
+### P1 (In Progress)
+- 🔄 Mobile Voice Compatibility - Complete Capacitor plugin integration
+- 📋 Re-enable AI Chef Feature in UI
+- 📋 Android Native Build Verification
+
+### P2 (Future)
+- ElevenLabs TTS quota notification UI
+- Ingredient Encyclopedia Page
+- Ingredient Detail Page (dynamic route)
+- iOS app development guidance
 - Production Android Voice Engine
 - Isolated AI Chef Feature structure
 
