@@ -588,8 +588,22 @@ function safeStartRecognition() {
     return false;
   }
   
-  // MOBILE: Use mobile speech recognition for better reliability
-  if (isMobile && mobileSpeechRecognition.isSupported()) {
+  // ANDROID: Use Android Voice Engine for recognition
+  if (isAndroid && androidEngineActive) {
+    if (androidVoiceEngine.getListeningStatus()) return true;
+    
+    try {
+      androidVoiceEngine.startListening();
+      return true;
+    } catch (e) {
+      console.log('[Recognition] Android engine start failed:', e.message);
+      onRecognitionStateChange?.('error');
+      return false;
+    }
+  }
+  
+  // iOS: Use mobile speech recognition for better reliability
+  if (isIOS && mobileSpeechRecognition.isSupported()) {
     if (mobileSpeechRecognition.getIsListening()) return true;
     
     try {
@@ -625,8 +639,13 @@ function safeStartRecognition() {
 }
 
 function forceStopRecognition() {
-  // Stop mobile recognition
-  if (isMobile && mobileSpeechRecognition.isSupported()) {
+  // ANDROID: Use Android engine's stop
+  if (isAndroid && androidEngineActive) {
+    androidVoiceEngine.stopListening();
+  }
+  
+  // iOS: Stop mobile recognition
+  if (isIOS && mobileSpeechRecognition.isSupported()) {
     mobileSpeechRecognition.abort();
   }
   
@@ -647,6 +666,20 @@ function startListening() {
   if (!isSecureContext) {
     onRecognitionStateChange?.('disabled');
     return false;
+  }
+  
+  // ANDROID: Use Android engine
+  if (isAndroid && androidEngineActive) {
+    if (androidVoiceEngine.getListeningStatus()) return true;
+    
+    if (isSpeaking) {
+      shouldBeListening = true;
+      return false;
+    }
+    
+    shouldBeListening = true;
+    onRecognitionStateChange?.('starting');
+    return safeStartRecognition();
   }
   
   if (!recognition && !initRecognition()) return false;
