@@ -564,6 +564,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   >
                     <Play size={14} fill="white" /> Cook
                   </Button>
+                  {/* AI Chef Mode - DISABLED (code preserved in features-premium/ai-chef/)
                   <Button
                     onClick={() => {
                       const recipeId = recipe?.id || recipe?._id || recipe?.recipe_id;
@@ -581,6 +582,7 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
                   >
                     <Mic size={14} /> AI Chef
                   </Button>
+                  */}
                   <Button onClick={() => setIsBuySheetOpen(true)} variant="outline" size="sm" className="gap-2">
                     <ShoppingCart size={14} /> Groceries
                   </Button>
