@@ -1008,8 +1008,13 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
         # Priority 1: If we have a dish type (curry, biryani, etc), use "protein dish_type dish"
         if main_dish_type:
             if main_protein:
-                # e.g., "Spicy Prawn Curry" -> "prawn curry dish plated"
-                search_query = f"{main_protein} {main_dish_type} dish plated"
+                # For seafood dishes, explicitly exclude raw ingredients
+                if main_protein in ['prawn', 'shrimp', 'fish', 'lobster', 'crab', 'scallop']:
+                    # e.g., "Prawn Biryani" -> "seafood biryani cooked served"
+                    search_query = f"{main_dish_type} {main_protein} cooked served plated"
+                else:
+                    # e.g., "Chicken Curry" -> "chicken curry dish plated"
+                    search_query = f"{main_protein} {main_dish_type} dish plated"
             else:
                 # e.g., "Vegetable Curry" -> "vegetable curry dish plated"
                 search_query = f"{main_dish_type} dish plated"
@@ -1023,7 +1028,8 @@ async def search_food_images(dish_name: str, cuisine: str = '', limit: int = 5) 
             search_query = f"{search_query} {cuisine}"
         
         # Add quality modifiers and negative keywords to filter out restaurant/dining scenes
-        search_query += " recipe photo close-up -restaurant -dining -patio -outdoor -table -setting -scene -people"
+        # Also exclude raw ingredients
+        search_query += " recipe photo close-up -restaurant -dining -patio -outdoor -table -setting -scene -people -raw -uncooked -ingredient -ingredients -market"
         
         logging.info(f"Image search: '{dish_name}' -> '{search_query}'")
         
