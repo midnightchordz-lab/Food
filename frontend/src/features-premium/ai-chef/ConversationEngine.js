@@ -88,16 +88,45 @@ class ConversationEngine {
   getFallbackResponse(userMessage) {
     const lower = userMessage.toLowerCase();
     const steps = this.currentRecipe?.instructions || [];
+    const currentInstruction = steps[this.currentStep] || '';
+    
+    // Natural transition phrases
+    const nextPhrases = [
+      `Perfect! Alright, now we're gonna ${steps[this.currentStep + 1]?.toLowerCase() || 'move on'}`,
+      `Nice work! Okay so next up - ${steps[this.currentStep + 1] || 'we continue'}`,
+      `Awesome! Looking great! Now let's ${steps[this.currentStep + 1] || 'keep going'}`
+    ];
+    
+    const backPhrases = [
+      `No worries! Let's take it back. We were doing: ${steps[this.currentStep - 1] || 'the previous step'}`,
+      `Of course! Here's where we were: ${steps[this.currentStep - 1] || 'going back'}`,
+      `Got it! Let's rewind a bit: ${steps[this.currentStep - 1] || 'previous step'}`
+    ];
+    
+    const repeatPhrases = [
+      `Sure thing! So what we're doing is: ${currentInstruction}`,
+      `Of course! Here it is again: ${currentInstruction}`,
+      `No problem! We're at: ${currentInstruction}`
+    ];
+    
+    const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
     
     // Handle basic navigation locally as fallback
-    if (lower.includes('next') || lower.includes('continue')) {
+    if (lower.includes('next') || lower.includes('continue') || lower.includes('done')) {
       if (this.currentStep < steps.length - 1) {
         this.currentStep++;
         return {
-          text: `Step ${this.currentStep + 1}: ${steps[this.currentStep]}`,
+          text: randomChoice(nextPhrases),
           step: this.currentStep,
           emotion: 'encouraging',
           navigation: 'next'
+        };
+      } else {
+        return {
+          text: `And we're done! Your ${this.currentRecipe?.title || 'dish'} looks amazing! You crushed it!`,
+          step: this.currentStep,
+          emotion: 'celebratory',
+          navigation: 'complete'
         };
       }
     }
@@ -106,7 +135,7 @@ class ConversationEngine {
       if (this.currentStep > 0) {
         this.currentStep--;
         return {
-          text: `Step ${this.currentStep + 1}: ${steps[this.currentStep]}`,
+          text: randomChoice(backPhrases),
           step: this.currentStep,
           emotion: 'supportive',
           navigation: 'back'
@@ -114,27 +143,34 @@ class ConversationEngine {
       }
     }
     
-    if (lower.includes('repeat')) {
+    if (lower.includes('repeat') || lower.includes('again')) {
       return {
-        text: `Step ${this.currentStep + 1}: ${steps[this.currentStep] || 'No step available'}`,
+        text: randomChoice(repeatPhrases),
         step: this.currentStep,
         emotion: 'patient',
         navigation: 'repeat'
       };
     }
     
-    if (lower.includes('help')) {
+    if (lower.includes('help') || lower.includes('stuck')) {
       return {
-        text: "I'm here to help! Say 'next' to continue, 'back' to go back, or 'repeat' to hear the step again.",
+        text: `Hey, I got you! We're working on: ${currentInstruction}. What part is tricky? Just say "next" when you're ready, "back" to go back, or ask me anything!`,
         step: this.currentStep,
         emotion: 'helpful'
       };
     }
     
+    // Default friendly response
+    const defaultResponses = [
+      "Got it! Let me know when you're ready to move on!",
+      "Sounds good! Say 'next' when you're ready to continue!",
+      "Alright! Take your time, I'm here when you need me!"
+    ];
+    
     return {
-      text: "I understand. Let me know if you need help with this step!",
+      text: randomChoice(defaultResponses),
       step: this.currentStep,
-      emotion: 'supportive'
+      emotion: 'friendly'
     };
   }
 
