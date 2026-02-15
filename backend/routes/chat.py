@@ -986,6 +986,18 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
                     all_cached_recipes = parse_recipes_to_json(cached_response, user_cuisine)
                     # LIMIT to quota - only return allowed number of recipes
                     cached_structured_recipes = all_cached_recipes[:recipes_to_generate]
+                    
+                    # Generate and add recipe IDs for AI Chef access
+                    from services.recipe_library import generate_recipe_id
+                    for recipe in cached_structured_recipes:
+                        recipe_cuisine = recipe.get('cuisine', '') or ''
+                        recipe_dietary = recipe.get('dietary', '') or ''
+                        recipe['id'] = generate_recipe_id(
+                            recipe.get('title', ''),
+                            recipe_cuisine,
+                            recipe_dietary
+                        )
+                    
                     logging.info(f"Returning {len(cached_structured_recipes)} recipes from cache (quota: {recipes_to_generate})")
                     
                     # INCREMENT USAGE COUNTER for cached responses too
