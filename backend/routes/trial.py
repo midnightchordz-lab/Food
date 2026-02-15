@@ -59,6 +59,8 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
     Auto-start trial for new users
     Safe to call multiple times - only starts once
     
+    Creates both user flags AND subscription record for feature gating
+    
     Args:
         user_id: The user's ID
         platform: 'web', 'ios', or 'android'
@@ -82,7 +84,28 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
         if plan in ["pro", "team", "chef_pro"]:
             return {"started": False, "reason": "Paid user", "days_remaining": 0}
         
-        # Trial already active
+        # Check if trial subscription already exists
+        existing_trial_sub = await db.user_subscriptions.find_one({
+            "user_id": user_id,
+            "status": "trialing"
+        })
+        if existing_trial_sub:
+            trial_end = existing_trial_sub.get("trial_end")
+            if trial_end:
+                if isinstance(trial_end, str):
+                    trial_end_dt = datetime.fromisoformat(trial_end.replace('Z', '+00:00'))
+                else:
+                    trial_end_dt = trial_end
+                if datetime.now(timezone.utc) < trial_end_dt:
+                    days = max(1, int((trial_end_dt - datetime.now(timezone.utc)).total_seconds() / 86400) + 1)
+                    return {
+                        "started": False, 
+                        "reason": "Trial already active",
+                        "trial_ends": trial_end_dt.isoformat(),
+                        "days_remaining": days
+                    }
+        
+        # Trial already active (fallback check on user)
         trial_end = user_data.get("trial_end_date")
         if trial_end:
             if isinstance(trial_end, str):
@@ -100,6 +123,7 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
         now = datetime.now(timezone.utc)
         end_date = now + timedelta(days=7)
         
+        # Update user document
         await db.users.update_one(
             {"id": user_id},
             {
@@ -114,7 +138,48 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
             }
         )
         
+        # ============ CREATE SUBSCRIPTION RECORD FOR FEATURE GATING ============
+        # This is CRITICAL - the FeatureGate system reads from user_subscriptions
+        
+        # Define trial features (same as premium_monthly)
+        trial_features = {
+            "recipe_search_limit": -1,  # Unlimited
+            "premium_recipes_access": True,
+            "ad_free": True,
+            "ai_photo_recognition_enabled": True,
+            "ai_image_generation_enabled": True,
+            "meal_planner_weeks": 8,
+            "export_to_pdf": True,
+            "recipe_import": True,
+            "video_import": True,
+            "voice_guided_cooking": True,
+            "diabetes_module": True,
+            "priority_support": True,
+            "advanced_filters": True
+        }
+        
+        # Remove any existing subscription for this user (to avoid duplicates)
+        await db.user_subscriptions.delete_many({"user_id": user_id})
+        
+        # Create trial subscription
+        subscription_doc = {
+            "user_id": user_id,
+            "plan_id": "premium_monthly",  # Trial gives premium features
+            "status": "trialing",
+            "source": "trial_autostart",  # Valid source for entitlement
+            "trial_start": now.isoformat(),
+            "trial_end": end_date.isoformat(),
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+            "platform": platform,
+            "features": trial_features,
+            "is_trial": True
+        }
+        
+        await db.user_subscriptions.insert_one(subscription_doc)
+        
         logger.info(f"✅ Trial auto-started for user {user_id} from platform {platform}")
+        logger.info(f"✅ Created trial subscription with premium features")
         
         return {
             "started": True,
