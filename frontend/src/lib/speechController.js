@@ -582,9 +582,29 @@ function startListening() {
 /**
  * Start listening from user gesture (arms session on mobile)
  */
-function startListeningFromGesture() {
+async function startListeningFromGesture() {
   console.log('[Recognition] User gesture - arming session');
   sessionArmed = true;
+  
+  // MOBILE: Initialize mobile voice compatibility (AudioContext, prewarm, voices)
+  if (isMobile && !mobileInitialized) {
+    await initMobileVoice();
+  }
+  
+  // MOBILE: Request microphone permission first
+  if (isMobile && mobileSpeechRecognition.isSupported()) {
+    try {
+      const hasPermission = await mobileSpeechRecognition.requestPermission();
+      if (!hasPermission) {
+        onRecognitionStateChange?.('permission-needed');
+        return false;
+      }
+    } catch (e) {
+      console.log('[Recognition] Permission request failed:', e);
+      onRecognitionStateChange?.('permission-needed');
+      return false;
+    }
+  }
   
   // MOBILE: If TTS speaking, just arm session
   if (isMobile && isSpeaking) {
