@@ -30,46 +30,44 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
-### 2026-02-15 - AI Chef Production Fix (Current Session)
+### 2026-02-15 - AI Chef Complete Integration Fix
+- **FIXED**: Critical bug where AI Chef couldn't find newly generated chat recipes
+  - Root cause: `detailed_recipes` were saved by `title_lower` key but AI Chef searched by `id`
+  - Fix: Added `recipe_id` to `DetailedRecipeRequest` model
+  - Frontend now passes `recipe_id` when calling `/api/recipes/detailed`
+  - Backend saves `id` field to `detailed_recipes` collection
+  - Added cache update logic for recipes already in cache
+- **TESTED**: Complete E2E flow verified with Chef Pro account (Lloyd)
+  - Login → Chat → Mood → Meal Type → Dietary → Cuisine → Generate → View Recipe → AI Chef ✅
+
+### 2026-02-15 - AI Chef Production Fix (Earlier)
 - **COMPLETED**: AI Chef Error Handling Refactor
   - Updated `AIChefMode.jsx` with production-grade error handling
   - Added error type classification (NOT_FOUND, NETWORK, SERVER, UNKNOWN)
   - Implemented user-friendly error screens with contextual icons and messages
-  - Added retry functionality for network/server errors
-  - Added comprehensive data-testid attributes for testing
-- **TESTED**: All error scenarios verified working
-  - Invalid recipe ID → 404 → "Recipe Not Found" screen with 🔍 icon
-  - Network errors → "Connection Issue" screen with 📡 icon  
-  - Server errors → "Server Error" screen with 🔧 icon
-  - Go Back button correctly navigates
-  - Valid recipes load successfully with start screen
-
-### 2026-02-15 - Fork Session (Earlier)
-- **FIXED**: Network connectivity verified in new environment
-- **FIXED**: `LlmChat` initialization bug in `/app/backend/routes/chat.py` line 1253
-- **FIXED**: Recipe IDs now generated and included in all response paths
-- **FIXED**: Hybrid/SerpAPI recipes now saved to library for AI Chef access
-- **ADDED**: On-demand instruction generation for recipes without steps
 
 ### Previous Session Completions
-- App Logo Implementation (Android/iOS icons and splash screens)
-- Mobile Voice Compatibility Layer (`mobileVoiceCompat.js`, `mobileSpeechRecognition.js`)
-- Production Android Voice Engine (`AndroidVoiceEngine.js`)
-- Isolated AI Chef Feature structure (`frontend/src/features-premium/ai-chef/`)
+- Network connectivity restoration
+- `LlmChat` initialization bug fix
+- Recipe ID consistency fix
+- App Logo Implementation
+- Mobile Voice Compatibility Layer
+- Production Android Voice Engine
+- Isolated AI Chef Feature structure
 
 ---
 
 ## Current Status
 
-### Working Features
+### Working Features ✅
 - User authentication (register/login)
 - Recipe generation via `/api/chat/recipes/hybrid`
 - SerpAPI recipe search
-- Voice engine architecture (untested on device)
-- **AI Chef Feature (Production Ready)**
-  - Recipe loading from multiple collections
+- Voice engine architecture
+- **AI Chef Feature (FULLY WORKING)**
+  - Complete flow: Chat → Mood → Meal → Dietary → Cuisine → Recipes → View → AI Chef
+  - Recipe loading from multiple collections (recipe_library, detailed_recipes, recipes)
   - Error handling with retry logic
-  - Start cooking screen
   - Step-by-step navigation
   - Voice commands support
 
@@ -85,6 +83,7 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - [x] Network connectivity restoration
 - [x] Recipe generation bug fix
 - [x] AI Chef Error Handling Production Fix
+- [x] AI Chef Recipe ID Integration Fix
 
 ### P1 - High Priority
 - [ ] Android build verification
@@ -95,51 +94,18 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - [ ] ElevenLabs TTS quota notification UI
 - [ ] Ingredient Detail Page (dynamic route `/ingredients/:id`)
 
-### P3 - Low Priority
-- [ ] Voice engine optimization on real devices
-
 ---
 
-## Architecture
-
-```
-/app
-├── backend/
-│   ├── server.py
-│   ├── routes/
-│   │   ├── chat.py (recipes, AI chat, AI Chef endpoints)
-│   │   ├── recipes.py
-│   │   ├── diabetes.py
-│   │   └── fridge_scanner.py
-│   └── services/
-├── frontend/
-│   ├── src/
-│   │   ├── App.js (routing, includes /recipes/:id/ai-chef route)
-│   │   ├── features-premium/ai-chef/
-│   │   │   ├── AIChefMode.jsx (main component - UPDATED)
-│   │   │   ├── AIChef.css (styles - UPDATED)
-│   │   │   ├── ConversationEngine.js
-│   │   │   ├── EmotionalNarrator.js
-│   │   │   └── VoiceRecognition.js
-│   │   ├── components/RecipeDetailModal.js (has AI Chef button)
-│   │   ├── lib/speechController.js
-│   │   └── pages/
-│   └── capacitor.config.json
-├── android/ (native project)
-└── ios/ (native project)
-```
-
 ## Key API Endpoints
-- `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/chat/recipes/hybrid` - Recipe generation
+- `POST /api/recipes/detailed` - Generate detailed recipe (now saves with ID)
 - `GET /api/chat/ai-chef/recipe/{recipe_id}` - Get recipe for AI Chef
 - `POST /api/chat/ai-chef/chat` - AI Chef conversation
-- `POST /api/fridge/scan` - Fridge scanning
 
 ## Test Credentials
-- Email: `demouser@example.com`
-- Password: `password123`
+- **Chef Pro Account**: `lloydmasih1976@gmail.com` / `Milokiko*25`
+- **Demo Account**: `demouser@example.com` / `password123`
 
 ## Test Reports
-- `/app/test_reports/iteration_88.json` - AI Chef Error Handling Tests (All Passing)
+- `/app/test_reports/iteration_90.json` - AI Chef Complete Flow Tests (All Passing)
