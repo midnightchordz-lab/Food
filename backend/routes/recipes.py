@@ -134,21 +134,27 @@ async def get_detailed_recipe(request: DetailedRecipeRequest, current_user: User
         user_message = UserMessage(text=f"Generate the complete detailed recipe for {request.recipe_title}")
         detailed_content = await chat.send_message(user_message)
         
-        # Cache in database
+        # Cache in database - include recipe_id for AI Chef lookup
+        update_doc = {
+            "$set": {
+                "title": request.recipe_title,
+                "title_lower": request.recipe_title.lower().strip(),
+                "cuisine": request.cuisine,
+                "meal_type": request.meal_type,
+                "dietary_pref": request.dietary_pref,
+                "detailed_content": detailed_content,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "user_id": current_user.id
+            }
+        }
+        
+        # Add recipe_id if provided (for AI Chef to find)
+        if request.recipe_id:
+            update_doc["$set"]["id"] = request.recipe_id
+        
         await db.detailed_recipes.update_one(
             {"title_lower": request.recipe_title.lower().strip()},
-            {
-                "$set": {
-                    "title": request.recipe_title,
-                    "title_lower": request.recipe_title.lower().strip(),
-                    "cuisine": request.cuisine,
-                    "meal_type": request.meal_type,
-                    "dietary_pref": request.dietary_pref,
-                    "detailed_content": detailed_content,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                    "user_id": current_user.id
-                }
-            },
+            update_doc,
             upsert=True
         )
         
