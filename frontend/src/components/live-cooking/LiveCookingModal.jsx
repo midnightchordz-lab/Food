@@ -404,6 +404,7 @@ export default function LiveCookingModal() {
   // Voice narration for current step - MOBILE AUDIO FOCUS SEQUENCING
   // Single authoritative source: reads ONLY from currentStep at moment of playback
   // MOBILE: Uses turn-taking (TTS -> delay -> Recognition)
+  // NATURAL: Uses varied, conversational transitions
   const readCurrentStep = async () => {
     if (!instructions.length || currentStep >= instructions.length) return;
     
@@ -445,25 +446,35 @@ export default function LiveCookingModal() {
     
     if (!stepText) return;
     
+    // NATURAL: Generate conversational narration text
+    const naturalText = generateNaturalNarration(stepText, currentStep + 1, instructions.length);
+    
     // Get environment for mobile-specific behavior
     const env = globalGetEnvironment();
     
-    // If browser speech mode is active, use GLOBAL CONTROLLER
+    // If browser speech mode is active, use GLOBAL CONTROLLER with natural text
     if (useBrowserSpeech) {
-      console.log('[VoiceSync] Using browser speech');
+      console.log('[VoiceSync] Using browser speech with natural narration');
       
       // MOBILE TURN-TAKING: Use speakThenListen for automatic recognition after TTS
       if (env.isMobile && handsFreeEnabled && globalIsSessionArmed()) {
         console.log('[VoiceSync] Mobile turn-taking: TTS -> Recognition');
-        globalSpeakThenListen(stepText, currentStep + 1, instructions.length);
+        // Use natural text for browser speech
+        globalSpeak(naturalText);
+        // Start listening after a delay
+        setTimeout(() => {
+          if (globalIsSessionArmed()) {
+            globalStartRecognition();
+          }
+        }, 2000);
       } else {
-        // Desktop or session not armed: just narrate
-        globalNarrateStep(stepText, currentStep + 1, instructions.length);
+        // Desktop or session not armed: just narrate naturally
+        globalSpeak(naturalText);
       }
       return;
     }
     
-    // Try ElevenLabs first
+    // Try ElevenLabs first (it handles natural narration on its own via backend)
     try {
       const token = localStorage.getItem('token');
       
