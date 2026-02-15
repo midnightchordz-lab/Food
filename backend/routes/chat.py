@@ -1252,11 +1252,12 @@ Do NOT repeat these recipes: {', '.join([r['title'] for r in serpapi_recipes])}
             
             chat = LlmChat(
                 api_key=os.environ.get('EMERGENT_LLM_KEY'),
-                model="gpt-4o-mini",
-                system_prompt="You are a creative chef generating unique recipe suggestions."
+                session_id=f"hybrid-{session_id}",
+                system_message="You are a creative chef generating unique recipe suggestions."
             )
+            chat.with_model("openai", "gpt-4o-mini")
             
-            ai_response = await chat.send_message_async(UserMessage(content=prompt))
+            ai_response = await chat.send_message(UserMessage(text=prompt))
             
             # Parse AI response
             ai_parsed = parse_recipes_to_json(ai_response)
