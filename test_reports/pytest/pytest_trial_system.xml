@@ -1,0 +1,765 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="11" failures="4" skipped="0" tests="15" time="161.296" timestamp="2026-02-15T12:14:56.177177+00:00" hostname="agent-env-71058ddb-8c12-47d7-912b-447376ebe0d2"><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_status_unauthorized" time="20.021"><failure message="requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/status (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/status (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:65: in test_trial_status_unauthorized
+    response = session.get(f"{BASE_URL}/api/trial/status")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:602: in get
+    return self.request("GET", url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/status (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</failure></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_start_unauthorized" time="20.019"><failure message="requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/start (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/start (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:71: in test_trial_start_unauthorized
+    response = session.post(f"{BASE_URL}/api/trial/start", json={"platform": "web"})
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/start (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</failure></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_check_access_unauthorized" time="20.016"><failure message="requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/check-access (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/check-access (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:77: in test_trial_check_access_unauthorized
+    response = session.get(f"{BASE_URL}/api/trial/check-access")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:602: in get
+    return self.request("GET", url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/check-access (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</failure></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_status_for_user2_with_active_trial" time="20.021"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:54: in user2_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_2)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_check_access_for_user2" time="0.000"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:54: in user2_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_2)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_start_rejected_for_user2_already_active" time="0.000"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:54: in user2_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_2)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_status_for_user1" time="20.021"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:46: in user1_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_check_access_for_user1" time="0.000"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:46: in user1_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_start_with_different_platforms" time="0.000"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:46: in user1_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialSystem" name="test_trial_status_after_start_attempt" time="0.000"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:46: in user1_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_1)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialDataValidation" name="test_trial_status_response_structure" time="20.018"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:254: in auth_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_2)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialDataValidation" name="test_check_access_response_structure" time="0.000"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:254: in auth_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_2)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialEdgeCases" name="test_trial_start_with_invalid_platform" time="20.021"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:322: in auth_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_2)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialEdgeCases" name="test_trial_start_without_platform" time="0.000"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))&quot;">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:322: in auth_token
+    response = session.post(f"{BASE_URL}/api/auth/login", json=TEST_USER_2)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:637: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/auth/login (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</error></testcase><testcase classname="tests.test_trial_system.TestTrialEdgeCases" name="test_invalid_token_rejection" time="20.020"><failure message="requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/status (Caused by NameResolutionError(&quot;HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)&quot;))">/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:204: in _new_conn
+    sock = connection.create_connection(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/connection.py:60: in create_connection
+    for res in socket.getaddrinfo(host, port, family, socket.SOCK_STREAM):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/socket.py:974: in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   socket.gaierror: [Errno -3] Temporary failure in name resolution
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:488: in _make_request
+    raise new_e
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:464: in _make_request
+    self._validate_conn(conn)
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:1093: in _validate_conn
+    conn.connect()
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:759: in connect
+    self.sock = sock = self._new_conn()
+                       ^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/urllib3/connection.py:211: in _new_conn
+    raise NameResolutionError(self.host, self, e) from e
+E   urllib3.exceptions.NameResolutionError: HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)
+
+The above exception was the direct cause of the following exception:
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:644: in send
+    resp = conn.urlopen(
+/root/.venv/lib/python3.11/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+/root/.venv/lib/python3.11/site-packages/urllib3/util/retry.py:535: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/status (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))
+
+During handling of the above exception, another exception occurred:
+tests/test_trial_system.py:356: in test_invalid_token_rejection
+    r1 = session.get(
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:602: in get
+    return self.request("GET", url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/root/.venv/lib/python3.11/site-packages/requests/adapters.py:677: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPSConnectionPool(host='hands-free-cook.preview.emergentagent.com', port=443): Max retries exceeded with url: /api/trial/status (Caused by NameResolutionError("HTTPSConnection(host='hands-free-cook.preview.emergentagent.com', port=443): Failed to resolve 'hands-free-cook.preview.emergentagent.com' ([Errno -3] Temporary failure in name resolution)"))</failure></testcase></testsuite></testsuites>
