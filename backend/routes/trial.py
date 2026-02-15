@@ -141,21 +141,25 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
         # ============ CREATE SUBSCRIPTION RECORD FOR FEATURE GATING ============
         # This is CRITICAL - the FeatureGate system reads from user_subscriptions
         
-        # Define trial features (same as premium_monthly)
+        # Define trial features (ALL premium features unlocked)
         trial_features = {
             "recipe_search_limit": -1,  # Unlimited
             "premium_recipes_access": True,
             "ad_free": True,
             "ai_photo_recognition_enabled": True,
+            "ai_photo_recognition_limit": 100,
             "ai_image_generation_enabled": True,
-            "meal_planner_weeks": 8,
+            "ai_image_generation_limit": 50,
+            "meal_planner_weeks": 12,
             "export_to_pdf": True,
             "recipe_import": True,
             "video_import": True,
             "voice_guided_cooking": True,
             "diabetes_module": True,
             "priority_support": True,
-            "advanced_filters": True
+            "advanced_filters": True,
+            "family_members": 5,
+            "fridge_scanner": True
         }
         
         # Remove any existing subscription for this user (to avoid duplicates)
