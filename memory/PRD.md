@@ -1808,6 +1808,50 @@ The app uses **Capacitor** hybrid framework - all web features are automatically
 - **Ingredient Encyclopedia Page** - Create `/pages/IngredientEncyclopedia.jsx` to browse/search all ingredients from the database
 - **Ingredient Detail Page** - Create dynamic route `/ingredients/:id` for individual ingredient details
 
+### AI Chef Assistant ✅ NEW (Feb 2026)
+**Premium feature: AI-powered conversational cooking assistant - 100% ISOLATED from existing code**
+
+**What it is:**
+- Conversational AI chef that guides users through recipes step-by-step
+- Voice commands + text input support
+- GPT-4o-mini powered responses with cooking tips
+- ElevenLabs premium voice with emotional variation
+- Works on Web, iOS, and Android
+
+**Implementation Strategy:**
+- 100% isolated in `features-premium/ai-chef/` folder
+- ZERO changes to existing voice mode code
+- Can be removed by deleting folder + 1 route
+
+**Files Created (6 new files, ~730 lines total):**
+1. `features-premium/ai-chef/PlatformDetector.js` - Platform detection (Web/iOS/Android)
+2. `features-premium/ai-chef/ConversationEngine.js` - GPT-4o-mini conversation with recipe context
+3. `features-premium/ai-chef/EmotionalNarrator.js` - ElevenLabs TTS with emotion settings
+4. `features-premium/ai-chef/VoiceRecognition.js` - Cross-platform speech recognition
+5. `features-premium/ai-chef/AIChefMode.jsx` - Main React component
+6. `features-premium/ai-chef/AIChef.css` - Isolated styling (dark theme)
+
+**Files Modified (minimal changes):**
+- `App.js` - Added 1 import + 1 route (`/recipes/:id/ai-chef`)
+
+**Route Access:**
+- Navigate to `/recipes/{recipe_id}/ai-chef`
+- Can add button to RecipeDetailPage if needed
+
+**API Keys Required (add to .env):**
+```
+REACT_APP_OPENAI_KEY=sk-your-key
+REACT_APP_ELEVENLABS_API_KEY=your-key
+REACT_APP_ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
+```
+
+**Isolation Guarantee:**
+- Deleting `features-premium/` folder = app works exactly as before
+- Existing voice mode completely untouched
+- No shared state with existing components
+
+**Test Status:** Code implementation complete. Requires API keys and real device testing.
+
 ### P2 - Medium Priority
 - Case-insensitive user search bug fix
 - Add voice player to more recipe views (DiscoverRecipes if needed)
