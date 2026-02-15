@@ -597,47 +597,63 @@ All existing named exports preserved for LiveCookingModal.jsx:
 4. Mobile browsers have stricter autoplay policies
 5. Android speech recognition needs auto-restart
 
-**Solution - Two Compatibility Layers:**
+**Solution - Three Compatibility Layers:**
 
-1. **`utils/mobileVoiceCompat.js`** - Speech Synthesis Wrapper
+1. **`utils/mobileVoiceCompat.js`** - iOS Speech Synthesis Wrapper
    - `initAudioContext()` - Creates AudioContext from user interaction (iOS requirement)
    - `prewarm()` - Pre-warms speech synthesis (iOS requirement)
    - `ensureVoicesReady()` - Waits up to 1.5s for voices to load on mobile
    - `speak()` - Enhanced speak with local voice preference for iOS
    - `speakInChunks()` - Auto-splits long text for iOS (>200 chars)
 
-2. **`utils/mobileSpeechRecognition.js`** - Speech Recognition Wrapper
+2. **`utils/mobileSpeechRecognition.js`** - iOS Speech Recognition Wrapper
    - `requestPermission()` - Explicit microphone permission request
    - `start()` - Mobile-optimized start with permission check
-   - Auto-restart on Android (continuous=false for reliability)
-   - Error handling: no-speech auto-restart, permission denied callback
+   - Auto-restart on end, error handling
+
+3. **`services/AndroidVoiceEngine.js`** - Production-Grade Android Voice Engine
+   - **Audio System Init:** AudioContext + silent audio + speech prewarm (triple-method)
+   - **Voice Caching:** Loads once, reuses with priority selection (Google > English > Default)
+   - **Aggressive TTS Cleanup:** Triple-method cancel (cancel + clear + pause-cancel)
+   - **Event Throttling:** 500ms min between commands (prevents sluggishness)
+   - **Auto-Restart Recognition:** 300ms delay between sessions (prevents event loop congestion)
+   - **Memory Leak Prevention:** Cleanup on visibility change, beforeunload
+   - **Safety Timeout:** 2s timeout if speech doesn't start
 
 **Integration into speechController.js:**
-- `initMobileVoice()` - One-time mobile initialization from user gesture
-- `initializeFromUserGesture()` - Full init including mobile compat
-- `startListeningFromGesture()` - Now requests mic permission on mobile first
-- `safeStartRecognition()` - Uses mobile recognition on mobile devices
-- iOS: Uses `speakWithMobileCompat()` for long text (>200 chars)
-- iOS: Prefers local voices for better reliability
+- Android: Uses `AndroidVoiceEngine` exclusively (production-grade)
+- iOS: Uses `mobileVoiceCompat` + `mobileSpeechRecognition`
+- Desktop: Uses standard Web Speech API
+- `initMobileVoice()` - Platform-specific initialization from user gesture
+- `speakWithAndroidEngine()` - Android-optimized speech function
+- `cancelSpeech()` - Now uses Android engine's force stop on Android
+- `checkIsSpeaking()` - Checks Android engine state on Android
 
 **Files Created:**
-- `frontend/src/utils/mobileVoiceCompat.js` - Speech synthesis mobile compat
-- `frontend/src/utils/mobileSpeechRecognition.js` - Speech recognition mobile compat
+- `frontend/src/utils/mobileVoiceCompat.js` - iOS speech synthesis compat
+- `frontend/src/utils/mobileSpeechRecognition.js` - iOS speech recognition compat
+- `frontend/src/services/AndroidVoiceEngine.js` - Production Android voice engine
 
 **Files Modified:**
-- `frontend/src/lib/speechController.js` - Integrated mobile compatibility layers
+- `frontend/src/lib/speechController.js` - Integrated all mobile compatibility layers
 
-**Key Mobile Requirements Handled:**
-- ✅ HTTPS only (http:// won't work)
-- ✅ User interaction required (button tap/click)
-- ✅ Voice loading wait on iOS (up to 1.5s)
-- ✅ Microphone permission request
+**Key Android Optimizations:**
+- ✅ `continuous = false` for recognition (more responsive)
+- ✅ Command throttling (prevents rapid-fire sluggishness)
+- ✅ Delayed auto-restart (300ms, prevents event loop congestion)
+- ✅ Aggressive cleanup (prevents memory leaks)
+- ✅ Triple-method audio initialization
+- ✅ Voice caching with priority selection
+- ✅ Safety timeouts on speech
+
+**Key iOS Optimizations:**
+- ✅ Voice loading wait (up to 1.5s)
 - ✅ AudioContext initialization from gesture
 - ✅ Speech synthesis prewarm
-- ✅ Long text chunking for iOS
-- ✅ Auto-restart recognition on Android
+- ✅ Long text chunking (>200 chars)
+- ✅ Local voice preference
 
-**Test Status:** Code implementation complete. Requires real device testing.
+**Test Status:** Code implementation complete. Requires real device testing on Android and iOS.
 
 #### Mobile Audio Focus Sequencing Fix ✅ (Dec 2025)
 **Stabilized mobile audio by implementing single audio owner and turn-taking sequence**
