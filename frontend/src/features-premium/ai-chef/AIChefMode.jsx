@@ -43,7 +43,9 @@ function AIChefMode() {
   const hasInitialized = useRef(false);
   const messagesEndRef = useRef(null);
   const loadAttempts = useRef(0);
+  const smallTalkTimer = useRef(null);
   const MAX_LOAD_ATTEMPTS = 2;
+  const SMALL_TALK_DELAY = 45000; // 45 seconds of idle before small talk
 
   /**
    * Production-grade recipe loader with comprehensive error handling
