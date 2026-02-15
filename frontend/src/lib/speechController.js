@@ -17,13 +17,15 @@
  * - Turn-taking: TTS → pause → Recognition → pause → TTS
  * 
  * MOBILE COMPATIBILITY (Feb 2026):
- * - Uses mobileVoiceCompat for iOS/Android speech synthesis
- * - Uses mobileSpeechRecognition for iOS/Android speech recognition
+ * - Uses mobileVoiceCompat for iOS speech synthesis
+ * - Uses mobileSpeechRecognition for iOS speech recognition
+ * - Uses AndroidVoiceEngine for Android (production-grade)
  * - Handles AudioContext initialization, voice loading, permissions
  */
 
 import { mobileVoiceCompat, initVoiceModeForMobile } from '../utils/mobileVoiceCompat';
 import { mobileSpeechRecognition } from '../utils/mobileSpeechRecognition';
+import { androidVoiceEngine } from '../services/AndroidVoiceEngine';
 
 // ============================================
 // STATE
@@ -32,6 +34,7 @@ import { mobileSpeechRecognition } from '../utils/mobileSpeechRecognition';
 let initialized = false;
 let destroyed = false;
 let mobileInitialized = false;
+let androidEngineActive = false;
 
 // Environment
 let isMobile = false;
