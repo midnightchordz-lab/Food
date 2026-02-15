@@ -469,6 +469,12 @@ class VoiceRecognition {
   }
 
   async requestPermission() {
+    // Use Capacitor permission if available
+    if (this.useCapacitor && CapacitorSpeechRecognition) {
+      return this.requestCapacitorPermission();
+    }
+    
+    // Web: Request microphone permission
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(track => track.stop());
@@ -481,6 +487,16 @@ class VoiceRecognition {
   }
 
   startInternal() {
+    // Use Capacitor if available
+    if (this.useCapacitor && CapacitorSpeechRecognition) {
+      this.startCapacitorRecognition().catch(e => {
+        console.error('[VoiceRecognition] Capacitor start failed:', e);
+        this.handleCapacitorError(e);
+      });
+      return true;
+    }
+    
+    // Web Speech API
     if (!this.recognition || this.isListening) return false;
 
     try {
