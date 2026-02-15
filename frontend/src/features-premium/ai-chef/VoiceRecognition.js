@@ -516,12 +516,15 @@ class VoiceRecognition {
    * Start listening in TAP-TO-SPEAK mode (original behavior)
    */
   async start() {
-    if (!this.recognition) {
+    // Ensure initialization is complete
+    await this.ensureInitialized();
+    
+    if (!this.recognition && !this.useCapacitor) {
       throw new Error('Speech recognition not supported');
     }
 
     // Request permission on mobile
-    if (platformDetector.isMobile()) {
+    if (platformDetector.isMobile() || this.useCapacitor) {
       const hasPermission = await this.requestPermission();
       if (!hasPermission) {
         throw new Error('Microphone permission required');
@@ -539,7 +542,10 @@ class VoiceRecognition {
    * Automatically restarts after speech ends or silence detected
    */
   async startContinuous() {
-    if (!this.recognition) {
+    // Ensure initialization is complete
+    await this.ensureInitialized();
+    
+    if (!this.recognition && !this.useCapacitor) {
       throw new Error('Speech recognition not supported');
     }
 
