@@ -105,7 +105,7 @@ class DiscoveredRecipe(BaseModel):
 async def get_detailed_recipe(request: DetailedRecipeRequest, current_user: User = Depends(get_current_user)):
     """Generate a comprehensive detailed recipe"""
     try:
-        logging.info(f"Generating detailed recipe for: {request.recipe_title}")
+        logging.info(f"Generating detailed recipe for: {request.recipe_title}, recipe_id: {request.recipe_id}")
         
         # Check cache first
         cached = await db.detailed_recipes.find_one(
@@ -114,6 +114,13 @@ async def get_detailed_recipe(request: DetailedRecipeRequest, current_user: User
         )
         if cached and cached.get("detailed_content"):
             logging.info(f"Found cached detailed recipe for: {request.recipe_title}")
+            # If recipe_id provided and not already saved with this ID, update the record
+            if request.recipe_id and cached.get("id") != request.recipe_id:
+                logging.info(f"Updating cached recipe with ID: {request.recipe_id}")
+                await db.detailed_recipes.update_one(
+                    {"title_lower": request.recipe_title.lower().strip()},
+                    {"$set": {"id": request.recipe_id}}
+                )
             return {"recipe": cached["detailed_content"], "cached": True}
         
         # Generate new detailed recipe
