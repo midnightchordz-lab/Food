@@ -543,13 +543,35 @@ function AIChefMode() {
             </div>
           )}
 
+          {/* Hands-Free Mode Toggle */}
+          <div className="hands-free-toggle" data-testid="hands-free-toggle">
+            <label className="toggle-switch">
+              <input 
+                type="checkbox" 
+                checked={handsFreeMode}
+                onChange={toggleHandsFreeMode}
+                data-testid="hands-free-checkbox"
+              />
+              <span className="toggle-slider"></span>
+            </label>
+            <span className="toggle-label">
+              {handsFreeMode ? 'Hands-Free Mode' : 'Tap-to-Speak Mode'}
+            </span>
+          </div>
+
           {/* Listening Indicator */}
           <div 
-            className={`listening-indicator ${isListening ? 'active' : ''}`}
+            className={`listening-indicator ${isListening ? 'active' : ''} ${handsFreeMode ? 'hands-free' : ''} ${voiceState}`}
             onClick={toggleListening}
             data-testid="ai-chef-mic-btn"
           >
-            {isListening ? '🎤 Listening...' : '🎤 Tap to speak'}
+            <div className="mic-icon-container">
+              {isListening && handsFreeMode && (
+                <div className="pulse-ring"></div>
+              )}
+              <span className="mic-icon">{isListening ? '🎤' : '🎙️'}</span>
+            </div>
+            <span className="status-text">{getVoiceStatusText()}</span>
           </div>
 
           {/* Controls */}
