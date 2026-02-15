@@ -1586,6 +1586,7 @@ async def get_recipe_for_ai_chef(
     Fetch a recipe from any collection for AI Chef mode
     Searches multiple collections to find the recipe
     Parses instructions from full_content if not present
+    Generates basic instructions on-demand if none exist
     """
     try:
         recipe = None
@@ -1626,6 +1627,50 @@ async def get_recipe_for_ai_chef(
                 ingredients = parse_ingredients_from_markdown(full_content)
                 if ingredients:
                     recipe['ingredients'] = ingredients
+        
+        # Generate basic instructions on-demand if still empty (for SerpAPI recipes)
+        if not recipe.get('instructions') or len(recipe.get('instructions', [])) == 0:
+            try:
+                title = recipe.get('title', 'this dish')
+                description = recipe.get('description', '')
+                ingredients = recipe.get('ingredients', [])
+                
+                # Generate instructions using AI
+                chat = LlmChat(
+                    api_key=os.environ.get('EMERGENT_LLM_KEY'),
+                    session_id=f"ai-chef-gen-{recipe_id}",
+                    system_message="You are a chef. Generate clear, numbered cooking instructions."
+                )
+                chat.with_model("openai", "gpt-4o-mini")
+                
+                prompt = f"""Generate 5-7 simple cooking steps for "{title}".
+Description: {description}
+Ingredients: {', '.join(ingredients[:10]) if ingredients else 'standard ingredients'}
+
+Return ONLY numbered steps (1. Step one, 2. Step two, etc). Keep each step concise (1-2 sentences)."""
+                
+                ai_response = await chat.send_message(UserMessage(text=prompt))
+                
+                # Parse numbered steps from response
+                import re
+                steps = re.findall(r'\d+\.\s*(.+?)(?=\n\d+\.|\n\n|$)', ai_response, re.DOTALL)
+                if steps:
+                    recipe['instructions'] = [s.strip() for s in steps if s.strip()]
+                    
+                    # Save generated instructions to the database
+                    await db.recipe_library.update_one(
+                        {"id": recipe_id},
+                        {"$set": {"instructions": recipe['instructions']}}
+                    )
+                    logging.info(f"Generated {len(recipe['instructions'])} instructions for recipe: {title}")
+            except Exception as gen_error:
+                logging.error(f"Failed to generate instructions: {gen_error}")
+                # Provide fallback basic instructions
+                recipe['instructions'] = [
+                    f"Prepare all ingredients for {recipe.get('title', 'the dish')}.",
+                    "Follow the recipe description to cook the dish.",
+                    "Serve and enjoy!"
+                ]
         
         return recipe
         
