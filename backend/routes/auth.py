@@ -22,6 +22,7 @@ from services.entitlement_guard import (
     log_security_event,
     SecurityEvent
 )
+from .trial import auto_start_trial_if_eligible
 import jwt
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
