@@ -15,7 +15,15 @@
  * - TTS and Recognition CANNOT run simultaneously
  * - User tap required to "arm" session on mobile
  * - Turn-taking: TTS → pause → Recognition → pause → TTS
+ * 
+ * MOBILE COMPATIBILITY (Feb 2026):
+ * - Uses mobileVoiceCompat for iOS/Android speech synthesis
+ * - Uses mobileSpeechRecognition for iOS/Android speech recognition
+ * - Handles AudioContext initialization, voice loading, permissions
  */
+
+import { mobileVoiceCompat, initVoiceModeForMobile } from '../utils/mobileVoiceCompat';
+import { mobileSpeechRecognition } from '../utils/mobileSpeechRecognition';
 
 // ============================================
 // STATE
@@ -23,9 +31,12 @@
 
 let initialized = false;
 let destroyed = false;
+let mobileInitialized = false;
 
 // Environment
 let isMobile = false;
+let isIOS = false;
+let isAndroid = false;
 let isSecureContext = true;
 
 // TTS State
