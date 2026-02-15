@@ -59,31 +59,46 @@ class VoiceRecognition {
     this.maxRestartAttempts = 10; // Prevent infinite restart loops
     this.useCapacitor = false; // Track which API we're using
     this.capacitorListener = null; // Store listener for cleanup
+    this.capacitorInitialized = false;
+    this.initializationPromise = null;
     
-    this.initialize();
+    // Start initialization (async, but don't block constructor)
+    this.initializationPromise = this.initialize();
   }
 
   async initialize() {
     // Check if we should use Capacitor native API
     const isNative = platformDetector.isNative();
     
-    if (isNative && CapacitorSpeechRecognition) {
-      try {
-        // Check if Capacitor Speech Recognition is available
-        const available = await CapacitorSpeechRecognition.available();
-        if (available.available) {
-          this.useCapacitor = true;
-          console.log('[VoiceRecognition] Using Capacitor native speech recognition');
-          this.setupCapacitorHandlers();
-          return;
+    if (isNative) {
+      // Try to load Capacitor plugin
+      const pluginLoaded = await loadCapacitorSpeechPlugin();
+      
+      if (pluginLoaded && CapacitorSpeechRecognition) {
+        try {
+          // Check if Capacitor Speech Recognition is available
+          const available = await CapacitorSpeechRecognition.available();
+          if (available.available) {
+            this.useCapacitor = true;
+            this.capacitorInitialized = true;
+            console.log('[VoiceRecognition] Using Capacitor native speech recognition');
+            await this.setupCapacitorHandlers();
+            return;
+          }
+        } catch (e) {
+          console.log('[VoiceRecognition] Capacitor speech check failed:', e.message);
         }
-      } catch (e) {
-        console.log('[VoiceRecognition] Capacitor speech check failed, falling back to Web API:', e);
       }
     }
     
     // Fallback to Web Speech API
     this.initializeWebSpeechAPI();
+  }
+  
+  async ensureInitialized() {
+    if (this.initializationPromise) {
+      await this.initializationPromise;
+    }
   }
   
   initializeWebSpeechAPI() {
