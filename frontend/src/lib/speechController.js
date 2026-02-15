@@ -351,6 +351,33 @@ async function speakWithMobileCompat(text, onComplete) {
   return true;
 }
 
+/**
+ * Speak using Android Voice Engine (production-grade)
+ */
+async function speakWithAndroidEngine(text, onComplete) {
+  // Stop recognition first (single audio owner)
+  if (isListening) {
+    androidVoiceEngine.stopListening();
+    isListening = false;
+  }
+  
+  isSpeaking = true;
+  onSynthesisStateChange?.('speaking');
+  
+  try {
+    await androidVoiceEngine.speak(text, { rate: 0.95 });
+  } catch (e) {
+    console.error('[TTS] Android engine speak failed:', e);
+  }
+  
+  isSpeaking = false;
+  onSynthesisStateChange?.('idle');
+  
+  // Delay before callback (audio focus handoff)
+  setTimeout(() => onComplete?.(), 400);
+  return true;
+}
+
 function cleanupTTS() {
   isSpeaking = false;
   currentUtterance = null;
@@ -372,6 +399,14 @@ function cancelSpeech(reason = 'unknown') {
     return;
   }
   
+  // ANDROID: Use Android engine's force stop
+  if (isAndroid && androidEngineActive) {
+    androidVoiceEngine.forceStopSpeech();
+    isSpeaking = false;
+    onSynthesisStateChange?.('idle');
+    return;
+  }
+  
   if (!synthesis || (!isSpeaking && !synthesis?.speaking)) return;
   
   console.log('[TTS] Cancel:', reason);
@@ -381,6 +416,10 @@ function cancelSpeech(reason = 'unknown') {
 }
 
 function checkIsSpeaking() {
+  // ANDROID: Check Android engine state
+  if (isAndroid && androidEngineActive) {
+    return androidVoiceEngine.getSpeakingStatus();
+  }
   return isSpeaking || (synthesis?.speaking === true);
 }
 
