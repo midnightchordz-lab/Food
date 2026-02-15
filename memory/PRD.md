@@ -32,6 +32,20 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-15 - Mobile Voice Compatibility Complete ✅
+- **COMPLETED**: Full Capacitor native speech recognition integration
+  - Enhanced VoiceRecognition.js with native iOS/Android support via @capacitor-community/speech-recognition
+  - Implemented async initialization with proper plugin loading
+  - Added Capacitor permission request and handling
+  - Platform-specific error handling (permission denied, no speech, network errors)
+  - Auto-restart in continuous hands-free mode on native platforms
+  - Partial results listener for real-time speech feedback
+  - Graceful fallback to Web Speech API when native unavailable
+- **FILES MODIFIED**:
+  - `frontend/src/features-premium/ai-chef/VoiceRecognition.js` - Full Capacitor integration
+  - `frontend/src/features-premium/ai-chef/PlatformDetector.js` - Enhanced Capacitor detection
+- **TESTED**: Web platform verified working (native requires device build)
+
 ### 2026-02-15 - Blue (Relaxed) App Icon Implementation ✅
 - **COMPLETED**: New app icon with "Relaxed" blue theme
   - Generated all PWA icon sizes (72, 96, 128, 144, 152, 192, 384, 512px)
