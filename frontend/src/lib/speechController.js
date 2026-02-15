@@ -757,6 +757,11 @@ function destroy() {
     recognition = null;
   }
   
+  // Stop mobile recognition
+  if (mobileSpeechRecognition.isSupported()) {
+    mobileSpeechRecognition.abort();
+  }
+  
   // Clear callbacks
   onRecognitionResult = null;
   onRecognitionStateChange = null;
@@ -765,6 +770,7 @@ function destroy() {
   
   // Reset state
   initialized = false;
+  mobileInitialized = false;
   isSpeaking = false;
   isListening = false;
   sessionArmed = false;
