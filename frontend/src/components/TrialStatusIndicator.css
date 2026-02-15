@@ -1,0 +1,128 @@
+/* Trial Status Indicator Styles */
+
+.trial-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Active trial - default state */
+.trial-indicator-active {
+  background: linear-gradient(135deg, rgba(74, 124, 89, 0.15) 0%, rgba(74, 124, 89, 0.1) 100%);
+  color: #4A7C59;
+  border: 1px solid rgba(74, 124, 89, 0.2);
+}
+
+.trial-indicator-active:hover {
+  background: linear-gradient(135deg, rgba(74, 124, 89, 0.25) 0%, rgba(74, 124, 89, 0.2) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(74, 124, 89, 0.15);
+}
+
+/* Urgent state - 2 days or less */
+.trial-indicator-urgent {
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.15) 0%, rgba(234, 88, 12, 0.1) 100%);
+  color: #EA580C;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  animation: pulse-urgent 2s ease-in-out infinite;
+}
+
+.trial-indicator-urgent:hover {
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.25) 0%, rgba(234, 88, 12, 0.2) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.2);
+}
+
+@keyframes pulse-urgent {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* Pro badge for paid users */
+.trial-indicator-pro {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #1a1a1a;
+  border: none;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.trial-indicator-pro:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+/* Indicator text */
+.trial-indicator-text {
+  font-weight: 600;
+}
+
+/* Upgrade CTA */
+.trial-indicator-cta {
+  background: rgba(255, 255, 255, 0.9);
+  color: inherit;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+}
+
+.trial-indicator-urgent .trial-indicator-cta {
+  background: rgba(234, 88, 12, 0.2);
+}
+
+/* Compact variant for mobile */
+.trial-indicator-compact {
+  padding: 4px 10px;
+  font-size: 12px;
+  gap: 4px;
+}
+
+.trial-indicator-compact .trial-indicator-text {
+  font-weight: 700;
+}
+
+/* SVG icon adjustments */
+.trial-indicator svg {
+  flex-shrink: 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .trial-indicator {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  
+  .trial-indicator-cta {
+    display: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .trial-indicator-active {
+    background: linear-gradient(135deg, rgba(74, 124, 89, 0.25) 0%, rgba(74, 124, 89, 0.15) 100%);
+    color: #7BB8A8;
+    border-color: rgba(74, 124, 89, 0.3);
+  }
+  
+  .trial-indicator-urgent {
+    background: linear-gradient(135deg, rgba(234, 88, 12, 0.25) 0%, rgba(234, 88, 12, 0.15) 100%);
+    color: #FB923C;
+    border-color: rgba(234, 88, 12, 0.4);
+  }
+  
+  .trial-indicator-cta {
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
