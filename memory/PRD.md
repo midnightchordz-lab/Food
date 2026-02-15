@@ -158,6 +158,7 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - ✅ Blue (Relaxed) App Icon Implementation
 - ✅ 7-Day Trial System
 - ✅ Mobile Voice Compatibility (Capacitor integration)
+- ✅ Trial Auto-Start on Registration (with Welcome Modal)
 
 ### P1 (In Progress)
 - 📋 Re-enable AI Chef Feature in UI
