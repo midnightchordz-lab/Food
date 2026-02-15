@@ -660,14 +660,37 @@ class VoiceRecognition {
   }
 
   isSupported() {
-    return this.recognition !== null;
+    return this.recognition !== null || this.useCapacitor;
   }
 
-  destroy() {
-    this.stop();
+  async destroy() {
+    await this.stop();
+    
+    // Clean up Capacitor listener
+    if (this.capacitorListener) {
+      try {
+        await this.capacitorListener.remove();
+      } catch (e) {
+        // Ignore
+      }
+      this.capacitorListener = null;
+    }
+    
     this.onResult = null;
     this.onStateChange = null;
     this.onError = null;
+  }
+  
+  /**
+   * Get info about which speech API is being used
+   */
+  getApiInfo() {
+    return {
+      useCapacitor: this.useCapacitor,
+      platform: platformDetector.getPlatform(),
+      isNative: platformDetector.isNative(),
+      isSupported: this.isSupported()
+    };
   }
 }
 
