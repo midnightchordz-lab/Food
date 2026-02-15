@@ -876,13 +876,19 @@ function destroy() {
   // Stop recognition
   disarmSession();
   
+  // ANDROID: Destroy Android engine
+  if (androidEngineActive) {
+    androidVoiceEngine.destroy();
+    androidEngineActive = false;
+  }
+  
   // Clear recognition instance
   if (recognition) {
     try { recognition.abort(); } catch {}
     recognition = null;
   }
   
-  // Stop mobile recognition
+  // Stop mobile recognition (iOS)
   if (mobileSpeechRecognition.isSupported()) {
     mobileSpeechRecognition.abort();
   }
