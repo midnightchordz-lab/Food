@@ -180,7 +180,7 @@ function AIChefMode() {
     
     voiceRecognition.setOnStateChange((state) => {
       setVoiceState(state);
-      setIsListening(state === 'listening' || state === 'hearing' || state === 'restarting');
+      setIsListening(state === 'listening' || state === 'hearing' || state === 'restarting' || state === 'reconnecting');
     });
     
     voiceRecognition.setOnError((error) => {
@@ -188,7 +188,13 @@ function AIChefMode() {
         addMessage('system', 'Microphone permission denied. Please enable it in settings.');
         setHandsFreeMode(false);
       } else if (error === 'network-error') {
-        addMessage('system', 'Network error with voice recognition. Please check your connection.');
+        // Only show persistent network error message (after multiple retries failed)
+        addMessage('system', 'Voice recognition connection issue. Will keep trying. You can also type commands below.');
+      } else if (error === 'audio-capture-error') {
+        addMessage('system', 'Microphone not available. Please check your audio settings.');
+      } else if (error === 'service-blocked') {
+        addMessage('system', 'Speech recognition service is not available. Please try again later.');
+        setHandsFreeMode(false);
       }
     });
 
