@@ -1086,9 +1086,21 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
             if potential_recipes and len(potential_recipes) >= 1:
                 # LIMIT to quota - only return allowed number of recipes
                 structured_recipes = potential_recipes[:recipes_to_generate] if recipe_params else potential_recipes
+                
+                # Generate and add recipe IDs to each recipe for AI Chef access
+                from services.recipe_library import generate_recipe_id
+                for recipe in structured_recipes:
+                    recipe_cuisine = recipe.get('cuisine', '') or ''
+                    recipe_dietary = recipe.get('dietary', '') or ''
+                    recipe['id'] = generate_recipe_id(
+                        recipe.get('title', ''),
+                        recipe_cuisine,
+                        recipe_dietary
+                    )
+                
                 logging.info(f"Returning {len(structured_recipes)} recipes (quota: {recipes_to_generate if recipe_params else 'unlimited'})")
                 for r in structured_recipes[:3]:  # Log first 3
-                    logging.info(f"  - {r.get('title', 'No title')} ({r.get('cuisine', 'No cuisine')})")
+                    logging.info(f"  - {r.get('title', 'No title')} ({r.get('cuisine', 'No cuisine')}) [id: {r.get('id', 'N/A')}]")
                 
                 # INCREMENT USAGE COUNTER after successful recipe generation
                 # This is the key fix - we count RECIPES, not REQUESTS
