@@ -397,6 +397,10 @@ function AIChefMode() {
       case 'waiting':
         return '🎤 Waiting for voice...';
       default:
+        // If there's a notification, show tap to retry
+        if (voiceNotification) {
+          return '🎤 Tap to retry';
+        }
         return handsFreeMode ? '🎤 Speak anytime' : '🎤 Tap to speak';
     }
   };
