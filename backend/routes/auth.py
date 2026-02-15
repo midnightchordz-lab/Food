@@ -116,23 +116,22 @@ async def register(user: UserRegister):
     # Re-fetch user to get updated trial fields
     updated_user = await db.users.find_one({"id": user_id}, {"_id": 0, "hashed_password": 0})
     
-    # Build response with trial info
-    response_data = {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": updated_user,
-    }
-    
-    # Add trial info to response if trial was started
+    # Build trial info if trial was started
+    trial_info = None
     if trial_result and trial_result.get("started"):
-        response_data["trial"] = {
+        trial_info = {
             "active": True,
             "endsAt": trial_result.get("trial_ends"),
             "daysRemaining": trial_result.get("days_remaining", 7),
             "message": "🎉 Your 7-day premium trial has started!"
         }
     
-    return response_data
+    return Token(
+        access_token=access_token, 
+        token_type="bearer", 
+        user=updated_user,
+        trial=trial_info
+    )
 
 
 @router.post("/login", response_model=Token)
