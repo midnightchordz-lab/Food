@@ -638,6 +638,12 @@ function disarmSession() {
   sessionArmed = false;
   shouldBeListening = false;
   forceStopRecognition();
+  
+  // Also stop mobile recognition
+  if (isMobile && mobileSpeechRecognition.isSupported()) {
+    mobileSpeechRecognition.stop();
+  }
+  
   console.log('[Recognition] Session disarmed');
 }
 
