@@ -182,6 +182,53 @@ class ConversationEngine {
     return this.currentRecipe?.instructions?.length || 0;
   }
 
+  /**
+   * Get a random cooking tip relevant to the current step
+   */
+  getRandomTip() {
+    const tips = [
+      "A sharp knife is actually safer than a dull one - it requires less pressure!",
+      "Room temperature ingredients blend better in most recipes.",
+      "Salt your pasta water until it tastes like the sea!",
+      "Let meat rest after cooking - it keeps all those delicious juices inside.",
+      "Taste as you go - it's the chef's secret weapon!",
+      "Mise en place, baby! Having everything prepped makes cooking so much smoother.",
+      "Don't overcrowd your pan - that's how you get steaming instead of searing.",
+      "Fresh herbs at the end, dried herbs at the beginning!",
+      "A squeeze of lemon can brighten up almost any dish.",
+      "When in doubt, add a little butter. Works every time!"
+    ];
+    return tips[Math.floor(Math.random() * tips.length)];
+  }
+
+  /**
+   * Get small talk to maintain engagement during idle periods
+   */
+  async getSmallTalk() {
+    const recipe = this.currentRecipe;
+    if (!recipe) return null;
+    
+    const currentInstruction = recipe.instructions?.[this.currentStep] || '';
+    
+    // Local small talk options (no API call needed)
+    const smallTalkOptions = [
+      `How's it looking over there? ${currentInstruction.includes('heat') ? "Getting nice and hot?" : "Coming along nicely?"}`,
+      `Mmm, I bet that's starting to smell amazing!`,
+      `You're doing great! This ${recipe.title} is gonna be so good.`,
+      `Fun fact - ${this.getRandomTip()}`,
+      `Take your time with this part - no rush!`,
+      `This is my favorite part of the recipe, honestly.`,
+      `Doesn't cooking just feel so satisfying? I love it.`,
+      `You know what would go great with this? A nice glass of wine!`,
+      `How are you feeling about this so far? Need any help?`
+    ];
+    
+    return {
+      text: smallTalkOptions[Math.floor(Math.random() * smallTalkOptions.length)],
+      emotion: 'friendly'
+    };
+  }
+
   reset() {
     this.conversationHistory = [];
     this.currentRecipe = null;
