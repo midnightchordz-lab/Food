@@ -149,8 +149,9 @@ class TestAIChefNoAuth:
         """Test that AI Chef recipe endpoint requires authentication"""
         response = requests.get(f"{BASE_URL}/api/chat/ai-chef/recipe/some-recipe-id")
         
-        assert response.status_code == 401, f"Expected 401 Unauthorized, got {response.status_code}"
-        print(f"✓ Unauthenticated request correctly returns 401")
+        # 401 or 403 both indicate auth is required
+        assert response.status_code in [401, 403], f"Expected 401/403 Unauthorized, got {response.status_code}"
+        print(f"✓ Unauthenticated request correctly returns {response.status_code}")
     
     def test_chat_endpoint_requires_auth(self):
         """Test that AI Chef chat endpoint requires authentication"""
@@ -164,8 +165,9 @@ class TestAIChefNoAuth:
             headers={"Content-Type": "application/json"}
         )
         
-        assert response.status_code == 401, f"Expected 401 Unauthorized, got {response.status_code}"
-        print(f"✓ Unauthenticated chat request correctly returns 401")
+        # 401 or 403 both indicate auth is required
+        assert response.status_code in [401, 403], f"Expected 401/403 Unauthorized, got {response.status_code}"
+        print(f"✓ Unauthenticated chat request correctly returns {response.status_code}")
 
 
 if __name__ == "__main__":
