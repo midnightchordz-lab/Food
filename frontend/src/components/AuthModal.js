@@ -688,6 +688,14 @@ const AuthModal = ({ open, onClose }) => {
           </div>
         )}
       </DialogContent>
+      
+      {/* Trial Welcome Modal - shown after successful registration */}
+      <TrialWelcomeModal
+        show={showTrialWelcome}
+        onClose={handleTrialWelcomeClose}
+        daysRemaining={trialInfo?.daysRemaining || 7}
+        endsAt={trialInfo?.endsAt}
+      />
     </Dialog>
   );
 };
