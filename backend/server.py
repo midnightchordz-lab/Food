@@ -57,6 +57,7 @@ from routes.usage import router as usage_router
 from routes.audio import router as audio_router
 from routes.shopping import router as shopping_router
 from routes.ingredient_guide import router as ingredient_guide_router
+from routes.trial import router as trial_router
 from services.scheduled_tasks import router as scheduled_tasks_router, start_scheduler, stop_scheduler
 
 # Include all routers with /api prefix
@@ -79,6 +80,7 @@ app.include_router(usage_router, prefix="/api")
 app.include_router(audio_router, prefix="/api")
 app.include_router(shopping_router, prefix="/api")
 app.include_router(ingredient_guide_router, prefix="/api")
+app.include_router(trial_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(
