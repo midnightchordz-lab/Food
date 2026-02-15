@@ -33,9 +33,11 @@ function AIChefMode() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [voiceState, setVoiceState] = useState('idle'); // idle, listening, hearing, restarting, paused
   const [lastTranscript, setLastTranscript] = useState('');
   const [messages, setMessages] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [handsFreeMode, setHandsFreeMode] = useState(true); // Default to hands-free
   
   const hasInitialized = useRef(false);
   const messagesEndRef = useRef(null);
