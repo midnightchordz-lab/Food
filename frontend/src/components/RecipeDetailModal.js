@@ -282,6 +282,7 @@ const StarRating = ({ rating, onRate, size = 20 }) => {
 
 // Recipe Detail Modal Component - NEW Two-Column Layout
 const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingList, fromPlanner = false }) => {
+  const navigate = useNavigate();
   const [userRating, setUserRating] = useState(0);
   const [checkedSteps, setCheckedSteps] = useState({});
   const [checkedIngredients, setCheckedIngredients] = useState({});
