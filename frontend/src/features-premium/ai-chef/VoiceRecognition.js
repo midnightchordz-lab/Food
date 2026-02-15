@@ -130,7 +130,45 @@ class VoiceRecognition {
           }, 500);
         }
       } else if (event.error === 'network') {
-        this.onError?.('network-error');
+        // Network errors are common with Web Speech API - auto-retry in continuous mode
+        console.log('[VoiceRecognition] Network error - will retry in continuous mode');
+        this.networkErrorCount = (this.networkErrorCount || 0) + 1;
+        
+        if (this.continuousMode && this.shouldAutoRestart && this.networkErrorCount < 5) {
+          // Retry with exponential backoff
+          const retryDelay = Math.min(1000 * this.networkErrorCount, 5000);
+          console.log(`[VoiceRecognition] Retrying in ${retryDelay}ms (attempt ${this.networkErrorCount})`);
+          this.onStateChange?.('reconnecting');
+          
+          this.restartTimer = setTimeout(() => {
+            if (this.shouldAutoRestart && this.continuousMode) {
+              this.startInternal();
+            }
+          }, retryDelay);
+        } else if (this.networkErrorCount >= 5) {
+          // Too many network errors - notify user but keep listening capability
+          console.warn('[VoiceRecognition] Multiple network errors - pausing auto-reconnect');
+          this.onError?.('network-error');
+          this.networkErrorCount = 0;
+          
+          // Reset after a delay and try again
+          setTimeout(() => {
+            if (this.continuousMode && this.shouldAutoRestart) {
+              console.log('[VoiceRecognition] Attempting to restore connection...');
+              this.startInternal();
+            }
+          }, 10000);
+        } else {
+          this.onError?.('network-error');
+        }
+      } else if (event.error === 'audio-capture') {
+        // Microphone issue - inform user
+        this.onError?.('audio-capture-error');
+      } else if (event.error === 'service-not-allowed') {
+        // Service blocked - inform user
+        this.shouldAutoRestart = false;
+        this.continuousMode = false;
+        this.onError?.('service-blocked');
       } else {
         this.onError?.(event.error);
       }
