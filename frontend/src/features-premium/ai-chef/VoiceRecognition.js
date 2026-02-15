@@ -1,6 +1,7 @@
 /**
  * Voice Recognition - Handles speech-to-text
  * Works on Web, iOS, and Android
+ * Supports CONTINUOUS HANDS-FREE listening mode
  * 100% isolated - no dependencies on existing code
  */
 
@@ -11,10 +12,13 @@ class VoiceRecognition {
     this.recognition = null;
     this.isListening = false;
     this.shouldAutoRestart = false;
+    this.continuousMode = false; // NEW: Hands-free continuous listening
     this.onResult = null;
     this.onStateChange = null;
     this.onError = null;
     this.restartTimer = null;
+    this.restartAttempts = 0;
+    this.maxRestartAttempts = 10; // Prevent infinite restart loops
     
     this.initialize();
   }
@@ -32,8 +36,9 @@ class VoiceRecognition {
     // Platform-specific settings
     const isAndroid = platformDetector.isAndroid();
     
-    this.recognition.continuous = !isAndroid; // Short bursts on Android
-    this.recognition.interimResults = false;
+    // Use continuous mode for web, short bursts + auto-restart for mobile
+    this.recognition.continuous = !isAndroid;
+    this.recognition.interimResults = true; // Enable interim results for responsive UX
     this.recognition.maxAlternatives = 1;
     this.recognition.lang = 'en-US';
 
@@ -45,22 +50,42 @@ class VoiceRecognition {
 
     this.recognition.onstart = () => {
       this.isListening = true;
-      console.log('[VoiceRecognition] Started listening');
+      this.restartAttempts = 0; // Reset on successful start
+      console.log('[VoiceRecognition] Started listening (continuous:', this.continuousMode, ')');
       this.onStateChange?.('listening');
     };
 
     this.recognition.onend = () => {
       this.isListening = false;
-      console.log('[VoiceRecognition] Stopped listening');
-      this.onStateChange?.('idle');
+      console.log('[VoiceRecognition] Session ended');
 
-      // Auto-restart on Android
-      if (this.shouldAutoRestart && platformDetector.isAndroid()) {
-        this.restartTimer = setTimeout(() => {
-          if (this.shouldAutoRestart) {
-            this.startInternal();
-          }
-        }, 300);
+      // CONTINUOUS MODE: Auto-restart on ALL platforms when in hands-free mode
+      if (this.continuousMode && this.shouldAutoRestart) {
+        if (this.restartAttempts < this.maxRestartAttempts) {
+          this.restartAttempts++;
+          const delay = Math.min(300 * this.restartAttempts, 1500); // Progressive backoff
+          console.log(`[VoiceRecognition] Auto-restarting in ${delay}ms (attempt ${this.restartAttempts})`);
+          
+          this.onStateChange?.('restarting');
+          
+          this.restartTimer = setTimeout(() => {
+            if (this.shouldAutoRestart && this.continuousMode) {
+              this.startInternal();
+            }
+          }, delay);
+        } else {
+          console.warn('[VoiceRecognition] Max restart attempts reached, pausing');
+          this.onStateChange?.('paused');
+          // Reset after a longer delay to allow recovery
+          setTimeout(() => {
+            this.restartAttempts = 0;
+            if (this.continuousMode && this.shouldAutoRestart) {
+              this.startInternal();
+            }
+          }, 3000);
+        }
+      } else {
+        this.onStateChange?.('idle');
       }
     };
 
@@ -72,7 +97,14 @@ class VoiceRecognition {
         const confidence = result[0].confidence;
         
         console.log('[VoiceRecognition] Heard:', transcript, `(${Math.round(confidence * 100)}%)`);
+        this.restartAttempts = 0; // Reset on successful recognition
         this.onResult?.(transcript, confidence);
+      } else {
+        // Interim result - show user that we're hearing them
+        const interim = result[0].transcript.trim();
+        if (interim.length > 0) {
+          this.onStateChange?.('hearing');
+        }
       }
     };
 
@@ -81,12 +113,24 @@ class VoiceRecognition {
       
       if (event.error === 'not-allowed') {
         this.shouldAutoRestart = false;
+        this.continuousMode = false;
         this.onError?.('permission-denied');
       } else if (event.error === 'no-speech') {
-        // Normal - will auto-restart
-        this.onStateChange?.('no-speech');
+        // Normal in continuous mode - just means silence, will auto-restart
+        console.log('[VoiceRecognition] No speech detected, continuing to listen...');
+        this.onStateChange?.('waiting');
       } else if (event.error === 'aborted') {
-        // Ignore - manual stop
+        // Manual stop or browser interrupted - don't treat as error
+        if (this.continuousMode && this.shouldAutoRestart) {
+          // Try to restart if we're in continuous mode
+          this.restartTimer = setTimeout(() => {
+            if (this.shouldAutoRestart && this.continuousMode) {
+              this.startInternal();
+            }
+          }, 500);
+        }
+      } else if (event.error === 'network') {
+        this.onError?.('network-error');
       } else {
         this.onError?.(event.error);
       }
