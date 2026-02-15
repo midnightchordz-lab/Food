@@ -834,6 +834,8 @@ export const speechController = new SpeechController();
 // Named exports for direct function access
 export {
   initialize,
+  initializeFromUserGesture,
+  initMobileVoice,
   speak,
   cancelSpeech,
   narrateStep,
