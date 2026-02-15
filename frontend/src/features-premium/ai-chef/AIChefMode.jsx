@@ -182,6 +182,15 @@ function AIChefMode() {
     voiceRecognition.setOnStateChange((state) => {
       setVoiceState(state);
       setIsListening(state === 'listening' || state === 'hearing' || state === 'restarting' || state === 'reconnecting');
+      
+      // Clear notification when successfully listening
+      if (state === 'listening') {
+        setVoiceNotification(null);
+      }
+      // Show reconnecting notification
+      if (state === 'reconnecting') {
+        setVoiceNotification('Reconnecting to voice service...');
+      }
     });
     
     voiceRecognition.setOnError((error) => {
@@ -189,10 +198,10 @@ function AIChefMode() {
         addMessage('system', 'Microphone permission denied. Please enable it in settings.');
         setHandsFreeMode(false);
       } else if (error === 'network-error') {
-        // Only show persistent network error message (after multiple retries failed)
-        addMessage('system', 'Voice recognition connection issue. Will keep trying. You can also type commands below.');
+        // Use transient notification instead of permanent message
+        showVoiceNotification('Voice connection issue. Tap mic or type below.', 8000);
       } else if (error === 'audio-capture-error') {
-        addMessage('system', 'Microphone not available. Please check your audio settings.');
+        showVoiceNotification('Microphone not available. Check audio settings.', 8000);
       } else if (error === 'service-blocked') {
         addMessage('system', 'Speech recognition service is not available. Please try again later.');
         setHandsFreeMode(false);
@@ -205,7 +214,7 @@ function AIChefMode() {
       conversationEngine.reset();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handsFreeMode, isReady]);
+  }, [handsFreeMode, isReady, showVoiceNotification]);
 
   // Add message to chat
   const addMessage = useCallback((role, text) => {
