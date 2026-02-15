@@ -114,7 +114,7 @@ class TestDetailedRecipeIdFix:
         print(f"✅ Step 2 - AI Chef: Recipe found by ID {chat_recipe_id}")
         
         # Step 3: Verify AI Chef can start a conversation about the recipe
-        chat_response = requests.post(f"{BASE_URL}/api/chat/ai-chef", json={
+        chat_response = requests.post(f"{BASE_URL}/api/chat/ai-chef/chat", json={
             "recipe_id": chat_recipe_id,
             "message": "How do I prepare the curry paste?"
         }, headers=headers, timeout=60)
