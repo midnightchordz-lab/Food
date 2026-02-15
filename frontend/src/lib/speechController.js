@@ -65,11 +65,15 @@ let onSynthesisStateChange = null;
 
 function detectEnvironment() {
   if (typeof window === 'undefined') {
-    return { isMobile: false, isSecureContext: false };
+    return { isMobile: false, isIOS: false, isAndroid: false, isSecureContext: false };
   }
   
   const ua = navigator.userAgent || '';
-  isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+  
+  isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  isAndroid = /Android/.test(ua);
+  isMobile = isIOS || isAndroid || 
+    /webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
     ('ontouchstart' in window) ||
     (navigator.maxTouchPoints > 2);
   
@@ -77,12 +81,12 @@ function detectEnvironment() {
     window.location.protocol === 'https:' || 
     window.location.hostname === 'localhost';
   
-  console.log(`[Speech] Environment: mobile=${isMobile}, secure=${isSecureContext}`);
-  return { isMobile, isSecureContext };
+  console.log(`[Speech] Environment: mobile=${isMobile}, iOS=${isIOS}, Android=${isAndroid}, secure=${isSecureContext}`);
+  return { isMobile, isIOS, isAndroid, isSecureContext };
 }
 
 function getEnvironment() {
-  return { isMobile, isSecureContext, sessionArmed };
+  return { isMobile, isIOS, isAndroid, isSecureContext, sessionArmed };
 }
 
 // ============================================
