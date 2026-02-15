@@ -796,6 +796,11 @@ class SpeechController {
     return this;
   }
   
+  async initFromUserGesture() {
+    await initializeFromUserGesture();
+    return this;
+  }
+  
   // TTS
   speak(text, onComplete) { return speak(text, onComplete); }
   cancel(reason) { cancelSpeech(reason); }
