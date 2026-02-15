@@ -81,6 +81,7 @@ class RecipeSearchRequest(BaseModel):
 
 class DetailedRecipeRequest(BaseModel):
     recipe_title: str
+    recipe_id: Optional[str] = None  # ID from chat-generated recipe for AI Chef lookup
     cuisine: str = "International"
     meal_type: str = "Dinner"
     dietary_pref: str = "Any"
