@@ -217,6 +217,12 @@ function AIChefMode() {
     }]);
   }, []);
 
+  // Show transient voice notification (auto-dismisses)
+  const showVoiceNotification = useCallback((text, duration = 5000) => {
+    setVoiceNotification(text);
+    setTimeout(() => setVoiceNotification(null), duration);
+  }, []);
+
   // Handle user message (voice or text)
   const handleUserMessage = useCallback(async (message) => {
     if (!message.trim() || isProcessing) return;
