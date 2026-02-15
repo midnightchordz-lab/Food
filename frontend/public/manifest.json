@@ -54,7 +54,7 @@
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#4a7c59",
+  "theme_color": "#2D5F8B",
   "background_color": "#faf9f6",
   "orientation": "portrait-primary",
   "scope": "/",
