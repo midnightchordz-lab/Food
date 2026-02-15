@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class MoodMealPlannerAPITester:
-    def __init__(self, base_url="https://recipe-loader-1.preview.emergentagent.com"):
+    def __init__(self, base_url="https://ai-cooking-v2.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
