@@ -6,23 +6,43 @@
  * 
  * Cross-Platform Strategy:
  * - Web: Uses Web Speech API (SpeechRecognition)
- * - iOS Native (Capacitor): Uses @capacitor-community/speech-recognition if available
- * - Android Native (Capacitor): Uses @capacitor-community/speech-recognition if available
+ * - iOS Native (Capacitor): Uses @capacitor-community/speech-recognition
+ * - Android Native (Capacitor): Uses @capacitor-community/speech-recognition
  * - Fallback: Web Speech API on all platforms
  */
 
 import platformDetector from './PlatformDetector';
 
-// Try to import Capacitor Speech Recognition (may not be available)
+// Try to import Capacitor Speech Recognition dynamically
 let CapacitorSpeechRecognition = null;
-try {
-  // Dynamic import check - will be null if not installed
-  if (window.Capacitor?.Plugins?.SpeechRecognition) {
-    CapacitorSpeechRecognition = window.Capacitor.Plugins.SpeechRecognition;
-    console.log('[VoiceRecognition] Capacitor SpeechRecognition plugin detected');
+let SpeechRecognitionModule = null;
+
+// Async function to load Capacitor plugin
+async function loadCapacitorSpeechPlugin() {
+  try {
+    // First check if Capacitor is available
+    if (typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()) {
+      // Try direct plugin access first (bundled with app)
+      if (window.Capacitor?.Plugins?.SpeechRecognition) {
+        CapacitorSpeechRecognition = window.Capacitor.Plugins.SpeechRecognition;
+        console.log('[VoiceRecognition] Capacitor SpeechRecognition plugin loaded from Plugins');
+        return true;
+      }
+      
+      // Try dynamic import as fallback
+      try {
+        SpeechRecognitionModule = await import('@capacitor-community/speech-recognition');
+        CapacitorSpeechRecognition = SpeechRecognitionModule.SpeechRecognition;
+        console.log('[VoiceRecognition] Capacitor SpeechRecognition loaded via import');
+        return true;
+      } catch (importError) {
+        console.log('[VoiceRecognition] Dynamic import failed:', importError.message);
+      }
+    }
+  } catch (e) {
+    console.log('[VoiceRecognition] Capacitor SpeechRecognition not available:', e.message);
   }
-} catch (e) {
-  console.log('[VoiceRecognition] Capacitor SpeechRecognition not available, using Web API');
+  return false;
 }
 
 class VoiceRecognition {
