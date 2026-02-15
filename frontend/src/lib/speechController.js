@@ -124,6 +124,31 @@ function initTTS() {
 }
 
 /**
+ * Initialize mobile voice compatibility
+ * Called from user gesture to enable iOS/Android speech
+ */
+async function initMobileVoice() {
+  if (mobileInitialized) return true;
+  
+  if (!isMobile) {
+    mobileInitialized = true;
+    return true;
+  }
+  
+  console.log('[TTS] Initializing mobile voice compatibility...');
+  
+  try {
+    await initVoiceModeForMobile();
+    mobileInitialized = true;
+    console.log('[TTS] Mobile voice compatibility ready');
+    return true;
+  } catch (e) {
+    console.error('[TTS] Mobile voice init failed:', e);
+    return false;
+  }
+}
+
+/**
  * Speak text with TTS
  * @param {string} text - Text to speak
  * @param {function} onComplete - Callback when done
@@ -165,11 +190,22 @@ function speak(text, onComplete = null) {
     forceStopRecognition();
   }
   
+  // MOBILE: Use mobile compat for long text on iOS
+  if (isIOS && cleanText.length > 200) {
+    return speakWithMobileCompat(cleanText, onComplete);
+  }
+  
   // Ensure voices loaded
   if (!voicesLoaded) {
     const voices = synthesis.getVoices();
     if (voices.length > 0) {
-      selectedVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+      // iOS: Prefer local voices
+      if (isIOS) {
+        selectedVoice = voices.find(v => v.lang.startsWith('en') && v.localService === true) ||
+          voices.find(v => v.lang.startsWith('en')) || voices[0];
+      } else {
+        selectedVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+      }
       voicesLoaded = true;
     }
   }
@@ -215,6 +251,15 @@ function speak(text, onComplete = null) {
   
   utterance.onerror = (e) => {
     console.log('[TTS] Error:', e.error);
+    
+    // Don't treat interrupted/canceled as errors
+    if (e.error === 'interrupted' || e.error === 'canceled') {
+      cleanupTTS();
+      speechEndCallback?.();
+      speechEndCallback = null;
+      return;
+    }
+    
     cleanupTTS();
     speechEndCallback?.();
     speechEndCallback = null;
@@ -223,13 +268,33 @@ function speak(text, onComplete = null) {
   // Start speaking
   synthesis.speak(utterance);
   
-  // Safari kick
+  // Safari kick - resume if stuck
   setTimeout(() => {
     if (currentUtterance === utterance && !synthesis?.speaking) {
       try { synthesis?.resume(); } catch {}
     }
   }, 250);
   
+  return true;
+}
+
+/**
+ * Speak using mobile compatibility layer (for iOS long text)
+ */
+async function speakWithMobileCompat(text, onComplete) {
+  isSpeaking = true;
+  onSynthesisStateChange?.('speaking');
+  
+  try {
+    await mobileVoiceCompat.speak(text, { rate: 0.9 });
+  } catch (e) {
+    console.error('[TTS] Mobile compat speak failed:', e);
+  }
+  
+  cleanupTTS();
+  
+  // Delay before callback (audio focus handoff)
+  setTimeout(() => onComplete?.(), isMobile ? 400 : 50);
   return true;
 }
 
