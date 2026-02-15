@@ -51,6 +51,7 @@ class VoiceRecognition {
     this.recognition.onstart = () => {
       this.isListening = true;
       this.restartAttempts = 0; // Reset on successful start
+      this.networkErrorCount = 0; // Reset network errors on successful start
       console.log('[VoiceRecognition] Started listening (continuous:', this.continuousMode, ')');
       this.onStateChange?.('listening');
     };
