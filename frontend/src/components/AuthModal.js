@@ -280,6 +280,14 @@ const AuthModal = ({ open, onClose }) => {
     setPhoneAuthUser(null);
     setRegistrationStep('credentials');
     setPendingExclusions([]);
+    setTrialInfo(null);
+  };
+  
+  // Handle trial welcome modal close
+  const handleTrialWelcomeClose = () => {
+    setShowTrialWelcome(false);
+    setTrialInfo(null);
+    navigate('/chat');
   };
 
   const toggleDietary = (option) => {
