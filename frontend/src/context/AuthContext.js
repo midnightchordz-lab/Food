@@ -50,19 +50,26 @@ export const AuthProvider = ({ children }) => {
         dietary_restrictions: dietaryRestrictions,
         cuisine_preferences: cuisinePreferences
       });
-      const { access_token, user: userData } = response.data;
+      const { access_token, user: userData, trial } = response.data;
       localStorage.setItem('token', access_token);
       setToken(access_token);
       setUser(userData);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       // Trigger subscription refresh after successful registration
       window.dispatchEvent(new CustomEvent('trigger-subscription-refresh'));
-      toast.success('Welcome to Chef Feels!');
-      return true;
+      
+      // Return trial info for showing welcome modal
+      if (trial?.active) {
+        toast.success('Welcome! Your 7-day premium trial has started!');
+        return { success: true, trial };
+      }
+      
+      toast.success('Welcome to MOOD FOOD!');
+      return { success: true, trial: null };
     } catch (error) {
       const message = error.response?.data?.detail || 'Registration failed';
       toast.error(message);
-      return false;
+      return { success: false, trial: null };
     }
   };
 
