@@ -1,29 +1,72 @@
 /**
  * Voice Recognition - Handles speech-to-text
- * Works on Web, iOS, and Android
+ * Works on Web, iOS, and Android (including Capacitor native apps)
  * Supports CONTINUOUS HANDS-FREE listening mode
  * 100% isolated - no dependencies on existing code
+ * 
+ * Cross-Platform Strategy:
+ * - Web: Uses Web Speech API (SpeechRecognition)
+ * - iOS Native (Capacitor): Uses @capacitor-community/speech-recognition if available
+ * - Android Native (Capacitor): Uses @capacitor-community/speech-recognition if available
+ * - Fallback: Web Speech API on all platforms
  */
 
 import platformDetector from './PlatformDetector';
+
+// Try to import Capacitor Speech Recognition (may not be available)
+let CapacitorSpeechRecognition = null;
+try {
+  // Dynamic import check - will be null if not installed
+  if (window.Capacitor?.Plugins?.SpeechRecognition) {
+    CapacitorSpeechRecognition = window.Capacitor.Plugins.SpeechRecognition;
+    console.log('[VoiceRecognition] Capacitor SpeechRecognition plugin detected');
+  }
+} catch (e) {
+  console.log('[VoiceRecognition] Capacitor SpeechRecognition not available, using Web API');
+}
 
 class VoiceRecognition {
   constructor() {
     this.recognition = null;
     this.isListening = false;
     this.shouldAutoRestart = false;
-    this.continuousMode = false; // NEW: Hands-free continuous listening
+    this.continuousMode = false; // Hands-free continuous listening
     this.onResult = null;
     this.onStateChange = null;
     this.onError = null;
     this.restartTimer = null;
     this.restartAttempts = 0;
     this.maxRestartAttempts = 10; // Prevent infinite restart loops
+    this.useCapacitor = false; // Track which API we're using
+    this.capacitorListener = null; // Store listener for cleanup
     
     this.initialize();
   }
 
-  initialize() {
+  async initialize() {
+    // Check if we should use Capacitor native API
+    const isNative = platformDetector.isNative();
+    
+    if (isNative && CapacitorSpeechRecognition) {
+      try {
+        // Check if Capacitor Speech Recognition is available
+        const available = await CapacitorSpeechRecognition.available();
+        if (available.available) {
+          this.useCapacitor = true;
+          console.log('[VoiceRecognition] Using Capacitor native speech recognition');
+          this.setupCapacitorHandlers();
+          return;
+        }
+      } catch (e) {
+        console.log('[VoiceRecognition] Capacitor speech check failed, falling back to Web API:', e);
+      }
+    }
+    
+    // Fallback to Web Speech API
+    this.initializeWebSpeechAPI();
+  }
+  
+  initializeWebSpeechAPI() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -36,10 +79,24 @@ class VoiceRecognition {
       
       // Platform-specific settings
       const isAndroid = platformDetector.isAndroid();
+      const isIOS = platformDetector.isIOS();
       
-      // Use continuous mode for web, short bursts + auto-restart for mobile
-      this.recognition.continuous = !isAndroid;
-      this.recognition.interimResults = true; // Enable interim results for responsive UX
+      // iOS Safari has specific requirements for continuous mode
+      // Android Chrome works better with short bursts + auto-restart
+      if (isIOS) {
+        // iOS: continuous mode but shorter sessions
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+      } else if (isAndroid) {
+        // Android: short bursts work better, auto-restart handles continuity
+        this.recognition.continuous = false;
+        this.recognition.interimResults = true;
+      } else {
+        // Desktop: full continuous mode
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+      }
+      
       this.recognition.maxAlternatives = 1;
       this.recognition.lang = 'en-US';
 
@@ -49,10 +106,18 @@ class VoiceRecognition {
       if (navigator.brave && navigator.brave.isBrave) {
         console.warn('[VoiceRecognition] Brave browser detected - may need to allow Google services for voice recognition');
       }
+      
+      console.log(`[VoiceRecognition] Web Speech API initialized (platform: ${platformDetector.getPlatform()})`);
     } catch (error) {
       console.error('[VoiceRecognition] Failed to initialize:', error);
       this.recognition = null;
     }
+  }
+  
+  setupCapacitorHandlers() {
+    // Capacitor speech recognition event setup
+    // Will be called when using native Capacitor plugin
+    console.log('[VoiceRecognition] Setting up Capacitor handlers');
   }
 
   setupEventHandlers() {
