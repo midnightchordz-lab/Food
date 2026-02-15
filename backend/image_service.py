@@ -102,8 +102,19 @@ def build_search_query(recipe_name: str, cuisine: str = '') -> str:
             return f"{found_protein} curry dish plated"
         return "curry dish plated"
     
-    # Biryani - always show the rice dish
+    # Biryani - always show the rice dish with the protein
     if 'biryani' in name_lower:
+        proteins = ['prawn', 'prawns', 'shrimp', 'chicken', 'lamb', 'mutton', 'beef', 'vegetable', 'egg', 'fish']
+        found_protein = None
+        for p in proteins:
+            if p in name_lower:
+                found_protein = p
+                break
+        if found_protein:
+            # Prawn/seafood biryani needs specific query to avoid raw seafood images
+            if found_protein in ['prawn', 'prawns', 'shrimp']:
+                return f"seafood biryani cooked rice dish served plated"
+            return f"{found_protein} biryani rice dish plated"
         return "biryani rice dish plated"
     
     # Use first 3-4 meaningful keywords
