@@ -75,6 +75,10 @@ const AuthModal = ({ open, onClose }) => {
   // Exclusions state (for onboarding step)
   const [pendingExclusions, setPendingExclusions] = useState([]);
   
+  // Trial welcome modal state
+  const [showTrialWelcome, setShowTrialWelcome] = useState(false);
+  const [trialInfo, setTrialInfo] = useState(null);
+  
   const { register, login, loginWithToken } = useAuth();
 
   // Email authentication - Modified to handle exclusion step
