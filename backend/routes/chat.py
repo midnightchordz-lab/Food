@@ -1454,6 +1454,69 @@ YOUR PERSONALITY:
         )
 
 
+def parse_instructions_from_markdown(markdown: str) -> List[str]:
+    """Parse cooking instructions from markdown content"""
+    instructions = []
+    
+    # Try to find Instructions section
+    import re
+    
+    # Look for Instructions/Steps section
+    instructions_match = re.search(
+        r'##\s*(?:🍳\s*)?(?:Instructions|Steps|Directions|Method)([\s\S]*?)(?=##|$)',
+        markdown, re.IGNORECASE
+    )
+    
+    if instructions_match:
+        section = instructions_match.group(1)
+        # Extract numbered steps (1. Step text, **Step 1:**, etc)
+        step_patterns = [
+            r'^\d+\.\s*\*\*[^*]+\*\*[:\s]*(.+?)(?=\n\d+\.|\n\n|$)',  # 1. **Step**: text
+            r'^\*\*Step\s*\d+[:\s]*\*\*[:\s]*(.+?)(?=\*\*Step|\n\n|$)',  # **Step 1:** text
+            r'^\d+\.\s*(.+?)(?=\n\d+\.|\n\n|$)',  # 1. text
+        ]
+        
+        for pattern in step_patterns:
+            matches = re.findall(pattern, section, re.MULTILINE)
+            if matches:
+                instructions = [m.strip() for m in matches if m.strip()]
+                break
+        
+        # If no numbered steps found, try bullet points
+        if not instructions:
+            bullets = re.findall(r'^[-*]\s+(.+)$', section, re.MULTILINE)
+            instructions = [b.strip() for b in bullets if b.strip() and len(b) > 10]
+    
+    # Fallback: look for numbered lines anywhere
+    if not instructions:
+        all_numbered = re.findall(r'^\d+\.\s+(.+)$', markdown, re.MULTILINE)
+        # Filter to likely cooking instructions (longer text, not list items)
+        instructions = [s.strip() for s in all_numbered if len(s) > 20][:15]
+    
+    return instructions
+
+
+def parse_ingredients_from_markdown(markdown: str) -> List[str]:
+    """Parse ingredients from markdown content"""
+    ingredients = []
+    
+    import re
+    
+    # Look for Ingredients section
+    ingredients_match = re.search(
+        r'##\s*(?:🥕\s*)?(?:Ingredients)([\s\S]*?)(?=##|$)',
+        markdown, re.IGNORECASE
+    )
+    
+    if ingredients_match:
+        section = ingredients_match.group(1)
+        # Extract bullet points
+        bullets = re.findall(r'^[-*]\s+(.+)$', section, re.MULTILINE)
+        ingredients = [b.strip() for b in bullets if b.strip()]
+    
+    return ingredients
+
+
 
 @router.get("/ai-chef/recipe/{recipe_id}")
 async def get_recipe_for_ai_chef(
