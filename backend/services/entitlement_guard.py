@@ -674,7 +674,15 @@ async def get_user_subscription_safe(
         
         # Subscription is valid - return with full features
         plan = get_plan_by_id_func(subscription["plan_id"])
-        subscription["features"] = plan["features"] if plan else {}
+        
+        # For trials, prefer subscription features over plan features (trials get all features)
+        if has_trial and subscription.get("features"):
+            # Keep the trial's features (which include all premium features)
+            pass
+        else:
+            # For paid subscriptions, use plan features
+            subscription["features"] = plan["features"] if plan else {}
+        
         subscription["plan"] = plan
         subscription["entitlement_tier"] = plan_id
         subscription["trial_active"] = has_trial
