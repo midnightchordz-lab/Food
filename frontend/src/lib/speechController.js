@@ -379,7 +379,9 @@ function initRecognition() {
   
   // Create fresh instance
   recognition = new SpeechRecognition();
-  recognition.continuous = true;
+  
+  // Android: Use continuous = false for better reliability
+  recognition.continuous = !isAndroid;
   recognition.interimResults = false;
   recognition.lang = 'en-US';
   recognition.maxAlternatives = 1;
@@ -411,6 +413,16 @@ function initRecognition() {
       return;
     }
     
+    // Android: Auto-restart on no-speech
+    if (event.error === 'no-speech' && isAndroid && shouldBeListening) {
+      setTimeout(() => {
+        if (shouldBeListening && !isListening && !isSpeaking && !destroyed) {
+          safeStartRecognition();
+        }
+      }, 500);
+      return;
+    }
+    
     onRecognitionStateChange?.('error');
   };
   
@@ -422,12 +434,14 @@ function initRecognition() {
     onRecognitionStateChange?.('idle');
     
     // Auto-restart if armed and should be listening (not during TTS)
+    // Android: Always auto-restart when shouldBeListening
     if (sessionArmed && shouldBeListening && wasListening && !isSpeaking) {
+      const restartDelay = isAndroid ? 100 : 100;
       setTimeout(() => {
         if (shouldBeListening && !isListening && !isSpeaking && !destroyed) {
           safeStartRecognition();
         }
-      }, 100);
+      }, restartDelay);
     }
   };
   
@@ -437,6 +451,35 @@ function initRecognition() {
       if (document.hidden && isListening) {
         forceStopRecognition();
       }
+    });
+  }
+  
+  // Setup mobile recognition callbacks
+  if (isMobile) {
+    mobileSpeechRecognition.setOnResult((transcript) => {
+      console.log('[Recognition] Mobile heard:', transcript);
+      onRecognitionResult?.(transcript);
+    });
+    
+    mobileSpeechRecognition.setOnStateChange((state) => {
+      console.log('[Recognition] Mobile state:', state);
+      if (state === 'listening') {
+        isListening = true;
+        onRecognitionStateChange?.('listening');
+      } else if (state === 'idle' || state === 'aborted') {
+        isListening = false;
+        onRecognitionStateChange?.('idle');
+      } else if (state === 'permission-denied') {
+        sessionArmed = false;
+        shouldBeListening = false;
+        onRecognitionStateChange?.('permission-needed');
+      }
+    });
+    
+    mobileSpeechRecognition.setOnPermissionDenied(() => {
+      sessionArmed = false;
+      shouldBeListening = false;
+      onRecognitionStateChange?.('permission-needed');
     });
   }
   
