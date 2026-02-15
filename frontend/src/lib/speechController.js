@@ -725,6 +725,20 @@ async function initialize() {
 }
 
 /**
+ * Initialize for mobile from user gesture
+ * Call this when user taps "Start Voice Mode" button
+ */
+async function initializeFromUserGesture() {
+  await initialize();
+  
+  if (isMobile) {
+    await initMobileVoice();
+  }
+  
+  return initialized;
+}
+
+/**
  * Full cleanup - destroys all speech instances
  */
 function destroy() {
