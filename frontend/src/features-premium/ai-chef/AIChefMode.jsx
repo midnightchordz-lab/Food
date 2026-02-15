@@ -36,7 +36,14 @@ function AIChefMode() {
     const fetchRecipe = async () => {
       try {
         const API_URL = process.env.REACT_APP_BACKEND_URL || '';
-        const response = await fetch(`${API_URL}/api/recipes/${id}`);
+        const token = localStorage.getItem('token');
+        
+        const response = await fetch(`${API_URL}/api/chat/ai-chef/recipe/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         
         if (!response.ok) {
           throw new Error('Recipe not found');
