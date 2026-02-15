@@ -114,9 +114,9 @@ const AuthModal = ({ open, onClose }) => {
     setPendingExclusions(exclusions);
     
     // First register the user
-    const success = await register(email, password, name, dietaryRestrictions, cuisinePreferences);
+    const result = await register(email, password, name, dietaryRestrictions, cuisinePreferences);
     
-    if (success && exclusions.length > 0) {
+    if (result.success && exclusions.length > 0) {
       // Save exclusions after registration
       try {
         await axios.post(`${API}/exclusions`, {
@@ -130,11 +130,18 @@ const AuthModal = ({ open, onClose }) => {
     }
     
     setLoading(false);
-    if (success) {
+    if (result.success) {
       onClose();
       resetForm();
-      // Navigate to chat after successful registration
-      navigate('/chat');
+      
+      // Show trial welcome modal if trial was auto-started
+      if (result.trial?.active) {
+        setTrialInfo(result.trial);
+        setShowTrialWelcome(true);
+      } else {
+        // Navigate to chat directly if no trial
+        navigate('/chat');
+      }
     }
   };
   
