@@ -60,8 +60,7 @@
 }
 
 /* Loading */
-.ai-chef-loading,
-.ai-chef-error {
+.ai-chef-loading {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -81,25 +80,103 @@
   margin-bottom: 16px;
 }
 
+.loading-hint {
+  font-size: 14px;
+  opacity: 0.6;
+  margin-top: 8px;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.ai-chef-error h2 {
-  font-size: 24px;
-  margin-bottom: 12px;
+/* Error Screen - Production Ready */
+.ai-chef-error-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
-.ai-chef-error button {
-  margin-top: 20px;
-  padding: 12px 24px;
-  background: #4ade80;
-  color: #000;
-  border: none;
+.ai-chef-error-screen .error-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: bounceIn 0.5s ease-out;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.ai-chef-error-screen .error-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.ai-chef-error-screen .error-message {
+  font-size: 16px;
+  line-height: 1.5;
+  opacity: 0.85;
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ai-chef-error-screen .error-hint {
+  font-size: 14px;
+  line-height: 1.4;
+  opacity: 0.65;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ai-chef-error-screen .error-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.ai-chef-error-screen .error-btn {
+  padding: 14px 24px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  border: none;
+}
+
+.ai-chef-error-screen .retry-btn {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+  color: #000;
+}
+
+.ai-chef-error-screen .retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(74, 222, 128, 0.3);
+}
+
+.ai-chef-error-screen .back-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ai-chef-error-screen .back-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* Start Screen */
