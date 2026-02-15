@@ -227,6 +227,10 @@ function AIChefMode() {
     });
 
     return () => {
+      // Clear small talk timer on cleanup
+      if (smallTalkTimer.current) {
+        clearTimeout(smallTalkTimer.current);
+      }
       emotionalNarrator.stop();
       voiceRecognition.destroy();
       conversationEngine.reset();
