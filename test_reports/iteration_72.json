@@ -115,7 +115,7 @@
   
   "test_environment": {
     "viewport": {"width": 1920, "height": 1080, "device": "Desktop"},
-    "url": "https://hands-free-chef.preview.emergentagent.com",
+    "url": "https://hands-free-cook.preview.emergentagent.com",
     "browser_automation": "Playwright"
   }
 }

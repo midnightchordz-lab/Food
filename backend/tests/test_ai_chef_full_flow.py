@@ -15,7 +15,7 @@ import os
 import time
 
 # Get the backend URL from environment
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://hands-free-chef.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://hands-free-cook.preview.emergentagent.com')
 
 # Test credentials from the review request
 TEST_EMAIL = "lloydmasih1976@gmail.com"
