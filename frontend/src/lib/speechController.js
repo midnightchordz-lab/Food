@@ -141,6 +141,51 @@ async function initMobileVoice() {
   console.log('[TTS] Initializing mobile voice compatibility...');
   
   try {
+    // ANDROID: Use production-grade Android Voice Engine
+    if (isAndroid) {
+      const success = await androidVoiceEngine.initialize();
+      if (success) {
+        androidEngineActive = true;
+        
+        // Setup callbacks
+        androidVoiceEngine.setOnCommand((transcript) => {
+          console.log('[Android] Command received:', transcript);
+          onRecognitionResult?.(transcript);
+        });
+        
+        androidVoiceEngine.setOnListeningStart(() => {
+          isListening = true;
+          onRecognitionStateChange?.('listening');
+        });
+        
+        androidVoiceEngine.setOnListeningEnd(() => {
+          isListening = false;
+          onRecognitionStateChange?.('idle');
+        });
+        
+        androidVoiceEngine.setOnSpeakingStart(() => {
+          isSpeaking = true;
+          onSynthesisStateChange?.('speaking');
+        });
+        
+        androidVoiceEngine.setOnSpeakingEnd(() => {
+          isSpeaking = false;
+          onSynthesisStateChange?.('idle');
+        });
+        
+        androidVoiceEngine.setOnPermissionDenied(() => {
+          sessionArmed = false;
+          shouldBeListening = false;
+          onRecognitionStateChange?.('permission-needed');
+        });
+        
+        mobileInitialized = true;
+        console.log('[TTS] Android Voice Engine ready');
+        return true;
+      }
+    }
+    
+    // iOS: Use mobile compat layers
     await initVoiceModeForMobile();
     mobileInitialized = true;
     console.log('[TTS] Mobile voice compatibility ready');
@@ -162,13 +207,6 @@ function speak(text, onComplete = null) {
     return false;
   }
   
-  if (!synthesis) {
-    if (!initTTS()) {
-      onComplete?.();
-      return false;
-    }
-  }
-  
   // Validate input
   if (text === null || text === undefined) {
     onComplete?.();
@@ -179,6 +217,18 @@ function speak(text, onComplete = null) {
   if (!cleanText) {
     onComplete?.();
     return false;
+  }
+  
+  // ANDROID: Use production-grade Android Voice Engine
+  if (isAndroid && androidEngineActive) {
+    return speakWithAndroidEngine(cleanText, onComplete);
+  }
+  
+  if (!synthesis) {
+    if (!initTTS()) {
+      onComplete?.();
+      return false;
+    }
   }
   
   // Block if already speaking
@@ -193,7 +243,7 @@ function speak(text, onComplete = null) {
     forceStopRecognition();
   }
   
-  // MOBILE: Use mobile compat for long text on iOS
+  // iOS: Use mobile compat for long text
   if (isIOS && cleanText.length > 200) {
     return speakWithMobileCompat(cleanText, onComplete);
   }
