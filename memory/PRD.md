@@ -124,4 +124,5 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - **Demo Account**: `demouser@example.com` / `password123`
 
 ## Test Reports
+- `/app/test_reports/iteration_91.json` - Hands-Free Continuous Listening (Code Review Passed)
 - `/app/test_reports/iteration_90.json` - AI Chef Complete Flow Tests (All Passing)
