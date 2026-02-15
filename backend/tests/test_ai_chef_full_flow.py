@@ -32,13 +32,12 @@ class TestAIChefFullFlow:
         self.token = None
         self.user = None
         
-        # Login
+        # Login using email/password
         login_response = self.session.post(
-            f"{BASE_URL}/api/auth/google",
+            f"{BASE_URL}/api/auth/login",
             json={
                 "email": TEST_EMAIL,
-                "name": "Test Chef Pro User",
-                "google_id": f"chef_pro_{int(time.time())}"
+                "password": TEST_PASSWORD
             }
         )
         
