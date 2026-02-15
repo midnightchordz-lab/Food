@@ -1,116 +1,82 @@
 /**
- * Conversation Engine - Handles AI conversation with OpenAI GPT
+ * Conversation Engine - Handles AI conversation via secure backend
  * 100% isolated - no dependencies on existing code
+ * Uses backend API for AI calls (no frontend API keys exposed)
  */
 
 import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 class ConversationEngine {
   constructor() {
     this.conversationHistory = [];
     this.currentRecipe = null;
     this.currentStep = 0;
-    this.apiKey = process.env.REACT_APP_OPENAI_KEY;
   }
 
   setRecipe(recipe) {
     this.currentRecipe = recipe;
     this.currentStep = 0;
     this.conversationHistory = [];
-    
-    // Initialize with recipe context
-    this.conversationHistory.push({
-      role: 'system',
-      content: this.buildSystemPrompt()
-    });
   }
 
-  buildSystemPrompt() {
+  getRecipeContext() {
     const recipe = this.currentRecipe;
-    if (!recipe) return '';
-
-    return `You are a warm, friendly AI chef assistant helping someone cook "${recipe.title}". 
-
-RECIPE DETAILS:
-- Title: ${recipe.title}
-- Servings: ${recipe.servings || 'Not specified'}
-- Prep Time: ${recipe.prepTime || 'Not specified'}
-- Cook Time: ${recipe.cookTime || 'Not specified'}
-
-INGREDIENTS:
-${(recipe.ingredients || []).map(i => `- ${i}`).join('\n')}
-
-INSTRUCTIONS:
-${(recipe.instructions || []).map((step, i) => `Step ${i + 1}: ${step}`).join('\n')}
-
-YOUR PERSONALITY:
-- Be warm, encouraging, and patient
-- Use casual, friendly language
-- Add cooking tips when relevant
-- Be enthusiastic about food
-- Keep responses concise (2-3 sentences max)
-- Guide through steps naturally
-
-RESPOND TO:
-- "next" → Move to next step
-- "back" / "previous" → Go back a step
-- "repeat" → Repeat current step
-- Questions about ingredients, substitutions, techniques
-- General cooking questions
-
-Current step: ${this.currentStep + 1} of ${(recipe.instructions || []).length}`;
+    if (!recipe) return {};
+    
+    return {
+      title: recipe.title || 'Unknown Recipe',
+      servings: recipe.servings || 'Not specified',
+      prepTime: recipe.prepTime || 'Not specified',
+      cookTime: recipe.cookTime || 'Not specified',
+      ingredients: recipe.ingredients || [],
+      instructions: recipe.instructions || []
+    };
   }
 
   async chat(userMessage) {
-    if (!this.apiKey) {
-      console.error('[ConversationEngine] No API key configured');
-      return this.getFallbackResponse(userMessage);
-    }
-
-    // Add user message to history
+    // Add user message to local history
     this.conversationHistory.push({
       role: 'user',
       content: userMessage
     });
 
-    // Handle navigation commands locally
-    const navResponse = this.handleNavigationCommand(userMessage);
-    if (navResponse) {
-      this.conversationHistory.push({
-        role: 'assistant',
-        content: navResponse.text
-      });
-      return navResponse;
-    }
-
     try {
+      const token = localStorage.getItem('token');
+      
       const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
+        `${API_URL}/api/chat/ai-chef/chat`,
         {
-          model: 'gpt-4o-mini',
-          messages: this.conversationHistory,
-          max_tokens: 150,
-          temperature: 0.7
+          message: userMessage,
+          recipe_context: this.getRecipeContext(),
+          conversation_history: this.conversationHistory.slice(-10),
+          current_step: this.currentStep
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
       );
 
-      const assistantMessage = response.data.choices[0].message.content;
+      const result = response.data;
       
+      // Update current step from response
+      this.currentStep = result.step;
+      
+      // Add assistant response to history
       this.conversationHistory.push({
         role: 'assistant',
-        content: assistantMessage
+        content: result.text
       });
 
       return {
-        text: assistantMessage,
-        step: this.currentStep,
-        emotion: this.detectEmotion(assistantMessage)
+        text: result.text,
+        step: result.step,
+        emotion: result.emotion || 'neutral',
+        navigation: result.navigation
       };
 
     } catch (error) {
@@ -119,25 +85,19 @@ Current step: ${this.currentStep + 1} of ${(recipe.instructions || []).length}`;
     }
   }
 
-  handleNavigationCommand(message) {
-    const lower = message.toLowerCase().trim();
+  getFallbackResponse(userMessage) {
+    const lower = userMessage.toLowerCase();
     const steps = this.currentRecipe?.instructions || [];
     
+    // Handle basic navigation locally as fallback
     if (lower.includes('next') || lower.includes('continue')) {
       if (this.currentStep < steps.length - 1) {
         this.currentStep++;
         return {
-          text: `Great job! Step ${this.currentStep + 1}: ${steps[this.currentStep]}`,
+          text: `Step ${this.currentStep + 1}: ${steps[this.currentStep]}`,
           step: this.currentStep,
           emotion: 'encouraging',
           navigation: 'next'
-        };
-      } else {
-        return {
-          text: "You've completed all the steps! Amazing work, chef! Your dish is ready!",
-          step: this.currentStep,
-          emotion: 'celebratory',
-          navigation: 'complete'
         };
       }
     }
@@ -146,35 +106,22 @@ Current step: ${this.currentStep + 1} of ${(recipe.instructions || []).length}`;
       if (this.currentStep > 0) {
         this.currentStep--;
         return {
-          text: `No problem, let's go back. Step ${this.currentStep + 1}: ${steps[this.currentStep]}`,
+          text: `Step ${this.currentStep + 1}: ${steps[this.currentStep]}`,
           step: this.currentStep,
           emotion: 'supportive',
           navigation: 'back'
         };
-      } else {
-        return {
-          text: "We're already at the first step. Here it is again: " + steps[0],
-          step: this.currentStep,
-          emotion: 'helpful',
-          navigation: 'stay'
-        };
       }
     }
     
-    if (lower.includes('repeat') || lower.includes('again')) {
+    if (lower.includes('repeat')) {
       return {
-        text: `Of course! Step ${this.currentStep + 1}: ${steps[this.currentStep]}`,
+        text: `Step ${this.currentStep + 1}: ${steps[this.currentStep] || 'No step available'}`,
         step: this.currentStep,
         emotion: 'patient',
         navigation: 'repeat'
       };
     }
-
-    return null; // Not a navigation command
-  }
-
-  getFallbackResponse(userMessage) {
-    const lower = userMessage.toLowerCase();
     
     if (lower.includes('help')) {
       return {
@@ -189,25 +136,6 @@ Current step: ${this.currentStep + 1} of ${(recipe.instructions || []).length}`;
       step: this.currentStep,
       emotion: 'supportive'
     };
-  }
-
-  detectEmotion(text) {
-    const lower = text.toLowerCase();
-    
-    if (lower.includes('great') || lower.includes('perfect') || lower.includes('excellent')) {
-      return 'encouraging';
-    }
-    if (lower.includes('done') || lower.includes('complete') || lower.includes('finished')) {
-      return 'celebratory';
-    }
-    if (lower.includes('tip') || lower.includes('trick') || lower.includes('try')) {
-      return 'informative';
-    }
-    if (lower.includes('careful') || lower.includes('watch') || lower.includes('attention')) {
-      return 'cautioning';
-    }
-    
-    return 'neutral';
   }
 
   getCurrentStep() {
