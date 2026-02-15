@@ -160,7 +160,18 @@ function AIChefMode() {
 
   // Setup callbacks
   useEffect(() => {
-    emotionalNarrator.setOnSpeakingChange(setIsSpeaking);
+    emotionalNarrator.setOnSpeakingChange((speaking) => {
+      setIsSpeaking(speaking);
+      // Pause listening while AI is speaking to avoid feedback
+      if (speaking && handsFreeMode) {
+        voiceRecognition.pause();
+      } else if (!speaking && handsFreeMode && isReady) {
+        // Resume continuous listening after AI finishes speaking
+        setTimeout(() => {
+          voiceRecognition.resume().catch(console.error);
+        }, 500);
+      }
+    });
     
     voiceRecognition.setOnResult((transcript) => {
       setLastTranscript(transcript);
@@ -168,12 +179,16 @@ function AIChefMode() {
     });
     
     voiceRecognition.setOnStateChange((state) => {
-      setIsListening(state === 'listening');
+      setVoiceState(state);
+      setIsListening(state === 'listening' || state === 'hearing' || state === 'restarting');
     });
     
     voiceRecognition.setOnError((error) => {
       if (error === 'permission-denied') {
         addMessage('system', 'Microphone permission denied. Please enable it in settings.');
+        setHandsFreeMode(false);
+      } else if (error === 'network-error') {
+        addMessage('system', 'Network error with voice recognition. Please check your connection.');
       }
     });
 
@@ -183,7 +198,7 @@ function AIChefMode() {
       conversationEngine.reset();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [handsFreeMode, isReady]);
 
   // Add message to chat
   const addMessage = useCallback((role, text) => {
