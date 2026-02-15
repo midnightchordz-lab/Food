@@ -1329,25 +1329,41 @@ Do NOT repeat these recipes: {', '.join([r['title'] for r in serpapi_recipes])}
         logging.info(f"Hybrid recipe generation: {len(serpapi_recipes)} from SerpAPI, {len(ai_recipes)} from AI")
         
         # Save combined recipes to library for AI Chef access
+        # IMPORTANT: Use the SAME ID that was generated for the response
         try:
             for recipe in combined[:request.limit]:
-                recipe_to_save = {
+                recipe_id = recipe.get('id')
+                if not recipe_id:
+                    continue
+                    
+                # Check if recipe already exists in library
+                existing = await db.recipe_library.find_one({"id": recipe_id})
+                if existing:
+                    logging.debug(f"Recipe already exists in library: {recipe.get('title')}")
+                    continue
+                
+                # Save with the exact same ID
+                recipe_doc = {
+                    "id": recipe_id,  # Use the same ID from response
                     "title": recipe.get("title", ""),
+                    "title_normalized": recipe.get("title", "").lower().strip(),
                     "description": recipe.get("description", ""),
                     "cooking_time": recipe.get("cooking_time", "30 min"),
                     "difficulty": recipe.get("difficulty", "Medium"),
                     "cuisine": recipe.get("cuisine", request.cuisines[0] if request.cuisines else ""),
                     "dietary": request.dietary_preference or "",
+                    "meal_type": request.meal_type or "",
+                    "mood": request.mood,
                     "ingredients": recipe.get("ingredients", []),
-                    "full_content": recipe.get("description", ""),  # SerpAPI recipes don't have full content
+                    "full_content": recipe.get("description", ""),
+                    "source": recipe.get("source_type", "serpapi"),
+                    "times_served": 1,
+                    "created_at": datetime.now(timezone.utc),
+                    "last_served": datetime.now(timezone.utc),
+                    "is_premium": False,
                 }
-                await save_recipes_to_library(
-                    db, [recipe_to_save],
-                    mood=request.mood,
-                    meal_type=request.meal_type or "",
-                    dietary=request.dietary_preference or "",
-                    cuisine=request.cuisines[0] if request.cuisines else ""
-                )
+                await db.recipe_library.insert_one(recipe_doc)
+                logging.info(f"Saved recipe to library with ID {recipe_id}: {recipe.get('title')}")
         except Exception as save_error:
             logging.warning(f"Failed to save hybrid recipes to library: {save_error}")
         
