@@ -13,8 +13,8 @@ import LiveCookingModal from "@/components/live-cooking/LiveCookingModal";
 import { initializeCapacitor, isNative } from "@/capacitor";
 import "@/App.css";
 
-// Premium features (isolated)
-const AIChefMode = lazy(() => import("@/features-premium/ai-chef/AIChefMode"));
+// Premium features (DISABLED - code preserved in features-premium/ai-chef/)
+// const AIChefMode = lazy(() => import("@/features-premium/ai-chef/AIChefMode"));
 
 // Lazy load pages for code splitting - only load when needed
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
