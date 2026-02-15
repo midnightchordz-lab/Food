@@ -131,8 +131,11 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - [x] AI Chef Error Handling Production Fix
 - [x] AI Chef Recipe ID Integration Fix
 - [x] **Hands-Free Continuous Listening** - No more tap-to-speak!
+- [x] **7-Day Trial System** - Cross-platform (Web/iOS/Android)
+- [x] **Cross-Platform Voice Updates** - Enhanced mobile support
 
 ### P1 - High Priority
+- [ ] Re-enable AI Chef feature in UI (when requested)
 - [ ] Android build verification
 - [ ] Implement Ingredient Encyclopedia Page
 - [ ] Address iOS app requirements query
@@ -149,11 +152,15 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - `POST /api/recipes/detailed` - Generate detailed recipe (now saves with ID)
 - `GET /api/chat/ai-chef/recipe/{recipe_id}` - Get recipe for AI Chef
 - `POST /api/chat/ai-chef/chat` - AI Chef conversation
+- **NEW**: `GET /api/trial/status` - Get trial status
+- **NEW**: `POST /api/trial/start` - Start 7-day trial
+- **NEW**: `GET /api/trial/check-access` - Check premium access
 
 ## Test Credentials
 - **Chef Pro Account**: `lloydmasih1976@gmail.com` / `Milokiko*25`
 - **Demo Account**: `demouser@example.com` / `password123`
 
 ## Test Reports
+- `/app/test_reports/iteration_92.json` - 7-Day Trial System (15/15 Tests Passed)
 - `/app/test_reports/iteration_91.json` - Hands-Free Continuous Listening (Code Review Passed)
 - `/app/test_reports/iteration_90.json` - AI Chef Complete Flow Tests (All Passing)
