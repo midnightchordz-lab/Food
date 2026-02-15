@@ -31,18 +31,28 @@ class VoiceRecognition {
       return;
     }
 
-    this.recognition = new SpeechRecognition();
-    
-    // Platform-specific settings
-    const isAndroid = platformDetector.isAndroid();
-    
-    // Use continuous mode for web, short bursts + auto-restart for mobile
-    this.recognition.continuous = !isAndroid;
-    this.recognition.interimResults = true; // Enable interim results for responsive UX
-    this.recognition.maxAlternatives = 1;
-    this.recognition.lang = 'en-US';
+    try {
+      this.recognition = new SpeechRecognition();
+      
+      // Platform-specific settings
+      const isAndroid = platformDetector.isAndroid();
+      
+      // Use continuous mode for web, short bursts + auto-restart for mobile
+      this.recognition.continuous = !isAndroid;
+      this.recognition.interimResults = true; // Enable interim results for responsive UX
+      this.recognition.maxAlternatives = 1;
+      this.recognition.lang = 'en-US';
 
-    this.setupEventHandlers();
+      this.setupEventHandlers();
+      
+      // Detect Brave browser (may have issues with Google Speech API)
+      if (navigator.brave && navigator.brave.isBrave) {
+        console.warn('[VoiceRecognition] Brave browser detected - may need to allow Google services for voice recognition');
+      }
+    } catch (error) {
+      console.error('[VoiceRecognition] Failed to initialize:', error);
+      this.recognition = null;
+    }
   }
 
   setupEventHandlers() {
