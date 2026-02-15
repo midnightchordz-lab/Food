@@ -1307,6 +1307,18 @@ Do NOT repeat these recipes: {', '.join([r['title'] for r in serpapi_recipes])}
                 seen_titles.add(title_lower)
                 combined.append(recipe)
         
+        # Generate IDs for all combined recipes for AI Chef access
+        from services.recipe_library import generate_recipe_id
+        for recipe in combined:
+            if not recipe.get('id'):
+                recipe_cuisine = recipe.get('cuisine', '') or ''
+                recipe_dietary = recipe.get('dietary', '') or ''
+                recipe['id'] = generate_recipe_id(
+                    recipe.get('title', ''),
+                    recipe_cuisine,
+                    recipe_dietary
+                )
+        
         # Determine source attribution
         source = "hybrid"
         if len(serpapi_recipes) > 0 and len(ai_recipes) == 0:
