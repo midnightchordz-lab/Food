@@ -32,6 +32,22 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-15 - Blue (Relaxed) App Icon Implementation ✅
+- **COMPLETED**: New app icon with "Relaxed" blue theme
+  - Generated all PWA icon sizes (72, 96, 128, 144, 152, 192, 384, 512px)
+  - Created favicon.ico for browser tabs
+  - Design: Calming blue bowl with friendly face and steam waves
+  - Color palette: Deep blue (#2D5F8B), Accent blue (#4A90C2), Highlight (#7BB8E0)
+  - Updated theme-color in index.html and manifest.json to match
+  - Icons deployed to web, Android, and iOS asset directories
+- **FILES MODIFIED**:
+  - `frontend/public/icons/*.png` - All icon sizes regenerated
+  - `frontend/public/favicon.ico` - New favicon
+  - `frontend/public/index.html` - Updated theme-color meta tags
+  - `frontend/public/manifest.json` - Updated theme_color
+  - `frontend/android/app/src/main/assets/public/icons/*` - Android icons
+  - `frontend/ios/App/App/public/icons/*` - iOS icons
+
 ### 2026-02-15 - 7-Day Trial System (Cross-Platform) ✅
 - **COMPLETED**: Implemented full trial subscription system
   - Backend APIs: `/api/trial/status`, `/api/trial/start`, `/api/trial/check-access`
