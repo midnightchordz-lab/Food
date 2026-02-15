@@ -387,8 +387,10 @@ const RecipeDetailModal = ({ recipe, isOpen, onClose, onSave, onAddToShoppingLis
     setIsLoadingDetails(true);
     try {
       const token = localStorage.getItem('token');
+      const recipeId = recipe.id || recipe._id || recipe.recipe_id;
       const response = await axios.post(`${API}/recipes/detailed`, {
         recipe_title: recipe.title,
+        recipe_id: recipeId,  // Pass recipe ID for AI Chef lookup
         cuisine: recipe.cuisineHint || recipe.cuisine || 'International',
         meal_type: recipe.mealType || 'Dinner',
         dietary_pref: recipe.dietaryPref || 'Any'
