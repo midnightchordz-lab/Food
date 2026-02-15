@@ -560,6 +560,15 @@ function AIChefMode() {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Voice Notification (transient) */}
+          {voiceNotification && (
+            <div className="voice-notification" onClick={() => setVoiceNotification(null)}>
+              <span className="notification-icon">ℹ️</span>
+              <span className="notification-text">{voiceNotification}</span>
+              <span className="notification-dismiss">×</span>
+            </div>
+          )}
+
           {/* Last Transcript */}
           {lastTranscript && (
             <div className="transcript-bubble">
