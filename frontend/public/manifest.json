@@ -74,6 +74,13 @@
       "type": "image/png",
       "form_factor": "narrow",
       "label": "AI Recipe Chat"
+    },
+    {
+      "src": "screenshots/desktop-home.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "MOOD FOOD Desktop Experience"
     }
   ],
   "shortcuts": [
