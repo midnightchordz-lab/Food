@@ -26,7 +26,8 @@ import {
   Brain,
   Salad,
   Wine,
-  Check
+  Check,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthModal from '@/components/AuthModal';
