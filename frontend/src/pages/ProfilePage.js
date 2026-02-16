@@ -85,6 +85,7 @@ const ProfilePage = () => {
     setSaving(true);
     await updateProfile({
       name,
+      phone_number: phoneNumber || null,
       dietary_restrictions: dietaryRestrictions,
       cuisine_preferences: cuisinePreferences
     });
