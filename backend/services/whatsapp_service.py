@@ -161,8 +161,6 @@ Download MoodFood and join the family!
         
         recipe_count = len(session.get('recipe_options', []))
         meal_date = session.get('meal_date', 'today')
-        expires_at = session.get('expires_at', '')
-        session_id = session.get('id', session.get('_id', ''))
         
         message = f"""{emoji} *Time to Vote!*
 
