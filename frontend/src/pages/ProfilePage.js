@@ -128,6 +128,11 @@ const ProfilePage = () => {
               />
             </div>
 
+            <PhoneNumberInput 
+              value={phoneNumber}
+              onChange={setPhoneNumber}
+            />
+
             <div className="space-y-3">
               <Label>Dietary Restrictions</Label>
               <p className="text-sm text-muted-foreground">
