@@ -127,7 +127,7 @@ Configured in `capacitor.config.json`:
 ### API URL
 The app connects to the backend at:
 - **Production**: Set in `.env` file
-- **Current**: `https://premium-voice-cook.preview.emergentagent.com`
+- **Current**: `https://trial-bug-fix.preview.emergentagent.com`
 
 For production, update `frontend/.env`:
 ```
