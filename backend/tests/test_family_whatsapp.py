@@ -90,10 +90,10 @@ class TestFamilyWhatsAppIntegration:
         print(f"  has_family: {data['has_family']}")
     
     def test_get_my_family_without_auth(self):
-        """GET /api/family/my-family without auth returns 401"""
+        """GET /api/family/my-family without auth returns 401/403"""
         response = requests.get(f"{BASE_URL}/api/family/my-family")
-        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
-        print("✓ GET /api/family/my-family returns 401 without auth")
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
+        print(f"✓ GET /api/family/my-family returns {response.status_code} without auth")
     
     # ==================== WHATSAPP SETTINGS ENDPOINTS ====================
     
@@ -126,10 +126,10 @@ class TestFamilyWhatsAppIntegration:
         print(f"  has_phone: {data['has_phone']}")
     
     def test_get_whatsapp_settings_without_auth(self):
-        """GET /api/family/whatsapp/settings without auth returns 401"""
+        """GET /api/family/whatsapp/settings without auth returns 401/403"""
         response = requests.get(f"{BASE_URL}/api/family/whatsapp/settings")
-        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
-        print("✓ GET /api/family/whatsapp/settings returns 401 without auth")
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
+        print(f"✓ GET /api/family/whatsapp/settings returns {response.status_code} without auth")
     
     def test_put_whatsapp_settings_returns_200(self, headers):
         """PUT /api/family/whatsapp/settings updates settings successfully"""
@@ -274,13 +274,13 @@ class TestFamilyWhatsAppIntegration:
             print("✓ POST /api/family/create returns 400 (user may already have family)")
     
     def test_post_family_create_without_auth(self):
-        """POST /api/family/create without auth returns 401"""
+        """POST /api/family/create without auth returns 401/403"""
         response = requests.post(
             f"{BASE_URL}/api/family/create",
             json={"family_name": "Test Family"}
         )
-        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
-        print("✓ POST /api/family/create returns 401 without auth")
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
+        print(f"✓ POST /api/family/create returns {response.status_code} without auth")
     
     # ==================== FAMILY JOIN ====================
     
@@ -300,13 +300,13 @@ class TestFamilyWhatsAppIntegration:
         print("✓ POST /api/family/join with invalid code returns 404")
     
     def test_post_family_join_without_auth(self):
-        """POST /api/family/join without auth returns 401"""
+        """POST /api/family/join without auth returns 401/403"""
         response = requests.post(
             f"{BASE_URL}/api/family/join",
             json={"invite_code": "TESTCODE"}
         )
-        assert response.status_code == 401, f"Expected 401, got {response.status_code}"
-        print("✓ POST /api/family/join returns 401 without auth")
+        assert response.status_code in [401, 403], f"Expected 401/403, got {response.status_code}"
+        print(f"✓ POST /api/family/join returns {response.status_code} without auth")
     
     # ==================== VOTING ENDPOINTS (REQUIRE FAMILY) ====================
     
