@@ -23,8 +23,13 @@ WEBP_QUALITY = 80
 from motor.motor_asyncio import AsyncIOMotorClient
 
 mongo_url = os.environ.get('MONGO_URL')
+if not mongo_url:
+    raise RuntimeError("MONGO_URL environment variable is required")
+db_name = os.environ.get('DB_NAME')
+if not db_name:
+    raise RuntimeError("DB_NAME environment variable is required")
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'test_database')]
+db = client[db_name]
 
 # Collection for caching generated images
 recipe_images_collection = db['recipe_images']

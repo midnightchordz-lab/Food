@@ -12,7 +12,9 @@ from typing import List, Dict, Optional
 from urllib.parse import urlencode
 from datetime import datetime, timedelta
 
-SERPAPI_KEY = os.environ.get('SERPAPI_KEY', '61b164ba24fae31ca5fda08e0280c76c873edfc80cf9d34169587d52a7fb42ac')
+SERPAPI_KEY = os.environ.get('SERPAPI_KEY')
+if not SERPAPI_KEY:
+    logging.warning("SERPAPI_KEY not configured - image search features will be limited")
 SERPAPI_BASE_URL = "https://serpapi.com/search.json"
 
 # Rate limiting: Track API calls to avoid 429 errors
