@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { User, Loader2 } from 'lucide-react';
+import { User, Loader2, Phone } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ManageExclusions from '@/components/ManageExclusions';
+import PhoneNumberInput from '@/components/PhoneNumberInput';
 
 const DIETARY_OPTIONS = [
   'Non-Vegetarian',
