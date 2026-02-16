@@ -7,11 +7,9 @@ import {
   Users, 
   UserPlus, 
   Vote, 
-  Trophy, 
   Loader2, 
   ArrowLeft,
   Crown,
-  Clock,
   Check,
   MessageCircle
 } from 'lucide-react';
@@ -29,6 +27,7 @@ const FamilyPage = () => {
   const [family, setFamily] = useState(null);
   const [hasFamily, setHasFamily] = useState(false);
   const [votingSessions, setVotingSessions] = useState([]);
+  const [isFamilyPlan, setIsFamilyPlan] = useState(false);
   
   // Create family form
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -39,10 +38,6 @@ const FamilyPage = () => {
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [joining, setJoining] = useState(false);
-
-  // Check if user has Family Plan
-  const isFamilyPlan = user?.plan?.toLowerCase()?.includes('family') || 
-                       user?.default_plan?.toLowerCase()?.includes('family');
 
   useEffect(() => {
     if (authLoading) return;
