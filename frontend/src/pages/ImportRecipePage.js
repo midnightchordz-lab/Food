@@ -89,18 +89,28 @@ const ImportRecipePage = () => {
   
   // Feature access check
   const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('recipe_import');
+  const { subscription } = useSubscription ? useSubscription() : { subscription: null };
   
-  // Show feature lock if user doesn't have access
+  // Show feature lock only after subscription is fully loaded and feature is definitely locked
+  // Add subscription to dependencies to ensure we wait for it
   useEffect(() => {
-    if (!featureLoading && !hasAccess && isAuthenticated) {
-      setFeatureLockedModal({
-        isOpen: true,
-        feature: 'recipe_import',
-        upgradeTo: 'premium_monthly',
-        currentPlan: 'free'
-      });
+    // Wait for both feature loading AND subscription to be present
+    // This prevents showing the lock modal during the initial load
+    if (!featureLoading && !hasAccess && isAuthenticated && subscription) {
+      // Double-check the subscription features before showing lock
+      const features = subscription?.features || {};
+      const actualAccess = features.recipe_import === true;
+      
+      if (!actualAccess) {
+        setFeatureLockedModal({
+          isOpen: true,
+          feature: 'recipe_import',
+          upgradeTo: 'premium_monthly',
+          currentPlan: subscription?.plan_id || 'free'
+        });
+      }
     }
-  }, [hasAccess, featureLoading, isAuthenticated]);
+  }, [hasAccess, featureLoading, isAuthenticated, subscription]);
   
   // Load recent imports
   useEffect(() => {
