@@ -52,6 +52,7 @@ const FamilyPage = () => {
     }
     
     fetchFamilyData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading, token]);
 
   const fetchFamilyData = async () => {
