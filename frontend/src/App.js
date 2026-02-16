@@ -105,6 +105,7 @@ function App() {
                     <Route path="/checkout/failure" element={<CheckoutFailurePage />} />
                     <Route path="/fridge-scanner" element={<FridgeScannerPage />} />
                     <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                    <Route path="/family" element={<FamilyPage />} />
                     
                     {/* Premium Feature - AI Chef Assistant (DISABLED - code preserved)
                     <Route path="/recipes/:id/ai-chef" element={<AIChefMode />} />
