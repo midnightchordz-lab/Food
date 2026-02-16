@@ -238,6 +238,23 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
+        
+        {/* Footer with Privacy Policy */}
+        <footer className="py-8 px-4 sm:px-6 lg:px-8 border-t border-border/40 bg-muted/30">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              © 2026 MoodFood. All rights reserved.
+            </p>
+            <a 
+              href="/privacy-policy" 
+              className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              data-testid="footer-privacy-link"
+            >
+              <Shield size={14} />
+              Privacy Policy
+            </a>
+          </div>
+        </footer>
       </div>
       
       <AuthModal open={showAuthModal} onClose={() => setShowAuthModal(false)} />
