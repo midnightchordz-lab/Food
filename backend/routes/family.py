@@ -147,10 +147,10 @@ async def create_family_account(
         whatsapp_sent = False
         whatsapp_results = []
         
-        # Get full user data for WhatsApp check
-        user_data = await db.users.find_one({"id": current_user.id}, {"_id": 0})
+        # Check subscription for WhatsApp features
+        has_family_plan = await is_family_plan_user(current_user.id)
         
-        if whatsapp_service.is_enabled_for_user(user_data or {}):
+        if has_family_plan and whatsapp_service.enabled:
             # Send invites to phone numbers if provided
             if request.invite_phone_numbers:
                 for phone in request.invite_phone_numbers:
