@@ -128,6 +128,12 @@ const Navigation = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link to="/family" className="cursor-pointer" data-testid="family-link">
+                        <Users size={16} className="mr-2" />
+                        Family
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/subscription" className="cursor-pointer" data-testid="subscription-link">
                         <CreditCard size={16} className="mr-2" />
                         Subscription
