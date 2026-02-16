@@ -52,6 +52,9 @@ export const AuthProvider = ({ children }) => {
       });
       const { access_token, user: userData, trial } = response.data;
       localStorage.setItem('token', access_token);
+      // CRITICAL: Clear old cached subscription before setting new user
+      // This prevents stale subscription data from blocking trial features
+      localStorage.removeItem('cached_subscription');
       setToken(access_token);
       setUser(userData);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
@@ -82,6 +85,9 @@ export const AuthProvider = ({ children }) => {
       });
       const { access_token, user: userData } = response.data;
       localStorage.setItem('token', access_token);
+      // CRITICAL: Clear old cached subscription before setting new user
+      // This prevents stale subscription data from another user
+      localStorage.removeItem('cached_subscription');
       setToken(access_token);
       setUser(userData);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
@@ -122,8 +128,9 @@ export const AuthProvider = ({ children }) => {
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
     
-    // Clear auth data
+    // Clear auth data and subscription cache
     localStorage.removeItem('token');
+    localStorage.removeItem('cached_subscription');
     setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
