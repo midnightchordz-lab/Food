@@ -140,6 +140,8 @@ export const AuthProvider = ({ children }) => {
   // Login with token directly (for phone auth)
   const loginWithToken = async (accessToken, userData) => {
     localStorage.setItem('token', accessToken);
+    // CRITICAL: Clear old cached subscription before setting new user
+    localStorage.removeItem('cached_subscription');
     setToken(accessToken);
     setUser(userData);
     axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
