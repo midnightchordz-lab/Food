@@ -205,8 +205,10 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 - ✅ Mobile Voice Compatibility (Capacitor integration)
 - ✅ Trial Auto-Start on Registration (with Welcome Modal)
 - ✅ Trial Status Indicator in Header
+- ✅ **Trial Feature Access Bug Fix** (localStorage cache clearing)
+- ✅ **Deployment Blockers Fixed** (hardcoded keys, .gitignore cleanup)
 
-### P1 (In Progress)
+### P1 (Next Up)
 - 📋 Re-enable AI Chef Feature in UI
 - 📋 Android Native Build Verification
 
