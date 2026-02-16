@@ -656,7 +656,10 @@ async def complete_voting_session(
         # ========== WHATSAPP INTEGRATION ==========
         announcements_sent = 0
         
-        if whatsapp_service.is_enabled_for_user(user) and family:
+        # Check subscription for WhatsApp features
+        has_family_plan = await is_family_plan_user(current_user.id)
+        
+        if has_family_plan and whatsapp_service.enabled and family:
             # Get family members with phone numbers
             members = family.get("members", [])
             member_ids = [m["user_id"] for m in members]
