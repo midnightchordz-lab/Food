@@ -42,9 +42,18 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
   - Removed hardcoded SERPAPI_KEY fallback (security)
   - Removed hardcoded DB_NAME fallback (prevents wrong database in production)
   - Cleaned up corrupted .gitignore (was blocking .env files)
+- **PRIVACY POLICY PAGE ADDED**:
+  - Created `/privacy-policy` route with styled page
+  - Added to mobile "More" menu (last item before Logout)
+  - Added to desktop user dropdown (between Subscription and Logout)
+  - Added footer with Privacy Policy link on landing page
 - **FILES MODIFIED**:
   - `frontend/src/context/AuthContext.js` - Clear cached_subscription on auth state changes
   - `frontend/src/pages/ImportRecipePage.js` - Improved feature lock timing
+  - `frontend/src/pages/PrivacyPolicyPage.jsx` - NEW: Privacy Policy page
+  - `frontend/src/pages/LandingPage.js` - Added footer with Privacy Policy link
+  - `frontend/src/components/Navigation.js` - Added Privacy Policy to menus
+  - `frontend/src/App.js` - Added Privacy Policy route
   - `backend/services/serpapi_service.py` - Removed hardcoded API key
   - `backend/ai_image_service.py` - Required DB_NAME env variable
   - `.gitignore` - Cleaned up duplicate entries
