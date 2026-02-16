@@ -11,7 +11,7 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { FeatureLockedModal, handleFeatureLockedError, useFeatureAccess } from '@/components/FeatureGate';
+import { FeatureLockedModal, handleFeatureLockedError, useFeatureAccess, useSubscription } from '@/components/FeatureGate';
 import {
   Dialog,
   DialogContent,
