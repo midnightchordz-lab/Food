@@ -32,6 +32,23 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-16 - Trial Feature Access Bug Fix (FINAL) ✅
+- **BUG FIXED (P0 CRITICAL)**: Trial users were seeing "Feature Locked" modal on Import Recipe page
+  - Root cause: **localStorage cache pollution** - Old `cached_subscription` from previous user/session was being loaded first
+  - Fix 1: Clear `cached_subscription` on register, login, logout, and phone login
+  - Fix 2: Enhanced ImportRecipePage to wait for fresh subscription data before showing lock modal
+  - Fix 3: Double-check subscription features directly instead of relying only on hook state
+- **DEPLOYMENT FIXES**:
+  - Removed hardcoded SERPAPI_KEY fallback (security)
+  - Removed hardcoded DB_NAME fallback (prevents wrong database in production)
+  - Cleaned up corrupted .gitignore (was blocking .env files)
+- **FILES MODIFIED**:
+  - `frontend/src/context/AuthContext.js` - Clear cached_subscription on auth state changes
+  - `frontend/src/pages/ImportRecipePage.js` - Improved feature lock timing
+  - `backend/services/serpapi_service.py` - Removed hardcoded API key
+  - `backend/ai_image_service.py` - Required DB_NAME env variable
+  - `.gitignore` - Cleaned up duplicate entries
+
 ### 2026-02-15 - Trial Feature Access Fix ✅
 - **BUG FIXED**: Trial users now have full access to ALL premium features
   - Root cause: Trial auto-start was only updating user document, not creating subscription record
