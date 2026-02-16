@@ -40,6 +40,7 @@ const Navigation = () => {
     { path: '/import-recipe', icon: Import, label: 'Import Recipe' },
     { path: '/saved-recipes', icon: Heart, label: 'Saved Recipes' },
     { path: '/profile', icon: User, label: 'Profile' },
+    { path: '/family', icon: Users, label: 'Family' },
     { path: '/subscription', icon: CreditCard, label: 'Subscription' },
     { path: '/privacy-policy', icon: Shield, label: 'Privacy Policy' },
   ];
