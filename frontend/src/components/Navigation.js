@@ -41,6 +41,7 @@ const Navigation = () => {
     { path: '/saved-recipes', icon: Heart, label: 'Saved Recipes' },
     { path: '/profile', icon: User, label: 'Profile' },
     { path: '/subscription', icon: CreditCard, label: 'Subscription' },
+    { path: '/privacy-policy', icon: Shield, label: 'Privacy Policy' },
   ];
   
   // All items for desktop
