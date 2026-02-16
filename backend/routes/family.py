@@ -454,7 +454,10 @@ async def create_voting_session(
         # ========== WHATSAPP INTEGRATION ==========
         notifications_sent = 0
         
-        if whatsapp_service.is_enabled_for_user(user):
+        # Check subscription for WhatsApp features
+        has_family_plan = await is_family_plan_user(current_user.id)
+        
+        if has_family_plan and whatsapp_service.enabled:
             # Get family members with phone numbers
             members = family.get("members", [])
             member_ids = [m["user_id"] for m in members if m["user_id"] != current_user.id]
