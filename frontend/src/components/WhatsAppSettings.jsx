@@ -11,7 +11,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
  * WhatsApp Settings Component
  * Manage WhatsApp notification preferences for Family Plan users
  */
-const WhatsAppSettings = ({ onPhoneAdd }) => {
+const WhatsAppSettings = ({ onPhoneAdd, isFamilyPlan = false }) => {
   const { user, token } = useAuth();
   const [settings, setSettings] = useState({
     enabled: true,
@@ -22,10 +22,6 @@ const WhatsAppSettings = ({ onPhoneAdd }) => {
   const [phoneNumber, setPhoneNumber] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  // Check if user has Family Plan
-  const isFamilyPlan = user?.plan?.toLowerCase()?.includes('family') || 
-                       user?.default_plan?.toLowerCase()?.includes('family');
 
   useEffect(() => {
     const fetchSettings = async () => {
