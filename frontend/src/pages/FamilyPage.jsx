@@ -52,6 +52,23 @@ const FamilyPage = () => {
 
   const fetchFamilyData = async () => {
     try {
+      // First check subscription to see if user has family plan
+      const subRes = await fetch(`${API_URL}/api/subscription/current`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const subData = await subRes.json();
+      
+      if (subData.success && subData.subscription) {
+        const planId = subData.subscription.plan_id || '';
+        const hasFamilyPlan = planId.toLowerCase().includes('family');
+        setIsFamilyPlan(hasFamilyPlan);
+        
+        if (!hasFamilyPlan) {
+          setLoading(false);
+          return;
+        }
+      }
+
       // Get family info
       const familyRes = await fetch(`${API_URL}/api/family/my-family`, {
         headers: { 'Authorization': `Bearer ${token}` }
