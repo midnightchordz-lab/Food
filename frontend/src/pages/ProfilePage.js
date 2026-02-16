@@ -45,6 +45,7 @@ const ProfilePage = () => {
   const { user, updateProfile, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name || '');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone_number || '');
   const [dietaryRestrictions, setDietaryRestrictions] = useState(user?.dietary_restrictions || []);
   const [cuisinePreferences, setCuisinePreferences] = useState(user?.cuisine_preferences || []);
   const [saving, setSaving] = useState(false);
