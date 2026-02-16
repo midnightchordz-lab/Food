@@ -9,6 +9,7 @@ const PWAInstallPrompt = () => {
   const [isStandalone, setIsStandalone] = useState(false);
   const [canInstall, setCanInstall] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -21,9 +22,10 @@ const PWAInstallPrompt = () => {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     setIsIOS(iOS);
     
-    // Check if mobile
+    // Check if mobile vs desktop
     const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setIsMobile(mobile);
+    setIsDesktop(!mobile);
     
     // Don't show if already installed
     if (standalone) return;
@@ -38,26 +40,33 @@ const PWAInstallPrompt = () => {
     
     // Listen for install availability on Android/Chrome
     const handleInstallAvailable = (e) => {
+      console.log('PWA install available');
       setCanInstall(true);
       setShowPrompt(true);
     };
     
     window.addEventListener('pwaInstallAvailable', handleInstallAvailable);
     
-    // Check if deferredPrompt is already available (in case event fired before component mounted)
+    // Check if deferredPrompt is already available
     if (window.deferredPrompt) {
       setCanInstall(true);
       setShowPrompt(true);
     } else {
-      // Show prompt after a delay for iOS or as fallback
+      // Show prompt after a delay
       const timer = setTimeout(() => {
-        // Only show if iOS (which doesn't support beforeinstallprompt) or if install is available
-        if (iOS || window.deferredPrompt) {
+        // Always show on mobile (iOS shows manual instructions, Android may have deferredPrompt)
+        // On desktop, only show if we can actually install
+        if (mobile) {
           setShowPrompt(true);
           if (window.deferredPrompt) {
             setCanInstall(true);
           }
+        } else if (window.deferredPrompt) {
+          // Desktop with install prompt available
+          setCanInstall(true);
+          setShowPrompt(true);
         }
+        // Note: We don't show on desktop without deferredPrompt to avoid confusion
       }, 5000);
       
       return () => {
@@ -84,11 +93,10 @@ const PWAInstallPrompt = () => {
 
   const handleInstall = async () => {
     if (window.installPWA && canInstall) {
-      await window.installPWA();
-      setShowPrompt(false);
-    } else {
-      // Fallback: Show browser-specific instructions
-      alert('To install this app:\n\n• Chrome: Click the install icon in the address bar (⊕)\n• Edge: Click "..." menu → "Apps" → "Install this site as an app"\n• Firefox: Add to Home Screen from menu');
+      const result = await window.installPWA();
+      if (result) {
+        setShowPrompt(false);
+      }
     }
   };
 
@@ -139,7 +147,7 @@ const PWAInstallPrompt = () => {
                   <li>Tap "Add to Home Screen"</li>
                 </ol>
               </div>
-            ) : (
+            ) : canInstall ? (
               <Button 
                 onClick={handleInstall}
                 className="w-full gap-2 h-9 text-sm"
@@ -148,6 +156,14 @@ const PWAInstallPrompt = () => {
                 <Download size={16} />
                 Install App
               </Button>
+            ) : (
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-2 sm:p-3">
+                <p className="font-medium mb-1">To install on Android:</p>
+                <ol className="list-decimal list-inside space-y-0.5">
+                  <li>Tap the menu (⋮)</li>
+                  <li>Tap "Add to Home Screen"</li>
+                </ol>
+              </div>
             )}
           </div>
         </div>
