@@ -32,6 +32,29 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-16 - WhatsApp Family Integration ✅
+- **COMPLETED**: Full WhatsApp integration for Family Plan users
+  - WhatsApp notification service using Twilio API
+  - Family account creation with invite codes
+  - Recipe voting system for families
+  - WhatsApp notifications for: family invites, voting sessions, winner announcements
+  - WhatsApp notification settings management
+  - Phone number input in user profile
+- **NEW FILES**:
+  - `backend/services/whatsapp_service.py` - WhatsApp service with Twilio integration
+  - `backend/routes/family.py` - Family API endpoints (create, join, voting, settings)
+  - `frontend/src/pages/FamilyPage.jsx` - Family management page
+  - `frontend/src/components/PhoneNumberInput.jsx` - Phone input component
+  - `frontend/src/components/WhatsAppSettings.jsx` - Notification settings
+  - `frontend/src/components/InviteFamilyWhatsApp.jsx` - WhatsApp invite component
+- **MODIFIED FILES**:
+  - `backend/server.py` - Added family_router
+  - `backend/routes/auth.py` - Profile update supports phone_number
+  - `frontend/src/App.js` - Added /family route
+  - `frontend/src/pages/ProfilePage.js` - Added PhoneNumberInput
+- **TESTING**: 100% backend tests passed (23/23), 100% frontend UI verified
+- **NOTE**: Family features require 'family_annual' subscription plan
+
 ### 2026-02-16 - Privacy Policy TermsFeed Integration ✅
 - **COMPLETED**: Updated Privacy Policy page to embed official TermsFeed document
   - Embedded TermsFeed URL via iframe: `https://www.termsfeed.com/live/b7d423d9-b86b-4642-a9ab-3fc13fcb730d`
