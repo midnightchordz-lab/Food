@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
-import { X, Download, Smartphone } from 'lucide-react';
+import { X, Download, Smartphone, Monitor } from 'lucide-react';
 
 const PWAInstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -19,6 +21,10 @@ const PWAInstallPrompt = () => {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     setIsIOS(iOS);
     
+    // Check if mobile
+    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(mobile);
+    
     // Don't show if already installed
     if (standalone) return;
     
@@ -30,20 +36,37 @@ const PWAInstallPrompt = () => {
       if (daysSinceDismissed < 7) return;
     }
     
-    // Show prompt after a delay
-    const timer = setTimeout(() => {
-      setShowPrompt(true);
-    }, 5000);
-    
     // Listen for install availability on Android/Chrome
-    const handleInstallAvailable = () => {
+    const handleInstallAvailable = (e) => {
+      setCanInstall(true);
       setShowPrompt(true);
     };
     
     window.addEventListener('pwaInstallAvailable', handleInstallAvailable);
     
+    // Check if deferredPrompt is already available (in case event fired before component mounted)
+    if (window.deferredPrompt) {
+      setCanInstall(true);
+      setShowPrompt(true);
+    } else {
+      // Show prompt after a delay for iOS or as fallback
+      const timer = setTimeout(() => {
+        // Only show if iOS (which doesn't support beforeinstallprompt) or if install is available
+        if (iOS || window.deferredPrompt) {
+          setShowPrompt(true);
+          if (window.deferredPrompt) {
+            setCanInstall(true);
+          }
+        }
+      }, 5000);
+      
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('pwaInstallAvailable', handleInstallAvailable);
+      };
+    }
+    
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('pwaInstallAvailable', handleInstallAvailable);
     };
   }, []);
@@ -60,10 +83,13 @@ const PWAInstallPrompt = () => {
   }, [showPrompt, location.pathname]);
 
   const handleInstall = async () => {
-    if (window.installPWA) {
+    if (window.installPWA && canInstall) {
       await window.installPWA();
+      setShowPrompt(false);
+    } else {
+      // Fallback: Show browser-specific instructions
+      alert('To install this app:\n\n• Chrome: Click the install icon in the address bar (⊕)\n• Edge: Click "..." menu → "Apps" → "Install this site as an app"\n• Firefox: Add to Home Screen from menu');
     }
-    setShowPrompt(false);
   };
 
   const handleDismiss = () => {
@@ -88,7 +114,11 @@ const PWAInstallPrompt = () => {
         {/* Content */}
         <div className="flex gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0">
-            <Smartphone className="text-primary" size={24} />
+            {isMobile ? (
+              <Smartphone className="text-primary" size={24} />
+            ) : (
+              <Monitor className="text-primary" size={24} />
+            )}
           </div>
           
           <div className="flex-1 pr-4">
@@ -96,7 +126,9 @@ const PWAInstallPrompt = () => {
               Install MOOD FOOD
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground mb-3">
-              Add to your home screen for quick access and offline support.
+              {isMobile 
+                ? "Add to your home screen for quick access and offline support."
+                : "Install as a desktop app for quick access and better experience."}
             </p>
             
             {isIOS ? (
