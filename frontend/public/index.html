@@ -93,11 +93,13 @@
         
         <!-- Install Prompt Handler -->
         <script>
-            let deferredPrompt;
+            // Global variable to store the deferred prompt
+            window.deferredPrompt = null;
             
             window.addEventListener('beforeinstallprompt', (e) => {
+                console.log('beforeinstallprompt event fired');
                 e.preventDefault();
-                deferredPrompt = e;
+                window.deferredPrompt = e;
                 
                 // Dispatch custom event for React to handle
                 window.dispatchEvent(new CustomEvent('pwaInstallAvailable', { detail: e }));
@@ -105,16 +107,21 @@
             
             window.addEventListener('appinstalled', () => {
                 console.log('MOOD FOOD was installed');
-                deferredPrompt = null;
+                window.deferredPrompt = null;
             });
             
             // Global function to trigger install
             window.installPWA = async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
+                if (window.deferredPrompt) {
+                    console.log('Triggering install prompt...');
+                    window.deferredPrompt.prompt();
+                    const { outcome } = await window.deferredPrompt.userChoice;
                     console.log('Install prompt outcome:', outcome);
-                    deferredPrompt = null;
+                    window.deferredPrompt = null;
+                    return outcome === 'accepted';
+                } else {
+                    console.log('No deferred prompt available');
+                    return false;
                 }
             };
         </script>
