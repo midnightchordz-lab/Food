@@ -32,6 +32,13 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ## Changelog
 
+### 2026-02-16 - Privacy Policy TermsFeed Integration ✅
+- **COMPLETED**: Updated Privacy Policy page to embed official TermsFeed document
+  - Embedded TermsFeed URL via iframe: `https://www.termsfeed.com/live/b7d423d9-b86b-4642-a9ab-3fc13fcb730d`
+  - Added "Open in new tab" link for accessibility
+  - Cleaned up page layout for better iframe display
+- **FILE MODIFIED**: `frontend/src/pages/PrivacyPolicyPage.jsx`
+
 ### 2026-02-16 - Trial Feature Access Bug Fix (FINAL) ✅
 - **BUG FIXED (P0 CRITICAL)**: Trial users were seeing "Feature Locked" modal on Import Recipe page
   - Root cause: **localStorage cache pollution** - Old `cached_subscription` from previous user/session was being loaded first
