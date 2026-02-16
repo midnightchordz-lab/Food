@@ -132,6 +132,12 @@ const Navigation = () => {
                         Subscription
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/privacy-policy" className="cursor-pointer" data-testid="privacy-policy-link">
+                        <Shield size={16} className="mr-2" />
+                        Privacy Policy
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout} className="cursor-pointer" data-testid="logout-button">
                       <LogOut size={16} className="mr-2" />
