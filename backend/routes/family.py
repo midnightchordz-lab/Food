@@ -320,7 +320,8 @@ async def send_family_invites(
         if not invite_code:
             raise HTTPException(status_code=400, detail="No invite code found")
         
-        if not whatsapp_service.is_enabled_for_user(user):
+        # Check subscription instead of user dict
+        if not await is_family_plan_user(current_user.id):
             raise HTTPException(
                 status_code=403, 
                 detail="WhatsApp notifications require Family Plan"
