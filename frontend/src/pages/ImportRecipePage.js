@@ -89,7 +89,7 @@ const ImportRecipePage = () => {
   
   // Feature access check
   const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('recipe_import');
-  const { subscription } = useSubscription ? useSubscription() : { subscription: null };
+  const { subscription } = useSubscription();
   
   // Show feature lock only after subscription is fully loaded and feature is definitely locked
   // Add subscription to dependencies to ensure we wait for it
