@@ -127,7 +127,7 @@ Configured in `capacitor.config.json`:
 ### API URL
 The app connects to the backend at:
 - **Production**: Set in `.env` file
-- **Current**: `https://trial-bug-fix.preview.emergentagent.com`
+- **Current**: `https://cooklaw-docs.preview.emergentagent.com`
 
 For production, update `frontend/.env`:
 ```
