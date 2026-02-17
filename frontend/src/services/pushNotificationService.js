@@ -1,5 +1,5 @@
 /**
- * Push Notification Service — Frontend
+ * Push Notification Service — Frontend (Web + Mobile)
  * Phase 1: Handles FCM token registration and notification display
  * 
  * Usage:
@@ -10,22 +10,37 @@
  */
 
 import { Capacitor } from '@capacitor/core';
-import { PushNotifications } from '@capacitor/push-notifications';
+import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+// VAPID key for web push (get from Firebase Console > Project Settings > Cloud Messaging)
+const VAPID_KEY = 'BKagOny0KF_2pCJQ3m....'; // Will be set when available
+
+let webMessaging = null;
 
 /**
  * Initialize push notifications (call after user login)
  * @param {string} authToken - User's JWT auth token
  */
 export const initPushNotifications = async (authToken) => {
-  // Only run on native platforms
-  if (!Capacitor.isNativePlatform()) {
-    console.log('Push notifications only available on native platforms');
-    return { success: false, reason: 'web_platform' };
+  // Determine platform
+  const isNative = Capacitor.isNativePlatform();
+  
+  if (isNative) {
+    return initNativePush(authToken);
+  } else {
+    return initWebPush(authToken);
   }
+};
 
+/**
+ * Initialize native (mobile) push notifications
+ */
+const initNativePush = async (authToken) => {
   try {
+    const { PushNotifications } = await import('@capacitor/push-notifications');
+    
     // Request permission
     const permResult = await PushNotifications.requestPermissions();
     
@@ -40,8 +55,6 @@ export const initPushNotifications = async (authToken) => {
     // Listen for registration success
     PushNotifications.addListener('registration', async (token) => {
       console.log('FCM Token received:', token.value);
-      
-      // Send token to backend
       await sendTokenToBackend(token.value, authToken);
     });
 
@@ -53,7 +66,6 @@ export const initPushNotifications = async (authToken) => {
     // Listen for incoming notifications (foreground)
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       console.log('Push received (foreground):', notification);
-      // You can show an in-app notification here
       handleForegroundNotification(notification);
     });
 
@@ -63,10 +75,75 @@ export const initPushNotifications = async (authToken) => {
       handleNotificationTap(notification);
     });
 
-    return { success: true };
+    return { success: true, platform: 'native' };
     
   } catch (error) {
-    console.error('Push notification init error:', error);
+    console.error('Native push init error:', error);
+    return { success: false, reason: 'init_failed', error: error.message };
+  }
+};
+
+/**
+ * Initialize web push notifications
+ */
+const initWebPush = async (authToken) => {
+  try {
+    // Check browser support
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.log('Web push not supported in this browser');
+      return { success: false, reason: 'not_supported' };
+    }
+
+    // Request notification permission
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.log('Notification permission denied');
+      return { success: false, reason: 'permission_denied' };
+    }
+
+    // Register service worker
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    console.log('Service worker registered:', registration);
+
+    // Wait for service worker to be ready
+    await navigator.serviceWorker.ready;
+
+    // Import Firebase messaging
+    const { getFirebaseMessaging, getToken, onMessage } = await import('@/config/firebase');
+    
+    const messaging = getFirebaseMessaging();
+    if (!messaging) {
+      console.log('Firebase messaging not available');
+      return { success: false, reason: 'messaging_unavailable' };
+    }
+    
+    webMessaging = messaging;
+
+    // Get FCM token
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+
+    if (token) {
+      console.log('Web FCM Token:', token);
+      await sendTokenToBackend(token, authToken);
+      
+      // Listen for foreground messages
+      onMessage(messaging, (payload) => {
+        console.log('Web push received (foreground):', payload);
+        handleWebForegroundNotification(payload);
+      });
+      
+      return { success: true, platform: 'web' };
+    } else {
+      console.log('No registration token available');
+      return { success: false, reason: 'no_token' };
+    }
+    
+  } catch (error) {
+    console.error('Web push init error:', error);
+    // Don't block the app if push fails
     return { success: false, reason: 'init_failed', error: error.message };
   }
 };
@@ -99,27 +176,56 @@ const sendTokenToBackend = async (fcmToken, authToken) => {
 };
 
 /**
- * Handle foreground notification (optional: show toast/banner)
+ * Handle foreground notification (native)
  */
 const handleForegroundNotification = (notification) => {
-  const { title, body, data } = notification;
+  const { title, body } = notification;
   
-  // You can integrate with your toast/notification system here
-  // For example, using sonner:
-  // toast(title, { description: body });
+  // Show toast notification
+  toast(title, {
+    description: body,
+    duration: 5000,
+    action: {
+      label: 'View',
+      onClick: () => handleNotificationTap({ notification })
+    }
+  });
+};
+
+/**
+ * Handle foreground notification (web)
+ */
+const handleWebForegroundNotification = (payload) => {
+  const { title, body } = payload.notification || {};
   
-  console.log('Foreground notification:', { title, body, data });
+  // Show toast notification
+  toast(title || 'MoodFood', {
+    description: body,
+    duration: 5000,
+    action: {
+      label: 'View',
+      onClick: () => {
+        const data = payload.data || {};
+        navigateToNotificationTarget(data);
+      }
+    }
+  });
 };
 
 /**
  * Handle notification tap (navigate to relevant screen)
  */
 const handleNotificationTap = (notification) => {
-  const data = notification.notification?.data || {};
-  
+  const data = notification.notification?.data || notification.data || {};
+  navigateToNotificationTarget(data);
+};
+
+/**
+ * Navigate based on notification data
+ */
+const navigateToNotificationTarget = (data) => {
   switch (data.type) {
     case 'voting_session':
-      // Navigate to voting page
       if (data.sessionId) {
         window.location.href = `/family/vote/${data.sessionId}`;
       } else {
@@ -128,7 +234,6 @@ const handleNotificationTap = (notification) => {
       break;
       
     case 'winner_announcement':
-      // Navigate to recipe detail
       if (data.recipeId) {
         window.location.href = `/recipe/${data.recipeId}`;
       } else {
@@ -137,12 +242,10 @@ const handleNotificationTap = (notification) => {
       break;
       
     case 'member_joined':
-      // Navigate to family page
       window.location.href = '/family';
       break;
       
     default:
-      // Default: go to family page
       window.location.href = '/family';
   }
 };
@@ -151,15 +254,20 @@ const handleNotificationTap = (notification) => {
  * Unregister from push notifications (call on logout)
  */
 export const unregisterPushNotifications = async () => {
-  if (!Capacitor.isNativePlatform()) {
-    return;
-  }
-
-  try {
-    await PushNotifications.removeAllListeners();
-    console.log('Push notifications unregistered');
-  } catch (error) {
-    console.error('Error unregistering push:', error);
+  const isNative = Capacitor.isNativePlatform();
+  
+  if (isNative) {
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      await PushNotifications.removeAllListeners();
+      console.log('Native push notifications unregistered');
+    } catch (error) {
+      console.error('Error unregistering native push:', error);
+    }
+  } else {
+    // Web - just clear the reference
+    webMessaging = null;
+    console.log('Web push notifications cleared');
   }
 };
 
@@ -167,11 +275,37 @@ export const unregisterPushNotifications = async () => {
  * Check if push notifications are available
  */
 export const isPushAvailable = () => {
-  return Capacitor.isNativePlatform();
+  const isNative = Capacitor.isNativePlatform();
+  
+  if (isNative) {
+    return true;
+  } else {
+    return 'serviceWorker' in navigator && 'PushManager' in window;
+  }
+};
+
+/**
+ * Check current notification permission status
+ */
+export const getNotificationPermission = async () => {
+  const isNative = Capacitor.isNativePlatform();
+  
+  if (isNative) {
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const result = await PushNotifications.checkPermissions();
+      return result.receive;
+    } catch {
+      return 'unknown';
+    }
+  } else {
+    return Notification.permission;
+  }
 };
 
 export default {
   initPushNotifications,
   unregisterPushNotifications,
-  isPushAvailable
+  isPushAvailable,
+  getNotificationPermission
 };
