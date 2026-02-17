@@ -172,7 +172,9 @@ const FamilyPage = () => {
   }
 
   // Not on Family Plan - show upgrade prompt
-  if (!isFamilyPlan) {
+  // Show pending invites even if user doesn't have family plan yet
+  // They might have been invited by someone
+  if (!isFamilyPlan && !hasFamily) {
     return (
       <div className="min-h-screen pt-20 pb-24 px-4 sm:px-6 lg:px-8" data-testid="family-page-upgrade">
         <div className="max-w-2xl mx-auto">
@@ -185,13 +187,19 @@ const FamilyPage = () => {
             Back
           </Button>
           
+          {/* Show pending invites if any */}
+          <PendingFamilyInvites onInviteAccepted={() => {
+            fetchFamilyData();
+            window.location.reload();
+          }} />
+          
           <div className="text-center py-12">
             <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Users size={40} className="text-primary" />
             </div>
             <h1 className="text-3xl font-serif font-bold mb-4">Family Plan Required</h1>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-              Create a family account, vote on recipes together, and get WhatsApp notifications 
+              Create a family account, vote on recipes together, and get notified 
               with the Family Plan.
             </p>
             <Button
@@ -218,6 +226,11 @@ const FamilyPage = () => {
           <ArrowLeft size={18} className="mr-2" />
           Back
         </Button>
+        
+        {/* Show pending invites at top */}
+        <PendingFamilyInvites onInviteAccepted={() => {
+          fetchFamilyData();
+        }} />
 
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-serif font-bold mb-2" data-testid="page-title">
