@@ -1,5 +1,6 @@
 """
-Family Plan Routes - Family accounts, voting, and WhatsApp notifications
+Family Plan Routes - Family accounts, voting, and notifications
+Phase 1: Push Notifications + SMS Fallback (WhatsApp dormant)
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
@@ -14,6 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from .deps import db, User, get_current_user
 from services.whatsapp_service import whatsapp_service
+from services.notification_service import notification_service
 
 router = APIRouter(prefix="/family", tags=["Family"])
 
