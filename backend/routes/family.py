@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class CreateFamilyRequest(BaseModel):
     family_name: str
     max_members: int = 5
-    invite_phone_numbers: Optional[List[str]] = None  # Phone numbers to invite via WhatsApp
+    invite_phone_numbers: Optional[List[str]] = None
 
 
 class JoinFamilyRequest(BaseModel):
@@ -36,6 +36,19 @@ class JoinFamilyRequest(BaseModel):
 
 class SendInvitesRequest(BaseModel):
     phone_numbers: List[str]
+
+
+class AddMemberRequest(BaseModel):
+    member_name: str
+    phone_number: str
+
+
+class AcceptInviteRequest(BaseModel):
+    invite_id: str
+
+
+class DeclineInviteRequest(BaseModel):
+    invite_id: str
 
 
 class CreateVotingSessionRequest(BaseModel):
