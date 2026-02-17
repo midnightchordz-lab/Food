@@ -65,8 +65,15 @@ export const AuthProvider = ({ children }) => {
       // Return trial info for showing welcome modal
       if (trial?.active) {
         toast.success('Welcome! Your 7-day premium trial has started!');
+        
+        // Initialize push notifications for mobile
+        initPushNotifications(access_token).catch(console.error);
+        
         return { success: true, trial };
       }
+      
+      // Initialize push notifications for mobile
+      initPushNotifications(access_token).catch(console.error);
       
       toast.success('Welcome to MOOD FOOD!');
       return { success: true, trial: null };
