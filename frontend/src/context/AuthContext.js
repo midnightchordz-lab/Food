@@ -127,6 +127,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Unregister push notifications
+    unregisterPushNotifications().catch(console.error);
+    
     // Clear all user-specific chat data from localStorage
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
