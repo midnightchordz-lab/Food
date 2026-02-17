@@ -94,6 +94,10 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       // Trigger subscription refresh after successful login
       window.dispatchEvent(new CustomEvent('trigger-subscription-refresh'));
+      
+      // Initialize push notifications for mobile
+      initPushNotifications(access_token).catch(console.error);
+      
       toast.success(`Welcome back, ${userData.name}!`);
       return true;
     } catch (error) {
