@@ -14,8 +14,9 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-// VAPID key for web push (get from Firebase Console > Project Settings > Cloud Messaging)
-const VAPID_KEY = 'BKagOny0KF_2pCJQ3m....'; // Will be set when available
+// VAPID key for web push (from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates)
+// This will be empty until user provides the key
+const VAPID_KEY = process.env.REACT_APP_FIREBASE_VAPID_KEY || '';
 
 let webMessaging = null;
 
