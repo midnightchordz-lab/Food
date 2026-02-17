@@ -312,6 +312,15 @@ async def get_my_family(current_user: User = Depends(get_current_user)):
                 "family": None
             }
         
+        # Also get pending invitations for the family
+        pending_invites = []
+        if family:
+            invites = await db.family_invitations.find({
+                "family_id": family["id"],
+                "status": "pending"
+            }, {"_id": 0}).to_list(length=10)
+            pending_invites = invites
+        
         return {
             "success": True,
             "has_family": True,
@@ -321,13 +330,301 @@ async def get_my_family(current_user: User = Depends(get_current_user)):
                 "invite_code": family["invite_code"],
                 "members": family.get("members", []),
                 "max_members": family.get("max_members", 5),
-                "role": user["family_account"].get("role", "member")
+                "role": user["family_account"].get("role", "member"),
+                "pending_invites": pending_invites
             }
         }
         
     except Exception as e:
         logger.error(f"Get family error: {e}")
         raise HTTPException(status_code=500, detail="Failed to get family details")
+
+
+# ============== ADD MEMBER BY OWNER ==============
+
+@router.post("/add-member")
+async def add_family_member(
+    request: AddMemberRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Owner adds a family member by name and phone number. Sends SMS invite."""
+    from services.sms_service import sms_service
+    
+    try:
+        user = await db.users.find_one({"id": current_user.id}, {"_id": 0})
+        
+        if not user or not user.get("family_account", {}).get("family_id"):
+            raise HTTPException(status_code=400, detail="You don't have a family account")
+        
+        # Only owner can add members
+        if user["family_account"].get("role") != "owner":
+            raise HTTPException(status_code=403, detail="Only the family owner can add members")
+        
+        family_id = user["family_account"]["family_id"]
+        family = await db.families.find_one({"id": family_id}, {"_id": 0})
+        
+        if not family:
+            raise HTTPException(status_code=404, detail="Family not found")
+        
+        # Check max members (including pending)
+        current_members = len(family.get("members", []))
+        pending_count = await db.family_invitations.count_documents({
+            "family_id": family_id,
+            "status": "pending"
+        })
+        
+        max_members = family.get("max_members", 5)
+        if current_members + pending_count >= max_members:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Family is full. Maximum {max_members} members allowed."
+            )
+        
+        # Check if phone already has pending invite
+        existing_invite = await db.family_invitations.find_one({
+            "family_id": family_id,
+            "phone_number": request.phone_number,
+            "status": "pending"
+        })
+        
+        if existing_invite:
+            raise HTTPException(status_code=400, detail="This phone number already has a pending invite")
+        
+        # Check if phone is already a member
+        for member in family.get("members", []):
+            member_user = await db.users.find_one({"id": member["user_id"]}, {"_id": 0, "phone_number": 1})
+            if member_user and member_user.get("phone_number") == request.phone_number:
+                raise HTTPException(status_code=400, detail="This person is already a family member")
+        
+        now = datetime.now(timezone.utc)
+        invite_id = str(uuid.uuid4())
+        invite_code = generate_invite_code()
+        
+        # Create invitation record
+        invitation = {
+            "id": invite_id,
+            "family_id": family_id,
+            "family_name": family["name"],
+            "invite_code": invite_code,
+            "member_name": request.member_name,
+            "phone_number": request.phone_number,
+            "invited_by": current_user.id,
+            "invited_by_name": current_user.name,
+            "status": "pending",
+            "created_at": now.isoformat()
+        }
+        
+        await db.family_invitations.insert_one(invitation)
+        
+        # Send SMS invite
+        sms_text = f"Hi {request.member_name}! {current_user.name} invited you to join '{family['name']}' on MoodFood. Log in with this number and accept the invite to join!"
+        sms_result = await sms_service.send(request.phone_number, sms_text)
+        
+        invitation.pop("_id", None)
+        
+        return {
+            "success": True,
+            "message": f"Invite sent to {request.member_name}",
+            "invitation": invitation,
+            "sms_sent": sms_result.get("success", False)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Add member error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to add family member")
+
+
+@router.get("/my-invites")
+async def get_my_invites(current_user: User = Depends(get_current_user)):
+    """Get pending family invitations for the logged-in user (by phone number)"""
+    try:
+        user = await db.users.find_one({"id": current_user.id}, {"_id": 0})
+        
+        if not user:
+            return {"success": True, "invites": []}
+        
+        phone_number = user.get("phone_number")
+        if not phone_number:
+            return {"success": True, "invites": []}
+        
+        # Find pending invitations for this phone number
+        invites = await db.family_invitations.find({
+            "phone_number": phone_number,
+            "status": "pending"
+        }, {"_id": 0}).to_list(length=10)
+        
+        return {
+            "success": True,
+            "invites": invites
+        }
+        
+    except Exception as e:
+        logger.error(f"Get invites error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get invitations")
+
+
+@router.post("/accept-invite")
+async def accept_family_invite(
+    request: AcceptInviteRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Accept a family invitation and join the family with Family Plan access"""
+    try:
+        user = await db.users.find_one({"id": current_user.id}, {"_id": 0})
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if user already in a family
+        if user.get("family_account", {}).get("family_id"):
+            raise HTTPException(status_code=400, detail="You're already in a family")
+        
+        # Find the invitation
+        invitation = await db.family_invitations.find_one({
+            "id": request.invite_id,
+            "status": "pending"
+        }, {"_id": 0})
+        
+        if not invitation:
+            raise HTTPException(status_code=404, detail="Invitation not found or expired")
+        
+        # Verify phone number matches
+        if user.get("phone_number") != invitation.get("phone_number"):
+            raise HTTPException(status_code=403, detail="This invitation was sent to a different phone number")
+        
+        family_id = invitation["family_id"]
+        family = await db.families.find_one({"id": family_id}, {"_id": 0})
+        
+        if not family:
+            raise HTTPException(status_code=404, detail="Family no longer exists")
+        
+        # Check max members
+        if len(family.get("members", [])) >= family.get("max_members", 5):
+            raise HTTPException(status_code=400, detail="Family is full")
+        
+        now = datetime.now(timezone.utc)
+        
+        # Add user to family members
+        new_member = {
+            "user_id": current_user.id,
+            "name": invitation.get("member_name") or current_user.name,
+            "role": "member",
+            "joined_at": now.isoformat()
+        }
+        
+        await db.families.update_one(
+            {"id": family_id},
+            {"$push": {"members": new_member}}
+        )
+        
+        # Update user's family account
+        family_account = {
+            "family_id": family_id,
+            "family_name": family["name"],
+            "invite_code": family["invite_code"],
+            "role": "member",
+            "joined_at": now.isoformat()
+        }
+        
+        await db.users.update_one(
+            {"id": current_user.id},
+            {"$set": {"family_account": family_account}}
+        )
+        
+        # Grant Family Plan access to the member
+        # Create a family member subscription (inherits from family owner)
+        period_end = now + timedelta(days=365)
+        member_subscription = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "plan_id": "family_member",  # Special plan for family members
+            "status": "active",
+            "source": "family_invite",
+            "family_id": family_id,
+            "current_period_start": now.isoformat(),
+            "current_period_end": period_end.isoformat(),
+            "created_at": now.isoformat()
+        }
+        
+        # Check if user already has a subscription, update it
+        existing_sub = await db.user_subscriptions.find_one({"user_id": current_user.id})
+        if existing_sub:
+            await db.user_subscriptions.update_one(
+                {"user_id": current_user.id},
+                {"$set": member_subscription}
+            )
+        else:
+            await db.user_subscriptions.insert_one(member_subscription)
+        
+        # Mark invitation as accepted
+        await db.family_invitations.update_one(
+            {"id": request.invite_id},
+            {"$set": {
+                "status": "accepted",
+                "accepted_at": now.isoformat(),
+                "accepted_by_user_id": current_user.id
+            }}
+        )
+        
+        # Notify family owner
+        owner_id = family.get("owner_id")
+        if owner_id:
+            await notification_service.on_member_joined(
+                None,  # fcm_token - will be fetched
+                None,  # phone
+                invitation.get("member_name") or current_user.name,
+                family["name"]
+            )
+        
+        return {
+            "success": True,
+            "message": f"You've joined {family['name']}!",
+            "family_name": family["name"],
+            "family_id": family_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Accept invite error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to accept invitation")
+
+
+@router.post("/decline-invite")
+async def decline_family_invite(
+    request: DeclineInviteRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Decline a family invitation"""
+    try:
+        now = datetime.now(timezone.utc)
+        
+        result = await db.family_invitations.update_one(
+            {
+                "id": request.invite_id,
+                "status": "pending"
+            },
+            {"$set": {
+                "status": "declined",
+                "declined_at": now.isoformat()
+            }}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Invitation not found or already processed")
+        
+        return {
+            "success": True,
+            "message": "Invitation declined"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Decline invite error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to decline invitation")
 
 
 @router.post("/send-invites")
