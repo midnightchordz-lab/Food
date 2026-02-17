@@ -467,35 +467,35 @@ async def create_voting_session(
         
         await db.voting_sessions.insert_one(session_doc)
         
-        # ========== WHATSAPP INTEGRATION ==========
-        notifications_sent = 0
+        # ========== PHASE 1: PUSH/SMS NOTIFICATIONS ==========
+        # Get family members for notifications
+        members = family.get("members", [])
+        member_ids = [m["user_id"] for m in members]
         
-        # Check subscription for WhatsApp features
-        has_family_plan = await is_family_plan_user(current_user.id)
+        members_data = await db.users.find({
+            "id": {"$in": member_ids}
+        }, {"_id": 0, "id": 1, "fcm_token": 1, "phone_number": 1, "push_notifications": 1}).to_list(length=100)
         
-        if has_family_plan and whatsapp_service.enabled:
-            # Get family members with phone numbers
-            members = family.get("members", [])
-            member_ids = [m["user_id"] for m in members if m["user_id"] != current_user.id]
-            
-            members_with_phones = await db.users.find({
-                "id": {"$in": member_ids},
-                "phone_number": {"$exists": True, "$ne": None},
-                "whatsapp_notifications.enabled": {"$ne": False}
-            }, {"_id": 0, "id": 1, "phone_number": 1, "whatsapp_notifications": 1}).to_list(length=100)
-            
-            for member in members_with_phones:
-                if member.get("phone_number"):
-                    result = await whatsapp_service.send_voting_notification(
-                        member["phone_number"],
-                        session_doc,
-                        family["name"]
-                    )
-                    if result.get("success"):
-                        notifications_sent += 1
-            
-            logger.info(f"WhatsApp voting notifications sent to {notifications_sent} members")
-        # ==========================================
+        # Format for notification service
+        members_for_notify = [
+            {
+                "user_id": m.get("id"),
+                "fcm_token": m.get("fcm_token"),
+                "phone_number": m.get("phone_number")
+            }
+            for m in members_data
+            if m.get("push_notifications", {}).get("voting_notifications", True) is not False
+        ]
+        
+        notify_result = await notification_service.on_voting_started(
+            members_for_notify,
+            session_doc,
+            family["name"],
+            current_user.id
+        )
+        notifications_sent = notify_result.get("sent", 0)
+        logger.info(f"Voting notifications sent: {notifications_sent}")
+        # =====================================================
         
         session_doc.pop("_id", None)
         
