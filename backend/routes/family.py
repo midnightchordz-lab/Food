@@ -669,37 +669,38 @@ async def complete_voting_session(
             }
         )
         
-        # ========== WHATSAPP INTEGRATION ==========
+        # ========== PHASE 1: PUSH/SMS NOTIFICATIONS ==========
         announcements_sent = 0
         
-        # Check subscription for WhatsApp features
-        has_family_plan = await is_family_plan_user(current_user.id)
-        
-        if has_family_plan and whatsapp_service.enabled and family:
-            # Get family members with phone numbers
+        if family:
+            # Get family members for notifications
             members = family.get("members", [])
             member_ids = [m["user_id"] for m in members]
             
-            members_with_phones = await db.users.find({
-                "id": {"$in": member_ids},
-                "phone_number": {"$exists": True, "$ne": None},
-                "whatsapp_notifications.winner_announcements": {"$ne": False}
-            }, {"_id": 0, "phone_number": 1}).to_list(length=100)
+            members_data = await db.users.find({
+                "id": {"$in": member_ids}
+            }, {"_id": 0, "id": 1, "fcm_token": 1, "phone_number": 1, "push_notifications": 1}).to_list(length=100)
             
-            for member in members_with_phones:
-                if member.get("phone_number"):
-                    result = await whatsapp_service.send_winner_announcement(
-                        member["phone_number"],
-                        winner_recipe,
-                        session,
-                        family["name"],
-                        winner_votes
-                    )
-                    if result.get("success"):
-                        announcements_sent += 1
+            # Format for notification service
+            members_for_notify = [
+                {
+                    "user_id": m.get("id"),
+                    "fcm_token": m.get("fcm_token"),
+                    "phone_number": m.get("phone_number")
+                }
+                for m in members_data
+                if m.get("push_notifications", {}).get("winner_announcements", True) is not False
+            ]
             
-            logger.info(f"WhatsApp winner announcements sent to {announcements_sent} members")
-        # ==========================================
+            notify_result = await notification_service.on_winner_announced(
+                members_for_notify,
+                winner_recipe,
+                winner_votes,
+                family["name"]
+            )
+            announcements_sent = notify_result.get("sent", 0)
+            logger.info(f"Winner announcements sent: {announcements_sent}")
+        # =====================================================
         
         return {
             "success": True,
