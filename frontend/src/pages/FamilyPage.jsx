@@ -10,12 +10,11 @@ import {
   Loader2, 
   ArrowLeft,
   Crown,
-  Check,
-  MessageCircle
+  Check
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import InviteFamilyWhatsApp from '@/components/InviteFamilyWhatsApp';
-import WhatsAppSettings from '@/components/WhatsAppSettings';
+import InviteFamilyMembers from '@/components/InviteFamilyMembers';
+import PushNotificationSettings from '@/components/PushNotificationSettings';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
