@@ -10,10 +10,12 @@ import {
   Loader2, 
   ArrowLeft,
   Crown,
-  Check
+  Check,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import InviteFamilyMembers from '@/components/InviteFamilyMembers';
+import AddFamilyMember from '@/components/AddFamilyMember';
+import PendingFamilyInvites from '@/components/PendingFamilyInvites';
 import PushNotificationSettings from '@/components/PushNotificationSettings';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
