@@ -79,7 +79,7 @@ class PushNotificationService:
             
         except messaging.UnregisteredError:
             # Token is invalid/expired
-            logger.warning(f"FCM token expired/invalid")
+            logger.warning("FCM token expired/invalid")
             return {"success": False, "reason": "token_expired", "should_clear": True}
         except Exception as e:
             logger.error(f"Push notification error: {e}")
