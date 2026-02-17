@@ -436,8 +436,8 @@ const FamilyPage = () => {
               </div>
             )}
 
-            {/* WhatsApp settings */}
-            <WhatsAppSettings onPhoneAdd={() => navigate('/profile')} isFamilyPlan={isFamilyPlan} />
+            {/* Push Notification settings */}
+            <PushNotificationSettings isFamilyPlan={isFamilyPlan} />
           </>
         )}
       </div>
