@@ -245,6 +245,20 @@ async def join_family(
             {"$set": {"family_account": family_account}}
         )
         
+        # ========== PHASE 1: NOTIFY COOK ==========
+        # Get the family owner (cook) to notify them
+        owner_id = family.get("owner_id")
+        if owner_id:
+            cook = await db.users.find_one({"id": owner_id}, {"_id": 0, "fcm_token": 1, "phone_number": 1})
+            if cook:
+                await notification_service.on_member_joined(
+                    cook.get("fcm_token"),
+                    cook.get("phone_number"),
+                    current_user.name,
+                    family["name"]
+                )
+        # ==========================================
+        
         return {
             "success": True,
             "message": f"Successfully joined {family['name']}",
