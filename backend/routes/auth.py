@@ -329,7 +329,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @router.put("/profile", response_model=User)
 async def update_profile(data: dict, current_user: User = Depends(get_current_user)):
-    allowed_fields = ["name", "dietary_restrictions", "cuisine_preferences", "phone_number", "whatsapp_notifications"]
+    allowed_fields = ["name", "dietary_restrictions", "cuisine_preferences", "phone_number", "whatsapp_notifications", "push_notifications"]
     update_data = {k: v for k, v in data.items() if k in allowed_fields}
     
     if update_data:
@@ -340,3 +340,60 @@ async def update_profile(data: dict, current_user: User = Depends(get_current_us
     
     updated_user = await db.users.find_one({"id": current_user.id}, {"_id": 0, "hashed_password": 0})
     return User(**updated_user)
+
+
+# ============== PHASE 1: FCM TOKEN ENDPOINTS ==============
+
+@router.post("/fcm-token")
+async def save_fcm_token(data: dict, current_user: User = Depends(get_current_user)):
+    """Save FCM token for push notifications"""
+    fcm_token = data.get("fcmToken")
+    if not fcm_token:
+        raise HTTPException(status_code=400, detail="fcmToken required")
+    
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"fcm_token": fcm_token}}
+    )
+    
+    return {"success": True}
+
+
+@router.put("/push-preferences")
+async def update_push_preferences(data: dict, current_user: User = Depends(get_current_user)):
+    """Update push notification preferences"""
+    # Get current preferences
+    user = await db.users.find_one({"id": current_user.id}, {"_id": 0, "push_notifications": 1})
+    current_prefs = user.get("push_notifications", {}) if user else {}
+    
+    # Merge with new preferences
+    updated_prefs = {
+        "enabled": data.get("enabled", current_prefs.get("enabled", True)),
+        "voting_notifications": data.get("voting_notifications", current_prefs.get("voting_notifications", True)),
+        "winner_announcements": data.get("winner_announcements", current_prefs.get("winner_announcements", True))
+    }
+    
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"push_notifications": updated_prefs}}
+    )
+    
+    return {"success": True, "preferences": updated_prefs}
+
+
+@router.get("/push-preferences")
+async def get_push_preferences(current_user: User = Depends(get_current_user)):
+    """Get push notification preferences"""
+    user = await db.users.find_one({"id": current_user.id}, {"_id": 0, "push_notifications": 1, "fcm_token": 1})
+    
+    default_prefs = {
+        "enabled": True,
+        "voting_notifications": True,
+        "winner_announcements": True
+    }
+    
+    return {
+        "success": True,
+        "preferences": user.get("push_notifications", default_prefs) if user else default_prefs,
+        "has_fcm_token": bool(user.get("fcm_token")) if user else False
+    }
