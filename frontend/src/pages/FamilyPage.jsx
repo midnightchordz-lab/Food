@@ -394,15 +394,38 @@ const FamilyPage = () => {
                     </div>
                   ))}
                 </div>
+                
+                {/* Pending invitations */}
+                {family.pending_invites?.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border/40">
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Clock size={14} className="text-amber-500" />
+                      Pending Invites
+                    </h4>
+                    <div className="space-y-2">
+                      {family.pending_invites.map((invite, index) => (
+                        <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+                          <div className="w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center text-sm font-medium">
+                            {invite.member_name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <span className="flex-1 text-amber-800 dark:text-amber-200">{invite.member_name}</span>
+                          <span className="text-xs text-amber-600 dark:text-amber-400">Pending</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Invite members */}
+            {/* Add family member - Owner only */}
             {family.role === 'owner' && (
               <div className="mb-6">
-                <InviteFamilyMembers 
-                  inviteCode={family.invite_code} 
-                  familyName={family.name} 
+                <AddFamilyMember 
+                  familyId={family.id}
+                  currentMemberCount={(family.members?.length || 0) + (family.pending_invites?.length || 0)}
+                  maxMembers={family.max_members}
+                  onMemberAdded={() => fetchFamilyData()}
                 />
               </div>
             )}
