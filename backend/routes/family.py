@@ -372,6 +372,59 @@ async def send_family_invites(
         raise HTTPException(status_code=500, detail="Failed to send invites")
 
 
+@router.post("/send-sms-invites")
+async def send_sms_invites(
+    request: SendInvitesRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Send SMS invites to join family (Phase 1 - WhatsApp dormant)"""
+    from services.sms_service import sms_service
+    
+    try:
+        user = await db.users.find_one({"id": current_user.id}, {"_id": 0})
+        
+        if not user or not user.get("family_account", {}).get("family_id"):
+            raise HTTPException(status_code=400, detail="You don't have a family account")
+        
+        family_account = user["family_account"]
+        invite_code = family_account.get("invite_code")
+        family_name = family_account.get("family_name")
+        
+        if not invite_code:
+            raise HTTPException(status_code=400, detail="No invite code found")
+        
+        # Check subscription
+        if not await is_family_plan_user(current_user.id):
+            raise HTTPException(
+                status_code=403, 
+                detail="SMS invites require Family Plan"
+            )
+        
+        results = []
+        for phone in request.phone_numbers:
+            sms_text = f"Join {family_name} on MoodFood! Use invite code: {invite_code}. Download app and enter code to join."
+            result = await sms_service.send(phone, sms_text)
+            results.append({
+                "phone": phone[-4:],
+                "success": result.get("success", False),
+                "error": result.get("error") if not result.get("success") else None
+            })
+        
+        success_count = sum(1 for r in results if r["success"])
+        
+        return {
+            "success": True,
+            "message": f"SMS invites sent to {success_count}/{len(request.phone_numbers)} numbers",
+            "results": results
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Send SMS invites error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send SMS invites")
+
+
 @router.delete("/leave")
 async def leave_family(current_user: User = Depends(get_current_user)):
     """Leave the current family"""
