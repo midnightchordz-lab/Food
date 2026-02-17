@@ -382,10 +382,10 @@ const FamilyPage = () => {
               </div>
             </div>
 
-            {/* Invite members via WhatsApp */}
+            {/* Invite members */}
             {family.role === 'owner' && (
               <div className="mb-6">
-                <InviteFamilyWhatsApp 
+                <InviteFamilyMembers 
                   inviteCode={family.invite_code} 
                   familyName={family.name} 
                 />
