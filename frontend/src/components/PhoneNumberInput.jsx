@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 
 /**
  * Phone Number Input Component
- * For WhatsApp notifications (Family Plan only)
+ * For SMS notifications (Family Plan only)
  */
 const PhoneNumberInput = ({ value, onChange, required = false, className = '' }) => {
   const [phone, setPhone] = useState(value || '');
@@ -29,10 +29,10 @@ const PhoneNumberInput = ({ value, onChange, required = false, className = '' })
   return (
     <div className={`phone-input-group space-y-2 ${className}`}>
       <Label htmlFor="phone-number">
-        WhatsApp Number {!required && <span className="text-muted-foreground">(Optional)</span>}
+        Phone Number {!required && <span className="text-muted-foreground">(Optional)</span>}
       </Label>
       <p className="text-sm text-muted-foreground">
-        Get voting notifications via WhatsApp (Family Plan only)
+        Get SMS notifications (Family Plan only)
       </p>
       <Input
         id="phone-number"
