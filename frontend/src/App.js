@@ -50,7 +50,14 @@ const PageLoader = () => (
 function App() {
   // Initialize Capacitor for native mobile app
   useEffect(() => {
-    initializeCapacitor();
+    const init = async () => {
+      try {
+        await initializeCapacitor();
+      } catch (error) {
+        console.error('Capacitor initialization error:', error);
+      }
+    };
+    init();
   }, []);
 
   // Auto-detect user's preferred language
