@@ -111,10 +111,10 @@ const initWebPush = async (authToken) => {
     // Wait for service worker to be ready
     await navigator.serviceWorker.ready;
 
-    // Import Firebase messaging
+    // Import Firebase messaging (now async)
     const { getFirebaseMessaging, getToken, onMessage } = await import('@/config/firebase');
     
-    const messaging = getFirebaseMessaging();
+    const messaging = await getFirebaseMessaging();
     if (!messaging) {
       console.log('Firebase messaging not available');
       return { success: false, reason: 'messaging_unavailable' };
@@ -122,7 +122,7 @@ const initWebPush = async (authToken) => {
     
     webMessaging = messaging;
 
-    // Get FCM token
+    // Get FCM token (now async)
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration
@@ -132,8 +132,8 @@ const initWebPush = async (authToken) => {
       console.log('Web FCM Token:', token);
       await sendTokenToBackend(token, authToken);
       
-      // Listen for foreground messages
-      onMessage(messaging, (payload) => {
+      // Listen for foreground messages (now async)
+      await onMessage(messaging, (payload) => {
         console.log('Web push received (foreground):', payload);
         handleWebForegroundNotification(payload);
       });
