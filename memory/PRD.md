@@ -249,7 +249,7 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 
 ### P1 (Next Up)
 - 📋 Re-enable AI Chef Feature in UI
-- 📋 Android Native Build Verification
+- ✅ Android Native Build Fix - Downgraded @capacitor/push-notifications from v8 to v5 to resolve Java 21 incompatibility
 
 ### P2 (Future)
 - ElevenLabs TTS quota notification UI
