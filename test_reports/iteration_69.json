@@ -86,7 +86,7 @@
       "height": 1080,
       "device": "Desktop"
     },
-    "url": "https://cooklaw-docs.preview.emergentagent.com",
+    "url": "https://push-notify-demo.preview.emergentagent.com",
     "browser_automation": "Playwright"
   }
 }
