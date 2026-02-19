@@ -1,9 +1,9 @@
 /**
  * Firebase Configuration for Web Push Notifications
  * Phase 1: Push Notifications for Family Plan
+ * 
+ * NOTE: All Firebase imports are dynamic to prevent crashes on native platforms
  */
-import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { Capacitor } from '@capacitor/core';
 
 // Firebase config from your Firebase Console
@@ -20,7 +20,7 @@ const firebaseConfig = {
 let app = null;
 let messaging = null;
 
-export const initFirebase = () => {
+export const initFirebase = async () => {
   // Skip Firebase web SDK initialization on native platforms
   if (Capacitor.isNativePlatform()) {
     console.log('Skipping Firebase web SDK on native platform');
@@ -28,29 +28,41 @@ export const initFirebase = () => {
   }
   
   if (!app) {
+    const { initializeApp } = await import('firebase/app');
     app = initializeApp(firebaseConfig);
   }
   return app;
 };
 
-export const getFirebaseMessaging = () => {
+export const getFirebaseMessaging = async () => {
   // Skip on native platforms
   if (Capacitor.isNativePlatform()) {
     return null;
   }
   
   if (!messaging) {
-    const app = initFirebase();
+    const app = await initFirebase();
     if (!app) return null;
     
     // Only initialize messaging in browser with service worker support
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      const { getMessaging } = await import('firebase/messaging');
       messaging = getMessaging(app);
     }
   }
   return messaging;
 };
 
-export { getToken, onMessage };
+export const getToken = async (messaging, options) => {
+  if (Capacitor.isNativePlatform()) return null;
+  const { getToken: firebaseGetToken } = await import('firebase/messaging');
+  return firebaseGetToken(messaging, options);
+};
+
+export const onMessage = async (messaging, callback) => {
+  if (Capacitor.isNativePlatform()) return null;
+  const { onMessage: firebaseOnMessage } = await import('firebase/messaging');
+  return firebaseOnMessage(messaging, callback);
+};
 
 export default { initFirebase, getFirebaseMessaging, getToken, onMessage };
