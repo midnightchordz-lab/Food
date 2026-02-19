@@ -28,8 +28,10 @@ export const initPushNotifications = async (authToken) => {
   // Determine platform
   const isNative = Capacitor.isNativePlatform();
   
+  // TEMPORARILY DISABLED on native to debug crash issue
   if (isNative) {
-    return initNativePush(authToken);
+    console.log('Push notifications temporarily disabled on native platform');
+    return { success: false, reason: 'temporarily_disabled' };
   } else {
     return initWebPush(authToken);
   }
