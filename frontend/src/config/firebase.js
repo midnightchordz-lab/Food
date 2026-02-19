@@ -34,8 +34,15 @@ export const initFirebase = () => {
 };
 
 export const getFirebaseMessaging = () => {
+  // Skip on native platforms
+  if (Capacitor.isNativePlatform()) {
+    return null;
+  }
+  
   if (!messaging) {
     const app = initFirebase();
+    if (!app) return null;
+    
     // Only initialize messaging in browser with service worker support
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       messaging = getMessaging(app);
