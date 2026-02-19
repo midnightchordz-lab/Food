@@ -4,6 +4,7 @@
  */
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { Capacitor } from '@capacitor/core';
 
 // Firebase config from your Firebase Console
 const firebaseConfig = {
@@ -20,6 +21,12 @@ let app = null;
 let messaging = null;
 
 export const initFirebase = () => {
+  // Skip Firebase web SDK initialization on native platforms
+  if (Capacitor.isNativePlatform()) {
+    console.log('Skipping Firebase web SDK on native platform');
+    return null;
+  }
+  
   if (!app) {
     app = initializeApp(firebaseConfig);
   }
