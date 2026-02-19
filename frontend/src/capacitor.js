@@ -4,11 +4,6 @@
  */
 
 import { Capacitor } from '@capacitor/core';
-import { App } from '@capacitor/app';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { SplashScreen } from '@capacitor/splash-screen';
-import { Keyboard } from '@capacitor/keyboard';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 // Check if running as native app
 export const isNative = Capacitor.isNativePlatform();
@@ -26,53 +21,86 @@ export const initializeCapacitor = async () => {
   console.log(`Running as native ${platform} app`);
 
   try {
+    // Dynamically import plugins to avoid crashes if not available
+    const [
+      { StatusBar, Style },
+      { SplashScreen },
+      { Keyboard },
+      { App }
+    ] = await Promise.all([
+      import('@capacitor/status-bar'),
+      import('@capacitor/splash-screen'),
+      import('@capacitor/keyboard'),
+      import('@capacitor/app')
+    ]);
+
     // Configure Status Bar
-    await StatusBar.setStyle({ style: Style.Dark });
-    if (platform === 'android') {
-      await StatusBar.setBackgroundColor({ color: '#4a7c59' });
+    try {
+      await StatusBar.setStyle({ style: Style.Dark });
+      if (platform === 'android') {
+        await StatusBar.setBackgroundColor({ color: '#4a7c59' });
+      }
+    } catch (e) {
+      console.warn('StatusBar setup error:', e);
     }
 
     // Hide splash screen after app is ready
-    await SplashScreen.hide();
+    try {
+      await SplashScreen.hide();
+    } catch (e) {
+      console.warn('SplashScreen hide error:', e);
+    }
 
     // Setup keyboard listeners for better UX
-    Keyboard.addListener('keyboardWillShow', (info) => {
-      document.body.classList.add('keyboard-visible');
-      document.documentElement.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
-    });
+    try {
+      Keyboard.addListener('keyboardWillShow', (info) => {
+        document.body.classList.add('keyboard-visible');
+        document.documentElement.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
+      });
 
-    Keyboard.addListener('keyboardWillHide', () => {
-      document.body.classList.remove('keyboard-visible');
-      document.documentElement.style.setProperty('--keyboard-height', '0px');
-    });
+      Keyboard.addListener('keyboardWillHide', () => {
+        document.body.classList.remove('keyboard-visible');
+        document.documentElement.style.setProperty('--keyboard-height', '0px');
+      });
+    } catch (e) {
+      console.warn('Keyboard setup error:', e);
+    }
 
     // Handle app state changes - trigger entitlement refresh on foreground resume
-    App.addListener('appStateChange', ({ isActive }) => {
-      console.log('App state changed. Is active:', isActive);
-      if (isActive) {
-        // Dispatch event to refresh subscription when app returns to foreground
-        window.dispatchEvent(new CustomEvent('app-foreground-resume'));
-      }
-    });
+    try {
+      App.addListener('appStateChange', ({ isActive }) => {
+        console.log('App state changed. Is active:', isActive);
+        if (isActive) {
+          // Dispatch event to refresh subscription when app returns to foreground
+          window.dispatchEvent(new CustomEvent('app-foreground-resume'));
+        }
+      });
 
-    // Handle back button on Android
-    App.addListener('backButton', ({ canGoBack }) => {
-      if (canGoBack) {
-        window.history.back();
-      } else {
-        App.exitApp();
-      }
-    });
+      // Handle back button on Android
+      App.addListener('backButton', ({ canGoBack }) => {
+        if (canGoBack) {
+          window.history.back();
+        } else {
+          App.exitApp();
+        }
+      });
 
-    // Handle deep links
-    App.addListener('appUrlOpen', (event) => {
-      console.log('App opened with URL:', event.url);
-      // Handle deep link navigation here
-      const path = new URL(event.url).pathname;
-      if (path) {
-        window.location.href = path;
-      }
-    });
+      // Handle deep links
+      App.addListener('appUrlOpen', (event) => {
+        console.log('App opened with URL:', event.url);
+        // Handle deep link navigation here
+        try {
+          const path = new URL(event.url).pathname;
+          if (path) {
+            window.location.href = path;
+          }
+        } catch (e) {
+          console.warn('Deep link parse error:', e);
+        }
+      });
+    } catch (e) {
+      console.warn('App listeners setup error:', e);
+    }
 
     console.log('Capacitor initialized successfully');
   } catch (error) {
@@ -87,6 +115,7 @@ export const hapticFeedback = async (style = 'light') => {
   if (!isNative) return;
 
   try {
+    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
     const impactStyle = {
       light: ImpactStyle.Light,
       medium: ImpactStyle.Medium,
