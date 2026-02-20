@@ -112,10 +112,50 @@ workflows:
         script: |
           cd frontend
           npx cap sync android
-      - name: Build Android Release
+      - name: Build Android Release APK
         script: |
           cd frontend/android
           gradle assembleRelease --no-daemon
     artifacts:
       - frontend/android/app/build/outputs/**/*.apk
       - frontend/android/app/build/outputs/**/*.aab
+
+  android-playstore:
+    name: Android Play Store Release
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      node: 18.17.0
+      java: 17
+    scripts:
+      - name: Install dependencies
+        script: |
+          cd frontend
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+
+      - name: Build web assets
+        script: |
+          cd frontend
+          export REACT_APP_BACKEND_URL=https://push-notify-demo.preview.emergentagent.com
+          CI=false npm run build
+
+      - name: Sync Capacitor
+        script: |
+          cd frontend
+          npx cap sync android
+
+      - name: Build signed AAB
+        script: |
+          cd frontend/android
+          gradle clean --no-daemon
+          gradle bundleRelease --no-daemon
+
+      - name: Verify AAB
+        script: |
+          cd frontend/android/app/build/outputs/bundle/release
+          ls -lh app-release.aab
+          echo "AAB file created successfully!"
+
+    artifacts:
+      - frontend/android/app/build/outputs/bundle/release/*.aab
