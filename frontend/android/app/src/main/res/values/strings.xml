@@ -1,8 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">MOOD FOOD</string>
-    <string name="title_activity_main">MOOD FOOD</string>
-    <string name="package_name">com.moodfood.app</string>
-    <string name="custom_url_scheme">com.moodfood.app</string>
-    <string name="default_notification_channel_id">moodfood_notifications</string>
-</resources>
