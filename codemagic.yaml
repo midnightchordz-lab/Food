@@ -112,10 +112,10 @@ workflows:
         script: |
           cd frontend
           npx cap sync android
-      - name: Build Android Release APK
+      - name: Build Android Release AAB
         script: |
           cd frontend/android
-          gradle assembleRelease --no-daemon
+          gradle bundleRelease --no-daemon
     artifacts:
       - frontend/android/app/build/outputs/**/*.apk
       - frontend/android/app/build/outputs/**/*.aab
