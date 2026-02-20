@@ -15,7 +15,7 @@ dependencies {
     implementation project(':capacitor-camera')
     implementation project(':capacitor-haptics')
     implementation project(':capacitor-keyboard')
-    implementation project(':capacitor-share')
+    // implementation project(':capacitor-share')  // REMOVED: Causes Android 13+ crash
     implementation project(':capacitor-splash-screen')
     implementation project(':capacitor-status-bar')
 
