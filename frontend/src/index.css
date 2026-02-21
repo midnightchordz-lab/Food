@@ -184,3 +184,75 @@ button {
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
 }
+/* React Phone Number Input Styling - Android WebView Compatible */
+.phone-input-container {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 12px !important;
+    background-color: hsl(var(--background)) !important;
+    padding: 4px 12px !important;
+    min-height: 48px !important;
+    box-sizing: border-box !important;
+}
+
+.phone-input-container:focus-within {
+    outline: 2px solid hsl(var(--ring)) !important;
+    outline-offset: 2px !important;
+}
+
+.phone-input-container .PhoneInputCountry {
+    margin-right: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.phone-input-container .PhoneInputCountrySelect {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 8px !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    color: hsl(var(--foreground)) !important;
+}
+
+.phone-input-container .PhoneInputCountryIcon {
+    width: 24px !important;
+    height: 18px !important;
+}
+
+.phone-input-container .PhoneInputCountryIconImg {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.phone-input-container .PhoneInputInput {
+    flex: 1 !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 12px 8px !important;
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+    outline: none !important;
+    color: hsl(var(--foreground)) !important;
+    min-width: 0 !important;
+}
+
+.phone-input-container .PhoneInputInput::placeholder {
+    color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Hide default arrow on country select */
+.phone-input-container .PhoneInputCountrySelectArrow {
+    display: block !important;
+    margin-left: 4px !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-left: 4px solid transparent !important;
+    border-right: 4px solid transparent !important;
+    border-top: 4px solid hsl(var(--foreground)) !important;
+}
