@@ -622,21 +622,72 @@ const AuthModal = ({ open, onClose }) => {
                   Change phone number
                 </button>
               </div>
-            ) : isNewPhoneUser ? (                <div className="space-y-2">
-                  <Label>Favorite Cuisines (select multiple)</Label>
-                  <div className="flex flex-wrap gap-2">
+            ) : isNewPhoneUser ? (
+              <div>
+                <div style={{textAlign: 'center', marginBottom: '16px'}}>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    backgroundColor: '#dcfce7',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 12px auto'
+                  }}>
+                    <CheckCircle style={{color: '#16a34a'}} size={32} />
+                  </div>
+                  <p style={{fontWeight: '600', fontSize: '16px', color: '#333'}}>Phone Verified!</p>
+                  <p style={{fontSize: '14px', color: '#666'}}>Let's set up your profile</p>
+                </div>
+                
+                <div style={{marginBottom: '16px'}}>
+                  <Label htmlFor="phone-name">What should we call you?</Label>
+                  <Input
+                    id="phone-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="rounded-xl mt-2"
+                    data-testid="phone-name-input"
+                  />
+                </div>
+
+                <div style={{marginBottom: '16px'}}>
+                  <Label>Dietary Preference</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {['Vegetarian', 'Vegan', 'Non-Vegetarian', 'Pescatarian'].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setDietaryRestrictions([option])}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                          dietaryRestrictions.includes(option)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary hover:bg-secondary/80'
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{marginBottom: '16px'}}>
+                  <Label>Favorite Cuisines</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {CUISINE_OPTIONS.slice(0, 8).map((cuisine) => (
                       <button
                         key={cuisine.name}
                         type="button"
                         onClick={() => toggleCuisine(cuisine.name)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                           cuisinePreferences.includes(cuisine.name)
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-secondary hover:bg-secondary/80'
                         }`}
                       >
-                        <span>{cuisine.flag}</span>
                         {cuisine.name}
                       </button>
                     ))}
