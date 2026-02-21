@@ -554,7 +554,7 @@ const AuthModal = ({ open, onClose }) => {
           </>
         )}
 
-        {/* Phone Authentication - Simple Android-compatible version */}
+        {/* Phone Authentication - Custom dropdown for Android WebView */}
         {authMethod === 'phone' && (
           <div data-testid="phone-auth-section">
             {!otpSent ? (
@@ -563,30 +563,67 @@ const AuthModal = ({ open, onClose }) => {
                   Phone Number
                 </p>
                 <div style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    data-testid="country-code-select"
-                    style={{
-                      width: '90px',
-                      height: '48px',
-                      padding: '8px',
-                      fontSize: '16px',
-                      border: '1px solid #ccc',
-                      borderRadius: '8px',
-                      backgroundColor: '#fff',
-                      color: '#333',
-                      WebkitAppearance: 'none',
-                      appearance: 'none'
-                    }}
-                  >
-                    <option value="+91">+91</option>
-                    <option value="+1">+1</option>
-                    <option value="+44">+44</option>
-                    <option value="+971">+971</option>
-                    <option value="+65">+65</option>
-                    <option value="+61">+61</option>
-                  </select>
+                  <div style={{position: 'relative'}}>
+                    <button
+                      type="button"
+                      onClick={() => setShowCountryPicker(!showCountryPicker)}
+                      data-testid="country-code-select"
+                      style={{
+                        width: '90px',
+                        height: '48px',
+                        padding: '8px',
+                        fontSize: '16px',
+                        border: '1px solid #ccc',
+                        borderRadius: '8px',
+                        backgroundColor: '#fff',
+                        color: '#333',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span>{countryCode}</span>
+                      <span style={{fontSize: '10px'}}>▼</span>
+                    </button>
+                    
+                    {showCountryPicker && (
+                      <div style={{
+                        position: 'absolute',
+                        zIndex: 9999,
+                        marginTop: '4px',
+                        width: '220px',
+                        backgroundColor: '#fff',
+                        border: '1px solid #ccc',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        maxHeight: '200px',
+                        overflowY: 'auto'
+                      }}>
+                        {countries.map((country, index) => (
+                          <div
+                            key={`${country.code}-${index}`}
+                            onClick={() => {
+                              setCountryCode(country.code);
+                              setShowCountryPicker(false);
+                            }}
+                            style={{
+                              padding: '10px 12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              borderBottom: '1px solid #eee',
+                              backgroundColor: countryCode === country.code ? '#f0f0f0' : '#fff'
+                            }}
+                          >
+                            <span style={{fontWeight: '500', minWidth: '50px'}}>{country.code}</span>
+                            <span style={{color: '#666', fontSize: '14px'}}>{country.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <input
                     type="tel"
                     inputMode="numeric"
