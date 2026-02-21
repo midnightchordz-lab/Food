@@ -167,7 +167,9 @@ async def create_indexes():
         try:
             await db.recipe_library.create_index([
                 ("is_premium", 1), ("times_served", -1)
-        ], background=True)  # For premium filtering with popularity sort
+            ], background=True)
+        except Exception:
+            pass
         
         logging.info("Database indexes created successfully")
     except Exception as e:
