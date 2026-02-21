@@ -15,7 +15,7 @@ import os
 import time
 
 # Get the backend URL from environment
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://push-notify-demo.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://moodfood-android.preview.emergentagent.com')
 
 # Test credentials from the review request
 TEST_EMAIL = "lloydmasih1976@gmail.com"

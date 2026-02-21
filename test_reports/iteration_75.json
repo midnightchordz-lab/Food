@@ -61,7 +61,7 @@
   
   "test_environment": {
     "viewport": {"width": 1920, "height": 1080, "device": "Desktop"},
-    "url": "https://push-notify-demo.preview.emergentagent.com",
+    "url": "https://moodfood-android.preview.emergentagent.com",
     "browser_automation": "Playwright"
   },
   
