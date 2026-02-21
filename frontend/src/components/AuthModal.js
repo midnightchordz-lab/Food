@@ -588,36 +588,71 @@ const AuthModal = ({ open, onClose }) => {
               </div>
             ) : !otpVerified ? (
               // Step 2: Enter OTP
-              <div className="space-y-4">
-                <div className="text-center mb-4">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Phone className="text-primary" size={32} />
-                  </div>
-                  <h3 className="font-semibold">Enter Verification Code</h3>
-                  <p className="text-sm text-muted-foreground">
+              <div style={{ padding: '16px', textAlign: 'center' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <h3 style={{ fontWeight: '600', fontSize: '18px', marginBottom: '8px' }}>Enter Verification Code</h3>
+                  <p style={{ fontSize: '14px', color: '#666666' }}>
                     Sent to {countryCode} {phoneNumber}
                   </p>
                 </div>
                 
-                <div className="space-y-2">
-                  <Input
-                    type="text"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="000000"
-                    className="text-center text-2xl tracking-[0.5em] rounded-xl py-6 font-mono"
-                    maxLength={6}
-                    data-testid="otp-input"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  maxLength={6}
+                  data-testid="otp-input"
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    fontSize: '24px',
+                    textAlign: 'center',
+                    letterSpacing: '0.5em',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '12px',
+                    marginBottom: '16px',
+                    backgroundColor: '#ffffff',
+                    color: '#000000'
+                  }}
+                />
                 
-                <Button
+                <button
                   type="button"
                   onClick={handleVerifyOTP}
-                  className="w-full rounded-xl py-6"
                   disabled={loading || otpCode.length !== 6}
                   data-testid="verify-otp-button"
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    backgroundColor: loading || otpCode.length !== 6 ? '#cccccc' : '#4a7c59',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    cursor: loading || otpCode.length !== 6 ? 'not-allowed' : 'pointer',
+                    marginBottom: '12px'
+                  }}
                 >
+                  {loading ? 'Verifying...' : 'Verify Code'}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => { setOtpSent(false); setOtpCode(''); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#4a7c59',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Change phone number
+                </button>
+              </div>
                   {loading ? (
                     <Loader2 className="animate-spin mr-2" size={18} />
                   ) : (
