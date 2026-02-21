@@ -168,7 +168,7 @@ const Navigation = () => {
       </nav>
       
       {/* Mobile Top Header - Minimal */}
-      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#4a7c59] shadow-md">
+      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#4a7c59] shadow-md" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="flex justify-between items-center h-14 px-4">
           <Link to="/" className="text-xl font-serif font-bold tracking-wide text-white" data-testid="nav-logo-mobile">
             MOOD FOOD
