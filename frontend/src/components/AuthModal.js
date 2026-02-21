@@ -153,9 +153,8 @@ const AuthModal = ({ open, onClose }) => {
 
   // Phone authentication - Send OTP
   const handleSendOTP = async () => {
-    const fullPhone = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
-    
-    if (phoneNumber.length < 10) {
+    // phoneNumber from react-phone-number-input already includes country code in E.164 format
+    if (!phoneNumber || phoneNumber.length < 10) {
       toast.error('Please enter a valid phone number');
       return;
     }
@@ -163,7 +162,7 @@ const AuthModal = ({ open, onClose }) => {
     setLoading(true);
     try {
       const response = await axios.post(`${API}/auth/phone/send-otp`, {
-        phone_number: fullPhone
+        phone_number: phoneNumber
       });
       
       setOtpSent(true);
