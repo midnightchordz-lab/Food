@@ -4,7 +4,6 @@ Shared dependencies and utilities for all routes
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorClient
-from passlib.context import CryptContext
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
@@ -13,6 +12,13 @@ import jwt
 import uuid
 import logging
 import asyncio
+import warnings
+
+# Suppress passlib bcrypt version warning
+warnings.filterwarnings("ignore", message=".*error reading bcrypt version.*")
+
+# Use bcrypt directly instead of through passlib to avoid version issues
+import bcrypt
 
 # Database connection - Production ready (no fallbacks)
 mongo_url = os.environ.get('MONGO_URL')
@@ -27,7 +33,6 @@ db = client[db_name]
 
 # Security - Production ready (no fallbacks)
 security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
 if not SECRET_KEY:
     raise RuntimeError("JWT_SECRET_KEY environment variable is required")
