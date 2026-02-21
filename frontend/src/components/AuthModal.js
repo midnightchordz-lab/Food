@@ -492,172 +492,83 @@ const AuthModal = ({ open, onClose }) => {
 
         {/* Phone Authentication */}
         {authMethod === 'phone' && (
-          <div style={{ padding: '16px' }}>
+          <div className="space-y-4 p-4">
             {!otpSent ? (
-              // Step 1: Enter phone number
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
-                  Phone Number
-                </label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    data-testid="country-code-select"
-                    style={{
-                      padding: '12px',
-                      fontSize: '16px',
-                      minHeight: '48px',
-                      width: '100px',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '8px',
-                      backgroundColor: '#ffffff',
-                      color: '#000000'
-                    }}
-                  >
-                    <option value="+1">+1 US</option>
-                    <option value="+44">+44 UK</option>
-                    <option value="+91">+91 IN</option>
-                    <option value="+86">+86 CN</option>
-                    <option value="+81">+81 JP</option>
-                    <option value="+49">+49 DE</option>
-                    <option value="+33">+33 FR</option>
-                    <option value="+61">+61 AU</option>
-                    <option value="+55">+55 BR</option>
-                    <option value="+52">+52 MX</option>
-                    <option value="+971">+971 AE</option>
-                    <option value="+65">+65 SG</option>
-                    <option value="+82">+82 KR</option>
-                    <option value="+39">+39 IT</option>
-                    <option value="+34">+34 ES</option>
-                  </select>
-                  <input
-                    type="tel"
+              // Step 1: Enter phone number using react-phone-number-input
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone-input">Phone Number</Label>
+                  <PhoneInput
+                    international
+                    defaultCountry="IN"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                    placeholder="Phone number"
+                    onChange={setPhoneNumber}
+                    placeholder="Enter phone number"
                     data-testid="phone-input"
-                    style={{
-                      flex: 1,
-                      padding: '12px',
-                      fontSize: '16px',
-                      minHeight: '48px',
-                      border: '1px solid #e5e5e5',
-                      borderRadius: '8px',
-                      backgroundColor: '#ffffff',
-                      color: '#000000'
-                    }}
+                    className="phone-input-container"
                   />
-                </div>
-                <p style={{ fontSize: '12px', color: '#666666', marginBottom: '16px' }}>
-                  We will send you a verification code via SMS
-                </p>
-                
-                <button
-                  type="button"
-                  onClick={handleSendOTP}
-                  disabled={loading || phoneNumber.length < 10}
-                  data-testid="send-otp-button"
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    backgroundColor: loading || phoneNumber.length < 10 ? '#cccccc' : '#4a7c59',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '12px',
-                    cursor: loading || phoneNumber.length < 10 ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  {loading ? 'Sending...' : 'Send Verification Code'}
-                </button>
-              </div>
-            ) : !otpVerified ? (
-              // Step 2: Enter OTP
-              <div style={{ padding: '16px', textAlign: 'center' }}>
-                <div style={{ marginBottom: '16px' }}>
-                  <h3 style={{ fontWeight: '600', fontSize: '18px', marginBottom: '8px' }}>Enter Verification Code</h3>
-                  <p style={{ fontSize: '14px', color: '#666666' }}>
-                    Sent to {countryCode} {phoneNumber}
+                  <p className="text-xs text-muted-foreground">
+                    We will send you a verification code via SMS
                   </p>
                 </div>
                 
-                <input
-                  type="text"
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  maxLength={6}
-                  data-testid="otp-input"
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    fontSize: '24px',
-                    textAlign: 'center',
-                    letterSpacing: '0.5em',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '12px',
-                    marginBottom: '16px',
-                    backgroundColor: '#ffffff',
-                    color: '#000000'
-                  }}
-                />
-                
-                <button
+                <Button
                   type="button"
-                  onClick={handleVerifyOTP}
-                  disabled={loading || otpCode.length !== 6}
-                  data-testid="verify-otp-button"
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    backgroundColor: loading || otpCode.length !== 6 ? '#cccccc' : '#4a7c59',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '12px',
-                    cursor: loading || otpCode.length !== 6 ? 'not-allowed' : 'pointer',
-                    marginBottom: '12px'
-                  }}
+                  onClick={handleSendOTP}
+                  disabled={loading || !phoneNumber || phoneNumber.length < 10}
+                  className="w-full rounded-xl py-6"
+                  data-testid="send-otp-button"
                 >
-                  {loading ? 'Verifying...' : 'Verify Code'}
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => { setOtpSent(false); setOtpCode(''); }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#4a7c59',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    textDecoration: 'underline'
-                  }}
-                >
-                  Change phone number
-                </button>
-              </div>
                   {loading ? (
                     <Loader2 className="animate-spin mr-2" size={18} />
                   ) : (
                     <ArrowRight className="mr-2" size={18} />
                   )}
-                  Verify Code
+                  {loading ? 'Sending...' : 'Send Verification Code'}
+                </Button>
+              </div>
+            ) : !otpVerified ? (
+              // Step 2: Enter OTP
+              <div className="space-y-4 text-center">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-lg">Enter Verification Code</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sent to {phoneNumber}
+                  </p>
+                </div>
+                
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="text-center text-2xl tracking-widest rounded-xl py-6"
+                  data-testid="otp-input"
+                />
+                
+                <Button
+                  type="button"
+                  onClick={handleVerifyOTP}
+                  disabled={loading || otpCode.length !== 6}
+                  className="w-full rounded-xl py-6"
+                  data-testid="verify-otp-button"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin mr-2" size={18} />
+                  ) : (
+                    <ArrowRight className="mr-2" size={18} />
+                  )}
+                  {loading ? 'Verifying...' : 'Verify Code'}
                 </Button>
                 
                 <button
                   type="button"
-                  onClick={() => setOtpSent(false)}
+                  onClick={() => { setOtpSent(false); setOtpCode(''); }}
                   className="w-full text-sm text-muted-foreground hover:text-primary"
                 >
-                  ← Use different phone number
+                  ← Change phone number
                 </button>
               </div>
             ) : isNewPhoneUser ? (
