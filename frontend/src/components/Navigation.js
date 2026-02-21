@@ -168,9 +168,9 @@ const Navigation = () => {
       </nav>
       
       {/* Mobile Top Header - Minimal */}
-      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
+      <nav className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#4a7c59] shadow-md">
         <div className="flex justify-between items-center h-14 px-4">
-          <Link to="/" className="text-xl font-serif font-bold tracking-wide text-primary" data-testid="nav-logo-mobile">
+          <Link to="/" className="text-xl font-serif font-bold tracking-wide text-white" data-testid="nav-logo-mobile">
             MOOD FOOD
           </Link>
           
@@ -181,7 +181,7 @@ const Navigation = () => {
             {isAuthenticated && (
               <button
                 onClick={() => setShowSearchHub(true)}
-                className="p-2 rounded-full bg-secondary/50"
+                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30"
                 data-testid="search-hub-button-mobile"
               >
                 <Search size={20} />
@@ -191,7 +191,7 @@ const Navigation = () => {
             {isAuthenticated ? (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-full bg-secondary/50"
+                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30"
                 data-testid="mobile-menu-button"
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -200,7 +200,7 @@ const Navigation = () => {
               <Button
                 onClick={() => setShowAuthModal(true)}
                 size="sm"
-                className="rounded-full bg-primary hover:bg-primary/90"
+                className="rounded-full bg-white text-[#4a7c59] hover:bg-white/90 font-semibold"
                 data-testid="login-button-mobile"
               >
                 Log In
