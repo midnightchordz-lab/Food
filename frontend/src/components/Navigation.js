@@ -59,10 +59,10 @@ const Navigation = () => {
   return (
     <>
       {/* Desktop Top Navigation */}
-      <nav className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <nav className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-[#4a7c59] shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="text-2xl font-serif font-bold tracking-wide text-primary" data-testid="nav-logo">
+            <Link to="/" className="text-2xl font-serif font-bold tracking-wide text-white" data-testid="nav-logo">
               MOOD FOOD
             </Link>
             
@@ -77,8 +77,8 @@ const Navigation = () => {
                     data-testid={`nav-${item.label.toLowerCase()}`}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 whitespace-nowrap ${
                       isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-secondary/50 hover:bg-secondary text-foreground'
+                        ? 'bg-white text-[#4a7c59] font-semibold'
+                        : 'bg-white/20 hover:bg-white/30 text-white'
                     }`}
                   >
                     <Icon size={18} />
@@ -91,7 +91,7 @@ const Navigation = () => {
               {isAuthenticated && (
                 <button
                   onClick={() => setShowSearchHub(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 bg-secondary/50 hover:bg-secondary text-foreground"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 bg-white/20 hover:bg-white/30 text-white"
                   data-testid="search-hub-button"
                 >
                   <Search size={18} />
