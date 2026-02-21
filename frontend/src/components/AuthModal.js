@@ -501,65 +501,90 @@ const AuthModal = ({ open, onClose }) => {
 
         {/* Phone Authentication */}
         {authMethod === 'phone' && (
-          <div className="space-y-4">
+          <div style={{ padding: '16px' }}>
             {!otpSent ? (
               // Step 1: Enter phone number
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Phone Number</Label>
-                  <div className="flex gap-2 items-center">
-                    <select
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                      className="px-3 py-2 rounded-xl border border-input bg-background text-sm w-28"
-                      data-testid="country-code-select"
-                      style={{ fontSize: '16px', minHeight: '44px', WebkitAppearance: 'menulist', MozAppearance: 'menulist' }}
-                    >
-                      <option value="+1">+1 US</option>
-                      <option value="+44">+44 UK</option>
-                      <option value="+91">+91 IN</option>
-                      <option value="+86">+86 CN</option>
-                      <option value="+81">+81 JP</option>
-                      <option value="+49">+49 DE</option>
-                      <option value="+33">+33 FR</option>
-                      <option value="+61">+61 AU</option>
-                      <option value="+55">+55 BR</option>
-                      <option value="+52">+52 MX</option>
-                      <option value="+971">+971 UAE</option>
-                      <option value="+65">+65 SG</option>
-                      <option value="+82">+82 KR</option>
-                      <option value="+39">+39 IT</option>
-                      <option value="+34">+34 ES</option>
-                    </select>
-                    <Input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                      placeholder="555-123-4567"
-                      className="flex-1 rounded-xl"
-                      style={{ fontSize: '16px', minHeight: '44px' }}
-                      data-testid="phone-input"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    We&apos;ll send you a verification code via SMS
-                  </p>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', fontSize: '14px' }}>
+                  Phone Number
+                </label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    data-testid="country-code-select"
+                    style={{
+                      padding: '12px',
+                      fontSize: '16px',
+                      minHeight: '48px',
+                      width: '100px',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '8px',
+                      backgroundColor: '#ffffff',
+                      color: '#000000'
+                    }}
+                  >
+                    <option value="+1">+1 US</option>
+                    <option value="+44">+44 UK</option>
+                    <option value="+91">+91 IN</option>
+                    <option value="+86">+86 CN</option>
+                    <option value="+81">+81 JP</option>
+                    <option value="+49">+49 DE</option>
+                    <option value="+33">+33 FR</option>
+                    <option value="+61">+61 AU</option>
+                    <option value="+55">+55 BR</option>
+                    <option value="+52">+52 MX</option>
+                    <option value="+971">+971 AE</option>
+                    <option value="+65">+65 SG</option>
+                    <option value="+82">+82 KR</option>
+                    <option value="+39">+39 IT</option>
+                    <option value="+34">+34 ES</option>
+                  </select>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                    placeholder="Phone number"
+                    data-testid="phone-input"
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      fontSize: '16px',
+                      minHeight: '48px',
+                      border: '1px solid #e5e5e5',
+                      borderRadius: '8px',
+                      backgroundColor: '#ffffff',
+                      color: '#000000'
+                    }}
+                  />
                 </div>
+                <p style={{ fontSize: '12px', color: '#666666', marginBottom: '16px' }}>
+                  We will send you a verification code via SMS
+                </p>
                 
-                <Button
+                <button
                   type="button"
                   onClick={handleSendOTP}
-                  className="w-full rounded-xl py-6"
                   disabled={loading || phoneNumber.length < 10}
                   data-testid="send-otp-button"
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    backgroundColor: loading || phoneNumber.length < 10 ? '#cccccc' : '#4a7c59',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    cursor: loading || phoneNumber.length < 10 ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
                 >
-                  {loading ? (
-                    <Loader2 className="animate-spin mr-2" size={18} />
-                  ) : (
-                    <Phone className="mr-2" size={18} />
-                  )}
-                  Send Verification Code
-                </Button>
+                  {loading ? 'Sending...' : 'Send Verification Code'}
+                </button>
               </div>
             ) : !otpVerified ? (
               // Step 2: Enter OTP
