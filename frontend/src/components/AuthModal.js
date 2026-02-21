@@ -491,32 +491,65 @@ const AuthModal = ({ open, onClose }) => {
           </>
         )}
 
-        {/* Phone Authentication */}
+        {/* Phone Authentication - Simple Android-compatible version */}
         {authMethod === 'phone' && (
-          <div className="space-y-4 p-4">
+          <div data-testid="phone-auth-section">
             {!otpSent ? (
-              // Step 1: Enter phone number using react-phone-number-input
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone-input">Phone Number</Label>
-                  <PhoneInput
-                    international
-                    defaultCountry="IN"
+              <div>
+                <p style={{fontWeight: '500', marginBottom: '8px', fontSize: '14px', color: '#333'}}>
+                  Phone Number
+                </p>
+                <div style={{display: 'flex', gap: '8px', marginBottom: '8px'}}>
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    data-testid="country-code-select"
+                    style={{
+                      width: '90px',
+                      height: '48px',
+                      padding: '8px',
+                      fontSize: '16px',
+                      border: '1px solid #ccc',
+                      borderRadius: '8px',
+                      backgroundColor: '#fff',
+                      color: '#333',
+                      WebkitAppearance: 'none',
+                      appearance: 'none'
+                    }}
+                  >
+                    <option value="+91">+91</option>
+                    <option value="+1">+1</option>
+                    <option value="+44">+44</option>
+                    <option value="+971">+971</option>
+                    <option value="+65">+65</option>
+                    <option value="+61">+61</option>
+                  </select>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
                     value={phoneNumber}
-                    onChange={setPhoneNumber}
-                    placeholder="Enter phone number"
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="Phone number"
                     data-testid="phone-input"
-                    className="phone-input-container"
+                    style={{
+                      flex: 1,
+                      height: '48px',
+                      padding: '12px',
+                      fontSize: '16px',
+                      border: '1px solid #ccc',
+                      borderRadius: '8px',
+                      backgroundColor: '#fff',
+                      color: '#333'
+                    }}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    We will send you a verification code via SMS
-                  </p>
                 </div>
-                
+                <p style={{fontSize: '12px', color: '#666', marginBottom: '16px'}}>
+                  We will send you a verification code via SMS
+                </p>
                 <Button
                   type="button"
                   onClick={handleSendOTP}
-                  disabled={loading || !phoneNumber || phoneNumber.length < 10}
+                  disabled={loading || phoneNumber.length < 10}
                   className="w-full rounded-xl py-6"
                   data-testid="send-otp-button"
                 >
@@ -529,26 +562,35 @@ const AuthModal = ({ open, onClose }) => {
                 </Button>
               </div>
             ) : !otpVerified ? (
-              // Step 2: Enter OTP
-              <div className="space-y-4 text-center">
-                <div className="mb-4">
-                  <h3 className="font-semibold text-lg">Enter Verification Code</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Sent to {phoneNumber}
-                  </p>
-                </div>
-                
-                <Input
-                  type="text"
+              <div style={{textAlign: 'center'}}>
+                <p style={{fontWeight: '600', fontSize: '18px', marginBottom: '8px', color: '#333'}}>
+                  Enter Verification Code
+                </p>
+                <p style={{fontSize: '14px', color: '#666', marginBottom: '16px'}}>
+                  Sent to {countryCode} {phoneNumber}
+                </p>
+                <input
+                  type="tel"
                   inputMode="numeric"
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
                   maxLength={6}
-                  className="text-center text-2xl tracking-widest rounded-xl py-6"
                   data-testid="otp-input"
+                  style={{
+                    width: '100%',
+                    height: '56px',
+                    padding: '12px',
+                    fontSize: '24px',
+                    textAlign: 'center',
+                    letterSpacing: '8px',
+                    border: '1px solid #ccc',
+                    borderRadius: '12px',
+                    backgroundColor: '#fff',
+                    color: '#333',
+                    marginBottom: '16px'
+                  }}
                 />
-                
                 <Button
                   type="button"
                   onClick={handleVerifyOTP}
@@ -563,62 +605,24 @@ const AuthModal = ({ open, onClose }) => {
                   )}
                   {loading ? 'Verifying...' : 'Verify Code'}
                 </Button>
-                
                 <button
                   type="button"
                   onClick={() => { setOtpSent(false); setOtpCode(''); }}
-                  className="w-full text-sm text-muted-foreground hover:text-primary"
+                  style={{
+                    width: '100%',
+                    marginTop: '12px',
+                    padding: '8px',
+                    fontSize: '14px',
+                    color: '#666',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
                 >
-                  ← Change phone number
+                  Change phone number
                 </button>
               </div>
-            ) : isNewPhoneUser ? (
-              // Step 3: New user profile setup
-              <div className="space-y-4">
-                <div className="text-center mb-4">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle className="text-green-600" size={32} />
-                  </div>
-                  <h3 className="font-semibold">Phone Verified!</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Let&apos;s set up your profile
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone-name">What should we call you?</Label>
-                  <Input
-                    id="phone-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    className="rounded-xl"
-                    data-testid="phone-name-input"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Dietary Preference</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {['Vegetarian', 'Vegan', 'Non-Vegetarian', 'Pescatarian'].map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setDietaryRestrictions([option])}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                          dietaryRestrictions.includes(option)
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary hover:bg-secondary/80'
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
+            ) : isNewPhoneUser ? (                <div className="space-y-2">
                   <Label>Favorite Cuisines (select multiple)</Label>
                   <div className="flex flex-wrap gap-2">
                     {CUISINE_OPTIONS.slice(0, 8).map((cuisine) => (
