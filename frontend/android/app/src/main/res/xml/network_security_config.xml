@@ -15,6 +15,15 @@
         </trust-anchors>
     </domain-config>
 
+    <!-- Emergent deployment domains -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">emergent.host</domain>
+        <domain includeSubdomains="true">emergentagent.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
     <!-- Development domains -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">localhost</domain>
