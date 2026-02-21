@@ -36,9 +36,10 @@ export const initializeCapacitor = async () => {
 
     // Configure Status Bar
     try {
-      await StatusBar.setStyle({ style: Style.Dark });
+      await StatusBar.setStyle({ style: Style.Light });
       if (platform === 'android') {
         await StatusBar.setBackgroundColor({ color: '#4a7c59' });
+        await StatusBar.setOverlaysWebView({ overlay: false });
       }
     } catch (e) {
       console.warn('StatusBar setup error:', e);
