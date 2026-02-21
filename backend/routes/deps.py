@@ -40,54 +40,133 @@ async def create_indexes():
     """Create database indexes for faster queries"""
     try:
         # Users collection
-        await db.users.create_index("id", unique=True, background=True)
-        await db.users.create_index("email", sparse=True, background=True)
-        await db.users.create_index("phone_number", sparse=True, background=True)
+        try:
+            await db.users.create_index("id", unique=True, background=True)
+        except Exception:
+            pass
+        try:
+            await db.users.create_index("email", sparse=True, background=True)
+        except Exception:
+            pass
+        try:
+            await db.users.create_index("phone_number", sparse=True, background=True)
+        except Exception:
+            pass
         
         # Recipes collection
-        await db.recipes.create_index("id", unique=True, background=True)
-        await db.recipes.create_index("title", background=True)
-        await db.recipes.create_index([("title", "text"), ("description", "text")], background=True)
+        try:
+            await db.recipes.create_index("id", unique=True, background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipes.create_index("title", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipes.create_index([("title", "text"), ("description", "text")], background=True)
+        except Exception:
+            pass
         
         # Saved recipes
-        await db.saved_recipes.create_index("user_id", background=True)
-        await db.saved_recipes.create_index([("user_id", 1), ("recipe_id", 1)], background=True)
+        try:
+            await db.saved_recipes.create_index("user_id", background=True)
+        except Exception:
+            pass
+        try:
+            await db.saved_recipes.create_index([("user_id", 1), ("recipe_id", 1)], background=True)
+        except Exception:
+            pass
         
         # Chat messages
-        await db.chat_messages.create_index([("session_id", 1), ("user_id", 1)], background=True)
-        await db.chat_messages.create_index("timestamp", background=True)
+        try:
+            await db.chat_messages.create_index([("session_id", 1), ("user_id", 1)], background=True)
+        except Exception:
+            pass
+        try:
+            await db.chat_messages.create_index("timestamp", background=True)
+        except Exception:
+            pass
         
         # Weekly plans
-        await db.weekly_plans.create_index([("user_id", 1), ("week_start", 1)], background=True)
+        try:
+            await db.weekly_plans.create_index([("user_id", 1), ("week_start", 1)], background=True)
+        except Exception:
+            pass
         
         # Meal preferences
-        await db.meal_preferences.create_index("user_id", unique=True, background=True)
+        try:
+            await db.meal_preferences.create_index("user_id", unique=True, background=True)
+        except Exception:
+            pass
         
         # User exclusions
-        await db.user_exclusions.create_index("userId", unique=True, background=True)
+        try:
+            await db.user_exclusions.create_index("userId", unique=True, background=True)
+        except Exception:
+            pass
         
         # Shopping lists
-        await db.shopping_lists.create_index("user_id", unique=True, background=True)
+        try:
+            await db.shopping_lists.create_index("user_id", unique=True, background=True)
+        except Exception:
+            pass
         
         # Imported recipes
-        await db.imported_recipes.create_index("user_id", background=True)
-        await db.imported_recipes.create_index("id", unique=True, background=True)
+        try:
+            await db.imported_recipes.create_index("user_id", background=True)
+        except Exception:
+            pass
+        try:
+            await db.imported_recipes.create_index("id", unique=True, background=True)
+        except Exception:
+            pass
         
         # Recipe Library (AI-generated recipes storage)
-        await db.recipe_library.create_index("id", unique=True, background=True)
-        await db.recipe_library.create_index("title_normalized", background=True)
-        await db.recipe_library.create_index("cuisine", background=True)
-        await db.recipe_library.create_index("dietary", background=True)
-        await db.recipe_library.create_index("meal_type", background=True)
-        await db.recipe_library.create_index("mood", background=True)
-        await db.recipe_library.create_index("tags", background=True)
-        await db.recipe_library.create_index("times_served", background=True)
-        await db.recipe_library.create_index("is_premium", background=True)  # Premium recipe filter
-        await db.recipe_library.create_index([
-            ("cuisine", 1), ("dietary", 1), ("meal_type", 1), ("mood", 1)
-        ], background=True)
-        await db.recipe_library.create_index([
-            ("is_premium", 1), ("times_served", -1)
+        try:
+            await db.recipe_library.create_index("id", unique=True, background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index("title_normalized", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index("cuisine", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index("dietary", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index("meal_type", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index("mood", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index("tags", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index("times_served", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index("is_premium", background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index([
+                ("cuisine", 1), ("dietary", 1), ("meal_type", 1), ("mood", 1)
+            ], background=True)
+        except Exception:
+            pass
+        try:
+            await db.recipe_library.create_index([
+                ("is_premium", 1), ("times_served", -1)
         ], background=True)  # For premium filtering with popularity sort
         
         logging.info("Database indexes created successfully")
