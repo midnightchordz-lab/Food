@@ -12,6 +12,8 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import ExclusionOnboarding from './ExclusionOnboarding';
 import TrialWelcomeModal from './TrialWelcomeModal';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
