@@ -182,7 +182,8 @@ const AuthModal = ({ open, onClose }) => {
 
   // Phone authentication - Verify OTP
   const handleVerifyOTP = async () => {
-    // phoneNumber already in E.164 format from react-phone-number-input
+    const fullPhone = `${countryCode}${phoneNumber.replace(/\D/g, '')}`;
+    
     if (otpCode.length !== 6) {
       toast.error('Please enter a 6-digit code');
       return;
@@ -191,7 +192,7 @@ const AuthModal = ({ open, onClose }) => {
     setLoading(true);
     try {
       const response = await axios.post(`${API}/auth/phone/verify-otp`, {
-        phone_number: phoneNumber,
+        phone_number: fullPhone,
         code: otpCode
       });
       
