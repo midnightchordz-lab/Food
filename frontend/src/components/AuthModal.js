@@ -511,19 +511,25 @@ const AuthModal = ({ open, onClose }) => {
                     <select
                       value={countryCode}
                       onChange={(e) => setCountryCode(e.target.value)}
-                      className="px-3 py-2 rounded-xl border bg-background text-sm w-24"
+                      className="px-3 py-2 rounded-xl border border-input bg-background text-sm w-28 appearance-none"
                       data-testid="country-code-select"
+                      style={{ WebkitAppearance: 'menulist', MozAppearance: 'menulist' }}
                     >
-                      <option value="+1">+1 🇺🇸</option>
-                      <option value="+44">+44 🇬🇧</option>
-                      <option value="+91">+91 🇮🇳</option>
-                      <option value="+86">+86 🇨🇳</option>
-                      <option value="+81">+81 🇯🇵</option>
-                      <option value="+49">+49 🇩🇪</option>
-                      <option value="+33">+33 🇫🇷</option>
-                      <option value="+61">+61 🇦🇺</option>
-                      <option value="+55">+55 🇧🇷</option>
-                      <option value="+52">+52 🇲🇽</option>
+                      <option value="+1">+1 US</option>
+                      <option value="+44">+44 UK</option>
+                      <option value="+91">+91 IN</option>
+                      <option value="+86">+86 CN</option>
+                      <option value="+81">+81 JP</option>
+                      <option value="+49">+49 DE</option>
+                      <option value="+33">+33 FR</option>
+                      <option value="+61">+61 AU</option>
+                      <option value="+55">+55 BR</option>
+                      <option value="+52">+52 MX</option>
+                      <option value="+971">+971 UAE</option>
+                      <option value="+65">+65 SG</option>
+                      <option value="+82">+82 KR</option>
+                      <option value="+39">+39 IT</option>
+                      <option value="+34">+34 ES</option>
                     </select>
                     <Input
                       type="tel"
