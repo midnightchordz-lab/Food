@@ -507,13 +507,13 @@ const AuthModal = ({ open, onClose }) => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Phone Number</Label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     <select
                       value={countryCode}
                       onChange={(e) => setCountryCode(e.target.value)}
-                      className="px-3 py-2 rounded-xl border border-input bg-background text-sm w-28 appearance-none"
+                      className="px-3 py-2 rounded-xl border border-input bg-background text-sm w-28"
                       data-testid="country-code-select"
-                      style={{ WebkitAppearance: 'menulist', MozAppearance: 'menulist' }}
+                      style={{ fontSize: '16px', minHeight: '44px', WebkitAppearance: 'menulist', MozAppearance: 'menulist' }}
                     >
                       <option value="+1">+1 US</option>
                       <option value="+44">+44 UK</option>
@@ -537,6 +537,7 @@ const AuthModal = ({ open, onClose }) => {
                       onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
                       placeholder="555-123-4567"
                       className="flex-1 rounded-xl"
+                      style={{ fontSize: '16px', minHeight: '44px' }}
                       data-testid="phone-input"
                     />
                   </div>
