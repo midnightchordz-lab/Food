@@ -529,7 +529,7 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
           </div>
 
           {/* Generation Mode Selection */}
-          <div>
+          <div style={{ position: 'relative', zIndex: 1 }}>
             <Label className="text-lg mb-3 block">
               Plan Generation Mode <span className="text-red-500">*</span>
             </Label>
@@ -539,16 +539,19 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
               onClick={() => setGenerationMode('manual')}
               data-testid="mode-manual"
               style={{
-                padding: '12px',
-                marginBottom: '8px',
+                display: 'block',
+                position: 'relative',
+                padding: '16px',
+                marginBottom: '12px',
                 borderRadius: '12px',
-                border: generationMode === 'manual' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-                backgroundColor: generationMode === 'manual' ? '#eff6ff' : '#fff',
-                cursor: 'pointer'
+                border: generationMode === 'manual' ? '2px solid #3b82f6' : '2px solid #d1d5db',
+                backgroundColor: generationMode === 'manual' ? '#eff6ff' : '#ffffff',
+                cursor: 'pointer',
+                zIndex: 1
               }}
             >
-              <div style={{ fontWeight: 600, color: '#111' }}>Manual</div>
-              <div style={{ fontSize: '13px', color: '#666' }}>You generate plans manually</div>
+              <div style={{ fontWeight: 600, fontSize: '16px', color: '#111827', marginBottom: '4px' }}>Manual</div>
+              <div style={{ fontSize: '14px', color: '#6b7280' }}>You generate plans manually</div>
             </div>
             
             {/* Auto Option */}
@@ -556,15 +559,18 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
               onClick={() => setGenerationMode('auto')}
               data-testid="mode-auto"
               style={{
-                padding: '12px',
+                display: 'block',
+                position: 'relative',
+                padding: '16px',
                 borderRadius: '12px',
-                border: generationMode === 'auto' ? '2px solid #22c55e' : '2px solid #e5e7eb',
-                backgroundColor: generationMode === 'auto' ? '#f0fdf4' : '#fff',
-                cursor: 'pointer'
+                border: generationMode === 'auto' ? '2px solid #22c55e' : '2px solid #d1d5db',
+                backgroundColor: generationMode === 'auto' ? '#f0fdf4' : '#ffffff',
+                cursor: 'pointer',
+                zIndex: 1
               }}
             >
-              <div style={{ fontWeight: 600, color: '#111' }}>Auto</div>
-              <div style={{ fontSize: '13px', color: '#666' }}>New plans generated weekly</div>
+              <div style={{ fontWeight: 600, fontSize: '16px', color: '#111827', marginBottom: '4px' }}>Auto</div>
+              <div style={{ fontSize: '14px', color: '#6b7280' }}>New plans generated weekly</div>
             </div>
           </div>
 
