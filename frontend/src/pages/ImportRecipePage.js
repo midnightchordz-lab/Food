@@ -191,6 +191,12 @@ const ImportRecipePage = () => {
   const handleImageUpload = async (file) => {
     if (!file) return;
     
+    // Check file size - compress if too large
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.info('Compressing large image...');
+    }
+    
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
@@ -213,28 +219,46 @@ const ImportRecipePage = () => {
     const progressInterval = setInterval(() => {
       msgIndex = Math.min(msgIndex + 1, progressMessages.length - 1);
       setLoadingMessage(progressMessages[msgIndex]);
-    }, 4000);
+    }, 5000); // Increased interval for longer processing
     
     try {
       // Convert to base64
+      console.log('[Image Import] Starting image conversion, size:', imageFile.size);
       const base64 = await fileToBase64(imageFile);
+      console.log('[Image Import] Base64 length:', base64.length);
       
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+      
+      console.log('[Image Import] Sending request to API...');
       const response = await axios.post(`${API}/import/image`, {
         image_data: base64,
         filename: imageFile.name
+      }, {
+        signal: controller.signal,
+        timeout: 90000, // 90 second timeout
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
+      clearTimeout(timeoutId);
       clearInterval(progressInterval);
+      
+      console.log('[Image Import] Response received:', response.status);
       const recipe = response.data.recipe;
       
       // Check if the response contains an error
       if (recipe.error) {
+        console.error('[Image Import] Recipe error:', recipe.reason);
         toast.error(recipe.reason || 'Could not extract recipe from this image');
         return;
       }
       
       // Validate the recipe has required fields
       if (!recipe.name || !recipe.ingredients || !recipe.instructions) {
+        console.error('[Image Import] Incomplete recipe:', recipe);
         toast.error('Image did not contain enough information for a complete recipe');
         return;
       }
@@ -244,14 +268,25 @@ const ImportRecipePage = () => {
       toast.success('Recipe extracted from image!');
     } catch (error) {
       clearInterval(progressInterval);
-      console.error('Error importing from image:', error);
+      console.error('[Image Import] Error:', error);
+      console.error('[Image Import] Error name:', error.name);
+      console.error('[Image Import] Error message:', error.message);
       
       // Check if it's a feature locked error
       if (handleFeatureLockedError(error, setFeatureLockedModal)) {
         return;
       }
       
-      toast.error(error.response?.data?.detail || 'Failed to read recipe from image');
+      // Handle specific error types
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+        toast.error('Request timed out. Please try with a smaller image.');
+      } else if (error.response?.status === 413) {
+        toast.error('Image is too large. Please use a smaller image.');
+      } else if (error.response?.status >= 500) {
+        toast.error('Server error. Please try again in a moment.');
+      } else {
+        toast.error(error.response?.data?.detail || 'Failed to read recipe from image. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
