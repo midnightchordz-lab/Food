@@ -965,72 +965,90 @@ const ImportRecipePage = () => {
                 </h2>
                 
                 <div className="space-y-4">
-                  {/* Native camera buttons for Android */}
-                  {isNative && !imagePreview && (
-                    <div className="flex gap-3 mb-4">
+                  {!imagePreview ? (
+                    <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-muted rounded-xl">
+                      <Upload size={48} className="mb-4 text-muted-foreground" />
+                      <p className="font-medium mb-2">Upload Recipe Image</p>
+                      <p className="text-sm text-muted-foreground mb-6 text-center">
+                        Recipe card, cookbook page, or handwritten recipe
+                      </p>
+                      
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Button
+                          onClick={() => isNative ? handleNativeImageCapture('camera') : imageInputRef.current?.click()}
+                          className="flex items-center gap-2"
+                          data-testid="camera-btn"
+                        >
+                          <Camera className="w-4 h-4" />
+                          Take Photo
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => isNative ? handleNativeImageCapture('photos') : imageInputRef.current?.click()}
+                          className="flex items-center gap-2"
+                          data-testid="upload-btn"
+                        >
+                          <Upload className="w-4 h-4" />
+                          Upload Image
+                        </Button>
+                      </div>
+                      
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        data-testid="image-input"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="relative rounded-xl overflow-hidden">
+                        <img
+                          src={imagePreview}
+                          alt="Recipe preview"
+                          className="w-full h-64 object-cover"
+                        />
+                        <button
+                          onClick={() => { setImagePreview(null); setImageFile(null); }}
+                          className="absolute top-3 right-3 p-2 bg-black/50 rounded-full text-white"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                      
                       <Button
-                        onClick={() => handleNativeImageCapture('camera')}
-                        variant="outline"
-                        className="flex-1 rounded-xl py-6"
+                        onClick={handleImageImport}
+                        disabled={isLoading}
+                        className="w-full rounded-full"
+                        size="lg"
+                        data-testid="import-image-btn"
                       >
-                        <Camera className="mr-2" size={20} />
-                        Take Photo
-                      </Button>
-                      <Button
-                        onClick={() => handleNativeImageCapture('photos')}
-                        variant="outline"
-                        className="flex-1 rounded-xl py-6"
-                      >
-                        <Upload className="mr-2" size={20} />
-                        Gallery
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="animate-spin mr-2" size={18} />
+                            {loadingMessage || 'Processing...'}
+                          </>
+                        ) : (
+                          'Extract Recipe from Image'
+                        )}
                       </Button>
                     </div>
                   )}
                   
-                  {/* Web file input or image preview */}
-                  <div 
-                    className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
-                      imagePreview ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/50'
-                    }`}
-                    onClick={handleImageAreaClick}
-                  >
-                    <input
-                      ref={imageInputRef}
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      data-testid="image-input"
-                    />
-                    
-                    {imagePreview ? (
-                      <div>
-                        <img 
-                          src={imagePreview} 
-                          alt="Recipe preview" 
-                          className="max-h-64 mx-auto rounded-xl mb-4"
-                        />
-                        <p className="text-sm text-muted-foreground">Click to change image</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <Upload size={48} className="mx-auto mb-4 text-muted-foreground" />
-                        <p className="font-medium mb-1">{isNative ? 'Or click here to select' : 'Click to upload or take photo'}</p>
-                        <p className="text-sm text-muted-foreground">Recipe card, cookbook page, or handwritten recipe</p>
-                      </div>
-                    )}
+                  <div className="bg-muted/30 rounded-xl p-4">
+                    <h4 className="font-medium text-sm mb-2">Tips for best results:</h4>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>✓ Ensure text is clear and legible</li>
+                      <li>✓ Good lighting with no shadows</li>
+                      <li>✓ Capture entire recipe in frame</li>
+                    </ul>
                   </div>
-                  
-                  {imagePreview && (
-                    <Button
-                      onClick={handleImageImport}
-                      disabled={isLoading}
-                      className="w-full rounded-full"
-                      data-testid="import-image-btn"
-                    >
-                      {isLoading ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
+                </div>
+              </div>
+            )}
                       Extract Recipe from Image
                     </Button>
                   )}
