@@ -275,7 +275,9 @@ async def import_from_image(request: ImportImageRequest, current_user: User = De
         # Increment usage counter for photo scans
         await FeatureGate.increment_usage(current_user.id, "photo_scans")
         
-        logging.info(f"Importing recipe from image: {request.filename}")
+        # Log request details
+        image_size = len(request.image_data) if request.image_data else 0
+        logging.info(f"[Image Import] User: {current_user.id}, File: {request.filename}, Size: {image_size}")
         
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
@@ -299,9 +301,13 @@ Output ONLY valid JSON, no other text or markdown code blocks."""
         
         image_content = ImageContent(image_base64=request.image_data)
         
+        logging.info(f"[Image Import] Sending to OpenAI Vision API...")
+        
         response = await vision_chat.send_message(
             UserMessage(text="Analyze this image and create a complete, detailed recipe. If this is a recipe card/text image, extract all information. If this is a photo of food, identify the dish and create a professional recipe for it. Output ONLY the JSON object.", file_contents=[image_content])
         )
+        
+        logging.info(f"[Image Import] Received response, length: {len(response) if response else 0}")
         
         try:
             json_match = response
@@ -316,17 +322,20 @@ Output ONLY valid JSON, no other text or markdown code blocks."""
             recipe['originalSource'] = f"Image: {request.filename}"
             recipe['importDate'] = datetime.now(timezone.utc).isoformat()
             
+            logging.info(f"[Image Import] Successfully extracted recipe: {recipe.get('name', 'Unknown')}")
+            
             return {"recipe": recipe, "source": f"Image: {request.filename}"}
             
         except json.JSONDecodeError as e:
-            logging.error(f"Failed to parse vision response: {e}")
+            logging.error(f"[Image Import] JSON parse error: {e}")
+            logging.error(f"[Image Import] Raw response: {response[:500] if response else 'None'}")
             raise HTTPException(status_code=500, detail="Failed to parse recipe from image. Please try again.")
         
     except HTTPException:
         raise
     except Exception as e:
-        logging.error(f"Error importing from image: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"[Image Import] Unexpected error: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
 
 
 @router.post("/video")
