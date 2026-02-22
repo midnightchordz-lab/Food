@@ -543,15 +543,27 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
                     : 'bg-card border-border hover:border-primary/50'
                 }`}
                 data-testid="mode-manual"
+                style={{ overflow: 'hidden' }}
               >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg flex-shrink-0 ${generationMode === 'manual' ? 'bg-blue-100' : 'bg-muted'}`}>
+                <div className="flex items-start gap-3" style={{ alignItems: 'flex-start' }}>
+                  <div 
+                    className={`p-2 rounded-lg ${generationMode === 'manual' ? 'bg-blue-100' : 'bg-muted'}`}
+                    style={{ flexShrink: 0 }}
+                  >
                     <MousePointer size={20} className={generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">Manual Generation</p>
-                    <p className={`text-sm break-words ${generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'}`}>
-                      Click &quot;Generate Next Week&quot; button each time you want a new plan
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <p className="font-semibold" style={{ marginBottom: '4px' }}>Manual Generation</p>
+                    <p 
+                      className={`text-sm ${generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'}`}
+                      style={{ 
+                        wordWrap: 'break-word', 
+                        overflowWrap: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.4'
+                      }}
+                    >
+                      Click "Generate Next Week" button each time you want a new plan
                     </p>
                   </div>
                 </div>
@@ -566,21 +578,40 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
                     : 'bg-card border-border hover:border-primary/50'
                 }`}
                 data-testid="mode-auto"
+                style={{ overflow: 'hidden' }}
               >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg flex-shrink-0 ${generationMode === 'auto' ? 'bg-green-100' : 'bg-muted'}`}>
+                <div className="flex items-start gap-3" style={{ alignItems: 'flex-start' }}>
+                  <div 
+                    className={`p-2 rounded-lg ${generationMode === 'auto' ? 'bg-green-100' : 'bg-muted'}`}
+                    style={{ flexShrink: 0 }}
+                  >
                     <RefreshCw size={20} className={generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">Auto Generation</p>
-                    <p className={`text-sm break-words ${generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <p className="font-semibold" style={{ marginBottom: '4px' }}>Auto Generation</p>
+                    <p 
+                      className={`text-sm ${generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'}`}
+                      style={{ 
+                        wordWrap: 'break-word', 
+                        overflowWrap: 'break-word',
+                        whiteSpace: 'normal',
+                        lineHeight: '1.4'
+                      }}
+                    >
                       Automatically generates unique plans every week
                     </p>
                   </div>
                 </div>
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2 break-words">
+            <p 
+              className="text-xs text-muted-foreground mt-2"
+              style={{ 
+                wordWrap: 'break-word', 
+                overflowWrap: 'break-word',
+                whiteSpace: 'normal'
+              }}
+            >
               {generationMode === 'auto' 
                 ? '✨ Auto mode: New plans appear automatically each week with unique, non-repeating recipes'
                 : '👆 Manual mode: You control when new plans are generated'}
