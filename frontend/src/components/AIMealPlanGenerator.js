@@ -545,12 +545,12 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
                 data-testid="mode-manual"
               >
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${generationMode === 'manual' ? 'bg-blue-100' : 'bg-muted'}`}>
+                  <div className={`p-2 rounded-lg flex-shrink-0 ${generationMode === 'manual' ? 'bg-blue-100' : 'bg-muted'}`}>
                     <MousePointer size={20} className={generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'} />
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="font-semibold">Manual Generation</p>
-                    <p className={`text-sm ${generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'}`}>
+                    <p className={`text-sm break-words ${generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'}`}>
                       Click &quot;Generate Next Week&quot; button each time you want a new plan
                     </p>
                   </div>
@@ -568,19 +568,19 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
                 data-testid="mode-auto"
               >
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${generationMode === 'auto' ? 'bg-green-100' : 'bg-muted'}`}>
+                  <div className={`p-2 rounded-lg flex-shrink-0 ${generationMode === 'auto' ? 'bg-green-100' : 'bg-muted'}`}>
                     <RefreshCw size={20} className={generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'} />
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="font-semibold">Auto Generation</p>
-                    <p className={`text-sm ${generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    <p className={`text-sm break-words ${generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'}`}>
                       Automatically generates unique plans every week
                     </p>
                   </div>
                 </div>
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-2 break-words">
               {generationMode === 'auto' 
                 ? '✨ Auto mode: New plans appear automatically each week with unique, non-repeating recipes'
                 : '👆 Manual mode: You control when new plans are generated'}
