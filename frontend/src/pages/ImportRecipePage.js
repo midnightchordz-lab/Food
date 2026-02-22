@@ -69,6 +69,7 @@ const ImportRecipePage = () => {
   const [previewRecipe, setPreviewRecipe] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [recentImports, setRecentImports] = useState([]);
+  const [isNative, setIsNative] = useState(false);
   
   // Feature lock modal state
   const [featureLockedModal, setFeatureLockedModal] = useState({
@@ -90,6 +91,11 @@ const ImportRecipePage = () => {
   const imageInputRef = useRef(null);
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  
+  // Check if running on native platform
+  useEffect(() => {
+    setIsNative(Capacitor.isNativePlatform());
+  }, []);
   
   // Feature access check
   const { allowed: hasAccess, loading: featureLoading } = useFeatureAccess('recipe_import');
