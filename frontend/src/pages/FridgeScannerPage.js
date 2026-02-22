@@ -136,12 +136,17 @@ const FridgeScanner = () => {
   };
 
   const handleWebCameraCapture = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
+    console.log('[FridgeScanner] Camera capture:', file?.name, file?.size);
+    
     if (file) {
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
       setScanResult(null);
     }
+    
+    // Reset the input to allow selecting the same file again
+    event.target.value = '';
   };
 
   const handleScan = async () => {
