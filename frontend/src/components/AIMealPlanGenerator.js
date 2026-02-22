@@ -511,7 +511,7 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
 
           <div>
             <Label className="text-lg mb-3 block">Cuisine Preferences (Optional)</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {CUISINES.map((cuisine) => (
                 <div key={cuisine} className="flex items-center gap-2">
                   <Checkbox
@@ -519,8 +519,13 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
                     checked={cuisinePreferences.includes(cuisine)}
                     onCheckedChange={() => toggleCuisine(cuisine)}
                     data-testid={`cuisine-${cuisine}`}
+                    className="flex-shrink-0"
                   />
-                  <Label htmlFor={`cuisine-${cuisine}`} className="text-sm cursor-pointer">
+                  <Label 
+                    htmlFor={`cuisine-${cuisine}`} 
+                    className="text-sm cursor-pointer truncate"
+                    style={{ fontSize: '13px' }}
+                  >
                     {cuisine}
                   </Label>
                 </div>
