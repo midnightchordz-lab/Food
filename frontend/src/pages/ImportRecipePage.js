@@ -190,8 +190,14 @@ const ImportRecipePage = () => {
   };
   
   // Import from Image
-  const handleImageUpload = async (file) => {
-    if (!file) return;
+  const handleImageUpload = async (event) => {
+    const file = event?.target?.files?.[0] || event;
+    console.log('[Image Import] File selected:', file?.name, file?.size);
+    
+    if (!file) {
+      console.log('[Image Import] No file provided');
+      return;
+    }
     
     // Check file size - compress if too large
     const maxSize = 5 * 1024 * 1024; // 5MB
@@ -201,6 +207,11 @@ const ImportRecipePage = () => {
     
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+    
+    // Reset the input to allow selecting the same file again
+    if (event?.target) {
+      event.target.value = '';
+    }
   };
   
   const handleImageImport = async () => {
