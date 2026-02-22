@@ -511,26 +511,36 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
 
           <div>
             <Label className="text-lg mb-3 block">Cuisine Preferences (Optional)</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <select
+              multiple
+              value={cuisinePreferences}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                setCuisinePreferences(selected);
+              }}
+              style={{
+                width: '100%',
+                minHeight: '120px',
+                padding: '8px',
+                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                fontSize: '14px',
+                backgroundColor: '#fff'
+              }}
+              data-testid="cuisine-select"
+            >
               {CUISINES.map((cuisine) => (
-                <div key={cuisine} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`cuisine-${cuisine}`}
-                    checked={cuisinePreferences.includes(cuisine)}
-                    onCheckedChange={() => toggleCuisine(cuisine)}
-                    data-testid={`cuisine-${cuisine}`}
-                    className="flex-shrink-0"
-                  />
-                  <Label 
-                    htmlFor={`cuisine-${cuisine}`} 
-                    className="text-sm cursor-pointer truncate"
-                    style={{ fontSize: '13px' }}
-                  >
-                    {cuisine}
-                  </Label>
-                </div>
+                <option key={cuisine} value={cuisine}>{cuisine}</option>
               ))}
-            </div>
+            </select>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+              Hold Ctrl/Cmd to select multiple
+            </p>
+            {cuisinePreferences.length > 0 && (
+              <p style={{ fontSize: '12px', color: '#3b82f6', marginTop: '4px' }}>
+                Selected: {cuisinePreferences.join(', ')}
+              </p>
+            )}
           </div>
 
           {/* Generation Mode Selection */}
