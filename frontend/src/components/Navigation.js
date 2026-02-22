@@ -188,15 +188,7 @@ const Navigation = () => {
               </button>
             )}
             
-            {isAuthenticated ? (
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-full bg-white/20 text-white hover:bg-white/30"
-                data-testid="mobile-menu-button"
-              >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            ) : (
+            {!isAuthenticated && (
               <Button
                 onClick={() => setShowAuthModal(true)}
                 size="sm"
