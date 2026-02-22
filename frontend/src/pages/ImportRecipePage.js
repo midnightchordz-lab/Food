@@ -965,11 +965,34 @@ const ImportRecipePage = () => {
                 </h2>
                 
                 <div className="space-y-4">
+                  {/* Native camera buttons for Android */}
+                  {isNative && !imagePreview && (
+                    <div className="flex gap-3 mb-4">
+                      <Button
+                        onClick={() => handleNativeImageCapture('camera')}
+                        variant="outline"
+                        className="flex-1 rounded-xl py-6"
+                      >
+                        <Camera className="mr-2" size={20} />
+                        Take Photo
+                      </Button>
+                      <Button
+                        onClick={() => handleNativeImageCapture('photos')}
+                        variant="outline"
+                        className="flex-1 rounded-xl py-6"
+                      >
+                        <Upload className="mr-2" size={20} />
+                        Gallery
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Web file input or image preview */}
                   <div 
                     className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
                       imagePreview ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => imageInputRef.current?.click()}
+                    onClick={handleImageAreaClick}
                   >
                     <input
                       ref={imageInputRef}
@@ -994,7 +1017,7 @@ const ImportRecipePage = () => {
                     ) : (
                       <div>
                         <Upload size={48} className="mx-auto mb-4 text-muted-foreground" />
-                        <p className="font-medium mb-1">Click to upload or take photo</p>
+                        <p className="font-medium mb-1">{isNative ? 'Or click here to select' : 'Click to upload or take photo'}</p>
                         <p className="text-sm text-muted-foreground">Recipe card, cookbook page, or handwritten recipe</p>
                       </div>
                     )}
