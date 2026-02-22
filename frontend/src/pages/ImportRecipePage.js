@@ -1049,23 +1049,6 @@ const ImportRecipePage = () => {
                 </div>
               </div>
             )}
-                      Extract Recipe from Image
-                    </Button>
-                  )}
-                  
-                  <div className="bg-muted/30 rounded-xl p-4">
-                    <h4 className="font-medium text-sm mb-2">Tips for best results:</h4>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>✓ Ensure text is clear and legible</li>
-                      <li>✓ Good lighting with no shadows</li>
-                      <li>✓ Capture entire recipe in frame</li>
-                      <li>✓ Hold camera steady</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-            
             {/* Video Import */}
             {selectedMethod === 'video' && (
               <div data-testid="import-from-video">
