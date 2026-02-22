@@ -295,13 +295,15 @@ const FridgeScanner = () => {
                     capture="environment"
                     className="hidden"
                     onChange={handleWebCameraCapture}
+                    data-testid="camera-input"
                   />
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/*"
                     className="hidden"
                     onChange={handleFileSelect}
+                    data-testid="file-input"
                   />
                 </div>
               ) : (
