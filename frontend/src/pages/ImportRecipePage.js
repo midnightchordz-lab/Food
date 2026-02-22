@@ -920,13 +920,15 @@ const ImportRecipePage = () => {
                     className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
                       imagePreview ? 'border-primary/50 bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => document.getElementById('image-upload').click()}
+                    onClick={() => imageInputRef.current?.click()}
                   >
                     <input
+                      ref={imageInputRef}
                       id="image-upload"
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e.target.files[0])}
+                      capture="environment"
+                      onChange={handleImageUpload}
                       className="hidden"
                       data-testid="image-input"
                     />
@@ -943,7 +945,7 @@ const ImportRecipePage = () => {
                     ) : (
                       <div>
                         <Upload size={48} className="mx-auto mb-4 text-muted-foreground" />
-                        <p className="font-medium mb-1">Click to upload or drag and drop</p>
+                        <p className="font-medium mb-1">Click to upload or take photo</p>
                         <p className="text-sm text-muted-foreground">Recipe card, cookbook page, or handwritten recipe</p>
                       </div>
                     )}
