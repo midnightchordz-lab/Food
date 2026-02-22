@@ -1,16 +1,25 @@
 package com.moodfood.app;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    
+    private ValueCallback<Uri[]> filePathCallback;
+    private static final int FILE_CHOOSER_RESULT_CODE = 1001;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +59,49 @@ public class MainActivity extends BridgeActivity {
             settings.setAllowContentAccess(true);
             settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
             settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+            
+            // Set custom WebChromeClient for file chooser support
+            webView.setWebChromeClient(new WebChromeClient() {
+                @Override
+                public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> callback,
+                                                 FileChooserParams fileChooserParams) {
+                    if (filePathCallback != null) {
+                        filePathCallback.onReceiveValue(null);
+                    }
+                    filePathCallback = callback;
+                    
+                    Intent intent = fileChooserParams.createIntent();
+                    try {
+                        startActivityForResult(intent, FILE_CHOOSER_RESULT_CODE);
+                    } catch (Exception e) {
+                        filePathCallback = null;
+                        return false;
+                    }
+                    return true;
+                }
+            });
+        }
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == FILE_CHOOSER_RESULT_CODE) {
+            if (filePathCallback == null) {
+                super.onActivityResult(requestCode, resultCode, data);
+                return;
+            }
+            
+            Uri[] results = null;
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                String dataString = data.getDataString();
+                if (dataString != null) {
+                    results = new Uri[]{Uri.parse(dataString)};
+                }
+            }
+            filePathCallback.onReceiveValue(results);
+            filePathCallback = null;
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
         }
     }
 }
