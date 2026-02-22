@@ -529,89 +529,127 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
           </div>
 
           {/* Generation Mode Selection */}
-          <div>
+          <div style={{ width: '100%' }}>
             <Label className="text-lg mb-3 block">
               Plan Generation Mode <span className="text-red-500">*</span>
             </Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+              {/* Manual Generation Card */}
               <button
                 type="button"
                 onClick={() => setGenerationMode('manual')}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${
-                  generationMode === 'manual'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700 ring-2 ring-blue-200'
-                    : 'bg-card border-border hover:border-primary/50'
-                }`}
                 data-testid="mode-manual"
-                style={{ overflow: 'hidden' }}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: generationMode === 'manual' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
+                  backgroundColor: generationMode === 'manual' ? '#eff6ff' : '#ffffff',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  boxSizing: 'border-box'
+                }}
               >
-                <div className="flex items-start gap-3" style={{ alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   <div 
-                    className={`p-2 rounded-lg ${generationMode === 'manual' ? 'bg-blue-100' : 'bg-muted'}`}
-                    style={{ flexShrink: 0 }}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '8px',
+                      backgroundColor: generationMode === 'manual' ? '#dbeafe' : '#f3f4f6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}
                   >
-                    <MousePointer size={20} className={generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'} />
+                    <MousePointer size={20} style={{ color: generationMode === 'manual' ? '#2563eb' : '#6b7280' }} />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                    <p className="font-semibold" style={{ marginBottom: '4px' }}>Manual Generation</p>
-                    <p 
-                      className={`text-sm ${generationMode === 'manual' ? 'text-blue-600' : 'text-muted-foreground'}`}
-                      style={{ 
-                        wordWrap: 'break-word', 
-                        overflowWrap: 'break-word',
-                        whiteSpace: 'normal',
-                        lineHeight: '1.4'
-                      }}
-                    >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ 
+                      fontWeight: 600, 
+                      marginBottom: '4px',
+                      color: generationMode === 'manual' ? '#1d4ed8' : '#111827'
+                    }}>
+                      Manual Generation
+                    </p>
+                    <p style={{ 
+                      fontSize: '14px',
+                      color: generationMode === 'manual' ? '#2563eb' : '#6b7280',
+                      lineHeight: '1.5',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere',
+                      whiteSpace: 'normal',
+                      margin: 0
+                    }}>
                       Click "Generate Next Week" button each time you want a new plan
                     </p>
                   </div>
                 </div>
               </button>
               
+              {/* Auto Generation Card */}
               <button
                 type="button"
                 onClick={() => setGenerationMode('auto')}
-                className={`p-4 rounded-xl border-2 transition-all text-left ${
-                  generationMode === 'auto'
-                    ? 'bg-green-50 border-green-500 text-green-700 ring-2 ring-green-200'
-                    : 'bg-card border-border hover:border-primary/50'
-                }`}
                 data-testid="mode-auto"
-                style={{ overflow: 'hidden' }}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: generationMode === 'auto' ? '2px solid #22c55e' : '2px solid #e5e7eb',
+                  backgroundColor: generationMode === 'auto' ? '#f0fdf4' : '#ffffff',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  boxSizing: 'border-box'
+                }}
               >
-                <div className="flex items-start gap-3" style={{ alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   <div 
-                    className={`p-2 rounded-lg ${generationMode === 'auto' ? 'bg-green-100' : 'bg-muted'}`}
-                    style={{ flexShrink: 0 }}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '8px',
+                      backgroundColor: generationMode === 'auto' ? '#dcfce7' : '#f3f4f6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}
                   >
-                    <RefreshCw size={20} className={generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'} />
+                    <RefreshCw size={20} style={{ color: generationMode === 'auto' ? '#16a34a' : '#6b7280' }} />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                    <p className="font-semibold" style={{ marginBottom: '4px' }}>Auto Generation</p>
-                    <p 
-                      className={`text-sm ${generationMode === 'auto' ? 'text-green-600' : 'text-muted-foreground'}`}
-                      style={{ 
-                        wordWrap: 'break-word', 
-                        overflowWrap: 'break-word',
-                        whiteSpace: 'normal',
-                        lineHeight: '1.4'
-                      }}
-                    >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ 
+                      fontWeight: 600, 
+                      marginBottom: '4px',
+                      color: generationMode === 'auto' ? '#15803d' : '#111827'
+                    }}>
+                      Auto Generation
+                    </p>
+                    <p style={{ 
+                      fontSize: '14px',
+                      color: generationMode === 'auto' ? '#16a34a' : '#6b7280',
+                      lineHeight: '1.5',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere',
+                      whiteSpace: 'normal',
+                      margin: 0
+                    }}>
                       Automatically generates unique plans every week
                     </p>
                   </div>
                 </div>
               </button>
             </div>
-            <p 
-              className="text-xs text-muted-foreground mt-2"
-              style={{ 
-                wordWrap: 'break-word', 
-                overflowWrap: 'break-word',
-                whiteSpace: 'normal'
-              }}
-            >
+            <p style={{ 
+              fontSize: '12px',
+              color: '#6b7280',
+              marginTop: '8px',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
+              whiteSpace: 'normal'
+            }}>
               {generationMode === 'auto' 
                 ? '✨ Auto mode: New plans appear automatically each week with unique, non-repeating recipes'
                 : '👆 Manual mode: You control when new plans are generated'}
