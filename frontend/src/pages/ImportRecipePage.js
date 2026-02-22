@@ -197,7 +197,7 @@ const ImportRecipePage = () => {
     }
   };
   
-  // Import from Image
+  // Import from Image - Handle native camera or file picker
   const handleImageUpload = async (event) => {
     const file = event?.target?.files?.[0] || event;
     console.log('[Image Import] File selected:', file?.name, file?.size);
@@ -219,6 +219,47 @@ const ImportRecipePage = () => {
     // Reset the input to allow selecting the same file again
     if (event?.target) {
       event.target.value = '';
+    }
+  };
+  
+  // Use Capacitor Camera on native platform
+  const handleNativeImageCapture = async (source) => {
+    try {
+      console.log('[Image Import] Using Capacitor Camera, source:', source);
+      
+      const image = await CapCamera.getPhoto({
+        quality: 80,
+        allowEditing: false,
+        resultType: CameraResultType.Base64,
+        source: source === 'camera' ? CameraSource.Camera : CameraSource.Photos,
+      });
+      
+      console.log('[Image Import] Capacitor image captured');
+      
+      // Convert base64 to blob/file
+      const base64Response = await fetch(`data:image/jpeg;base64,${image.base64String}`);
+      const blob = await base64Response.blob();
+      const file = new File([blob], 'recipe-photo.jpg', { type: 'image/jpeg' });
+      
+      setImageFile(file);
+      setImagePreview(`data:image/jpeg;base64,${image.base64String}`);
+      
+    } catch (error) {
+      console.error('[Image Import] Capacitor camera error:', error);
+      if (!error.message?.includes('cancelled')) {
+        toast.error('Failed to capture image');
+      }
+    }
+  };
+  
+  // Click handler for image upload area
+  const handleImageAreaClick = () => {
+    if (isNative) {
+      // On native, use Capacitor Camera with photo library
+      handleNativeImageCapture('photos');
+    } else {
+      // On web, use file input
+      imageInputRef.current?.click();
     }
   };
   
