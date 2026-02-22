@@ -160,21 +160,46 @@ const FridgeScanner = () => {
     formData.append('file', selectedImage);
 
     try {
+      console.log('[FridgeScanner] Starting scan, file size:', selectedImage.size);
+      
       const token = localStorage.getItem('token');
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+      
       const response = await axios.post(`${API}/api/fridge-scanner/scan`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        signal: controller.signal,
+        timeout: 90000 // 90 second timeout
       });
-
+      
+      clearTimeout(timeoutId);
+      
+      console.log('[FridgeScanner] Scan complete, found ingredients:', response.data?.ingredients?.length);
+      
       setScanResult(response.data);
       toast.success(`Found ${response.data.ingredients.length} ingredients!`);
     } catch (error) {
-      console.error('Scan error:', error);
+      console.error('[FridgeScanner] Scan error:', error);
+      console.error('[FridgeScanner] Error name:', error.name);
+      console.error('[FridgeScanner] Error message:', error.message);
+      
       // Check if it's a feature lock error
       if (!handleFeatureLockedError(error, setFeatureLockedModal)) {
-        toast.error(error.response?.data?.detail?.message || error.response?.data?.detail || 'Failed to scan image');
+        // Handle specific error types
+        if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+          toast.error('Request timed out. Please try with a smaller image.');
+        } else if (error.response?.status === 413) {
+          toast.error('Image is too large. Please use a smaller image.');
+        } else if (error.response?.status >= 500) {
+          toast.error('Server error. Please try again in a moment.');
+        } else {
+          toast.error(error.response?.data?.detail?.message || error.response?.data?.detail || 'Failed to scan image');
+        }
       }
     } finally {
       setScanning(false);
