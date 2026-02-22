@@ -83,7 +83,9 @@ const FridgeScanner = () => {
   }, [hasAccess, featureLoading, isAuthenticated]);
 
   const handleFileSelect = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
+    console.log('[FridgeScanner] File selected:', file?.name, file?.size);
+    
     if (file) {
       if (!file.type.startsWith('image/')) {
         toast.error('Please select an image file');
@@ -93,6 +95,9 @@ const FridgeScanner = () => {
       setPreviewUrl(URL.createObjectURL(file));
       setScanResult(null);
     }
+    
+    // Reset the input to allow selecting the same file again
+    event.target.value = '';
   };
 
   const handleCameraCapture = async () => {
