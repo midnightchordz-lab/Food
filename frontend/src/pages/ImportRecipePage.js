@@ -84,6 +84,8 @@ const ImportRecipePage = () => {
   const [videoFile, setVideoFile] = useState(null);
   const [textInput, setTextInput] = useState('');
   
+  // Refs for file inputs
+  const imageInputRef = useRef(null);
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   
