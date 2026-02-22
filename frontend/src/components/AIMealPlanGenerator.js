@@ -529,129 +529,125 @@ const AIMealPlanGenerator = ({ open, onClose, onPlanGenerated }) => {
           </div>
 
           {/* Generation Mode Selection */}
-          <div style={{ width: '100%' }}>
+          <div>
             <Label className="text-lg mb-3 block">
               Plan Generation Mode <span className="text-red-500">*</span>
             </Label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-              {/* Manual Generation Card */}
-              <button
-                type="button"
-                onClick={() => setGenerationMode('manual')}
-                data-testid="mode-manual"
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  border: generationMode === 'manual' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-                  backgroundColor: generationMode === 'manual' ? '#eff6ff' : '#ffffff',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <div 
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '8px',
-                      backgroundColor: generationMode === 'manual' ? '#dbeafe' : '#f3f4f6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}
-                  >
-                    <MousePointer size={20} style={{ color: generationMode === 'manual' ? '#2563eb' : '#6b7280' }} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ 
-                      fontWeight: 600, 
-                      marginBottom: '4px',
-                      color: generationMode === 'manual' ? '#1d4ed8' : '#111827'
-                    }}>
-                      Manual Generation
-                    </p>
-                    <p style={{ 
-                      fontSize: '14px',
-                      color: generationMode === 'manual' ? '#2563eb' : '#6b7280',
-                      lineHeight: '1.5',
-                      wordBreak: 'break-word',
-                      overflowWrap: 'anywhere',
-                      whiteSpace: 'normal',
-                      margin: 0
-                    }}>
-                      Click "Generate Next Week" button each time you want a new plan
-                    </p>
-                  </div>
-                </div>
-              </button>
-              
-              {/* Auto Generation Card */}
-              <button
-                type="button"
-                onClick={() => setGenerationMode('auto')}
-                data-testid="mode-auto"
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  border: generationMode === 'auto' ? '2px solid #22c55e' : '2px solid #e5e7eb',
-                  backgroundColor: generationMode === 'auto' ? '#f0fdf4' : '#ffffff',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                  <div 
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '8px',
-                      backgroundColor: generationMode === 'auto' ? '#dcfce7' : '#f3f4f6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}
-                  >
-                    <RefreshCw size={20} style={{ color: generationMode === 'auto' ? '#16a34a' : '#6b7280' }} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ 
-                      fontWeight: 600, 
-                      marginBottom: '4px',
-                      color: generationMode === 'auto' ? '#15803d' : '#111827'
-                    }}>
-                      Auto Generation
-                    </p>
-                    <p style={{ 
-                      fontSize: '14px',
-                      color: generationMode === 'auto' ? '#16a34a' : '#6b7280',
-                      lineHeight: '1.5',
-                      wordBreak: 'break-word',
-                      overflowWrap: 'anywhere',
-                      whiteSpace: 'normal',
-                      margin: 0
-                    }}>
-                      Automatically generates unique plans every week
-                    </p>
-                  </div>
-                </div>
-              </button>
+            
+            {/* Manual Generation Card */}
+            <div 
+              onClick={() => setGenerationMode('manual')}
+              data-testid="mode-manual"
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '16px',
+                marginBottom: '12px',
+                borderRadius: '12px',
+                border: generationMode === 'manual' ? '2px solid #3b82f6' : '2px solid #e5e7eb',
+                backgroundColor: generationMode === 'manual' ? '#eff6ff' : '#ffffff',
+                cursor: 'pointer',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+              }}
+            >
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '48px', verticalAlign: 'top', paddingRight: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        backgroundColor: generationMode === 'manual' ? '#dbeafe' : '#f3f4f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <MousePointer size={20} style={{ color: generationMode === 'manual' ? '#2563eb' : '#6b7280' }} />
+                      </div>
+                    </td>
+                    <td style={{ verticalAlign: 'top' }}>
+                      <div style={{ 
+                        fontWeight: 600, 
+                        marginBottom: '4px',
+                        color: generationMode === 'manual' ? '#1d4ed8' : '#111827'
+                      }}>
+                        Manual Generation
+                      </div>
+                      <div style={{ 
+                        fontSize: '14px',
+                        color: generationMode === 'manual' ? '#2563eb' : '#6b7280',
+                        lineHeight: '1.5'
+                      }}>
+                        Click "Generate Next Week" button each time you want a new plan
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+            
+            {/* Auto Generation Card */}
+            <div 
+              onClick={() => setGenerationMode('auto')}
+              data-testid="mode-auto"
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '16px',
+                borderRadius: '12px',
+                border: generationMode === 'auto' ? '2px solid #22c55e' : '2px solid #e5e7eb',
+                backgroundColor: generationMode === 'auto' ? '#f0fdf4' : '#ffffff',
+                cursor: 'pointer',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+              }}
+            >
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ width: '48px', verticalAlign: 'top', paddingRight: '12px' }}>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        backgroundColor: generationMode === 'auto' ? '#dcfce7' : '#f3f4f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <RefreshCw size={20} style={{ color: generationMode === 'auto' ? '#16a34a' : '#6b7280' }} />
+                      </div>
+                    </td>
+                    <td style={{ verticalAlign: 'top' }}>
+                      <div style={{ 
+                        fontWeight: 600, 
+                        marginBottom: '4px',
+                        color: generationMode === 'auto' ? '#15803d' : '#111827'
+                      }}>
+                        Auto Generation
+                      </div>
+                      <div style={{ 
+                        fontSize: '14px',
+                        color: generationMode === 'auto' ? '#16a34a' : '#6b7280',
+                        lineHeight: '1.5'
+                      }}>
+                        Automatically generates unique plans every week
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
             <p style={{ 
               fontSize: '12px',
               color: '#6b7280',
-              marginTop: '8px',
-              wordBreak: 'break-word',
-              overflowWrap: 'anywhere',
-              whiteSpace: 'normal'
+              marginTop: '8px'
             }}>
               {generationMode === 'auto' 
-                ? '✨ Auto mode: New plans appear automatically each week with unique, non-repeating recipes'
+                ? '✨ Auto mode: New plans appear automatically each week'
                 : '👆 Manual mode: You control when new plans are generated'}
             </p>
           </div>
