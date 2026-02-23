@@ -1,7 +1,7 @@
 import UIKit
 import WebKit
 
-class MainViewController: UIViewController, WKNavigationDelegate, WKUIDelegate {
+class MainViewController: UIViewController, WKNavigationDelegate, WKUIDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     private var webView: WKWebView!
     private var activityIndicator: UIActivityIndicatorView!
@@ -100,12 +100,6 @@ class MainViewController: UIViewController, WKNavigationDelegate, WKUIDelegate {
     
     // MARK: - WKUIDelegate
     
-    // Handle file upload (camera/photo library)
-    func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
-        // This is for macOS, iOS uses different approach
-        completionHandler(nil)
-    }
-    
     // Handle JavaScript alerts
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
         let alert = UIAlertController(title: "MOOD FOOD", message: message, preferredStyle: .alert)
@@ -135,20 +129,7 @@ class MainViewController: UIViewController, WKNavigationDelegate, WKUIDelegate {
         return nil
     }
     
-    // MARK: - Error Handling
-    
-    private func showErrorAlert(message: String) {
-        let alert = UIAlertController(title: "Connection Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Retry", style: .default) { [weak self] _ in
-            self?.loadWebsite()
-        })
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        present(alert, animated: true)
-    }
-}
-
-// MARK: - Image Picker for File Upload
-extension MainViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    // MARK: - UIImagePickerControllerDelegate
     
     func presentImagePicker(sourceType: UIImagePickerController.SourceType) {
         guard UIImagePickerController.isSourceTypeAvailable(sourceType) else {
@@ -165,10 +146,20 @@ extension MainViewController: UIImagePickerControllerDelegate, UINavigationContr
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)
-        // Handle image selection if needed
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true)
+    }
+    
+    // MARK: - Error Handling
+    
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(title: "Connection Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Retry", style: .default) { [weak self] _ in
+            self?.loadWebsite()
+        })
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
     }
 }
