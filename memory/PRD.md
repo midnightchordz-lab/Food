@@ -106,4 +106,4 @@ A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, fe
 ## Environment Configuration
 - Production Backend: `https://moodfood.in`
 - Development Backend: `https://trial-bug-fix.emergent.host` (current Android build target)
-- Preview URL: `https://moodfood-android.preview.emergentagent.com`
+- Preview URL: `https://moodfood-mobile.preview.emergentagent.com`
