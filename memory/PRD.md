@@ -1,109 +1,65 @@
-# Recipe Loader App - Product Requirements Document
+# MoodFood - Product Requirements Document
 
 ## Original Problem Statement
-A Capacitor-based hybrid cooking app with React frontend and FastAPI backend, featuring:
-- Recipe generation with AI (OpenAI)
-- Voice-controlled hands-free cooking mode
-- Fridge scanner for ingredient detection
-- Meal planning with dietary preferences
-- Premium AI Chef feature
-- **7-Day Trial System** for premium features (cross-platform)
-- **Family Plan** with SMS/Push notifications
+Build and maintain a full-stack meal planning and recipe application (MoodFood) with native mobile apps for both Android and iOS platforms, wrapping the web application at `https://moodfood.in`.
 
-## User Personas
-- Home cooks wanting recipe inspiration
-- Users with dietary restrictions (diabetes, allergies)
-- Mobile users needing hands-free cooking guidance
-- Families wanting to coordinate meal planning
+## Current Status
+- **Web App**: Production-ready at `https://moodfood.in`
+- **Android App**: Build configured (`versionCode: 33`), pointing to production URL
+- **iOS App**: Xcode project complete with AppIcon set (ready for build)
 
-## Core Requirements
-1. Recipe discovery and generation
-2. Hands-free voice-controlled cooking
-3. User authentication and preferences (Email + Phone OTP)
-4. Subscription/entitlement system (free/premium)
-5. **7-Day Trial System** (Web, iOS, Android compatible)
-6. **Family Plan** with invite system and notifications
+## Core Features
+1. AI-powered meal planning
+2. Recipe management and import
+3. Fridge scanner for ingredient detection
+4. Family plan with notifications
+5. Voice-enabled AI Chef
+6. Ingredient encyclopedia
 
-## Tech Stack
-- **Frontend**: React + Capacitor 6 (hybrid mobile app)
-- **Backend**: FastAPI + MongoDB
-- **Voice**: Web Speech API + Capacitor plugins
-- **AI**: OpenAI via emergentintegrations library
-- **TTS**: ElevenLabs (premium), browser fallback
-- **Notifications**: Twilio SMS, FCM Push
+## Completed Tasks (December 2024)
+- [x] iOS Xcode project skeleton created
+- [x] iOS AppIcon set generated (9 sizes) - Feb 24, 2025
+- [x] Android build configuration for production
+- [x] Image upload fixes for Recipe Import & Fridge Scanner
+- [x] Phone number input custom dropdown implementation
 
----
+## In Progress
+- [ ] Cuisine Preferences grid text overlap fix (needs dropdown→grid revert)
 
-## Changelog
+## Prioritized Backlog
+### P1 - High Priority
+- Verify phone number input on Android
+- Full E2E test of Family Invite Flow
+- Re-enable AI Chef feature
 
-### 2026-02-21 - Phone Input Screen Fix ✅
-- **COMPLETED**: Fixed critical Android phone input screen rendering bug
-  - Replaced custom phone input with `react-phone-number-input` library
-  - Fixed broken/orphaned JSX code in AuthModal.js
-  - Added custom CSS for phone input styling (Android WebView compatible)
-  - Updated versionCode to 15
-- **MODIFIED FILES**:
-  - `frontend/src/components/AuthModal.js` - Refactored phone auth with new library
-  - `frontend/src/index.css` - Added phone input styling
-  - `frontend/android/app/build.gradle` - Updated versionCode to 15
-  - `frontend/package.json` - Added react-phone-number-input dependency
+### P2 - Medium Priority  
+- Implement Ingredient Encyclopedia Page
+- ElevenLabs Quota UI notification
+- Ingredient Detail Page
 
-### 2026-02-20 - Capacitor 6 Migration & Android Stabilization
-- **COMPLETED**: Upgraded entire Capacitor ecosystem from v5 to v6
-  - Fixed Android 13+ compatibility issues
-  - Configured signed AAB builds for Play Store
-  - Managed multiple version code updates
-- **MODIFIED FILES**:
-  - `frontend/package.json` - All @capacitor/* packages to v6
-  - `frontend/android/app/build.gradle` - Signing config, SDK versions
-  - `codemagic.yaml` - AAB build configuration
+### P3 - Lower Priority
+- Production WhatsApp Integration
+- Android status bar app name issue
 
-### 2026-02-16 - WhatsApp Family Integration
-- **COMPLETED**: Full WhatsApp integration for Family Plan users
-  - WhatsApp notification service using Twilio API
-  - Family account creation with invite codes
-  - Recipe voting system for families
-
----
-
-## P0 - Critical Issues
-1. ✅ ~~Phone input screen broken on Android~~ (FIXED 2026-02-21)
-2. 🔄 Verify 7-day trial flow on Android (blocked until login confirmed working)
-
-## P1 - High Priority
-1. iOS Push Notification Setup (GoogleService-Info.plist)
-2. Full E2E Test of Family Invite Flow
-3. Re-enable AI Chef feature
-4. Android status bar issue
-
-## P2 - Medium Priority
-1. Implement Ingredient Encyclopedia Page
-2. UI for ElevenLabs Quota
-3. Ingredient Detail Page
-
-## P3 - Future/Backlog
-1. Production WhatsApp setup (Twilio Business API)
-2. Chunk loading error on Subscription Page (user verification pending)
-
----
-
-## Key Files Reference
-- `/app/frontend/src/components/AuthModal.js` - Phone authentication UI
-- `/app/frontend/android/app/build.gradle` - Android build config
-- `/app/frontend/capacitor.config.json` - Capacitor configuration
-- `/app/codemagic.yaml` - CI/CD build configuration
-- `/app/backend/routes/auth.py` - Phone OTP endpoints
+## Technical Architecture
+```
+/app
+├── backend/          # FastAPI + MongoDB
+├── frontend/         # React + Capacitor
+│   ├── android/      # Android native wrapper
+│   └── src/          # React components
+├── ios/              # iOS Xcode project
+│   └── MoodFood/     # Swift WebView wrapper
+└── codemagic.yaml    # CI/CD configuration
+```
 
 ## 3rd Party Integrations
-- **Capacitor v6**: Native mobile shell
-- **OpenAI GPT**: AI features (Emergent LLM Key)
-- **ElevenLabs**: Text-to-speech (User API Key)
-- **SerpApi**: Image search (User API Key)
-- **Twilio**: SMS notifications (User API Key)
-- **FCM**: Push notifications (disabled during debug)
-- **react-phone-number-input**: Phone number input library
+- OpenAI GPT (via emergentintegrations)
+- ElevenLabs TTS
+- SerpApi (image search)
+- Twilio SMS
+- Firebase Cloud Messaging
 
-## Environment Configuration
-- Production Backend: `https://moodfood.in`
-- Development Backend: `https://trial-bug-fix.emergent.host` (current Android build target)
-- Preview URL: `https://moodfood-mobile.preview.emergentagent.com`
+## Known Issues
+1. Android WebView rendering inconsistencies (flexbox/grid issues)
+2. Cuisine Preferences currently shows dropdown instead of checkbox grid
