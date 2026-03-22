@@ -5,7 +5,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       node: 18.17.0
-      java: 17
+      java: 21
     scripts:
       - name: Install dependencies
         script: |
@@ -96,7 +96,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       node: 18.17.0
-      java: 17
+      java: 21
     scripts:
       - name: Install dependencies
         script: |
@@ -126,7 +126,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       node: 18.17.0
-      java: 17
+      java: 21
     scripts:
       - name: Install dependencies
         script: |
