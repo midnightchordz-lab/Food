@@ -40,6 +40,10 @@
       "maxResults": 3,
       "partialResults": true,
       "popup": false
+    },
+    "Camera": {
+      "androidGalleryPermission": "NONE",
+      "androidCameraPermission": "CAMERA"
     }
   }
 }
