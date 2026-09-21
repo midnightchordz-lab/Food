@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend-only regression check for MOODFOOD logo overlap fix on Welcome screen + auth smoke test. All 3 requested cases PASS. Brand 'MOODFOOD' renders on a single line (rendered height 51px vs fontSize 42px, whiteSpace: nowrap, width 327px fits in 375px viewport minus 48px padding). Tagline 'When feelings need feeding' and description are fully visible and not overlapped (tagline y=287 below brand bottom y≈291 with a small intentional -4 marginTop, visually clean per screenshot). Registration flow with fresh account test+<ts>@example.com / Test1234 succeeds via [data-testid=auth-submit] and navigates into the app tabs — mood grid testIDs (mood-happy, mood-cozy, mood-stressed, mood-sad, mood-energetic, mood-calm, mood-romantic, mood-excited) plus bottom nav (Discover/Saved/Planner/Profile) confirmed. No red screen, no error toast. Two harmless React Native web deprecation console warnings observed (not blocking, not new to this change).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN Web console warnings", "issue": "'shadow*' style props deprecated (use 'boxShadow') and 'props.pointerEvents is deprecated (use style.pointerEvents)'. Not caused by this fix; pre-existing in shared UI/segment styles. Reference: /app/frontend/app/welcome.tsx:176 (shadowColor/shadowOpacity/shadowRadius/shadowOffset on segmentBtnActive)"}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional (not blocking): migrate shadow* style props to boxShadow and move pointerEvents from prop to style to silence RN web deprecation warnings on the Welcome segment control."
+  ],
+  "critical_code_review_comments": [
+    "welcome.tsx: numberOfLines={1} + adjustsFontSizeToFit + fontSize 42 + letterSpacing 0.5 correctly guarantees single-line brand render at 375px width (measured 327px used of 327px available — safe margin due to adjustsFontSizeToFit fallback).",
+    "tagline marginTop:-4 tucks it just under the brand baseline which is fine visually; no overlap into the hero image (hero height 260, brand top 240 with body marginTop:-20 as intended)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "Created one throwaway account test+<ts>@example.com / Test1234 during registration smoke test.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Welcome screen logo overlap bug is FIXED and verified. Auth register→tabs navigation works. Only outstanding cosmetic note is RN web shadow*/pointerEvents deprecation warnings on segment control — non-blocking.",
+  "rca_of_issue": "Original bug: brand Text wrapped to two lines ('MOODFO' / 'OD') because fontSize 46 + letterSpacing 1 + no numberOfLines caused overflow at 375px width. Fix: added numberOfLines={1} and adjustsFontSizeToFit, reduced fontSize to 42 and letterSpacing to 0.5, adjusted body marginTop from -30 to -20. Verified rendered as single line with whiteSpace:nowrap and no wrap into hero image."
+}
