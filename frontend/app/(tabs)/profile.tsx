@@ -54,8 +54,14 @@ export default function Profile() {
         </View>
 
         <View style={styles.card}>
+          <Pressable style={styles.linkRow} onPress={() => router.push('/exclusions')} testID="open-exclusions">
+            <View style={[styles.rowIcon, { backgroundColor: colors.accentSoft }]}><Icon name="silverware-variant" size={19} color={colors.accent} /></View>
+            <Text style={styles.rowLabel}>Food exclusions & allergies</Text>
+            <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
+          <View style={styles.rowDivider} />
           <Pressable style={styles.linkRow} onPress={() => router.push('/(tabs)')}>
-            <View style={styles.rowIcon}><Icon name="silverware-fork-knife" size={19} color={colors.accent} /></View>
+            <View style={styles.rowIcon}><Icon name="silverware-fork-knife" size={19} color={colors.primary} /></View>
             <Text style={styles.rowLabel}>Discover new recipes</Text>
             <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
           </Pressable>
@@ -85,5 +91,6 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   rowLabel: { flex: 1, fontFamily: f.bodyMedium, fontSize: 15, color: colors.foreground },
   rowValue: { fontFamily: f.body, fontSize: 14, color: colors.mutedForeground },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15 },
+  rowDivider: { height: 1, backgroundColor: colors.border },
   version: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, textAlign: 'center', marginTop: 20 },
 }));

@@ -38,10 +38,11 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - [x] Planner tab (GET/POST /api/weekly-plan) with mood + dietary selectors.
 - [x] Profile tab (user info, saved count, sign out).
 - [x] Backend tested: 13/13 endpoints pass.
+- [x] Food Exclusions & Allergies editor (Profile → screen; GET/POST /api/exclusions) — 2026-09-21. Also fixed a legacy `userId` unique index on user_exclusions (now `user_id`, migrated on startup).
 
 ## Backlog
 ### P1
-- Wire food/exclusions preferences into Discover + Profile (GET/PUT /api/exclusions, /api/auth/profile).
+- Wire food/exclusions preferences into Discover chips display (editor DONE).
 - Shopping list screen (backend ready: /api/shopping-list, add-to-list from recipe).
 - Recipe import (URL/photo/text) — backend routes/import_recipe.py exists.
 ### P2

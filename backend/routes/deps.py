@@ -106,7 +106,12 @@ async def create_indexes():
         
         # User exclusions
         try:
-            await db.user_exclusions.create_index("userId", unique=True, background=True)
+            # Drop legacy camelCase index if present (caused DuplicateKeyError on null userId)
+            try:
+                await db.user_exclusions.drop_index("userId_1")
+            except Exception:
+                pass
+            await db.user_exclusions.create_index("user_id", unique=True, background=True)
         except Exception:
             pass
         
