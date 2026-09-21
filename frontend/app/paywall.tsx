@@ -34,6 +34,8 @@ export default function Paywall() {
 
   const selectedPkg = packages.find((p) => p.identifier === selected) || packages[0];
 
+  const hasTrial = (pkg?: PurchasesPackage) => !!pkg?.product?.introPrice;
+
   const doPurchase = async (pkg: PurchasesPackage) => {
     setConfirmPkg(null);
     try {
@@ -121,7 +123,7 @@ export default function Paywall() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.planName}>{pkg.product.title?.replace(/\(.*\)/, '').trim() || (isAnnual ? 'Annual' : 'Monthly')}</Text>
-                      <Text style={styles.planPeriod}>{periodLabel(pkg)}</Text>
+                      <Text style={styles.planPeriod}>{hasTrial(pkg) ? '7-day free trial, then ' + periodLabel(pkg) : periodLabel(pkg)}</Text>
                     </View>
                     <Text style={styles.planPrice}>{pkg.product.priceString}</Text>
                   </Pressable>
@@ -144,7 +146,7 @@ export default function Paywall() {
             style={({ pressed }) => [styles.cta, { opacity: !identityReady ? 0.5 : pressed ? 0.9 : 1 }]}
           >
             {isPurchasing ? <ActivityIndicator color={colors.accentForeground} /> : (
-              <Text style={styles.ctaText}>Start Premium · {selectedPkg?.product.priceString} {periodLabel(selectedPkg!)}</Text>
+              <Text style={styles.ctaText}>{hasTrial(selectedPkg) ? 'Start 7-day free trial' : `Start Premium · ${selectedPkg?.product.priceString} ${periodLabel(selectedPkg!)}`}</Text>
             )}
           </Pressable>
           <Pressable onPress={doRestore} disabled={isRestoring} testID="paywall-restore" style={styles.restore}>

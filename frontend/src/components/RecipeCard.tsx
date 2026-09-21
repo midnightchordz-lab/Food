@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon } from '@/src/components/ui';
+import { useSubscription } from '@/src/lib/revenuecat';
 
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -50,8 +51,10 @@ export function RecipeCard({
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const aiImg = useRecipeImage(recipe.title, recipe.cuisine, recipe.description, !recipe.image_url);
+  const { isSubscribed } = useSubscription();
+  const aiImg = useRecipeImage(recipe.title, recipe.cuisine, recipe.description, !recipe.image_url && isSubscribed);
   const img = recipe.image_url || aiImg.data || foodImage(recipe.title, recipe.cuisine);
+  const showPremiumPhotoHint = !recipe.image_url && !isSubscribed;
 
   return (
     <Pressable
@@ -61,10 +64,16 @@ export function RecipeCard({
     >
       <View>
         <Image source={{ uri: img }} style={styles.img} contentFit="cover" transition={250} />
-        {!recipe.image_url && aiImg.isLoading ? (
+        {!recipe.image_url && isSubscribed && aiImg.isLoading ? (
           <View style={styles.imgBadge}>
             <Icon name="creation" size={12} color="#FFFFFF" />
             <Text style={styles.imgBadgeText}>Plating…</Text>
+          </View>
+        ) : null}
+        {showPremiumPhotoHint ? (
+          <View style={styles.premiumBadge}>
+            <Icon name="crown" size={12} color="#FFFFFF" />
+            <Text style={styles.imgBadgeText}>AI photo · Premium</Text>
           </View>
         ) : null}
         <View style={styles.actions}>
@@ -125,6 +134,10 @@ const useStyles = makeStyles(({ colors, radius }) => ({
   imgBadge: {
     position: 'absolute', left: 12, top: 12, flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4,
+  },
+  premiumBadge: {
+    position: 'absolute', left: 12, top: 12, flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(198,107,61,0.92)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4,
   },
   imgBadgeText: { color: '#FFFFFF', fontFamily: fonts.bodyMedium, fontSize: 11 },
   saveBtn: {

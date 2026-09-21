@@ -9,7 +9,7 @@ This file is a memory for interacting with the user's RevenueCat account via the
 - offering_lookup_key: default
 - Packages (package -> product_id, current price):
   - $rc_monthly -> prod649d26d000  ($9.99 / P1M, trial: none)
-  - $rc_annual  -> prod406f501191  ($79.99 / P1Y, trial: none)
+  - $rc_annual  -> prod406f501191  ($79.99 / P1Y, trial: 7-day / P1W)
 - Dashboard: https://app.revenuecat.com/projects/proj8cda2dbe
 
 SDK keys live in /app/frontend/.env (EXPO_PUBLIC_REVENUECAT_*). Never store key/token values here.

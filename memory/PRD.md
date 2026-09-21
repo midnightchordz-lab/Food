@@ -43,6 +43,8 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - [x] Exclusion Badge on Discover header (shows active exclusions, taps to editor) and exclusions now injected into AI recipe generation prompt — 2026-09-21.
 - [x] Fixed query-key collision crash: profile.tsx no longer overwrites the ['saved-recipes'] array cache with a count.
 - [x] RevenueCat in-app subscriptions (Emergent-managed) — 2026-09-21: paywall (/paywall) with Monthly $9.99 + Annual $79.99, `pro` entitlement, identity binding (explicit identityBound flag), purchase + restore (cache seeded onSuccess), Profile upgrade card, and free-tier gating (2 recipe regenerations then paywall). Verified end-to-end on RC Test Store. State in /app/memory/revenuecat.md. Real store purchases need user store-side setup (App Store/Play IAP products + credentials).
+- [x] 7-day free trial on the annual plan (RevenueCat P1W); paywall shows trial via product introPrice (real store builds only — web Test Store doesn't expose it) — 2026-09-21.
+- [x] Premium-gated AI recipe photos: subscribers get AI-generated food photos; free users see a stock placeholder + "AI photo · Premium" badge (client-side gate via useSubscription) — 2026-09-21.
 
 ## Backlog
 ### P1
