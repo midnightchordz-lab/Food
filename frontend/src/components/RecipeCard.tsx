@@ -40,7 +40,7 @@ export type RecipeCardData = {
 };
 
 export function RecipeCard({
-  recipe, onPress, onSave, saved, saving, onAddToCart,
+  recipe, onPress, onSave, saved, saving, onAddToCart, rating, onRate,
 }: {
   recipe: RecipeCardData;
   onPress: () => void;
@@ -48,6 +48,8 @@ export function RecipeCard({
   saved?: boolean;
   saving?: boolean;
   onAddToCart?: () => void;
+  rating?: number;
+  onRate?: (value: number) => void;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -111,6 +113,16 @@ export function RecipeCard({
             </View>
           ) : null}
         </View>
+        {onRate ? (
+          <View style={styles.starRow}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Pressable key={n} testID={`rate-${recipe.title}-${n}`} onPress={() => onRate(n)} hitSlop={6} style={styles.star}>
+                <Icon name={(rating || 0) >= n ? 'star' : 'star-outline'} size={20} color={(rating || 0) >= n ? colors.accent : colors.borderStrong} />
+              </Pressable>
+            ))}
+            {rating ? <Text style={styles.ratingText}>Your rating</Text> : <Text style={styles.ratingText}>Rate this</Text>}
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -158,4 +170,7 @@ const useStyles = makeStyles(({ colors, radius }) => ({
   tagText: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.accent },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.mutedForeground },
+  starRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
+  star: { padding: 2 },
+  ratingText: { fontFamily: fonts.body, fontSize: 12, color: colors.mutedForeground, marginLeft: 8 },
 }));

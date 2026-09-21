@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Platform, KeyboardAvoidingView, Linking } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -27,7 +28,7 @@ export default function ImportRecipe() {
   const queryClient = useQueryClient();
   const { isSubscribed } = useSubscription();
 
-  const [tab, setTab] = useState<'link' | 'text'>('link');
+  const [tab, setTab] = useState<'link' | 'text' | 'photo'>('link');
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
   const [preview, setPreview] = useState<ImportedRecipe | null>(null);
@@ -44,6 +45,41 @@ export default function ImportRecipe() {
     onSuccess: (recipe) => setPreview(recipe),
     onError: (e: any) => toast.show(e?.response?.data?.detail || 'Could not import recipe', 'error'),
   });
+
+  const imageMut = useMutation({
+    mutationFn: async (base64: string) => {
+      const res = await api.post('/mobile-import/image', { image_data: base64, filename: 'photo.jpg' });
+      return res.data.recipe as ImportedRecipe;
+    },
+    onSuccess: (recipe) => setPreview(recipe),
+    onError: (e: any) => toast.show(e?.response?.data?.detail || 'Could not read that photo', 'error'),
+  });
+
+  const pickImage = async (fromCamera: boolean) => {
+    try {
+      let perm;
+      if (fromCamera) {
+        perm = await ImagePicker.getCameraPermissionsAsync();
+        if (!perm.granted && perm.canAskAgain) perm = await ImagePicker.requestCameraPermissionsAsync();
+      } else {
+        perm = await ImagePicker.getMediaLibraryPermissionsAsync();
+        if (!perm.granted && perm.canAskAgain) perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      }
+      if (!perm.granted) {
+        toast.show(fromCamera ? 'Camera access is needed' : 'Photo access is needed', 'error');
+        if (!perm.canAskAgain) Linking.openSettings();
+        return;
+      }
+      const opts: ImagePicker.ImagePickerOptions = { quality: 0.6, base64: true, mediaTypes: ['images'] };
+      const result = fromCamera
+        ? await ImagePicker.launchCameraAsync(opts)
+        : await ImagePicker.launchImageLibraryAsync(opts);
+      if (result.canceled || !result.assets?.[0]?.base64) return;
+      imageMut.mutate(result.assets[0].base64);
+    } catch {
+      toast.show('Could not open the camera', 'error');
+    }
+  };
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -81,10 +117,10 @@ export default function ImportRecipe() {
           {!preview ? (
             <>
               <View style={styles.segment}>
-                {(['link', 'text'] as const).map((t) => (
+                {(['link', 'text', 'photo'] as const).map((t) => (
                   <Pressable key={t} testID={`import-tab-${t}`} onPress={() => setTab(t)} style={[styles.segBtn, tab === t && styles.segBtnActive]}>
-                    <Icon name={t === 'link' ? 'link-variant' : 'text'} size={16} color={tab === t ? colors.foreground : colors.mutedForeground} />
-                    <Text style={[styles.segText, tab === t && styles.segTextActive]}>{t === 'link' ? 'From link' : 'Paste text'}</Text>
+                    <Icon name={t === 'link' ? 'link-variant' : t === 'text' ? 'text' : 'camera'} size={16} color={tab === t ? colors.foreground : colors.mutedForeground} />
+                    <Text style={[styles.segText, tab === t && styles.segTextActive]}>{t === 'link' ? 'Link' : t === 'text' ? 'Text' : 'Photo'}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -104,7 +140,7 @@ export default function ImportRecipe() {
                     keyboardType="url"
                   />
                 </View>
-              ) : (
+              ) : tab === 'text' ? (
                 <TextInput
                   testID="import-text"
                   style={styles.textArea}
@@ -115,17 +151,32 @@ export default function ImportRecipe() {
                   multiline
                   textAlignVertical="top"
                 />
+              ) : (
+                <View style={styles.photoWrap}>
+                  <Pressable style={styles.photoBtn} onPress={() => pickImage(true)} testID="import-camera">
+                    <Icon name="camera" size={26} color={colors.primary} />
+                    <Text style={styles.photoBtnText}>Take a photo</Text>
+                  </Pressable>
+                  <Pressable style={styles.photoBtn} onPress={() => pickImage(false)} testID="import-library">
+                    <Icon name="image-multiple" size={26} color={colors.primary} />
+                    <Text style={styles.photoBtnText}>Choose from library</Text>
+                  </Pressable>
+                </View>
               )}
 
               <View style={{ height: 16 }} />
-              <Button
-                label="Import recipe"
-                icon="magic-staff"
-                onPress={() => importMut.mutate()}
-                loading={importMut.isPending}
-                disabled={tab === 'link' ? !url.trim() : text.trim().length < 20}
-                testID="import-submit"
-              />
+              {tab !== 'photo' ? (
+                <Button
+                  label="Import recipe"
+                  icon="magic-staff"
+                  onPress={() => importMut.mutate()}
+                  loading={importMut.isPending}
+                  disabled={tab === 'link' ? !url.trim() : text.trim().length < 20}
+                  testID="import-submit"
+                />
+              ) : imageMut.isPending ? (
+                <Button label="Reading your photo…" icon="loading" onPress={() => {}} loading testID="import-photo-loading" />
+              ) : null}
               <Text style={styles.hint}>Our AI chef rewrites it into clear steps with timings and tips.</Text>
             </>
           ) : (
@@ -190,6 +241,9 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, paddingHorizontal: 16, height: 56 },
   input: { flex: 1, fontFamily: f.body, fontSize: 15, color: colors.foreground, height: '100%' },
   textArea: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 16, fontFamily: f.body, fontSize: 15, color: colors.foreground, minHeight: 200 },
+  photoWrap: { gap: 12 },
+  photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 20 },
+  photoBtnText: { fontFamily: f.bodySemiBold, fontSize: 15.5, color: colors.foreground },
   hint: { fontFamily: f.body, fontSize: 13, color: colors.mutedForeground, textAlign: 'center', marginTop: 14, lineHeight: 19 },
   previewTitle: { fontFamily: f.serif, fontSize: 28, color: colors.foreground, lineHeight: 32 },
   previewDesc: { fontFamily: f.body, fontSize: 14.5, color: colors.mutedForeground, marginTop: 8, lineHeight: 21 },

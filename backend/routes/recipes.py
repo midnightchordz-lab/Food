@@ -319,6 +319,20 @@ async def get_recipe_ratings(recipe_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/my-ratings")
+async def get_my_ratings(current_user: User = Depends(get_current_user)):
+    """Return a map of recipe_id -> the current user's rating."""
+    try:
+        ratings = await db.recipe_ratings.find(
+            {"user_id": current_user.id}, {"_id": 0, "recipe_id": 1, "rating": 1}
+        ).to_list(500)
+        return {"ratings": {r["recipe_id"]: r["rating"] for r in ratings}}
+    except Exception as e:
+        logging.error(f"Error fetching my ratings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @router.post("/search")
 async def search_recipes(search_params: RecipeSearchRequest, current_user: User = Depends(get_current_user)):
     try:

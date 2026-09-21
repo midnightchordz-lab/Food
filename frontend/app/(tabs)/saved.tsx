@@ -47,7 +47,29 @@ export default function Saved() {
     onError: () => toast.show('Could not add to shopping list', 'error'),
   });
 
-  const recipes = Array.isArray(data) ? data : [];
+  const { data: ratingsMap } = useQuery({
+    queryKey: ['my-ratings'],
+    queryFn: async () => {
+      const res = await api.get('/recipes/my-ratings');
+      return (res.data.ratings || {}) as Record<string, number>;
+    },
+  });
+
+  const rateMut = useMutation({
+    mutationFn: async ({ id, rating }: { id: string; rating: number }) => {
+      await api.post(`/recipes/${id}/rate`, { rating });
+    },
+    onSuccess: (_d, { id, rating }) => {
+      queryClient.setQueryData(['my-ratings'], (prev: Record<string, number> = {}) => ({ ...prev, [id]: rating }));
+      toast.show('Thanks for rating!', 'success');
+    },
+    onError: () => toast.show('Could not save rating', 'error'),
+  });
+
+  const ratings = ratingsMap || {};
+  const recipes = (Array.isArray(data) ? data : [])
+    .slice()
+    .sort((a, b) => (ratings[b.id] || 0) - (ratings[a.id] || 0));
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -97,6 +119,8 @@ export default function Saved() {
                 })
               }
               onAddToCart={() => cartMut.mutate(r.id)}
+              rating={ratings[r.id]}
+              onRate={(value) => rateMut.mutate({ id: r.id, rating: value })}
             />
           ))}
         </ScrollView>

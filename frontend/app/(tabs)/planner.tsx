@@ -1,21 +1,26 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, Button, Loading, useToast } from '@/src/components/ui';
+import { useSubscription } from '@/src/lib/revenuecat';
 import { MOODS, DIETARY_PREFS } from '@/src/constants/data';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const MEALS = ['breakfast', 'lunch', 'dinner'];
+const FREE_PREVIEW_DAYS = 2;
 
 export default function Planner() {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
   const { colors } = useTheme();
   const toast = useToast();
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const { isSubscribed } = useSubscription();
 
   const [mood, setMood] = useState('cozy');
   const [dietary, setDietary] = useState('vegetarian');
@@ -46,6 +51,37 @@ export default function Planner() {
 
   const plan = data?.plan;
   const meals = plan?.meals || {};
+
+  const collectMealNames = () => {
+    const names: string[] = [];
+    DAYS.forEach((day) => {
+      const dayMeals = meals[day] || meals[day.toLowerCase()] || {};
+      MEALS.forEach((mt) => {
+        const v = dayMeals[mt];
+        if (v && typeof v === 'string') names.push(v);
+      });
+    });
+    return names;
+  };
+
+  const addWeekMut = useMutation({
+    mutationFn: async () => {
+      const names = collectMealNames();
+      const existing = await api.get('/shopping-list');
+      const current = (existing.data.items || []) as { name: string; checked: boolean }[];
+      const have = new Set(current.map((i) => i.name.toLowerCase()));
+      const additions = names.filter((n) => !have.has(n.toLowerCase())).map((n) => ({ name: n, checked: false }));
+      await api.post('/shopping-list', { items: [...current, ...additions] });
+      return additions.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
+      toast.show(count ? `Added ${count} meals to your list` : 'Everything is already on your list', 'success');
+    },
+    onError: () => toast.show('Could not update shopping list', 'error'),
+  });
+
+  const visibleDays = isSubscribed ? DAYS : DAYS.slice(0, FREE_PREVIEW_DAYS);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -106,28 +142,45 @@ export default function Planner() {
               <Text style={styles.emptyText}>No plan for this week yet.{'\n'}Pick a mood and generate one above.</Text>
             </View>
           ) : (
-            DAYS.map((day) => {
-              const dayMeals = meals[day] || meals[day.toLowerCase()] || {};
-              const hasAny = MEALS.some((mt) => dayMeals[mt]);
-              if (!hasAny) return null;
-              return (
-                <View key={day} style={styles.dayCard}>
-                  <Text style={styles.dayTitle}>{day}</Text>
-                  {MEALS.map((mt) => {
-                    const val = dayMeals[mt];
-                    if (!val) return null;
-                    return (
-                      <View key={mt} style={styles.mealRow}>
-                        <View style={styles.mealTypePill}>
-                          <Text style={styles.mealTypeText}>{mt[0].toUpperCase() + mt.slice(1)}</Text>
+            <>
+              {visibleDays.map((day) => {
+                const dayMeals = meals[day] || meals[day.toLowerCase()] || {};
+                const hasAny = MEALS.some((mt) => dayMeals[mt]);
+                if (!hasAny) return null;
+                return (
+                  <View key={day} style={styles.dayCard}>
+                    <Text style={styles.dayTitle}>{day}</Text>
+                    {MEALS.map((mt) => {
+                      const val = dayMeals[mt];
+                      if (!val) return null;
+                      return (
+                        <View key={mt} style={styles.mealRow}>
+                          <View style={styles.mealTypePill}>
+                            <Text style={styles.mealTypeText}>{mt[0].toUpperCase() + mt.slice(1)}</Text>
+                          </View>
+                          <Text style={styles.mealName} numberOfLines={2}>{typeof val === 'string' ? val : JSON.stringify(val)}</Text>
                         </View>
-                        <Text style={styles.mealName} numberOfLines={2}>{typeof val === 'string' ? val : JSON.stringify(val)}</Text>
-                      </View>
-                    );
-                  })}
+                      );
+                    })}
+                  </View>
+                );
+              })}
+
+              {data?.has_plan && !isSubscribed ? (
+                <Pressable style={styles.lockCard} onPress={() => router.push('/paywall')} testID="planner-upgrade">
+                  <Icon name="crown" size={26} color={colors.accent} />
+                  <Text style={styles.lockTitle}>Unlock the full 7-day plan</Text>
+                  <Text style={styles.lockDesc}>You're seeing a {FREE_PREVIEW_DAYS}-day preview. Go Premium for the whole week plus one-tap shopping lists.</Text>
+                  <View style={styles.lockCta}><Text style={styles.lockCtaText}>Go Premium</Text></View>
+                </Pressable>
+              ) : null}
+
+              {data?.has_plan && isSubscribed ? (
+                <View style={{ marginTop: 4 }}>
+                  <Button label="Add week to shopping list" icon="cart-plus" variant="outline" onPress={() => addWeekMut.mutate()} loading={addWeekMut.isPending} testID="add-week-to-list" />
                 </View>
-              );
-            })
+              ) : null}
+            </>
           )}
         </ScrollView>
       )}
@@ -154,4 +207,9 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   mealTypePill: { width: 78, backgroundColor: colors.primarySoft, borderRadius: 999, paddingVertical: 5, alignItems: 'center' },
   mealTypeText: { fontFamily: f.bodySemiBold, fontSize: 11.5, color: colors.primary },
   mealName: { flex: 1, fontFamily: f.body, fontSize: 14.5, color: colors.foreground, lineHeight: 20 },
+  lockCard: { alignItems: 'center', gap: 8, backgroundColor: colors.accentSoft, borderRadius: radius.lg, padding: 22, marginTop: 4, marginBottom: 12 },
+  lockTitle: { fontFamily: f.serif, fontSize: 22, color: colors.foreground, textAlign: 'center' },
+  lockDesc: { fontFamily: f.body, fontSize: 13.5, color: colors.mutedForeground, textAlign: 'center', lineHeight: 20 },
+  lockCta: { marginTop: 8, backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 22, paddingVertical: 11 },
+  lockCtaText: { fontFamily: f.bodySemiBold, fontSize: 14, color: colors.accentForeground },
 }));

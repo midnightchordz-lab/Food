@@ -18,11 +18,14 @@
       "bundleIdentifier": "in.moodfood.app",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Snap a cookbook page to import a recipe",
+        "NSPhotoLibraryUsageDescription": "Import a recipe from a saved photo"
       }
     },
     "android": {
       "package": "in.moodfood.app",
+      "permissions": ["android.permission.CAMERA"],
       "adaptiveIcon": {
         "backgroundColor": "#F9F8F6",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -38,6 +41,13 @@
       "expo-status-bar",
       "expo-image",
       "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Import a recipe from a saved photo",
+          "cameraPermission": "Snap a cookbook page to import a recipe"
+        }
+      ],
       "@react-native-vector-icons/material-design-icons",
       "expo-splash-screen",
       "expo-secure-store"

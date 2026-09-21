@@ -47,6 +47,10 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - [x] Premium-gated AI recipe photos: subscribers get AI-generated food photos; free users see a stock placeholder + "AI photo · Premium" badge (client-side gate via useSubscription) — 2026-09-21.
 - [x] Recipe Import (Premium): Saved '+' → /import screen; import from link or pasted text via unguarded /api/mobile-import/url|text (AI convert), preview, save via /api/import/save. Gated client-side on RevenueCat isSubscribed (free users see paywall lock) — 2026-09-21.
 - [x] Trial badge "7 days free" on Profile Premium card for non-subscribers — 2026-09-21.
+- [x] Premium Planner: free users see a 2-day preview + upgrade lock card; subscribers get full 7 days (client-side gate) — 2026-09-21.
+- [x] Meal Plan → List: subscribers' "Add week to shopping list" appends all plan meals to /api/shopping-list — 2026-09-21.
+- [x] Import from Photo (Premium): Import screen 'Photo' tab (camera/library via expo-image-picker + permissions) → /api/mobile-import/image (AI vision) — 2026-09-21.
+- [x] Recipe Ratings: 5-star row on Saved cards (POST /api/recipes/{id}/rate, GET /api/recipes/my-ratings); Saved list sorts highest-rated first — 2026-09-21.
 
 ## Backlog
 ### P1
