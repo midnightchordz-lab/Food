@@ -39,6 +39,9 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - [x] Profile tab (user info, saved count, sign out).
 - [x] Backend tested: 13/13 endpoints pass.
 - [x] Food Exclusions & Allergies editor (Profile → screen; GET/POST /api/exclusions) — 2026-09-21. Also fixed a legacy `userId` unique index on user_exclusions (now `user_id`, migrated on startup).
+- [x] Shopping List screen (Profile → screen): manual add, check/uncheck, remove, clear-checked, persistence (GET/POST /api/shopping-list) + add-from-saved-recipe cart button (POST /api/recipes/{id}/add-to-shopping-list) — 2026-09-21.
+- [x] Exclusion Badge on Discover header (shows active exclusions, taps to editor) and exclusions now injected into AI recipe generation prompt — 2026-09-21.
+- [x] Fixed query-key collision crash: profile.tsx no longer overwrites the ['saved-recipes'] array cache with a count.
 
 ## Backlog
 ### P1

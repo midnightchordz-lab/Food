@@ -16,13 +16,14 @@ export default function Profile() {
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  const { data: savedCount } = useQuery({
+  const { data: savedRecipes } = useQuery({
     queryKey: ['saved-recipes'],
     queryFn: async () => {
       const res = await api.get('/recipes/saved');
-      return (res.data.recipes || []).length as number;
+      return (res.data.recipes || []) as any[];
     },
   });
+  const savedCount = Array.isArray(savedRecipes) ? savedRecipes.length : 0;
 
   const initials = (user?.name || 'U').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
@@ -57,6 +58,12 @@ export default function Profile() {
           <Pressable style={styles.linkRow} onPress={() => router.push('/exclusions')} testID="open-exclusions">
             <View style={[styles.rowIcon, { backgroundColor: colors.accentSoft }]}><Icon name="silverware-variant" size={19} color={colors.accent} /></View>
             <Text style={styles.rowLabel}>Food exclusions & allergies</Text>
+            <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
+          <View style={styles.rowDivider} />
+          <Pressable style={styles.linkRow} onPress={() => router.push('/shopping')} testID="open-shopping">
+            <View style={[styles.rowIcon, { backgroundColor: colors.accentSoft }]}><Icon name="cart-outline" size={19} color={colors.accent} /></View>
+            <Text style={styles.rowLabel}>Shopping list</Text>
             <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
           </Pressable>
           <View style={styles.rowDivider} />

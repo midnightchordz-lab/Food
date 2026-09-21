@@ -1,0 +1,40 @@
+{
+  "summary": "Frontend-only testing of Shopping List + Exclusion Badge features. Shopping List CRUD (add/toggle/remove/clear-checked) and persistence work correctly. Exclusion Badge on Discover renders correctly ('Avoiding Peanuts, Shellfish') and navigates to /exclusions on tap. Cart button on Saved recipe successfully POSTs to /api/recipes/{id}/add-to-shopping-list (200) and shows the 'Ingredients added to shopping list' toast. CRITICAL BUG: immediately after that success, the Saved screen crashes with a red-screen 'recipes.map is not a function' at app/(tabs)/saved.tsx:68:20 — the cart-mutation appears to cause a saved-recipes refetch whose transient/returned state is not an array, blowing up the render. All other listed features passed. No deprecated Expo packages spotted in the reviewed files (no expo-av/expo-barcode-scanner/expo-background-fetch usage).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Saved tab (RecipeCard cart button)",
+        "issue": "After tapping the cart button on a saved recipe, the shopping-list POST returns 200 and toast fires, but the Saved screen immediately red-screens with 'Uncaught Error: recipes.map is not a function' at app/(tabs)/saved.tsx:68 ({recipes.map((r) => ( ... ))}). Reproduction: fresh account → generate 4 recipes on Discover → save one → open Saved tab → tap cart-<Title>. Root cause hypothesis: the cart mutation's onSuccess (or a react-query refocus refetch) re-runs GET /api/recipes/saved and briefly `data` is not an array before queryFn maps to `res.data.recipes || []`, OR the response body during that refetch is not `{recipes: [...]}`. Suggested fix: harden the render — `const recipes = Array.isArray(data) ? data : [];` — AND/OR make queryFn more defensive: `return Array.isArray(res.data?.recipes) ? res.data.recipes : []`. This is a red-screen crash and must be fixed.",
+        "testID": "cart-<Title>",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Saved recipe → Add ingredients to shopping list",
+        "issue": "API integration itself works (POST /api/recipes/{id}/add-to-shopping-list returns 200 and toast appears), but the follow-up render crashes on Saved screen (see ui_bugs above), preventing the user from continuing without a reload. Cannot verify ingredients actually landed in the shopping list from the UI because navigation after the crash is broken until reload. (Backend was previously verified via curl per the review request, so the ingredients likely do persist.)",
+        "affected_testIDs": ["cart-<Title>", "shop-item-*"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_99.json"],
+  "action_items": [
+    "URGENT: Fix red-screen crash in /app/frontend/app/(tabs)/saved.tsx line 68 — guard the render with `const recipes = Array.isArray(data) ? data : [];` and/or make the queryFn defensive: `return Array.isArray(res.data?.recipes) ? res.data.recipes : []`.",
+    "After the fix, re-verify: cart button → toast → Shopping List contains the recipe's ingredients (open Profile → Shopping list).",
+    "Optional QA polish: the /exclusions screen does not reflect the currently saved exclusions when opened again (chips selected state lost on remount); it still saves and the badge stays correct, but showing existing selections would be nicer UX. Not in scope for this iteration."
+  ],
+  "critical_code_review_comments": [
+    "app/(tabs)/saved.tsx:68 uses `recipes.map` where `recipes = data || []` — but `data` is whatever queryFn returned; if react-query returns cached/legacy data of a different shape (e.g., object), this crashes. Wrap with Array.isArray to prevent red screen.",
+    "RecipeCard renders two `save-<title>` Pressables (lines 77 and 84 of src/components/RecipeCard.tsx) — the second one is dead-only when onSave is set, but Playwright/testers will hit strict-mode duplicate testID warnings. Consider removing the duplicate or using distinct testIDs."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (frontend-only)", "frontend": "75% (Shopping list CRUD + Exclusion Badge pass; Saved→Cart flow crashes after success)" },
+  "seed_data_creation": "Registered fresh accounts test+<timestamp>@example.com / Test1234 during runs; set Peanuts+Shellfish exclusions; saved a Caprese recipe. No manual DB seeding required.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Shopping List (Profile → open-shopping) is fully functional including persistence via POST/GET /api/shopping-list. Exclusion Badge on Discover renders and navigates. The only broken piece is the Saved screen crashing right after a successful cart POST. Fix is a one-line guard in saved.tsx. Re-test scenario: register → generate 4 recipes → save first → Saved tab → tap cart → verify no red screen → open Shopping List and confirm ingredients present.",
+  "rca_of_issue": "Red screen 'recipes.map is not a function' at app/(tabs)/saved.tsx:68 occurs after POST /api/recipes/{id}/add-to-shopping-list succeeds. Network trace shows a second GET /api/recipes/saved fires right after the cart click (likely from react-query refetch on focus/invalidation), and during that transient state `data` is not an array so `recipes.map(...)` throws. Mitigation: coerce `recipes` to an array on render + harden queryFn to always return an array."
+}

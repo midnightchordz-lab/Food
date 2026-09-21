@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native'
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
@@ -32,16 +32,26 @@ export default function Discover() {
 
   const sessionId = React.useRef(`session-${Date.now()}`).current;
 
+  const exclusionsQuery = useQuery({
+    queryKey: ['exclusions'],
+    queryFn: async () => {
+      const res = await api.get('/exclusions');
+      return (res.data.excluded_ingredient_names || []) as string[];
+    },
+  });
+  const exclusions = exclusionsQuery.data || [];
+
   const buildMessage = (wantDifferent = false) => {
     const m = MOODS.find((x) => x.id === mood);
     const mt = MEAL_TYPES.find((x) => x.id === meal);
     const dp = DIETARY_PREFS.find((x) => x.id === dietary);
     const cu = cuisine === 'any' ? 'any cuisine' : CUISINES.find((x) => x.id === cuisine)?.label || 'any cuisine';
+    const avoid = exclusions.length ? `\n- Avoid these ingredients entirely: ${exclusions.join(', ')}` : '';
     return `[User Preferences]
 - Mood: ${m?.label} (${m?.description})
 - Meal Type: ${mt?.label}
 - Dietary Preference: ${dp?.label}
-- Cuisine(s): ${cu}
+- Cuisine(s): ${cu}${avoid}
 
 Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?.toLowerCase()} mood, are ${dp?.label?.toLowerCase()} friendly, and feature authentic ${cu} flavors. Give each a creative, appetizing name.${wantDifferent ? ' Show me completely DIFFERENT recipes than before.' : ''}`;
   };
@@ -134,6 +144,15 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
               <View key={i} style={[styles.progressDot, { backgroundColor: i <= stepIndex ? colors.primary : colors.border }]} />
             ))}
           </View>
+        )}
+
+        {exclusions.length > 0 && (
+          <Pressable style={styles.exclBadge} onPress={() => router.push('/exclusions')} testID="exclusion-badge">
+            <Icon name="shield-check" size={14} color={colors.primary} />
+            <Text style={styles.exclBadgeText} numberOfLines={1}>
+              Avoiding {exclusions.slice(0, 2).join(', ')}{exclusions.length > 2 ? ` +${exclusions.length - 2}` : ''}
+            </Text>
+          </Pressable>
         )}
       </View>
 
@@ -311,6 +330,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   iconBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   progress: { flexDirection: 'row', gap: 6, marginTop: 14 },
   progressDot: { flex: 1, height: 4, borderRadius: 2 },
+  exclBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 12, backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, maxWidth: '100%' },
+  exclBadgeText: { fontFamily: f.bodyMedium, fontSize: 12.5, color: colors.primary, flexShrink: 1 },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 6 },
   q: { fontFamily: f.serifMedium, fontSize: 24, color: colors.foreground, marginBottom: 18, lineHeight: 30 },
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16 },

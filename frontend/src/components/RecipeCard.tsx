@@ -39,13 +39,14 @@ export type RecipeCardData = {
 };
 
 export function RecipeCard({
-  recipe, onPress, onSave, saved, saving,
+  recipe, onPress, onSave, saved, saving, onAddToCart,
 }: {
   recipe: RecipeCardData;
   onPress: () => void;
   onSave?: () => void;
   saved?: boolean;
   saving?: boolean;
+  onAddToCart?: () => void;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -66,12 +67,19 @@ export function RecipeCard({
             <Text style={styles.imgBadgeText}>Plating…</Text>
           </View>
         ) : null}
+        <View style={styles.actions}>
+          {onAddToCart ? (
+            <Pressable testID={`cart-${recipe.title}`} onPress={onAddToCart} style={styles.actionBtn} hitSlop={8}>
+              <Icon name="cart-plus" size={19} color="#FFFFFF" />
+            </Pressable>
+          ) : null}
+          {onSave ? (
+            <Pressable testID={`save-${recipe.title}`} onPress={onSave} style={styles.actionBtn} hitSlop={8}>
+              <Icon name={saved ? 'heart' : 'heart-outline'} size={19} color={saved ? colors.accent : '#FFFFFF'} />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
-      {onSave ? (
-        <Pressable testID={`save-${recipe.title}`} onPress={onSave} style={styles.saveBtn} hitSlop={8}>
-          <Icon name={saved ? 'heart' : 'heart-outline'} size={20} color={saved ? colors.accent : '#FFFFFF'} />
-        </Pressable>
-      ) : null}
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>{recipe.title}</Text>
         {recipe.description ? (
@@ -123,6 +131,11 @@ const useStyles = makeStyles(({ colors, radius }) => ({
     position: 'absolute', top: 12, right: 12,
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center',
+  },
+  actions: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', gap: 8 },
+  actionBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center',
   },
   body: { padding: 16 },
   title: { fontFamily: fonts.serif, fontSize: 21, color: colors.foreground, lineHeight: 25 },

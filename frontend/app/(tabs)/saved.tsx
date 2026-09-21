@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
-import { Loading, EmptyState } from '@/src/components/ui';
+import { Loading, EmptyState, useToast } from '@/src/components/ui';
 import { RecipeCard } from '@/src/components/RecipeCard';
 
 type SavedRecipe = {
@@ -25,16 +25,29 @@ export default function Saved() {
   const styles = useStyles();
   const { colors } = useTheme();
   const router = useRouter();
+  const toast = useToast();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['saved-recipes'],
     queryFn: async () => {
       const res = await api.get('/recipes/saved');
-      return (res.data.recipes || []) as SavedRecipe[];
+      return (Array.isArray(res.data?.recipes) ? res.data.recipes : []) as SavedRecipe[];
     },
   });
 
-  const recipes = data || [];
+  const cartMut = useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/recipes/${id}/add-to-shopping-list`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
+      toast.show('Ingredients added to shopping list', 'success');
+    },
+    onError: () => toast.show('Could not add to shopping list', 'error'),
+  });
+
+  const recipes = Array.isArray(data) ? data : [];
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -78,6 +91,7 @@ export default function Saved() {
                   },
                 })
               }
+              onAddToCart={() => cartMut.mutate(r.id)}
             />
           ))}
         </ScrollView>
