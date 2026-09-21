@@ -51,6 +51,10 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - [x] Meal Plan → List: subscribers' "Add week to shopping list" appends all plan meals to /api/shopping-list — 2026-09-21.
 - [x] Import from Photo (Premium): Import screen 'Photo' tab (camera/library via expo-image-picker + permissions) → /api/mobile-import/image (AI vision) — 2026-09-21.
 - [x] Recipe Ratings: 5-star row on Saved cards (POST /api/recipes/{id}/rate, GET /api/recipes/my-ratings); Saved list sorts highest-rated first — 2026-09-21.
+- [x] Import Photo Polish: captured photo is stored (disk, served under /api/recipe-image/img) and becomes the recipe's image — shown in the import preview and on the saved card. /import/save now honors a provided image_url; RecipeCard resolves relative /api image URLs — 2026-09-21.
+- [x] Rating Filter: Saved tab has "All" / "4★ & up" filter chips (with top-rated count); top-rated filter shows only recipes rated ≥4 (`app/(tabs)/saved.tsx`) — 2026-06.
+- [x] Meal Plan → Recipe: planner meal rows are tappable → open full recipe detail (`/recipe`) with the meal name as title (`app/(tabs)/planner.tsx`) — 2026-06.
+- [x] Weekly Plan Reminders (push): Emergent-managed push relay (`routes/push.py`: /api/register-push + send_push). Scheduler (`services/scheduled_tasks.py`) sends a Sunday 10:00 UTC "plan your week" nudge to all registered users. Frontend registers device on auth + tap-routing/denied-nudge in `app/_layout.tsx`. Requires deploy + native build to actually deliver (Expo Go/web cannot). EMERGENT_PUSH_KEY=placeholder in backend .env (deployer injects real key) — 2026-06.
 
 ## Backlog
 ### P1

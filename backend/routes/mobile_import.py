@@ -76,6 +76,16 @@ SOURCE CONTEXT: The recipe is being extracted from an image.
         recipe = json.loads(json_match.strip())
         recipe["importMethod"] = "image"
         recipe["importDate"] = datetime.now(timezone.utc).isoformat()
+        # Persist the captured photo and use it as the recipe image
+        try:
+            from .gen_image import IMAGE_DIR
+            import base64 as _b64
+            key = f"upload-{uuid.uuid4().hex}"
+            with open(IMAGE_DIR / f"{key}.png", "wb") as f:
+                f.write(_b64.b64decode(request.image_data))
+            recipe["image_url"] = f"/api/recipe-image/img/{key}.png"
+        except Exception as img_err:
+            logging.warning(f"[Mobile Image Import] could not store photo: {img_err}")
         return {"recipe": recipe, "source": "Photo"}
     except json.JSONDecodeError:
         raise HTTPException(status_code=422, detail="Couldn't read a recipe from that photo. Try a clearer shot.")

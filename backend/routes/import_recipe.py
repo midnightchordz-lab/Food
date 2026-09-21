@@ -547,7 +547,7 @@ async def save_imported_recipe(request: ImportSaveRequest, current_user: User = 
             "original_source": recipe_data.get("originalSource", ""),
             "import_date": recipe_data.get("importDate", datetime.now(timezone.utc).isoformat()),
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "image_url": get_food_image(recipe_data.get("name", "food"), recipe_data.get("cuisine", ""))
+            "image_url": recipe_data.get("image_url") or get_food_image(recipe_data.get("name", "food"), recipe_data.get("cuisine", ""))
         }
         
         await db.imported_recipes.insert_one(recipe_doc)

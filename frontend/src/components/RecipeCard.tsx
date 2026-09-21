@@ -55,7 +55,8 @@ export function RecipeCard({
   const { colors } = useTheme();
   const { isSubscribed } = useSubscription();
   const aiImg = useRecipeImage(recipe.title, recipe.cuisine, recipe.description, !recipe.image_url && isSubscribed);
-  const img = recipe.image_url || aiImg.data || foodImage(recipe.title, recipe.cuisine);
+  const resolvedImageUrl = recipe.image_url && recipe.image_url.startsWith('/') ? `${BACKEND}${recipe.image_url}` : recipe.image_url;
+  const img = resolvedImageUrl || aiImg.data || foodImage(recipe.title, recipe.cuisine);
   const showPremiumPhotoHint = !recipe.image_url && !isSubscribed;
 
   return (

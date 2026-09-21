@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Platform, KeyboardAvoidingView, Linking } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -9,6 +10,8 @@ import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
 
+const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL;
+
 type ImportedRecipe = {
   name?: string;
   description?: string;
@@ -17,6 +20,7 @@ type ImportedRecipe = {
   totalTime?: string;
   ingredients?: any[];
   instructions?: any[];
+  image_url?: string;
 };
 
 export default function ImportRecipe() {
@@ -181,6 +185,14 @@ export default function ImportRecipe() {
             </>
           ) : (
             <>
+              {preview.image_url ? (
+                <Image
+                  source={{ uri: preview.image_url.startsWith('/') ? `${BACKEND}${preview.image_url}` : preview.image_url }}
+                  style={styles.previewImg}
+                  contentFit="cover"
+                  transition={250}
+                />
+              ) : null}
               <Text style={styles.previewTitle}>{preview.name || 'Imported Recipe'}</Text>
               {preview.description ? <Text style={styles.previewDesc}>{preview.description}</Text> : null}
               <View style={styles.metaRow}>
@@ -246,6 +258,7 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   photoBtnText: { fontFamily: f.bodySemiBold, fontSize: 15.5, color: colors.foreground },
   hint: { fontFamily: f.body, fontSize: 13, color: colors.mutedForeground, textAlign: 'center', marginTop: 14, lineHeight: 19 },
   previewTitle: { fontFamily: f.serif, fontSize: 28, color: colors.foreground, lineHeight: 32 },
+  previewImg: { width: '100%', height: 180, borderRadius: radius.lg, backgroundColor: colors.secondary, marginBottom: 16 },
   previewDesc: { fontFamily: f.body, fontSize: 14.5, color: colors.mutedForeground, marginTop: 8, lineHeight: 21 },
   metaRow: { flexDirection: 'row', gap: 14, marginTop: 12, flexWrap: 'wrap' },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },

@@ -46,6 +46,7 @@ class ScheduledTasks:
     def __init__(self):
         self.last_daily_reset = None
         self.last_hourly_check = None
+        self.last_weekly_nudge = None  # ISO week string, e.g. "2026-W23"
     
     async def start(self):
         """Start the scheduled task runner"""
@@ -83,6 +84,11 @@ class ScheduledTasks:
                 if self._should_run_hourly(now):
                     await self.run_hourly_tasks()
                     self.last_hourly_check = now.replace(minute=0, second=0, microsecond=0)
+
+                # Run weekly plan nudge (Sunday morning UTC)
+                if self._should_run_weekly_nudge(now):
+                    await self.run_weekly_plan_nudge()
+                    self.last_weekly_nudge = now.strftime("%Y-W%W")
                 
                 # Sleep for 1 minute before next check
                 await asyncio.sleep(60)
@@ -112,6 +118,24 @@ class ScheduledTasks:
             return True
         
         return current_hour > self.last_hourly_check
+
+    def _should_run_weekly_nudge(self, now: datetime) -> bool:
+        """Send the plan-your-week nudge once on Sunday (>= 10:00 UTC)."""
+        # Python weekday(): Monday=0 ... Sunday=6
+        if now.weekday() != 6 or now.hour < 10:
+            return False
+        this_week = now.strftime("%Y-W%W")
+        return self.last_weekly_nudge != this_week
+
+    async def run_weekly_plan_nudge(self):
+        """Send the weekly meal-plan reminder push to all registered users."""
+        logger.info("Running weekly meal-plan nudge...")
+        try:
+            from routes.push import send_weekly_plan_nudge
+            count = await send_weekly_plan_nudge()
+            logger.info(f"Weekly meal-plan nudge sent to {count} users")
+        except Exception as e:
+            logger.error(f"Error sending weekly plan nudge: {e}")
     
     async def run_daily_tasks(self):
         """Run all daily scheduled tasks"""

@@ -1,0 +1,33 @@
+{
+  "summary": "Frontend-only test of two new features on top of existing MoodFood app: (1) Saved-tab Rating Filter chips and (2) Planner meal -> full recipe navigation. Seeded a fresh user rf_test_1790010499@example.com/Test1234 via /api/auth/register, saved 2 recipes via /api/recipes/save (Golden Turmeric Chicken, Silky Miso Ramen), rated them 5★ and 3★ respectively via /api/recipes/{id}/rate, and generated a weekly plan via /api/weekly-plan/generate (mood=cozy, dietary=vegetarian). Then logged in through the web preview UI at mobile viewport (390x844) and validated all UI behavior. RESULTS: ALL PASS — filter-all and filter-top-rated chips render; top-rated label shows '4★ & up · 1' with correct count suffix from the single 5★ recipe; tapping filter-top-rated hides the 3★ 'Silky Miso Ramen' and keeps only the 5★ 'Golden Turmeric Chicken'; tapping filter-all restores both. Regression: rate-<title>-1..5 stars (5 per card), open-import '+' button navigates to /import — all confirmed. Planner: plan-meal-monday-breakfast (and monday-lunch, tuesday-dinner) render on the free 2-day preview, each row has the chevron-right icon on the right, tapping it navigates to /recipe?title=... with the meal name shown in the detail hero, close-recipe button present, and the AI-generated markdown body (WARM CINNAMON APPLE OATMEAL, Recipe Information / Prep / Cook / Total time, bullets) fully renders within ~2s. No red-screen errors, no console errors (only pre-existing 'shadow*'/'pointerEvents' deprecation & useNativeDriver warnings from Expo web, unchanged from previous iterations).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/tmp/rf_saved_all.png",
+    "/tmp/rf_saved_topRated.png",
+    "/tmp/rf_planner.png",
+    "/tmp/rf_recipe_from_planner.png",
+    "/tmp/rf_recipe_final.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "saved.tsx correctly sorts by rating descending BEFORE filtering, so top-rated view keeps a stable sort. filterChip active-state uses accent color for top-rated (nice visual distinction from primary 'All' chip).",
+    "topRatedCount is computed from the un-filtered allRecipes list (before applying the filter), so it stays correct even while the filter is active — no stale-count bug.",
+    "Empty state branch for top-rated case correctly renders 'No 4★ recipes yet' (star-outline icon) via existing EmptyState component; the general 'No saved recipes yet' state remains for when there are 0 saved.",
+    "planner.tsx meal row is a Pressable with router.push({ pathname:'/recipe', params:{ title, cuisine:'International', meal, dietary } }). Meal titles from the plan (which include suffixes like '(~300cal)') are passed through as-is and rendered on the detail hero — correct behavior. Note: no ingredients/description are passed so the /recipe screen fetches full markdown via POST /api/recipes/detailed and uses foodImage() fallback for the hero — verified working.",
+    "chevron-right icon in mealRow gives a clear tap affordance; touch target of the row is a full-width horizontal Pressable ~40px tall (12+7+7 padding + text). Acceptable, though slightly under the 44pt guideline vertically.",
+    "recipe.tsx handles missing ingredients param safely with try/catch JSON.parse — no crash when navigating from planner (which doesn't pass ingredients)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100% (all 3 review items — saved filter chips, planner->recipe nav, regression — verified end-to-end at UI level)"},
+  "seed_data_creation": "Registered rf_test_1790010499@example.com / Test1234 via /api/auth/register. Saved 2 recipes with recipe_ids da26f275-... (Golden Turmeric Chicken) and 22d5e075-... (Silky Miso Ramen). Rated them 5 and 3 respectively. Generated a full 7-day weekly plan (cozy/vegetarian).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Welcome screen tabs are 'auth-tab-signup' (default) and 'auth-tab-signin' — NOT 'auth-tab-login'. To login as an existing user you MUST click auth-tab-signin first. Bottom-tab labels 'Discover','Saved','Planner','Profile' still lack testIDs — use page.get_by_text('<Name>', exact=True).first. Meal-row inner_text on planner is 'Breakfast\\n<mealName>\\n<chevronGlyph>' — the last line is the chevron unicode char, so split by newline and use [1] (or filter out short single-glyph lines) when reading meal name for assertions.",
+  "rca_of_issue": "N/A — no bugs found."
+}

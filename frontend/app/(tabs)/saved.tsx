@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
-import { makeStyles, useTheme, fonts } from '@/src/theme';
+import { makeStyles, useTheme } from '@/src/theme';
 import { Loading, EmptyState, Icon, useToast } from '@/src/components/ui';
 import { RecipeCard } from '@/src/components/RecipeCard';
 
@@ -66,26 +66,53 @@ export default function Saved() {
     onError: () => toast.show('Could not save rating', 'error'),
   });
 
+  const [topRatedOnly, setTopRatedOnly] = useState(false);
+
   const ratings = ratingsMap || {};
-  const recipes = (Array.isArray(data) ? data : [])
+  const allRecipes = (Array.isArray(data) ? data : [])
     .slice()
     .sort((a, b) => (ratings[b.id] || 0) - (ratings[a.id] || 0));
+  const recipes = topRatedOnly ? allRecipes.filter((r) => (ratings[r.id] || 0) >= 4) : allRecipes;
+  const topRatedCount = allRecipes.filter((r) => (ratings[r.id] || 0) >= 4).length;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Your Collection</Text>
-          <Text style={styles.sub}>{recipes.length} saved recipe{recipes.length === 1 ? '' : 's'}</Text>
+          <Text style={styles.sub}>{allRecipes.length} saved recipe{allRecipes.length === 1 ? '' : 's'}</Text>
         </View>
         <Pressable style={styles.importBtn} onPress={() => router.push('/import')} testID="open-import">
           <Icon name="plus" size={22} color={colors.primaryForeground} />
         </Pressable>
       </View>
+      {allRecipes.length > 0 ? (
+        <View style={styles.filterRow}>
+          <Pressable
+            testID="filter-all"
+            onPress={() => setTopRatedOnly(false)}
+            style={[styles.filterChip, { backgroundColor: !topRatedOnly ? colors.primary : colors.secondary }]}
+          >
+            <Text style={[styles.filterText, { color: !topRatedOnly ? colors.primaryForeground : colors.secondaryForeground }]}>All</Text>
+          </Pressable>
+          <Pressable
+            testID="filter-top-rated"
+            onPress={() => setTopRatedOnly(true)}
+            style={[styles.filterChip, { backgroundColor: topRatedOnly ? colors.accent : colors.secondary }]}
+          >
+            <Icon name="star" size={14} color={topRatedOnly ? colors.accentForeground : colors.accent} />
+            <Text style={[styles.filterText, { color: topRatedOnly ? colors.accentForeground : colors.secondaryForeground }]}>4★ &amp; up{topRatedCount ? ` · ${topRatedCount}` : ''}</Text>
+          </Pressable>
+        </View>
+      ) : null}
       {isLoading ? (
         <Loading />
       ) : recipes.length === 0 ? (
-        <EmptyState icon="heart-outline" title="No saved recipes yet" subtitle="Tap the heart on any recipe to keep it here for later." />
+        topRatedOnly ? (
+          <EmptyState icon="star-outline" title="No 4★ recipes yet" subtitle="Rate your favourites 4 stars or higher and they'll show up here." />
+        ) : (
+          <EmptyState icon="heart-outline" title="No saved recipes yet" subtitle="Tap the heart on any recipe to keep it here for later." />
+        )
       ) : (
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
@@ -133,6 +160,9 @@ const useStyles = makeStyles(({ colors, spacing, fonts: f }) => ({
   root: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: 10, paddingBottom: 8 },
   importBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  filterRow: { flexDirection: 'row', gap: 8, paddingHorizontal: spacing.lg, paddingTop: 4, paddingBottom: 8 },
+  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  filterText: { fontFamily: f.bodyMedium, fontSize: 13 },
   title: { fontFamily: f.serif, fontSize: 32, color: colors.foreground },
   sub: { fontFamily: f.body, fontSize: 14, color: colors.mutedForeground, marginTop: 2 },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 10 },

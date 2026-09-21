@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
-import { makeStyles, useTheme, fonts } from '@/src/theme';
+import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, Loading, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
 import { MOODS, DIETARY_PREFS } from '@/src/constants/data';
@@ -153,13 +153,30 @@ export default function Planner() {
                     {MEALS.map((mt) => {
                       const val = dayMeals[mt];
                       if (!val) return null;
+                      const mealName = typeof val === 'string' ? val : JSON.stringify(val);
                       return (
-                        <View key={mt} style={styles.mealRow}>
+                        <Pressable
+                          key={mt}
+                          style={styles.mealRow}
+                          testID={`plan-meal-${day.toLowerCase()}-${mt}`}
+                          onPress={() =>
+                            router.push({
+                              pathname: '/recipe',
+                              params: {
+                                title: mealName,
+                                cuisine: 'International',
+                                meal: mt[0].toUpperCase() + mt.slice(1),
+                                dietary: dietary,
+                              },
+                            })
+                          }
+                        >
                           <View style={styles.mealTypePill}>
                             <Text style={styles.mealTypeText}>{mt[0].toUpperCase() + mt.slice(1)}</Text>
                           </View>
-                          <Text style={styles.mealName} numberOfLines={2}>{typeof val === 'string' ? val : JSON.stringify(val)}</Text>
-                        </View>
+                          <Text style={styles.mealName} numberOfLines={2}>{mealName}</Text>
+                          <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+                        </Pressable>
                       );
                     })}
                   </View>
@@ -170,7 +187,7 @@ export default function Planner() {
                 <Pressable style={styles.lockCard} onPress={() => router.push('/paywall')} testID="planner-upgrade">
                   <Icon name="crown" size={26} color={colors.accent} />
                   <Text style={styles.lockTitle}>Unlock the full 7-day plan</Text>
-                  <Text style={styles.lockDesc}>You're seeing a {FREE_PREVIEW_DAYS}-day preview. Go Premium for the whole week plus one-tap shopping lists.</Text>
+                  <Text style={styles.lockDesc}>You&apos;re seeing a {FREE_PREVIEW_DAYS}-day preview. Go Premium for the whole week plus one-tap shopping lists.</Text>
                   <View style={styles.lockCta}><Text style={styles.lockCtaText}>Go Premium</Text></View>
                 </Pressable>
               ) : null}

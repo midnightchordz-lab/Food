@@ -1,18 +1,43 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Stack } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import { Stack, useRouter } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
-import { View } from 'react-native';
+import { View, Platform, Alert, Linking } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '@/src/auth/AuthContext';
 import { ToastProvider } from '@/src/components/ui';
 import { useTheme } from '@/src/theme';
 import { initializeRevenueCat, SubscriptionProvider, rcEnabled, useSubscription } from '@/src/lib/revenuecat';
+import { registerForPush } from '@/src/lib/push';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Push: foreground display behavior — MODULE SCOPE
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
+
+// Push: Android channel — MODULE SCOPE
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync('default', {
+    name: 'Default',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'default',
+  }).catch(() => {});
+}
 
 try {
   initializeRevenueCat();
@@ -46,6 +71,66 @@ function RevenueCatIdentityBridge() {
       }
     })();
   }, [user?.id, bindIdentity, unbindIdentity]);
+
+  return null;
+}
+
+// Registers for push on auth, and wires notification tap handling + denied-permission nudge.
+function PushBridge() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const registeredRef = useRef<string | null>(null);
+
+  // Register the device whenever we have an authenticated user.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    if (user?.id && registeredRef.current !== user.id) {
+      registeredRef.current = user.id;
+      registerForPush(user.id);
+    } else if (!user?.id) {
+      registeredRef.current = null;
+    }
+  }, [user?.id]);
+
+  // Notification tap routing + cold-start + denied nudge.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    const openUrl = (data: Record<string, any>) => {
+      const url = data?.deeplink || data?.action_url;
+      if (!url) return;
+      if (String(url).startsWith('http')) Linking.openURL(url);
+      else router.push(url);
+    };
+
+    const tapSub = Notifications.addNotificationResponseReceivedListener((response) => {
+      openUrl(response.notification.request.content.data || {});
+    });
+
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) openUrl(response.notification.request.content.data || {});
+    });
+
+    (async () => {
+      const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+      if (status !== 'denied' || canAskAgain) return;
+      const lastNudge = await AsyncStorage.getItem('pushNudgeAt');
+      const oneWeek = 7 * 24 * 60 * 60 * 1000;
+      if (lastNudge && Date.now() - Number(lastNudge) <= oneWeek) return;
+      Alert.alert(
+        'Turn on reminders',
+        'Enable notifications to get a gentle Sunday nudge to plan your week of meals.',
+        [
+          { text: 'Later', style: 'cancel', onPress: () => AsyncStorage.setItem('pushNudgeAt', String(Date.now())) },
+          { text: 'Open Settings', onPress: () => { AsyncStorage.setItem('pushNudgeAt', String(Date.now())); Linking.openSettings(); } },
+        ],
+      );
+    })();
+
+    return () => {
+      tapSub.remove();
+    };
+  }, []);
 
   return null;
 }
@@ -99,6 +184,7 @@ export default function RootLayout() {
             <SubscriptionProvider>
               <ToastProvider>
                 <RevenueCatIdentityBridge />
+                <PushBridge />
                 <ThemedStack />
               </ToastProvider>
             </SubscriptionProvider>
