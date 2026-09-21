@@ -52,7 +52,13 @@ export default function Profile() {
             <Text style={styles.premiumTitle}>{isSubscribed ? 'Premium active' : 'MoodFood Premium'}</Text>
             <Text style={styles.premiumDesc}>{isSubscribed ? 'You have every feature unlocked' : 'Unlimited recipes, plans & more'}</Text>
           </View>
-          <Icon name={isSubscribed ? 'check-circle' : 'chevron-right'} size={22} color={isSubscribed ? colors.success : colors.accent} />
+          {isSubscribed ? (
+            <Icon name="check-circle" size={22} color={colors.success} />
+          ) : (
+            <View style={styles.trialRibbon}>
+              <Text style={styles.trialRibbonText}>7 days free</Text>
+            </View>
+          )}
         </Pressable>
 
         <View style={styles.card}>
@@ -107,6 +113,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   premiumIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
   premiumTitle: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.foreground },
   premiumDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.mutedForeground, marginTop: 1 },
+  trialRibbon: { backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  trialRibbonText: { fontFamily: fonts.bodyBold, fontSize: 11, color: colors.accentForeground, letterSpacing: 0.3 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15 },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   rowIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },

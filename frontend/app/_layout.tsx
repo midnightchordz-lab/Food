@@ -69,6 +69,7 @@ function ThemedStack() {
         <Stack.Screen name="exclusions" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="shopping" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="import" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
     </>
   );

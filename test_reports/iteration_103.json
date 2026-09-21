@@ -1,0 +1,33 @@
+{
+  "summary": "Frontend-only verification of the two new features on Expo web preview. ALL FIVE requested cases PASS. (1) TRIAL RIBBON: fresh registered user's Profile 'premium-card' shows the '7 days free' ribbon; after Test Store purchase the same card flips to 'Premium active / You have every feature unlocked' with a check-circle icon and NO ribbon (screenshots /tmp/06_profile.png free-with-ribbon, /tmp/11_after_purchase.png active). (2) SAVED '+': Saved tab shows the round primary '+' button [data-testid=\"open-import\"] top-right; tapping it navigates to /import (screenshot /tmp/07_saved.png, /tmp/08_import_locked.png). (3) FREE gate: Import screen shows lock UI with 'Unlock with Premium' [data-testid=\"import-upgrade\"]; tapping it routes to the paywall (/tmp/09_paywall.png shows paywall-subscribe visible). (4) SUBSCRIBED import: after Test Store 'Test valid purchase', reopening Saved -> '+' shows the input UI with tab toggle testIDs import-tab-link and import-tab-text (no import-upgrade). Switching to Paste text, pasting a full multi-sentence recipe (Creamy Lemon Garlic Pasta, ~450 chars) and tapping import-submit produced a structured AI preview (title/description/ingredients rendered) within ~10s; tapping import-save toasted success, invalidated saved-recipes and navigated to Saved which now shows '1 saved recipe' with the imported card visible (/tmp/13_preview.png, /tmp/14_saved_after.png). (5) NO REGRESSIONS: Saved tab loaded without any red screen (no [data-testid=\"error-screen\"]), no 'Pressable is not defined' error in the console; Pressable is properly imported in saved.tsx line 2. The reactive Premium flip works without a page reload (confirmed by observing Profile card state immediately after RC Test Store 'Test valid purchase'). Only carry-over non-blocking warnings remain ('shadow*' and 'props.pointerEvents' Expo web deprecations noted in iteration_101/102).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Expo web console warnings",
+        "issue": "Non-blocking deprecation warnings still logged: '\"shadow*\" style props are deprecated. Use \"boxShadow\"' and 'props.pointerEvents is deprecated. Use style.pointerEvents'. Present in shared theme (makeStyles) and RecipeCard.tsx. Reference: /app/frontend/src/theme and /app/frontend/src/components/RecipeCard.tsx."
+      }
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_103.json"],
+  "action_items": [
+    "None required for the two shipped features — all five requested test cases pass end-to-end on Expo web preview against the RC Test Store.",
+    "OPTIONAL polish (carry-over): migrate remaining shadow* styles to boxShadow and pointerEvents prop usage to style.pointerEvents to silence Expo web deprecation warnings."
+  ],
+  "critical_code_review_comments": [
+    "profile.tsx correctly conditions the ribbon: isSubscribed ? <check-circle> : <trialRibbon>. Ribbon text 'AI-verified' as '7 days free' (line 59). Correct.",
+    "saved.tsx imports Pressable from 'react-native' (line 2) and uses data-testid=\"open-import\" (line 59). No 'Pressable is not defined' regression. Correct.",
+    "import.tsx correctly gates on useSubscription().isSubscribed; non-subscribers see lockWrap + Button 'Unlock with Premium' with testID import-upgrade -> router.replace('/paywall'). Subscribed users get tab toggle (import-tab-link / import-tab-text), inputs (import-url / import-text), import-submit, and after preview import-save & import-again. Gating is client-side by design per agent-to-agent context. Correct.",
+    "import.tsx save uses api.post('/import/save', { recipe: preview }), then invalidates ['saved-recipes'] and navigates to /(tabs)/saved. Verified: after save, Saved tab shows the new recipe count 1 with the imported title/description card."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (frontend-only)", "frontend": "100% for the 5 requested cases (trial ribbon free+sub, Saved '+', free lock -> paywall, subscribed import+save, no red-screen regression)" },
+  "seed_data_creation": "Registered two fresh accounts test+<timestamp>@example.com / Test1234 during the run. Purchased Test Store subscription for the second one and saved one imported recipe. No cleanup required (isolated per-user).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "To re-verify: register fresh -> Profile shows '7 days free' ribbon on premium-card. Saved tab -> '+' (open-import) -> free user sees import-upgrade lock; tap -> paywall-subscribe present. Subscribe: premium-card -> paywall-subscribe -> confirm-buy -> RC overlay 'Test valid purchase'. Return to Profile: card flips to 'Premium active' with no ribbon. Return to Saved -> '+': see import-tab-link/import-tab-text; use Paste text with a >20-char multi-sentence recipe -> import-submit -> wait ~10s for preview -> import-save -> redirected to Saved with new card visible.",
+  "rca_of_issue": "No new bugs found. Both features (7-day trial ribbon on non-subscribers and Premium-gated Recipe Import from Saved '+') work end-to-end on Expo web preview against the RC Test Store."
+}
