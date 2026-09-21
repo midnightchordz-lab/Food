@@ -8,6 +8,7 @@ import { api } from '@/src/api/client';
 import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, Button } from '@/src/components/ui';
+import { useSubscription } from '@/src/lib/revenuecat';
 
 export default function Profile() {
   const insets = useSafeAreaInsets();
@@ -15,6 +16,7 @@ export default function Profile() {
   const { colors } = useTheme();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { isSubscribed } = useSubscription();
 
   const { data: savedRecipes } = useQuery({
     queryKey: ['saved-recipes'],
@@ -43,6 +45,15 @@ export default function Profile() {
           <Text style={styles.name}>{user?.name}</Text>
           <Text style={styles.email}>{user?.email || 'Signed in'}</Text>
         </View>
+
+        <Pressable style={styles.premiumCard} onPress={() => router.push('/paywall')} testID="premium-card">
+          <View style={styles.premiumIcon}><Icon name="crown" size={22} color={colors.accentForeground} /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.premiumTitle}>{isSubscribed ? 'Premium active' : 'MoodFood Premium'}</Text>
+            <Text style={styles.premiumDesc}>{isSubscribed ? 'You have every feature unlocked' : 'Unlimited recipes, plans & more'}</Text>
+          </View>
+          <Icon name={isSubscribed ? 'check-circle' : 'chevron-right'} size={22} color={isSubscribed ? colors.success : colors.accent} />
+        </Pressable>
 
         <View style={styles.card}>
           {rows.map((r, i) => (
@@ -92,6 +103,10 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   name: { fontFamily: f.serif, fontSize: 28, color: colors.foreground, marginTop: 14 },
   email: { fontFamily: f.body, fontSize: 14, color: colors.mutedForeground, marginTop: 2 },
   card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingHorizontal: 16, marginBottom: 14 },
+  premiumCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.accentSoft, borderWidth: 1, borderColor: colors.accent, borderRadius: radius.lg, padding: 16, marginBottom: 14 },
+  premiumIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  premiumTitle: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.foreground },
+  premiumDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.mutedForeground, marginTop: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15 },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   rowIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },

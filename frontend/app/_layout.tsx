@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,15 +7,48 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import { AuthProvider } from '@/src/auth/AuthContext';
+import { AuthProvider, useAuth } from '@/src/auth/AuthContext';
 import { ToastProvider } from '@/src/components/ui';
 import { useTheme } from '@/src/theme';
+import { initializeRevenueCat, SubscriptionProvider, rcEnabled, useSubscription } from '@/src/lib/revenuecat';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+try {
+  initializeRevenueCat();
+} catch (err) {
+  console.warn('RevenueCat unavailable:', err);
+}
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
+
+// Binds RevenueCat identity to the app's stable backend user id on every auth path.
+function RevenueCatIdentityBridge() {
+  const { user } = useAuth();
+  const { bindIdentity, unbindIdentity } = useSubscription();
+  const rcIdentityRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!rcEnabled) return;
+    (async () => {
+      try {
+        if (user?.id && rcIdentityRef.current !== user.id) {
+          await bindIdentity(user.id);
+          rcIdentityRef.current = user.id;
+        } else if (!user?.id && rcIdentityRef.current) {
+          await unbindIdentity();
+          rcIdentityRef.current = null;
+        }
+      } catch (e) {
+        console.warn('[RevenueCat] identity bind failed:', e);
+      }
+    })();
+  }, [user?.id, bindIdentity, unbindIdentity]);
+
+  return null;
+}
 
 function ThemedStack() {
   const { colors, isDark } = useTheme();
@@ -35,6 +68,7 @@ function ThemedStack() {
         <Stack.Screen name="recipe" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="exclusions" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="shopping" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
     </>
   );
@@ -61,9 +95,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <ToastProvider>
-              <ThemedStack />
-            </ToastProvider>
+            <SubscriptionProvider>
+              <ToastProvider>
+                <RevenueCatIdentityBridge />
+                <ThemedStack />
+              </ToastProvider>
+            </SubscriptionProvider>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

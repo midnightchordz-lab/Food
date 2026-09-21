@@ -1,0 +1,46 @@
+{
+  "summary": "Tested Emergent-managed RevenueCat flow on the web preview against the RC Test Store. Registration -> Profile -> paywall UX all pass with correct prices ($9.99/mo, $79.99/yr), plan testIDs (plan-$rc_monthly, plan-$rc_annual), no identity warning after a fresh signup, subscribe button enabled, restore button present. Test Store purchase completes end-to-end and 'Welcome to Premium!' toast fires. BUG: after a successful purchase, the client-side isSubscribed state does NOT reflect in the UI until a full page reload — the Profile 'MoodFood Premium' card stays in the non-active state and the paywall does not render the premium-active state; after reload both correctly show 'Premium active' / 'You're a Premium member. Enjoy!'. Root cause: purchaseMutation (and restoreMutation) in src/lib/revenuecat.tsx do not seed the react-query cache with the returned customerInfo, and the Purchases.addCustomerInfoUpdateListener does not fire reliably in purchases-js Browser Mode (Test Store). Regeneration gating logic was verified in code review (FREE_REGENERATIONS=2 -> router.push('/paywall')); in-browser E2E confirmation was inconclusive because the regenerate button is disabled while the AI mutation is pending, so rapid clicks are swallowed — main agent should re-verify manually.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Paywall / Profile after purchase",
+        "issue": "isSubscribed does not update after a successful RC Test Store purchase — Profile 'premium-card' stays in the 'MoodFood Premium / Unlimited recipes, plans & more' state and paywall does not render 'premium-active'. Only fixes after a full page reload. Purchases.addCustomerInfoUpdateListener does not fire in purchases-js Browser Mode.",
+        "testID": "premium-card, premium-active",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "RevenueCat purchase -> React Query cache",
+        "issue": "purchaseMutation.mutationFn returns customerInfo but does not call queryClient.setQueryData(['revenuecat', 'customer-info'], customerInfo). Same for restoreMutation. As a result, isSubscribed stays false in the UI right after Purchases.purchasePackage resolves. Fix in /app/frontend/src/lib/revenuecat.tsx: add onSuccess: (customerInfo) => queryClient.setQueryData(['revenuecat', 'customer-info'], customerInfo) on both mutations (or invalidate the ['revenuecat','customer-info'] query).",
+        "affected_testIDs": ["paywall-subscribe", "confirm-buy", "premium-active", "premium-card", "paywall-restore"]
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "console",
+        "issue": "Deprecation warnings during preview: 'shadow*' style props are deprecated (use boxShadow) and 'props.pointerEvents is deprecated (use style.pointerEvents)'. Non-blocking but should be cleaned up."
+      }
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_101.json"],
+  "action_items": [
+    "In /app/frontend/src/lib/revenuecat.tsx add onSuccess handler on purchaseMutation and restoreMutation that seeds react-query cache: queryClient.setQueryData(['revenuecat','customer-info'], customerInfo). This makes isSubscribed flip immediately after a Test Store purchase without needing a page reload, so Profile 'premium-card' shows 'Premium active' and paywall shows the premium-active state.",
+    "(Optional hardening) Also call Purchases.getCustomerInfo() after purchase/restore and setQueryData with the fresh result, in case purchasePackage's returned info is stale in Browser Mode.",
+    "Re-verify the regenerate gating end-to-end manually or in a test that waits for genMut.isPending==false between clicks; the code path (if !isSubscribed && regenCount >= FREE_REGENERATIONS -> router.push('/paywall')) is correct."
+  ],
+  "critical_code_review_comments": [
+    "purchaseMutation and restoreMutation in src/lib/revenuecat.tsx rely solely on the customerInfo update listener to refresh cache; this is fragile on web (purchases-js). Always seed the query cache from the mutation result.",
+    "Profile 'premium-card' correctly reads isSubscribed but user experience is broken because that flag doesn't update reactively after purchase — see fix above.",
+    "identityBound flag is a good workaround for the anonymous originalAppUserId in purchases-js — no issues here; identityReady flipped true after signup as expected."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (frontend only)", "frontend": "80%" },
+  "seed_data_creation": "Registered fresh accounts test+<ts>@example.com / Test1234 during the run (three accounts). No cleanup needed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Reproduce by registering a fresh account -> Profile -> premium-card -> paywall-subscribe -> confirm-buy -> click 'Test valid purchase' in the RC Test Store DOM overlay. Observe: 'Welcome to Premium!' toast fires but the paywall stays on the plans view (no premium-active testID) and Profile card still says 'MoodFood Premium / Unlimited recipes, plans & more'. A full page reload then shows 'Premium active' correctly. That confirms the client cache is out of sync until a refetch. Regen gating: on the results screen click 'regenerate' twice, wait each time until genMut.isPending is false, then the 3rd click should route to /paywall.",
+  "rca_of_issue": "Purchases.purchasePackage in purchases-js Browser Mode does not always trigger the CustomerInfoUpdateListener, so the react-query cache ['revenuecat','customer-info'] is never refreshed after purchase. Since isSubscribed is computed from customerInfoQuery.data?.entitlements.active['pro'], and that data isn't updated, the whole UI (Profile premium-card, paywall isSubscribed branch) stays in the 'not subscribed' state until React Query's staleTime (60s) elapses and a natural refetch happens, or the user hard-reloads the page. Fix: seed the cache from mutationFn's return value via onSuccess in both purchaseMutation and restoreMutation."
+}

@@ -9,7 +9,10 @@ import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { RecipeCard } from '@/src/components/RecipeCard';
+import { useSubscription } from '@/src/lib/revenuecat';
 import { MOODS, MEAL_TYPES, DIETARY_PREFS, CUISINES, StructuredRecipe } from '@/src/constants/data';
+
+const FREE_REGENERATIONS = 2;
 
 type Step = 'mood' | 'meal' | 'dietary' | 'cuisine' | 'results';
 
@@ -21,6 +24,8 @@ export default function Discover() {
   const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { isSubscribed } = useSubscription();
+  const [regenCount, setRegenCount] = useState(0);
 
   const [step, setStep] = useState<Step>('mood');
   const [mood, setMood] = useState<string | null>(null);
@@ -102,6 +107,15 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
     setStep('mood'); setMood(null); setMeal(null); setDietary(null); setCuisine(null); setRecipes([]);
   };
 
+  const regenerate = () => {
+    if (!isSubscribed && regenCount >= FREE_REGENERATIONS) {
+      router.push('/paywall');
+      return;
+    }
+    setRegenCount((c) => c + 1);
+    genMut.mutate(true);
+  };
+
   const openRecipe = (r: StructuredRecipe) => {
     router.push({
       pathname: '/recipe',
@@ -160,7 +174,7 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={genMut.isPending} onRefresh={() => genMut.mutate(true)} tintColor={colors.primary} />}
+          refreshControl={<RefreshControl refreshing={genMut.isPending} onRefresh={regenerate} tintColor={colors.primary} />}
         >
           <SelectionChips mood={mood} meal={meal} dietary={dietary} cuisine={cuisine} />
           {recipes.map((r) => (
@@ -173,7 +187,13 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
             />
           ))}
           <View style={{ height: 8 }} />
-          <Button label="Show me different recipes" variant="outline" icon="shuffle-variant" onPress={() => genMut.mutate(true)} loading={genMut.isPending} testID="regenerate" />
+          <Button label="Show me different recipes" variant="outline" icon="shuffle-variant" onPress={regenerate} loading={genMut.isPending} testID="regenerate" />
+          {!isSubscribed && regenCount >= FREE_REGENERATIONS ? (
+            <Pressable style={styles.upsell} onPress={() => router.push('/paywall')} testID="regen-upsell">
+              <Icon name="crown" size={16} color={colors.accent} />
+              <Text style={styles.upsellText}>Go Premium for unlimited fresh recipes</Text>
+            </Pressable>
+          ) : null}
         </ScrollView>
       ) : (
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
@@ -356,4 +376,6 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   chipRow: { gap: 8, paddingRight: 8 },
   summaryChip: { backgroundColor: colors.secondary, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, flexShrink: 0 },
   summaryChipText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.secondaryForeground },
+  upsell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, backgroundColor: colors.accentSoft, borderRadius: 999, paddingVertical: 12 },
+  upsellText: { fontFamily: f.bodySemiBold, fontSize: 14, color: colors.accent },
 }));

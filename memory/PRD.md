@@ -42,6 +42,7 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - [x] Shopping List screen (Profile → screen): manual add, check/uncheck, remove, clear-checked, persistence (GET/POST /api/shopping-list) + add-from-saved-recipe cart button (POST /api/recipes/{id}/add-to-shopping-list) — 2026-09-21.
 - [x] Exclusion Badge on Discover header (shows active exclusions, taps to editor) and exclusions now injected into AI recipe generation prompt — 2026-09-21.
 - [x] Fixed query-key collision crash: profile.tsx no longer overwrites the ['saved-recipes'] array cache with a count.
+- [x] RevenueCat in-app subscriptions (Emergent-managed) — 2026-09-21: paywall (/paywall) with Monthly $9.99 + Annual $79.99, `pro` entitlement, identity binding (explicit identityBound flag), purchase + restore (cache seeded onSuccess), Profile upgrade card, and free-tier gating (2 recipe regenerations then paywall). Verified end-to-end on RC Test Store. State in /app/memory/revenuecat.md. Real store purchases need user store-side setup (App Store/Play IAP products + credentials).
 
 ## Backlog
 ### P1
