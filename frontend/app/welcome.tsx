@@ -52,7 +52,7 @@ export default function Welcome() {
         <LinearGradient
           colors={['transparent', colors.background]}
           style={styles.heroFade}
-          locations={[0.35, 1]}
+          locations={[0.25, 0.82]}
         />
         <View style={[styles.heroContent, { paddingTop: insets.top + 40 }]}>
           <View style={styles.badge}>
@@ -71,7 +71,7 @@ export default function Welcome() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.brand} numberOfLines={1} adjustsFontSizeToFit>MOOD<Text style={styles.brandAccent}>FOOD</Text></Text>
+          <Text style={styles.brand} numberOfLines={1}>MOOD<Text style={styles.brandAccent}>FOOD</Text></Text>
           <Text style={styles.tagline}>When feelings need feeding</Text>
           <Text style={styles.sub}>
             A compassionate AI chef that reads your mood and serves meals to heal, comfort and energize.
@@ -164,8 +164,8 @@ const useStyles = makeStyles(({ colors }) => ({
     backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
   },
   badgeText: { color: colors.primaryForeground, fontFamily: fonts.bodySemiBold, fontSize: 13 },
-  body: { paddingHorizontal: 24, marginTop: -20 },
-  brand: { fontFamily: fonts.serif, fontSize: 42, color: colors.foreground, letterSpacing: 0.5 },
+  body: { paddingHorizontal: 24, marginTop: 0 },
+  brand: { fontFamily: fonts.serif, fontSize: 31, color: colors.foreground, letterSpacing: 0 },
   brandAccent: { color: colors.primary },
   tagline: { fontFamily: fonts.serifMedium, fontSize: 20, fontStyle: 'italic', color: colors.accent, marginTop: -4 },
   sub: { fontFamily: fonts.body, fontSize: 15, color: colors.mutedForeground, marginTop: 12, lineHeight: 22 },
