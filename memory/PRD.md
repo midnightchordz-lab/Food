@@ -1,68 +1,59 @@
-# MoodFood - Product Requirements Document
+# MoodFood Mobile — Product Requirements Document
 
 ## Original Problem Statement
-Build and maintain a full-stack meal planning and recipe application (MoodFood) with native mobile apps for both Android and iOS platforms, wrapping the web application at `https://moodfood.in`.
+Convert the existing MoodFood web application (GitHub: midnightchordz-lab/Food) into a native
+mobile app on the new Emergent (Expo) platform, reusing the existing FastAPI + MongoDB backend.
+Mid-build additions requested by user: (1) AI recipe image generation (Gemini Nano Banana),
+(2) Sign in with Apple, alongside existing email/password auth.
 
-## Current Status
-- **Web App**: Production-ready at `https://moodfood.in`
-- **Android App**: Build configured (`versionCode: 33`), pointing to production URL
-- **iOS App**: Xcode project complete with AppIcon set (ready for build)
+## Architecture
+- **Backend**: Existing full MoodFood FastAPI + MongoDB backend (ported as-is into /app/backend,
+  all original routers running: auth, chat, recipes, meal_planning, diabetes, family, voice,
+  shopping, subscription, twilio, fridge_scanner, etc.). Runs on :8001, all routes under /api.
+- **Frontend**: NEW Expo SDK 57 app (expo-router) in /app/frontend replacing the old React web app
+  (backed up at /app/web_frontend_old). Brand theme (Warm Bone / Sage / Terracotta, Cormorant
+  Garamond + Manrope fonts) preserved in src/theme.ts.
+- **New backend routers**: routes/gen_image.py (Gemini `gemini-3.1-flash-image-preview` recipe
+  photos, disk-cached, served under /api), routes/apple_auth.py (Apple JWKS verify → our JWT).
 
-## Core Features
-1. AI-powered meal planning
-2. Recipe management and import
-3. Fridge scanner for ingredient detection
-4. Family plan with notifications
-5. Voice-enabled AI Chef
-6. Ingredient encyclopedia
+## User Personas
+- Home cooks who want meal ideas matched to how they feel (stressed, cozy, energetic, etc.).
+- Users wanting weekly meal plans and a saved recipe collection.
 
-## Completed Tasks (December 2024)
-- [x] iOS Xcode project skeleton created
-- [x] iOS AppIcon set generated (9 sizes) - Feb 24, 2025
-- [x] Android app icons updated with 4-character food icon - Feb 24, 2025
-- [x] Android versionCode updated to 34 - Feb 24, 2025
-- [x] Play Store assets generated (512x512 icon, 1024x500 feature graphic)
-- [x] Android build configuration for production
-- [x] Image upload fixes for Recipe Import & Fridge Scanner
-- [x] Phone number input custom dropdown implementation
+## Core Requirements (static)
+- Mood → meal type → dietary → cuisine guided flow → 4 AI recipe suggestions.
+- Save recipes; view saved collection.
+- Weekly AI meal planner.
+- Full detailed recipe view (AI-generated, markdown rendered).
+- Email/password auth + Apple Sign In (iOS).
+- AI-generated food photo per recipe.
 
-## In Progress
-- [ ] Cuisine Preferences grid text overlap fix (needs dropdown→grid revert)
+## Implemented (2026-09-21)
+- [x] Expo SDK 57 scaffold, expo-router, brand theme + fonts, safe-area, toasts, tabs (NativeTabs on iOS 26+).
+- [x] Auth: email/password (register/login/me) with persisted token; Apple Sign In (iOS-only button + backend verify).
+- [x] Discover: mood grid + guided wizard → POST /api/chat/send → structured recipes.
+- [x] Recipe cards with AI-generated photos (Gemini Nano Banana), Unsplash placeholder while plating.
+- [x] Recipe detail modal: POST /api/recipes/detailed with markdown renderer + save.
+- [x] Saved tab (GET /api/recipes/saved), pull-to-refresh.
+- [x] Planner tab (GET/POST /api/weekly-plan) with mood + dietary selectors.
+- [x] Profile tab (user info, saved count, sign out).
+- [x] Backend tested: 13/13 endpoints pass.
 
-## Prioritized Backlog
-### P1 - High Priority
-- Verify phone number input on Android
-- Full E2E test of Family Invite Flow
-- Re-enable AI Chef feature
+## Backlog
+### P1
+- Wire food/exclusions preferences into Discover + Profile (GET/PUT /api/exclusions, /api/auth/profile).
+- Shopping list screen (backend ready: /api/shopping-list, add-to-list from recipe).
+- Recipe import (URL/photo/text) — backend routes/import_recipe.py exists.
+### P2
+- Diabetes-friendly planner tab (backend routes/diabetes.py).
+- Voice AI chef (ElevenLabs) — backend voice.py; needs native build.
+- Family plan + invites (backend family.py).
+- Subscription / premium gating (Razorpay) — backend subscription.py.
+### P3
+- Fridge scanner (camera) — backend fridge_scanner.py.
+- Ingredient encyclopedia.
 
-### P2 - Medium Priority  
-- Implement Ingredient Encyclopedia Page
-- ElevenLabs Quota UI notification
-- Ingredient Detail Page
-
-### P3 - Lower Priority
-- Production WhatsApp Integration
-- Android status bar app name issue
-
-## Technical Architecture
-```
-/app
-├── backend/          # FastAPI + MongoDB
-├── frontend/         # React + Capacitor
-│   ├── android/      # Android native wrapper
-│   └── src/          # React components
-├── ios/              # iOS Xcode project
-│   └── MoodFood/     # Swift WebView wrapper
-└── codemagic.yaml    # CI/CD configuration
-```
-
-## 3rd Party Integrations
-- OpenAI GPT (via emergentintegrations)
-- ElevenLabs TTS
-- SerpApi (image search)
-- Twilio SMS
-- Firebase Cloud Messaging
-
-## Known Issues
-1. Android WebView rendering inconsistencies (flexbox/grid issues)
-2. Cuisine Preferences currently shows dropdown instead of checkbox grid
+## Notes
+- Apple Sign In works only on a real iOS build/device (not Expo Go, Android, or web).
+- AI images cached on backend disk by md5(title|cuisine); for production scale, move to object storage.
+- Test creds: /app/memory/test_credentials.md. Apple testing: /app/auth_testing.md.

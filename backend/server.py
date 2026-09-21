@@ -59,6 +59,8 @@ from routes.shopping import router as shopping_router
 from routes.ingredient_guide import router as ingredient_guide_router
 from routes.trial import router as trial_router
 from routes.family import router as family_router
+from routes.gen_image import router as gen_image_router
+from routes.apple_auth import router as apple_auth_router
 from services.scheduled_tasks import router as scheduled_tasks_router, start_scheduler, stop_scheduler
 
 # Include all routers with /api prefix
@@ -83,6 +85,8 @@ app.include_router(shopping_router, prefix="/api")
 app.include_router(ingredient_guide_router, prefix="/api")
 app.include_router(trial_router, prefix="/api")
 app.include_router(family_router, prefix="/api")
+app.include_router(gen_image_router, prefix="/api")
+app.include_router(apple_auth_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(

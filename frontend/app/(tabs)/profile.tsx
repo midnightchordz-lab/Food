@@ -1,0 +1,89 @@
+import React from 'react';
+import { View, Text, ScrollView, Pressable } from 'react-native';
+import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/src/api/client';
+import { useAuth } from '@/src/auth/AuthContext';
+import { makeStyles, useTheme, fonts } from '@/src/theme';
+import { Icon, Button } from '@/src/components/ui';
+
+export default function Profile() {
+  const insets = useSafeAreaInsets();
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const { data: savedCount } = useQuery({
+    queryKey: ['saved-recipes'],
+    queryFn: async () => {
+      const res = await api.get('/recipes/saved');
+      return (res.data.recipes || []).length as number;
+    },
+  });
+
+  const initials = (user?.name || 'U').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+
+  const rows = [
+    { icon: 'silverware-variant', label: 'Dietary restrictions', value: (user?.dietary_restrictions?.length || 0) + ' set' },
+    { icon: 'earth', label: 'Cuisine preferences', value: (user?.cuisine_preferences?.length || 0) + ' set' },
+    { icon: 'heart', label: 'Saved recipes', value: `${savedCount ?? 0}` },
+  ];
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          <Text style={styles.name}>{user?.name}</Text>
+          <Text style={styles.email}>{user?.email || 'Signed in'}</Text>
+        </View>
+
+        <View style={styles.card}>
+          {rows.map((r, i) => (
+            <View key={r.label} style={[styles.row, i < rows.length - 1 && styles.rowBorder]}>
+              <View style={styles.rowIcon}><Icon name={r.icon} size={19} color={colors.primary} /></View>
+              <Text style={styles.rowLabel}>{r.label}</Text>
+              <Text style={styles.rowValue}>{r.value}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.card}>
+          <Pressable style={styles.linkRow} onPress={() => router.push('/(tabs)')}>
+            <View style={styles.rowIcon}><Icon name="silverware-fork-knife" size={19} color={colors.accent} /></View>
+            <Text style={styles.rowLabel}>Discover new recipes</Text>
+            <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
+        </View>
+
+        <View style={{ marginTop: 20 }}>
+          <Button label="Sign out" variant="outline" icon="logout" onPress={() => { logout(); router.replace('/welcome'); }} testID="logout-btn" />
+        </View>
+        <Text style={styles.version}>MoodFood • v1.0.0</Text>
+      </ScrollView>
+    </View>
+  );
+}
+
+const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
+  root: { flex: 1, backgroundColor: colors.background },
+  scroll: { paddingHorizontal: spacing.lg, paddingTop: 20 },
+  hero: { alignItems: 'center', marginBottom: 24 },
+  avatar: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontFamily: f.serif, fontSize: 34, color: colors.primaryForeground },
+  name: { fontFamily: f.serif, fontSize: 28, color: colors.foreground, marginTop: 14 },
+  email: { fontFamily: f.body, fontSize: 14, color: colors.mutedForeground, marginTop: 2 },
+  card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingHorizontal: 16, marginBottom: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15 },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  rowIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  rowLabel: { flex: 1, fontFamily: f.bodyMedium, fontSize: 15, color: colors.foreground },
+  rowValue: { fontFamily: f.body, fontSize: 14, color: colors.mutedForeground },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15 },
+  version: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, textAlign: 'center', marginTop: 20 },
+}));

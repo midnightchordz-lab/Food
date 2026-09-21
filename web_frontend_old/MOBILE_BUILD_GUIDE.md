@@ -127,7 +127,7 @@ Configured in `capacitor.config.json`:
 ### API URL
 The app connects to the backend at:
 - **Production**: Set in `.env` file
-- **Current**: `https://moodfood-mobile.preview.emergentagent.com`
+- **Current**: `https://app-launch-2905.preview.emergentagent.com`
 
 For production, update `frontend/.env`:
 ```
