@@ -136,7 +136,7 @@ async def get_detailed_recipe(request: DetailedRecipeRequest, current_user: User
             session_id=f"detailed-{uuid.uuid4().hex[:8]}",
             system_message=system_msg
         )
-        chat.with_model("openai", "gpt-4o")
+        chat.with_model("openai", "gpt-4o-mini")
         
         user_message = UserMessage(text=f"Generate the complete detailed recipe for {request.recipe_title}")
         detailed_content = await chat.send_message(user_message)

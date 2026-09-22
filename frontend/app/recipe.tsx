@@ -44,10 +44,10 @@ export default function RecipeDetail() {
 
   const title = String(p.title || 'Recipe');
   const providedContent = p.content ? String(p.content) : '';
-  const aiImg = useRecipeImage(title, String(p.cuisine || ''), String(p.description || ''));
   const providedImg = p.image
     ? (String(p.image).startsWith('/') ? `${process.env.EXPO_PUBLIC_BACKEND_URL}${p.image}` : String(p.image))
     : '';
+  const aiImg = useRecipeImage(title, String(p.cuisine || ''), String(p.description || ''), isSubscribed && !providedImg);
   const img = providedImg || aiImg.data || foodImage(title, String(p.cuisine || ''));
 
   const { data, isLoading } = useQuery({

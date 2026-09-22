@@ -31,7 +31,7 @@ export default function CookMode() {
 
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
-  const finishedRef = useRef(false);
+  const wasFinishedRef = useRef(false);
   const cache = useRef<Record<number, string>>({});
 
   useEffect(() => {
@@ -40,7 +40,6 @@ export default function CookMode() {
 
   const loadAndPlay = async (i: number) => {
     if (i < 0 || i >= steps.length) return;
-    finishedRef.current = false;
     try {
       let uri = cache.current[i];
       if (!uri) {
@@ -50,6 +49,9 @@ export default function CookMode() {
         uri = path?.startsWith('http') ? path : `${API_ROOT.replace(/\/api$/, '')}${path}`;
         cache.current[i] = uri;
       }
+      // Mark that we're starting fresh playback for this step so a lingering
+      // "didJustFinish" from the previous step can't trigger another advance.
+      wasFinishedRef.current = true;
       player.replace({ uri });
       player.play();
     } catch {
@@ -65,15 +67,14 @@ export default function CookMode() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  // Auto-advance to next step when audio finishes.
+  // Auto-advance exactly once per step, on the false->true edge of didJustFinish.
   useEffect(() => {
-    if (status?.didJustFinish && !finishedRef.current) {
-      finishedRef.current = true;
-      if (autoAdvance && index < steps.length - 1) {
-        setIndex((v) => v + 1);
-      }
+    const finished = !!status?.didJustFinish;
+    if (finished && !wasFinishedRef.current && autoAdvance) {
+      setIndex((v) => (v < steps.length - 1 ? v + 1 : v));
     }
-  }, [status?.didJustFinish, autoAdvance, index, steps.length]);
+    wasFinishedRef.current = finished;
+  }, [status?.didJustFinish, autoAdvance, steps.length]);
 
   const isPlaying = !!status?.playing;
 

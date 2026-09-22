@@ -64,6 +64,8 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - [x] Planner multiple diets (#4) + per-day diets (#5): dietary chips are multi-select and a "Customise diet by day" section sets `day_specific_preferences`; posted as `dietary_preference: string[]` + `day_specific_preferences` to `/weekly-plan/generate` (backend ai_meal_planner already supports both) — 2026-06.
 - [x] Performance (#1/#6): replaced retired `source.unsplash.com` (which hangs) in `foodImage()` with fast direct Unsplash CDN photos (keyword/deterministic pick) + expo-image `cachePolicy="memory-disk"` on recipe/mood images — 2026-06.
 - [x] Phone OTP sign-in (#2): welcome screen "Continue with phone" → `/auth/phone/send-otp` + `/auth/phone/verify-otp` (existing Twilio-backed endpoints; demo OTP surfaced via toast when SMS unavailable). AuthContext.sendPhoneOtp/phoneLogin store the returned JWT — 2026-06.
+- [x] Cook-mode step skipping fixed: auto-advance now fires once per step on the false→true edge of `didJustFinish` (was resetting a flag on every index change, so a lingering finished-status cascaded straight to the last step). `wasFinishedRef` is set true when a new step starts playing so stale status can't re-trigger (`app/cook.tsx`) — 2026-06.
+- [x] Speed (#1/#6 round 2): (a) recipe list cards NO LONGER trigger a per-card Gemini image gen — they use the fast CDN `foodImage` immediately (removed `useRecipeImage` from `RecipeCard`); AI photo now only on the recipe DETAIL hero and only for premium (`recipe.tsx`, gated on isSubscribed). (b) `/recipes/detailed` switched gpt-4o → gpt-4o-mini (~2x faster; results are DB-cached so repeat opens are instant) — 2026-06.
 
 ## Backlog
 ### P1

@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon } from '@/src/components/ui';
-import { useSubscription } from '@/src/lib/revenuecat';
 
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -83,11 +82,8 @@ export function RecipeCard({
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const { isSubscribed } = useSubscription();
-  const aiImg = useRecipeImage(recipe.title, recipe.cuisine, recipe.description, !recipe.image_url && isSubscribed);
   const resolvedImageUrl = recipe.image_url && recipe.image_url.startsWith('/') ? `${BACKEND}${recipe.image_url}` : recipe.image_url;
-  const img = resolvedImageUrl || aiImg.data || foodImage(recipe.title, recipe.cuisine);
-  const showPremiumPhotoHint = !recipe.image_url && !isSubscribed;
+  const img = resolvedImageUrl || foodImage(recipe.title, recipe.cuisine);
 
   return (
     <Pressable
@@ -97,18 +93,6 @@ export function RecipeCard({
     >
       <View>
         <Image source={{ uri: img }} style={styles.img} contentFit="cover" transition={250} cachePolicy="memory-disk" recyclingKey={img} />
-        {!recipe.image_url && isSubscribed && aiImg.isLoading ? (
-          <View style={styles.imgBadge}>
-            <Icon name="creation" size={12} color="#FFFFFF" />
-            <Text style={styles.imgBadgeText}>Plating…</Text>
-          </View>
-        ) : null}
-        {showPremiumPhotoHint ? (
-          <View style={styles.premiumBadge}>
-            <Icon name="crown" size={12} color="#FFFFFF" />
-            <Text style={styles.imgBadgeText}>AI photo · Premium</Text>
-          </View>
-        ) : null}
         <View style={styles.actions}>
           {onAddToCart ? (
             <Pressable testID={`cart-${recipe.title}`} onPress={onAddToCart} style={styles.actionBtn} hitSlop={8}>
