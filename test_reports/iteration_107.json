@@ -1,0 +1,37 @@
+{
+  "summary": "Full-stack test of the two new premium quick-action features: Snap-a-dish (Import photo tab) and Fridge Scanner (POST /api/mobile-fridge/scan). BACKEND (5/5 pytest passed, pytest_mobile_fridge.xml): (a) No Authorization header -> 403 (HTTPBearer); (b) Bad bearer -> 401; (c) With auth + real Unsplash fridge photo -> 200 with contract {scan_id (uuid str), ingredients:[{name,category,quantity?}], recipes:[{title,description,cooking_time,difficulty,ingredients_used[],missing_ingredients[],instructions[]}]}, no _id leak, >=1 ingredient + >=1 recipe; (d) empty image_data -> 400; (e) invalid base64 -> 400/422/502. FRONTEND (390x844 mobile viewport, fresh account fr_test+<ts>@example.com/Test1234): (1) Discover mood step shows both quick-action cards 'snap-dish' + 'scan-fridge'. (2) FREE user scan-fridge -> /fridge shows only fridge-upgrade + fridge-close (no fridge-camera / fridge-library) -- gating correct. Tapping fridge-upgrade routes to /paywall (paywall-subscribe visible). (3) FREE user snap-dish -> /import?tab=photo shows only import-upgrade + import-close (no import-camera / import-library / import-tab-photo tabs) -- gating correct. (4) RevenueCat Test Store purchase (paywall-subscribe -> confirm-buy -> 'Test valid purchase') flips isSubscribed=true. (5) SUBSCRIBED /fridge shows fridge-camera + fridge-library, fridge-upgrade gone, no crash / red screen / error text. (6) SUBSCRIBED /import?tab=photo shows all three segment tabs (import-tab-link/text/photo) with Photo tab active (import-camera + import-library rendered), import-upgrade gone. All five review scenarios pass end-to-end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_mobile_fridge.py",
+    "/app/test_reports/pytest/pytest_mobile_fridge.xml",
+    "/tmp/frscan_discover.png",
+    "/tmp/frscan_free_fridge.png",
+    "/tmp/frscan_paywall_from_fridge.png",
+    "/tmp/frscan_free_import.png",
+    "/tmp/frscan_rc_modal.png",
+    "/tmp/frscan_sub_fridge.png",
+    "/tmp/frscan_sub_import.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "mobile_fridge.py: correctly guards with Depends(get_current_user) so unauth -> 403 (HTTPBearer). Base64 with 'data:' prefix is stripped, PIL fallback resizes >1MB images to <=1024px @ q75 JPEG before LLM call -- keeps costs and latency down.",
+    "mobile_fridge.py: uses emergentintegrations LlmChat + ImageContent with gpt-4o-mini and system prompt that forces valid JSON schema; parse_combined_response is reused from routes/fridge_scanner.py. Persists scan to db.fridge_scans and returns {scan_id, ingredients, recipes} -- no ObjectId leak.",
+    "fridge.tsx: correctly gates on !isSubscribed to render the lock screen with only fridge-upgrade + fridge-close (verified: fridge-camera/library NOT in DOM for free users). Uses expo-image-picker with mediaTypes:['images'] (new SDK 57 API, not deprecated MediaTypeOptions).",
+    "import.tsx: reads params.tab and initialises tab state to 'photo' when snap-dish routes with ?tab=photo. Non-subscribers see import-upgrade lock; segment + photo buttons only render when isSubscribed=true.",
+    "(tabs)/index.tsx: quick-action cards 'snap-dish' + 'scan-fridge' are rendered only in step==='mood' (the first Discover step) -- matches review spec exactly.",
+    "No deprecated packages detected in the new scope: expo-image-picker is current (mediaTypes array API), no expo-av / expo-barcode-scanner / expo-background-fetch usage in fridge.tsx or import.tsx."
+  ],
+  "updated_files": ["/app/backend/tests/test_mobile_fridge.py"],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "100% -- all 5 review scenarios verified end-to-end"},
+  "seed_data_creation": "Registered fresh accounts fr_test+<timestamp>@example.com / Test1234 via /api/auth/register (with a 7-day trial). Performed RevenueCat Test Store 'Test valid purchase' on one account to verify subscribed flow. Real Unsplash fridge JPEG (~180KB) cached at /tmp/fridge.jpg drives the AI contract test; one fridge_scans document is written per successful contract run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend fridge scan contract test needs a REAL food/fridge image (~180KB Unsplash JPEG at /tmp/fridge.jpg) -- synthetic PIL blobs return 422 'Couldn't spot any ingredients'. The test skips gracefully in that case. Free-user gating for fridge = only fridge-upgrade + fridge-close render (fridge-camera/library assertion False confirms gating). Free-user gating for import = only import-upgrade + import-close render (import-camera / import-library / import-tab-* all False). Photo-tab-active on subscribed import is verified indirectly via presence of import-camera (that block only mounts when tab==='photo'). RevenueCat Test Store purchase pattern on web: click paywall-subscribe -> confirm-buy (in-app modal) -> then 'Test valid purchase' in RC overlay (no testID, click by text). Post-purchase router lands on '/' (Discover); use page.goto('/fridge') and page.goto('/import?tab=photo') directly to verify subscribed screens instead of tab-nav. Camera capture itself cannot be exercised headlessly on web -- verifying presence of the two photo buttons + no crash is the correct assertion for both screens.",
+  "rca_of_issue": "N/A -- no bugs found. Both new premium features (Snap-a-dish + Fridge Scanner) work correctly on backend + frontend, with correct RevenueCat gating for free vs subscribed."
+}

@@ -3,10 +3,10 @@ import { View, Text, ScrollView, Pressable, TextInput, Platform, KeyboardAvoidin
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
-import { makeStyles, useTheme, fonts } from '@/src/theme';
+import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
 
@@ -32,7 +32,9 @@ export default function ImportRecipe() {
   const queryClient = useQueryClient();
   const { isSubscribed } = useSubscription();
 
-  const [tab, setTab] = useState<'link' | 'text' | 'photo'>('link');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const initialTab = params.tab === 'photo' || params.tab === 'text' ? params.tab : 'link';
+  const [tab, setTab] = useState<'link' | 'text' | 'photo'>(initialTab as 'link' | 'text' | 'photo');
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
   const [preview, setPreview] = useState<ImportedRecipe | null>(null);
@@ -105,7 +107,7 @@ export default function ImportRecipe() {
         <View style={styles.lockWrap}>
           <View style={styles.lockIcon}><Icon name="import" size={34} color={colors.accent} /></View>
           <Text style={styles.lockTitle}>Import any recipe</Text>
-          <Text style={styles.lockDesc}>Paste a link or text and we'll turn it into a beautiful MoodFood recipe. This is a Premium feature.</Text>
+          <Text style={styles.lockDesc}>Paste a link or text — or snap a photo of a finished dish — and we&apos;ll turn it into a beautiful MoodFood recipe. This is a Premium feature.</Text>
           <View style={{ height: 20 }} />
           <Button label="Unlock with Premium" icon="crown" onPress={() => router.replace('/paywall')} testID="import-upgrade" />
         </View>

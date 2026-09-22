@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { useAuth } from '@/src/auth/AuthContext';
-import { makeStyles, useTheme, fonts } from '@/src/theme';
+import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { RecipeCard } from '@/src/components/RecipeCard';
 import { useSubscription } from '@/src/lib/revenuecat';
@@ -199,6 +199,18 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
           {step === 'mood' && (
             <>
+              <View style={styles.quickRow}>
+                <Pressable style={styles.quickCard} testID="snap-dish" onPress={() => router.push('/import?tab=photo')}>
+                  <View style={styles.quickIcon}><Icon name="camera-iris" size={22} color={colors.primary} /></View>
+                  <Text style={styles.quickTitle}>Snap a dish</Text>
+                  <Text style={styles.quickDesc} numberOfLines={2}>Photo any meal to get its recipe</Text>
+                </Pressable>
+                <Pressable style={styles.quickCard} testID="scan-fridge" onPress={() => router.push('/fridge')}>
+                  <View style={styles.quickIcon}><Icon name="fridge-outline" size={22} color={colors.accent} /></View>
+                  <Text style={styles.quickTitle}>Scan my fridge</Text>
+                  <Text style={styles.quickDesc} numberOfLines={2}>Cook with what you already have</Text>
+                </Pressable>
+              </View>
               <Text style={styles.q}>Pick the feeling that fits right now</Text>
               <View style={styles.moodGrid}>
                 {MOODS.map((mObj) => (
@@ -354,6 +366,11 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   exclBadgeText: { fontFamily: f.bodyMedium, fontSize: 12.5, color: colors.primary, flexShrink: 1 },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 6 },
   q: { fontFamily: f.serifMedium, fontSize: 24, color: colors.foreground, marginBottom: 18, lineHeight: 30 },
+  quickRow: { flexDirection: 'row', gap: 12, marginBottom: 22 },
+  quickCard: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 14 },
+  quickIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  quickTitle: { fontFamily: f.bodyBold, fontSize: 15, color: colors.foreground },
+  quickDesc: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, marginTop: 2, lineHeight: 17 },
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16 },
   moodCard: { width: '48%', backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: 12, overflow: 'hidden' },
   moodImg: { width: '100%', height: 90, borderRadius: radius.md, backgroundColor: colors.secondary },
