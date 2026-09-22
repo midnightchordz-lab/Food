@@ -91,6 +91,27 @@ export default function Profile() {
           </Pressable>
         </View>
 
+        <Text style={styles.groupLabel}>Support & legal</Text>
+        <View style={styles.card}>
+          <Pressable style={styles.linkRow} onPress={() => router.push({ pathname: '/legal', params: { type: 'support' } })} testID="open-support">
+            <View style={[styles.rowIcon, { backgroundColor: colors.accentSoft }]}><Icon name="lifebuoy" size={19} color={colors.accent} /></View>
+            <Text style={styles.rowLabel}>Support</Text>
+            <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
+          <View style={styles.rowDivider} />
+          <Pressable style={styles.linkRow} onPress={() => router.push({ pathname: '/legal', params: { type: 'terms' } })} testID="open-terms">
+            <View style={styles.rowIcon}><Icon name="file-document-outline" size={19} color={colors.primary} /></View>
+            <Text style={styles.rowLabel}>Terms & Conditions</Text>
+            <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
+          <View style={styles.rowDivider} />
+          <Pressable style={styles.linkRow} onPress={() => router.push({ pathname: '/legal', params: { type: 'privacy' } })} testID="open-privacy">
+            <View style={styles.rowIcon}><Icon name="shield-lock-outline" size={19} color={colors.primary} /></View>
+            <Text style={styles.rowLabel}>Privacy Policy</Text>
+            <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
+        </View>
+
         <View style={{ marginTop: 20 }}>
           <Button label="Sign out" variant="outline" icon="logout" onPress={() => { logout(); router.replace('/welcome'); }} testID="logout-btn" />
         </View>
@@ -123,4 +144,5 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15 },
   rowDivider: { height: 1, backgroundColor: colors.border },
   version: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, textAlign: 'center', marginTop: 20 },
+  groupLabel: { fontFamily: f.bodySemiBold, fontSize: 12.5, color: colors.mutedForeground, marginBottom: 8, marginLeft: 4, textTransform: 'uppercase', letterSpacing: 0.4 },
 }));
