@@ -16,7 +16,7 @@ edge protections live in `backend/security_middleware.py` (added after CORS).
 
 ## Category 2 — Authentication Bypass
 - 2.1 Missing auth → all app-used sensitive endpoints require `get_current_user`. ✅
-- 2.2 Token reuse/theft → JWTs are stateless 30-day; theft detection deferred (would need session store; NOT added to avoid re-login churn). ⚠️ backlog
+- 2.2 Token reuse/theft → IMPLEMENTED: 30-min access tokens + rotating refresh tokens with reuse/stolen-token detection (replay revokes all of a user's sessions + logs `auth_events`). Tokens now stored in Keychain/Keystore via expo-secure-store on native (AsyncStorage fallback on web). ✅
 - 2.3 Expired token → `jwt.decode` verifies `exp` (ExpiredSignatureError handled). ✅ already
 - 2.4 Invalid signature / `none` alg → `algorithms=["HS256"]` pinned; signature verified. ✅ already
 - 2.5 Case-sensitive Bearer → Starlette HTTPBearer matches scheme case-insensitively. ✅ already
