@@ -19,6 +19,11 @@ node_modules/
 # Testing
 /coverage
 
+# Auto-generated per-run test artifacts — never commit (can leak secrets)
+test_reports/
+# Local-only credentials notes for the testing/fork agents (not for git)
+memory/test_credentials.md
+
 # Next.js
 /.next/
 /out/
