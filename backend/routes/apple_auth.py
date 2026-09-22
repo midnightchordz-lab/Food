@@ -3,7 +3,7 @@ Sign in with Apple — verifies the Apple identity token against Apple's JWKS
 and issues our own JWT (reusing the existing auth token scheme). Users are
 upserted into the same `users` collection so /auth/me works unchanged.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from datetime import datetime, timezone
 from typing import Optional
@@ -15,7 +15,7 @@ import httpx
 import jwt
 from jwt.algorithms import RSAAlgorithm
 
-from .deps import db, create_access_token
+from .deps import db, issue_token_pair
 
 router = APIRouter(prefix="/auth", tags=["Apple Auth"])
 
@@ -44,7 +44,7 @@ async def _get_apple_keys():
 
 
 @router.post("/apple")
-async def apple_login(req: AppleLoginRequest):
+async def apple_login(req: AppleLoginRequest, http_request: Request):
     audiences = [a.strip() for a in os.environ.get("APPLE_AUDIENCES", "").split(",") if a.strip()]
     if not audiences:
         raise HTTPException(status_code=500, detail="Apple Sign In not configured")
@@ -105,9 +105,10 @@ async def apple_login(req: AppleLoginRequest):
         new_user.pop("_id", None)
         user_data = new_user
 
-    access_token = create_access_token({"sub": user_data["id"]})
+    pair = await issue_token_pair(user_data["id"], http_request)
     return {
-        "access_token": access_token,
+        "access_token": pair["access_token"],
+        "refresh_token": pair["refresh_token"],
         "token_type": "bearer",
         "user": user_data,
         "is_new_user": is_new_user,

@@ -9,10 +9,10 @@ import logging
 from datetime import datetime, timezone
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from .deps import db, create_access_token
+from .deps import db, issue_token_pair
 
 router = APIRouter(prefix="/auth", tags=["Google Auth"])
 
@@ -24,7 +24,7 @@ class SessionRequest(BaseModel):
 
 
 @router.post("/session")
-async def google_session(req: SessionRequest):
+async def google_session(req: SessionRequest, http_request: Request):
     if not req.session_id:
         raise HTTPException(status_code=401, detail="Missing session_id")
 
@@ -68,9 +68,10 @@ async def google_session(req: SessionRequest):
         new_user.pop("_id", None)
         user_data = new_user
 
-    access_token = create_access_token({"sub": user_data["id"]})
+    pair = await issue_token_pair(user_data["id"], http_request)
     return {
-        "access_token": access_token,
+        "access_token": pair["access_token"],
+        "refresh_token": pair["refresh_token"],
         "token_type": "bearer",
         "user": user_data,
         "is_new_user": is_new_user,

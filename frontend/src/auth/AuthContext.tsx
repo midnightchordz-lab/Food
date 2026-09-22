@@ -1,10 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
-import { api, setAuthToken } from '@/src/api/client';
-import { storage } from '@/src/utils/storage';
-
-const TOKEN_KEY = 'moodfood_token';
+import { api, setTokens, loadTokens, setOnAuthFailure, getRefreshToken } from '@/src/api/client';
 
 export type User = {
   id: string;
@@ -35,11 +32,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const applyToken = useCallback(async (tk: string | null) => {
-    setToken(tk);
-    setAuthToken(tk);
-    if (tk) await storage.set(TOKEN_KEY, tk);
-    else await storage.remove(TOKEN_KEY);
+  // Persist an access+refresh pair returned by any auth endpoint.
+  const applyPair = useCallback(async (access: string | null, refresh: string | null) => {
+    setToken(access);
+    await setTokens(access, refresh);
+  }, []);
+
+  const clearSession = useCallback(async () => {
+    setToken(null);
+    setUser(null);
+    await setTokens(null, null);
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -47,58 +49,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await api.get('/auth/me');
       setUser(res.data);
     } catch {
-      /* token invalid */
+      /* token invalid — interceptor handles refresh/logout */
     }
+  }, []);
+
+  // When a refresh fails (expired/revoked/stolen-token), the interceptor calls this.
+  useEffect(() => {
+    setOnAuthFailure(() => {
+      setToken(null);
+      setUser(null);
+    });
+    return () => setOnAuthFailure(null);
   }, []);
 
   useEffect(() => {
     (async () => {
-      const saved = await storage.get(TOKEN_KEY);
+      const saved = await loadTokens();
       if (saved) {
-        setAuthToken(saved);
         setToken(saved);
         try {
           const res = await api.get('/auth/me');
           setUser(res.data);
         } catch {
-          await applyToken(null);
+          await clearSession();
         }
       }
       setLoading(false);
     })();
-  }, [applyToken]);
+  }, [clearSession]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password });
-    await applyToken(res.data.access_token);
+    await applyPair(res.data.access_token, res.data.refresh_token);
     setUser(res.data.user);
-  }, [applyToken]);
+  }, [applyPair]);
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     const res = await api.post('/auth/register', { name, email, password });
-    await applyToken(res.data.access_token);
+    await applyPair(res.data.access_token, res.data.refresh_token);
     setUser(res.data.user);
-  }, [applyToken]);
+  }, [applyPair]);
 
   const logout = useCallback(async () => {
-    await applyToken(null);
-    setUser(null);
-  }, [applyToken]);
+    const rt = getRefreshToken();
+    if (rt) {
+      try { await api.post('/auth/logout', { refresh_token: rt }); } catch { /* best effort */ }
+    }
+    await clearSession();
+  }, [clearSession]);
 
   const appleLogin = useCallback(async (identityToken: string, name?: string | null, email?: string | null) => {
     const res = await api.post('/auth/apple', { identity_token: identityToken, name, email });
-    await applyToken(res.data.access_token);
+    await applyPair(res.data.access_token, res.data.refresh_token);
     setUser(res.data.user);
-  }, [applyToken]);
+  }, [applyPair]);
 
   const handledSessions = useRef<Set<string>>(new Set());
   const googleLogin = useCallback(async (sessionId: string) => {
     if (!sessionId || handledSessions.current.has(sessionId)) return;
     handledSessions.current.add(sessionId);
     const res = await api.post('/auth/session', { session_id: sessionId });
-    await applyToken(res.data.access_token);
+    await applyPair(res.data.access_token, res.data.refresh_token);
     setUser(res.data.user);
-  }, [applyToken]);
+  }, [applyPair]);
 
   // Capture the Google redirect: web URL on mount + mobile cold-start/hot links.
   useEffect(() => {
@@ -136,9 +149,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const phoneLogin = useCallback(async (phone: string, code: string) => {
     const res = await api.post('/auth/phone/verify-otp', { phone_number: phone, code });
-    await applyToken(res.data.access_token);
+    await applyPair(res.data.access_token, res.data.refresh_token);
     setUser(res.data.user);
-  }, [applyToken]);
+  }, [applyPair]);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, googleLogin, sendPhoneOtp, phoneLogin, logout, refreshUser }}>

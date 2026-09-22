@@ -29,6 +29,30 @@ FLOOD_WINDOW_SECONDS = 60
 FLOOD_MAX_REQUESTS = 600                 # 10 req/sec sustained per IP
 _ip_hits: dict[str, deque] = defaultdict(deque)
 
+# Stricter per-IP limits for sensitive auth endpoints (brute-force / spam defense).
+# Keyed by (ip, bucket). Still generous enough for real users on shared NATs.
+AUTH_LIMITS = {
+    "login":   (60, 300),    # /auth/login + /auth/session + /auth/apple  → 60 / 5 min
+    "refresh": (120, 300),   # /auth/refresh (silent refresh can be chatty) → 120 / 5 min
+    "otp":     (15, 300),    # /auth/phone/send-otp                        → 15 / 5 min
+    "register":(40, 3600),   # /auth/register                             → 40 / hour
+}
+_auth_hits: dict[str, deque] = defaultdict(deque)
+
+
+def _auth_bucket(method: str, path: str):
+    if method != "POST":
+        return None
+    if path.endswith("/auth/register"):
+        return "register"
+    if path.endswith("/auth/phone/send-otp"):
+        return "otp"
+    if path.endswith("/auth/refresh"):
+        return "refresh"
+    if path.endswith("/auth/login") or path.endswith("/auth/session") or path.endswith("/auth/apple") or path.endswith("/auth/phone/verify-otp"):
+        return "login"
+    return None
+
 
 def _client_ip(request: Request) -> str:
     # Honor the proxy chain (ingress sets X-Forwarded-For); fall back to peer.
@@ -92,5 +116,24 @@ async def security_middleware(request: Request, call_next):
     if len(_ip_hits) > 10000:
         for stale_ip in [k for k, v in list(_ip_hits.items())[:2000] if not v or v[-1] < cutoff]:
             _ip_hits.pop(stale_ip, None)
+
+    # Stricter throttle for sensitive auth endpoints (brute force / OTP spam).
+    bucket = _auth_bucket(method, request.url.path)
+    if bucket:
+        limit, window = AUTH_LIMITS[bucket]
+        akey = f"{ip}:{bucket}"
+        ahits = _auth_hits[akey]
+        acut = now - window
+        while ahits and ahits[0] < acut:
+            ahits.popleft()
+        if len(ahits) >= limit:
+            retry = max(1, int(window - (now - ahits[0])))
+            logger.warning(f"Auth throttle hit: {akey}")
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many attempts — please wait and try again"},
+                headers={"Retry-After": str(retry)},
+            )
+        ahits.append(now)
 
     return await call_next(request)

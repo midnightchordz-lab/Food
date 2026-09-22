@@ -1,7 +1,7 @@
 """
 Authentication routes - register, login, phone OTP, profile
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from datetime import datetime, timezone, timedelta
 import os
 import uuid
@@ -10,10 +10,11 @@ import random
 import sys
 
 from .deps import (
-    db, User, UserRegister, UserLogin, Token, 
+    db, User, UserRegister, UserLogin, Token, RefreshRequest,
     PhoneSendOTP, PhoneVerifyOTP, PhoneLoginResponse,
     get_current_user, verify_password, get_password_hash, create_access_token,
-    SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_DAYS, check_rate_limit
+    issue_token_pair, rotate_refresh_token, revoke_refresh_token,
+    SECRET_KEY, ALGORITHM, check_rate_limit
 )
 
 # Add backend to path for services import
@@ -38,7 +39,7 @@ DEBUG_RETURN_OTP = os.environ.get("AUTH_DEBUG_RETURN_OTP", "false").lower() == "
 
 
 @router.post("/register", response_model=Token)
-async def register(user: UserRegister):
+async def register(user: UserRegister, http_request: Request):
     """
     USER CREATION - HARD DEFAULTS (MANDATORY)
     
@@ -113,8 +114,8 @@ async def register(user: UserRegister):
         # Don't fail registration if trial fails
     # ==========================================
     
-    # Create token
-    access_token = create_access_token({"sub": user_id})
+    # Create token pair (short-lived access + rotating refresh)
+    pair = await issue_token_pair(user_id, http_request)
     
     # Return user without password
     # Re-fetch user to get updated trial fields
@@ -131,7 +132,8 @@ async def register(user: UserRegister):
         }
     
     return Token(
-        access_token=access_token, 
+        access_token=pair["access_token"],
+        refresh_token=pair["refresh_token"],
         token_type="bearer", 
         user=updated_user,
         trial=trial_info
@@ -139,17 +141,51 @@ async def register(user: UserRegister):
 
 
 @router.post("/login", response_model=Token)
-async def login(user: UserLogin):
+async def login(user: UserLogin, http_request: Request):
     email = user.email.lower().strip()
     db_user = await db.users.find_one({"email": email})
     if not db_user or not verify_password(user.password, db_user.get("hashed_password", "")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    access_token = create_access_token({"sub": db_user["id"]})
+    pair = await issue_token_pair(db_user["id"], http_request)
     
     user_response = {k: v for k, v in db_user.items() if k not in ["hashed_password", "_id"]}
     
-    return Token(access_token=access_token, token_type="bearer", user=user_response)
+    return Token(
+        access_token=pair["access_token"],
+        refresh_token=pair["refresh_token"],
+        token_type="bearer",
+        user=user_response,
+    )
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_tokens_endpoint(body: RefreshRequest, http_request: Request):
+    """Rotate a refresh token → new access + refresh pair. Detects stolen-token reuse."""
+    pair = await rotate_refresh_token(body.refresh_token, http_request)
+    user_id = None
+    try:
+        import jwt as _jwt
+        user_id = _jwt.decode(pair["access_token"], SECRET_KEY, algorithms=[ALGORITHM]).get("sub")
+    except Exception:
+        pass
+    user_response = {}
+    if user_id:
+        u = await db.users.find_one({"id": user_id}, {"_id": 0, "hashed_password": 0})
+        user_response = u or {}
+    return Token(
+        access_token=pair["access_token"],
+        refresh_token=pair["refresh_token"],
+        token_type="bearer",
+        user=user_response,
+    )
+
+
+@router.post("/logout")
+async def logout(body: RefreshRequest):
+    """Revoke the presented refresh token (logout on this device)."""
+    await revoke_refresh_token(body.refresh_token)
+    return {"status": "logged_out"}
 
 
 @router.post("/phone/send-otp")
@@ -213,7 +249,7 @@ async def send_phone_otp(request: PhoneSendOTP):
 
 
 @router.post("/phone/verify-otp", response_model=PhoneLoginResponse)
-async def verify_phone_otp(request: PhoneVerifyOTP):
+async def verify_phone_otp(request: PhoneVerifyOTP, http_request: Request):
     """Verify OTP and login/register user"""
     phone = request.phone_number.strip()
     code = request.code.strip()
@@ -300,16 +336,13 @@ async def verify_phone_otp(request: PhoneVerifyOTP):
             # Don't fail registration if trial fails
         # ==========================================
     
-    # Generate JWT token
-    token_data = {
-        "sub": user_data["id"],
-        "exp": datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    }
-    access_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+    # Generate token pair (short-lived access + rotating refresh)
+    pair = await issue_token_pair(user_data["id"], http_request)
     
     # Build response
     response = PhoneLoginResponse(
-        access_token=access_token,
+        access_token=pair["access_token"],
+        refresh_token=pair["refresh_token"],
         token_type="bearer",
         user=user_data,
         is_new_user=is_new_user
