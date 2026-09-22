@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -31,8 +31,18 @@ export default function Quick() {
 
   const [dietary, setDietary] = useState('balanced');
   const [cuisine, setCuisine] = useState('International');
+  const [pantry, setPantry] = useState<string[]>([]);
+  const [ingInput, setIngInput] = useState('');
   const [recipes, setRecipes] = useState<QuickRecipe[]>([]);
   const [tips, setTips] = useState<string[]>([]);
+
+  const addIngredient = () => {
+    const v = ingInput.trim();
+    if (!v) return;
+    if (!pantry.some((x) => x.toLowerCase() === v.toLowerCase())) setPantry((p) => [...p, v]);
+    setIngInput('');
+  };
+  const removeIngredient = (name: string) => setPantry((p) => p.filter((x) => x !== name));
 
   const genMut = useMutation({
     mutationFn: async () => {
@@ -41,7 +51,7 @@ export default function Quick() {
         dietary,
         cuisine: cuisine.toLowerCase(),
         mood: 'energizing',
-        ingredients: [],
+        ingredients: pantry,
         equipment: 'basic',
       });
       return res.data as { recipes: QuickRecipe[]; speed_tips: string[] };
@@ -83,7 +93,8 @@ export default function Quick() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.controlCard}>
           <Text style={styles.controlTitle}>Dietary</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
@@ -111,6 +122,34 @@ export default function Quick() {
               </Pressable>
             ))}
           </ScrollView>
+          <View style={{ height: 14 }} />
+          <Text style={styles.controlTitle}>What&apos;s in your kitchen? <Text style={styles.controlHint}>· optional</Text></Text>
+          <View style={styles.ingInputRow}>
+            <TextInput
+              style={styles.ingInput}
+              placeholder="e.g. eggs, spinach, feta"
+              placeholderTextColor={colors.mutedForeground}
+              value={ingInput}
+              onChangeText={setIngInput}
+              onSubmitEditing={addIngredient}
+              returnKeyType="done"
+              testID="quick-ingredient-input"
+            />
+            <Pressable style={styles.ingAddBtn} onPress={addIngredient} testID="quick-ingredient-add">
+              <Icon name="plus" size={20} color={colors.primaryForeground} />
+            </Pressable>
+          </View>
+          {pantry.length > 0 ? (
+            <View style={styles.pantryWrap}>
+              {pantry.map((ing) => (
+                <Pressable key={ing} style={styles.pantryChip} onPress={() => removeIngredient(ing)} testID={`quick-ing-${ing}`}>
+                  <Text style={styles.pantryChipText}>{ing}</Text>
+                  <Icon name="close" size={13} color={colors.accent} />
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
           <View style={{ height: 14 }} />
           <Button
             label={recipes.length ? 'Get 3 more' : 'Find 10-minute meals'}
@@ -161,6 +200,7 @@ export default function Quick() {
           </>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -172,6 +212,13 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 8 },
   controlCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 16, marginBottom: 16 },
   controlTitle: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.mutedForeground, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  controlHint: { fontFamily: f.body, fontSize: 11, color: colors.mutedForeground, textTransform: 'none', letterSpacing: 0 },
+  ingInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  ingInput: { flex: 1, backgroundColor: colors.secondary, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, fontFamily: f.body, fontSize: 14, color: colors.foreground },
+  ingAddBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  pantryWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  pantryChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.accentSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  pantryChipText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.accent },
   chipRow: { gap: 8, paddingRight: 8 },
   chip: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, flexShrink: 0 },
   chipText: { fontFamily: f.bodyMedium, fontSize: 13 },

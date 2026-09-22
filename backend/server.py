@@ -61,6 +61,7 @@ from routes.trial import router as trial_router
 from routes.family import router as family_router
 from routes.gen_image import router as gen_image_router
 from routes.apple_auth import router as apple_auth_router
+from routes.google_auth import router as google_auth_router
 from routes.mobile_import import router as mobile_import_router
 from routes.push import router as push_router
 from routes.mobile_voice import router as mobile_voice_router
@@ -93,6 +94,7 @@ app.include_router(trial_router, prefix="/api")
 app.include_router(family_router, prefix="/api")
 app.include_router(gen_image_router, prefix="/api")
 app.include_router(apple_auth_router, prefix="/api")
+app.include_router(google_auth_router, prefix="/api")
 app.include_router(mobile_import_router, prefix="/api")
 app.include_router(push_router, prefix="/api")
 app.include_router(mobile_voice_router, prefix="/api")

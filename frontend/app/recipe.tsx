@@ -102,6 +102,37 @@ export default function RecipeDetail() {
     onError: () => toast.show('Could not save recipe', 'error'),
   });
 
+  const getShoppingIngredients = (): string[] => {
+    if (providedIngredients.length) return providedIngredients;
+    const out: string[] = [];
+    let inIng = false;
+    for (const raw of recipeContent.split('\n')) {
+      const l = raw.trim();
+      if (/^#+\s*ingredients/i.test(l)) { inIng = true; continue; }
+      if (inIng && /^#+\s/.test(l)) break;
+      if (inIng && (l.startsWith('-') || l.startsWith('*'))) out.push(l.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim());
+    }
+    return out.filter(Boolean);
+  };
+
+  const addToListMut = useMutation({
+    mutationFn: async () => {
+      const ings = getShoppingIngredients();
+      if (!ings.length) throw new Error('no ingredients');
+      const existing = await api.get('/shopping-list');
+      const current = (existing.data.items || []).map((i: any) => ({ name: i.name, checked: !!i.checked }));
+      const names = new Set(current.map((i: any) => String(i.name).toLowerCase()));
+      const additions = ings.filter((n) => !names.has(n.toLowerCase())).map((n) => ({ name: n, checked: false }));
+      await api.post('/shopping-list', { items: [...current, ...additions] });
+      return additions.length;
+    },
+    onSuccess: (n: number) => {
+      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
+      toast.show(n > 0 ? `Added ${n} item${n === 1 ? '' : 's'} to your shopping list` : 'Those items are already on your list', 'success');
+    },
+    onError: () => toast.show('Could not add to shopping list', 'error'),
+  });
+
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }} showsVerticalScrollIndicator={false}>
@@ -148,7 +179,15 @@ export default function RecipeDetail() {
               <Loading label="Our chef is writing the full recipe…" />
             </View>
           ) : (
-            <Markdown content={recipeContent} />
+            <>
+              <Markdown content={recipeContent} />
+              {getShoppingIngredients().length > 0 ? (
+                <Pressable style={styles.listBtn} onPress={() => addToListMut.mutate()} testID="add-to-list" disabled={addToListMut.isPending}>
+                  <Icon name="cart-plus" size={18} color={colors.primary} />
+                  <Text style={styles.listText}>{addToListMut.isPending ? 'Adding…' : 'Add ingredients to shopping list'}</Text>
+                </Pressable>
+              ) : null}
+            </>
           )}
         </View>
       </ScrollView>
@@ -234,6 +273,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   saveText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.accent },
   cookBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10, backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 13 },
   cookText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.primaryForeground },
+  listBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20, backgroundColor: colors.primarySoft, borderRadius: 999, paddingVertical: 13 },
+  listText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.primary },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 22 },
   h1: { fontFamily: f.serif, fontSize: 26, color: colors.foreground, marginTop: 12, marginBottom: 4 },
   h2: { fontFamily: f.serif, fontSize: 22, color: colors.foreground, marginTop: 16, marginBottom: 4 },

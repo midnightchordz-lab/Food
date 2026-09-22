@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { Platform } from 'react-native';
+import * as Linking from 'expo-linking';
 import { api, setAuthToken } from '@/src/api/client';
 import { storage } from '@/src/utils/storage';
 
@@ -19,6 +21,7 @@ type AuthState = {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   appleLogin: (identityToken: string, name?: string | null, email?: string | null) => Promise<void>;
+  googleLogin: (sessionId: string) => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<{ demo_otp?: string; message?: string }>;
   phoneLogin: (phone: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -88,6 +91,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.data.user);
   }, [applyToken]);
 
+  const handledSessions = useRef<Set<string>>(new Set());
+  const googleLogin = useCallback(async (sessionId: string) => {
+    if (!sessionId || handledSessions.current.has(sessionId)) return;
+    handledSessions.current.add(sessionId);
+    const res = await api.post('/auth/session', { session_id: sessionId });
+    await applyToken(res.data.access_token);
+    setUser(res.data.user);
+  }, [applyToken]);
+
+  // Capture the Google redirect: web URL on mount + mobile cold-start/hot links.
+  useEffect(() => {
+    const extract = (url?: string | null) => {
+      if (!url) return null;
+      const m = url.match(/[?#&]session_id=([^&#]+)/);
+      return m ? decodeURIComponent(m[1]) : null;
+    };
+    const process = async (url?: string | null) => {
+      const sid = extract(url);
+      if (!sid) return;
+      try {
+        await googleLogin(sid);
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.history.replaceState(window.history.state, '', window.location.pathname);
+        }
+      } catch {
+        /* invalid session */
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      process(window.location.href);
+    } else {
+      Linking.getInitialURL().then(process);
+      const sub = Linking.addEventListener('url', (e) => process(e.url));
+      return () => sub.remove();
+    }
+  }, [googleLogin]);
+
   const sendPhoneOtp = useCallback(async (phone: string) => {
     const res = await api.post('/auth/phone/send-otp', { phone_number: phone });
     return res.data as { demo_otp?: string; message?: string };
@@ -100,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [applyToken]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, sendPhoneOtp, phoneLogin, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, googleLogin, sendPhoneOtp, phoneLogin, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform, Pressable,
 } from 'react-native';
@@ -6,10 +6,14 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Button, Icon, useToast } from '@/src/components/ui';
 import { AppleSignInButton } from '@/src/components/AppleSignInButton';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const HERO = 'https://images.unsplash.com/photo-1761662826410-3218852da3bf?w=900&q=80';
 
@@ -19,7 +23,11 @@ export default function Welcome() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
-  const { login, register, sendPhoneOtp, phoneLogin } = useAuth();
+  const { login, register, sendPhoneOtp, phoneLogin, googleLogin, user } = useAuth();
+
+  useEffect(() => {
+    if (user) router.replace('/(tabs)');
+  }, [user, router]);
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signup');
   const [name, setName] = useState('');
@@ -32,6 +40,33 @@ export default function Welcome() {
   const [code, setCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [phoneBusy, setPhoneBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+
+  const handleGoogle = async () => {
+    setGoogleBusy(true);
+    try {
+      if (Platform.OS === 'web') {
+        const redirect = window.location.origin + '/';
+        window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirect)}`;
+        return; // AuthContext handles the return on mount
+      }
+      const redirect = Linking.createURL('');
+      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirect)}`;
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirect);
+      let url: string | null = result.type === 'success' ? result.url : null;
+      if (!url) url = await Linking.getInitialURL();
+      const m = url ? url.match(/[?#&]session_id=([^&#]+)/) : null;
+      if (m) {
+        await googleLogin(decodeURIComponent(m[1]));
+        router.replace('/(tabs)');
+      }
+      // If no session_id here, the AuthContext url listener will pick it up.
+    } catch {
+      toast.show('Google sign-in failed. Please try again.', 'error');
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
 
   const sendCode = async () => {
     if (!/^\+\d{7,15}$/.test(phone.trim())) {
@@ -87,15 +122,19 @@ export default function Welcome() {
       <View style={styles.heroWrap}>
         <Image source={{ uri: HERO }} style={styles.hero} contentFit="cover" transition={300} />
         <LinearGradient
-          colors={['transparent', colors.background]}
+          colors={['rgba(45,42,38,0.35)', 'transparent', colors.background]}
           style={styles.heroFade}
-          locations={[0.25, 0.82]}
+          locations={[0, 0.4, 0.98]}
         />
-        <View style={[styles.heroContent, { paddingTop: insets.top + 40 }]}>
+        <View style={[styles.heroTop, { paddingTop: insets.top + 16 }]}>
           <View style={styles.badge}>
-            <Icon name="chef-hat" size={16} color={colors.primaryForeground} />
+            <Icon name="chef-hat" size={15} color={colors.primaryForeground} />
             <Text style={styles.badgeText}>AI Chef</Text>
           </View>
+        </View>
+        <View style={styles.heroBottom}>
+          <Text style={styles.brand} numberOfLines={1}>MOOD<Text style={styles.brandAccent}>FOOD</Text></Text>
+          <Text style={styles.tagline}>When feelings need feeding</Text>
         </View>
       </View>
 
@@ -108,11 +147,15 @@ export default function Welcome() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.brand} numberOfLines={1}>MOOD<Text style={styles.brandAccent}>FOOD</Text></Text>
-          <Text style={styles.tagline}>When feelings need feeding</Text>
           <Text style={styles.sub}>
             A compassionate AI chef that reads your mood and serves meals to heal, comfort and energize.
           </Text>
+
+          <View style={styles.pillsRow}>
+            <FeaturePill icon="emoticon-happy-outline" label="Mood-matched" />
+            <FeaturePill icon="silverware-fork-knife" label="AI recipes" />
+            <FeaturePill icon="calendar-heart" label="Weekly plans" />
+          </View>
 
           <View style={styles.segment}>
             {(['signup', 'signin'] as const).map((m) => (
@@ -168,23 +211,37 @@ export default function Welcome() {
 
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>or continue with</Text>
             <View style={styles.dividerLine} />
           </View>
-          <Pressable
-            style={styles.altBtn}
-            testID="toggle-phone"
-            onPress={() => { setPhoneMode((v) => !v); setOtpSent(false); setCode(''); }}
-          >
-            <Icon name={phoneMode ? 'email-outline' : 'phone-outline'} size={18} color={colors.foreground} />
-            <Text style={styles.altBtnText}>{phoneMode ? 'Use email instead' : 'Continue with phone'}</Text>
-          </Pressable>
+
+          <View style={styles.socialGrid}>
+            <Pressable
+              style={styles.altBtn}
+              testID="google-signin"
+              onPress={handleGoogle}
+              disabled={googleBusy}
+            >
+              <Icon name="google" size={19} color={colors.foreground} />
+              <Text style={styles.altBtnText}>{googleBusy ? 'Connecting…' : 'Google'}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.altBtn}
+              testID="toggle-phone"
+              onPress={() => { setPhoneMode((v) => !v); setOtpSent(false); setCode(''); }}
+            >
+              <Icon name={phoneMode ? 'email-outline' : 'phone-outline'} size={19} color={colors.foreground} />
+              <Text style={styles.altBtnText}>{phoneMode ? 'Email' : 'Phone'}</Text>
+            </Pressable>
+          </View>
 
           {Platform.OS === 'ios' && (
-            <AppleSignInButton />
+            <View style={{ marginTop: 10 }}>
+              <AppleSignInButton />
+            </View>
           )}
 
-          <Text style={styles.fineprint}>Free to use • 7-day premium trial included</Text>
+          <Text style={styles.fineprint}>Free to use · 7-day premium trial included</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -218,25 +275,43 @@ function Field({
   );
 }
 
+function FeaturePill({ icon, label }: { icon: string; label: string }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  return (
+    <View style={styles.pill}>
+      <Icon name={icon} size={14} color={colors.primary} />
+      <Text style={styles.pillText}>{label}</Text>
+    </View>
+  );
+}
+
 const useStyles = makeStyles(({ colors }) => ({
   root: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  heroWrap: { height: 260, width: '100%' },
+  heroWrap: { height: 300, width: '100%' },
   hero: { width: '100%', height: '100%' },
   heroFade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: 0 },
-  heroContent: { position: 'absolute', left: 0, right: 0, top: 0, alignItems: 'center' },
+  heroTop: { position: 'absolute', left: 0, right: 0, top: 0, alignItems: 'center' },
+  heroBottom: { position: 'absolute', left: 24, right: 24, bottom: 18 },
   badge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
   },
   badgeText: { color: colors.primaryForeground, fontFamily: fonts.bodySemiBold, fontSize: 13 },
-  body: { paddingHorizontal: 24, marginTop: 0 },
-  brand: { fontFamily: fonts.serif, fontSize: 31, color: colors.foreground, letterSpacing: 0 },
-  brandAccent: { color: colors.primary },
-  tagline: { fontFamily: fonts.serifMedium, fontSize: 20, fontStyle: 'italic', color: colors.accent, marginTop: -4 },
-  sub: { fontFamily: fonts.body, fontSize: 15, color: colors.mutedForeground, marginTop: 12, lineHeight: 22 },
+  body: { paddingHorizontal: 24, marginTop: 4 },
+  brand: { fontFamily: fonts.serif, fontSize: 40, color: colors.foreground, letterSpacing: 0.5 },
+  brandAccent: { color: colors.accent },
+  tagline: { fontFamily: fonts.serifMedium, fontSize: 21, fontStyle: 'italic', color: colors.mutedForeground, marginTop: -2 },
+  sub: { fontFamily: fonts.body, fontSize: 15, color: colors.mutedForeground, marginTop: 4, lineHeight: 22 },
+  pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: colors.primarySoft, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999,
+  },
+  pillText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.foreground },
   segment: {
-    flexDirection: 'row', backgroundColor: colors.secondary, borderRadius: 999, padding: 4, marginTop: 26, marginBottom: 18,
+    flexDirection: 'row', backgroundColor: colors.secondary, borderRadius: 999, padding: 4, marginTop: 24, marginBottom: 18,
   },
   segmentBtn: { flex: 1, paddingVertical: 11, borderRadius: 999, alignItems: 'center' },
   segmentBtnActive: { backgroundColor: colors.card, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
@@ -248,11 +323,12 @@ const useStyles = makeStyles(({ colors }) => ({
     borderRadius: 16, paddingHorizontal: 16, height: 56, marginBottom: 12,
   },
   input: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.foreground, height: '100%' },
-  fineprint: { fontFamily: fonts.body, fontSize: 12.5, color: colors.mutedForeground, textAlign: 'center', marginTop: 14 },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 18 },
+  fineprint: { fontFamily: fonts.body, fontSize: 12.5, color: colors.mutedForeground, textAlign: 'center', marginTop: 18 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { fontFamily: fonts.body, fontSize: 13, color: colors.mutedForeground },
-  altBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, height: 54, marginBottom: 4 },
+  dividerText: { fontFamily: fonts.body, fontSize: 12.5, color: colors.mutedForeground },
+  socialGrid: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  altBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, height: 54 },
   altBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.foreground },
   resendRow: { alignItems: 'center', paddingVertical: 12 },
   resendText: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.primary },

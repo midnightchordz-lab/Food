@@ -11,3 +11,8 @@ Register any new account from the Welcome screen, or use:
 - iOS only, requires a real Apple ID on a physical device / TestFlight build.
 - Cannot be tested in Expo Go's simulator or on web/Android.
 - Backend route: `POST /api/auth/apple` (verifies identity token vs Apple JWKS).
+
+## Google Auth (Emergent-managed) — 2026-06
+- Endpoint: POST /api/auth/session { session_id } -> exchanges with Emergent, upserts user by email, returns app JWT.
+- Cannot be tested headlessly (needs real Google login via auth.emergentagent.com). Invalid session_id -> 401 (verified).
+- Test accounts: use any Google account at runtime; users are upserted by email into `users`.

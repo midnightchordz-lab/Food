@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTheme, fonts } from '@/src/theme';
 import { usesNativeTabs } from '@/src/navigation';
+import { useAuth } from '@/src/auth/AuthContext';
 import { Icon } from '@/src/components/ui';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) router.replace('/welcome');
+  }, [user, loading, router]);
 
   if (usesNativeTabs) {
     return (
