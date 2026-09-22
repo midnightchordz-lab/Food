@@ -20,6 +20,8 @@ type QuickRecipe = {
   ingredients: string[];
   instructions: string[];
   pro_tip?: string;
+  image_url?: string | null;
+  image_validated?: boolean;
 };
 
 export default function Quick() {
@@ -46,7 +48,7 @@ export default function Quick() {
 
   const genMut = useMutation({
     mutationFn: async () => {
-      const res = await api.post('/quick-recipes/generate', {
+      const res = await api.post('/quick-recipes/generate-validated', {
         count: 3,
         dietary,
         cuisine: cuisine.toLowerCase(),
@@ -54,11 +56,11 @@ export default function Quick() {
         ingredients: pantry,
         equipment: 'basic',
       });
-      return res.data as { recipes: QuickRecipe[]; speed_tips: string[] };
+      return res.data as { recipes: QuickRecipe[] };
     },
     onSuccess: (data) => {
       setRecipes(data.recipes || []);
-      setTips(data.speed_tips || []);
+      setTips([]);
     },
     onError: () => toast.show('Could not generate recipes. Try again.', 'error'),
   });
@@ -81,6 +83,7 @@ export default function Quick() {
         difficulty: r.difficulty,
         ingredients: JSON.stringify(r.ingredients),
         content: parts.join('\n'),
+        ...(r.image_url ? { image: r.image_url } : {}),
       },
     });
   };
@@ -163,7 +166,7 @@ export default function Quick() {
         {genMut.isPending ? (
           <View style={styles.loadingBox}>
             <Icon name="lightning-bolt" size={34} color={colors.primary} />
-            <Text style={styles.loadingText}>Finding speedy recipes…</Text>
+            <Text style={styles.loadingText}>Cooking up recipes with verified photos…</Text>
           </View>
         ) : recipes.length === 0 ? (
           <View style={styles.emptyBox}>
@@ -182,6 +185,7 @@ export default function Quick() {
                   difficulty: r.difficulty,
                   cuisine: r.cuisine,
                   ingredients: r.ingredients,
+                  image_url: r.image_url || undefined,
                 }}
                 onPress={() => openRecipe(r)}
               />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -144,18 +145,27 @@ export default function RecipeDetail() {
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }} showsVerticalScrollIndicator={false}>
         <View style={styles.heroWrap}>
           <Image source={{ uri: img }} style={styles.hero} contentFit="cover" transition={250} cachePolicy="memory-disk" recyclingKey={img} />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.45)', 'transparent', 'rgba(0,0,0,0.75)']}
+            locations={[0, 0.45, 1]}
+            style={styles.heroFade}
+          />
           <Pressable style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={() => router.back()} testID="close-recipe" hitSlop={8}>
             <Icon name="close" size={22} color="#FFFFFF" />
           </Pressable>
+          <View style={styles.heroTextWrap}>
+            {p.cuisine ? (
+              <View style={styles.heroTag}><Text style={styles.heroTagText}>{String(p.cuisine)}</Text></View>
+            ) : null}
+            <Text style={styles.heroTitle}>{title}</Text>
+            <View style={styles.heroMetaRow}>
+              {p.cooking_time ? <HeroMeta icon="clock-outline" text={String(p.cooking_time)} /> : null}
+              {p.difficulty ? <HeroMeta icon="chef-hat" text={String(p.difficulty)} /> : null}
+            </View>
+          </View>
         </View>
 
         <View style={styles.body}>
-          <Text style={styles.title}>{title}</Text>
-          <View style={styles.metaRow}>
-            {p.cuisine ? <Meta icon="earth" text={String(p.cuisine)} /> : null}
-            {p.cooking_time ? <Meta icon="clock-outline" text={String(p.cooking_time)} /> : null}
-            {p.difficulty ? <Meta icon="chef-hat" text={String(p.difficulty)} /> : null}
-          </View>
           {p.description ? <Text style={styles.desc}>{String(p.description)}</Text> : null}
 
           {carbs != null ? (
@@ -216,13 +226,12 @@ export default function RecipeDetail() {
   );
 }
 
-function Meta({ icon, text }: { icon: string; text: string }) {
+function HeroMeta({ icon, text }: { icon: string; text: string }) {
   const styles = useStyles();
-  const { colors } = useTheme();
   return (
-    <View style={styles.meta}>
-      <Icon name={icon} size={14} color={colors.mutedForeground} />
-      <Text style={styles.metaText}>{text}</Text>
+    <View style={styles.heroMeta}>
+      <Icon name={icon} size={14} color="rgba(255,255,255,0.9)" />
+      <Text style={styles.heroMetaText}>{text}</Text>
     </View>
   );
 }
@@ -267,8 +276,8 @@ function Markdown({ content }: { content: string }) {
         if (/^\s*\d+\.\s+/.test(line)) {
           const num = line.match(/^\s*(\d+)\./)?.[1] || '';
           return (
-            <View key={idx} style={styles.bulletRow}>
-              <Text style={[styles.num, { color: colors.accent }]}>{num}.</Text>
+            <View key={idx} style={styles.stepRow}>
+              <View style={styles.stepNum}><Text style={styles.stepNumText}>{num}</Text></View>
               {renderInline(line.replace(/^\s*\d+\.\s+/, ''), `n-${idx}`)}
             </View>
           );
@@ -281,15 +290,19 @@ function Markdown({ content }: { content: string }) {
 
 const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   root: { flex: 1, backgroundColor: colors.background },
-  heroWrap: { width: '100%', height: 240 },
+  heroWrap: { width: '100%', height: 320 },
   hero: { width: '100%', height: '100%', backgroundColor: colors.secondary },
+  heroFade: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  heroTextWrap: { position: 'absolute', left: spacing.lg, right: spacing.lg, bottom: 18 },
+  heroTag: { alignSelf: 'flex-start', backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5, marginBottom: 10 },
+  heroTagText: { fontFamily: f.bodySemiBold, fontSize: 12, color: colors.accentForeground },
+  heroTitle: { fontFamily: f.serif, fontSize: 34, color: '#FFFFFF', lineHeight: 38 },
+  heroMetaRow: { flexDirection: 'row', gap: 16, marginTop: 10 },
+  heroMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  heroMetaText: { fontFamily: f.bodyMedium, fontSize: 13.5, color: 'rgba(255,255,255,0.92)' },
   closeBtn: { position: 'absolute', right: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
-  title: { fontFamily: f.serif, fontSize: 32, color: colors.foreground, lineHeight: 36 },
-  metaRow: { flexDirection: 'row', gap: 14, marginTop: 12, flexWrap: 'wrap' },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.mutedForeground },
-  desc: { fontFamily: f.body, fontSize: 15, color: colors.mutedForeground, marginTop: 14, lineHeight: 22 },
+  desc: { fontFamily: f.body, fontSize: 15, color: colors.mutedForeground, lineHeight: 22 },
   carbBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, borderWidth: 1, borderRadius: radius.md, paddingVertical: 12, paddingHorizontal: 14 },
   carbDot: { width: 12, height: 12, borderRadius: 6 },
   carbBannerValue: { fontFamily: f.bodyBold, fontSize: 16, color: colors.foreground },
@@ -304,11 +317,14 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   listText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.primary },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 22 },
   h1: { fontFamily: f.serif, fontSize: 26, color: colors.foreground, marginTop: 12, marginBottom: 4 },
-  h2: { fontFamily: f.serif, fontSize: 22, color: colors.foreground, marginTop: 16, marginBottom: 4 },
+  h2: { fontFamily: f.serif, fontSize: 23, color: colors.foreground, marginTop: 20, marginBottom: 10 },
   h3: { fontFamily: f.bodyBold, fontSize: 16, color: colors.foreground, marginTop: 12, marginBottom: 2 },
-  p: { fontFamily: f.body, fontSize: 15, color: colors.foreground, lineHeight: 23 },
+  p: { flex: 1, fontFamily: f.body, fontSize: 15, color: colors.foreground, lineHeight: 23 },
   bold: { fontFamily: f.bodyBold, color: colors.foreground },
-  bulletRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingVertical: 2 },
-  bulletDot: { width: 6, height: 6, borderRadius: 3, marginTop: 9 },
+  bulletRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', paddingVertical: 4 },
+  bulletDot: { width: 7, height: 7, borderRadius: 4, marginTop: 8, backgroundColor: colors.accent },
+  stepRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingVertical: 7 },
+  stepNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  stepNumText: { fontFamily: f.bodyBold, fontSize: 13, color: colors.primaryForeground },
   num: { fontFamily: f.bodyBold, fontSize: 15, marginTop: 0 },
 }));
