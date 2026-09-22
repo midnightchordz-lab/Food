@@ -35,6 +35,7 @@ db = client[db_name]
 
 # Security - Production ready (no fallbacks)
 security = HTTPBearer()
+security_optional = HTTPBearer(auto_error=False)
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
 if not SECRET_KEY:
     raise RuntimeError("JWT_SECRET_KEY environment variable is required")
@@ -332,11 +333,27 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Authentication failed")
 
 
+async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(security_optional)):
+    """Like get_current_user but returns None (instead of 401) when there is no
+    valid token. Used by graceful-degradation endpoints that must stay usable
+    without login so a security fix never hard-breaks an existing request."""
+    if not credentials:
+        return None
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            return None
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "hashed_password": 0})
+        return User(**user) if user else None
+    except Exception:
+        return None
+
+
 async def require_admin_user(current_user: "User" = Depends(get_current_user)) -> "User":
-    """Authorize an authenticated user as an admin.
-    Authorization is DB-authoritative (get_current_user loads the live user),
-    so a token issued before demotion won't retain admin. 403 for non-admins,
-    401 (from get_current_user) for missing/invalid tokens."""
+    """Authorize an authenticated user as an admin. DB-authoritative (get_current_user
+    loads the live user) so a token issued before demotion won't retain admin.
+    403 for non-admins, 401 (from get_current_user) for missing/invalid tokens."""
     if not getattr(current_user, "is_admin", False):
         raise HTTPException(status_code=403, detail="Administrator role required")
     return current_user

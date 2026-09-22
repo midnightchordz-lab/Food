@@ -3,7 +3,7 @@ AI recipe image generation using Gemini Nano Banana (gemini-3.1-flash-image-prev
 Generated images are cached on disk and served under /api so they are reachable
 through the Kubernetes ingress (only /api/* is routed to the backend).
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
@@ -14,7 +14,7 @@ import logging
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
-from .deps import User, get_current_user, check_and_increment_daily_image_cap
+from .deps import User, get_optional_user, check_and_increment_daily_image_cap
 
 router = APIRouter(prefix="/recipe-image", tags=["AI Recipe Image"])
 
@@ -71,8 +71,10 @@ def _key(title: str, cuisine: str) -> str:
 
 
 @router.post("/ai-generate")
-async def generate_recipe_image(req: GenerateImageRequest, current_user: User = Depends(get_current_user)):
-    """Generate (or return cached) an AI food photo for a recipe. Returns a relative /api url."""
+async def generate_recipe_image(req: GenerateImageRequest, request: Request, current_user: User = Depends(get_optional_user)):
+    """Generate (or return cached) an AI food photo for a recipe. Returns a relative /api url.
+    Auth is OPTIONAL for backwards-compatibility: cache hits are always served, and
+    paid (cache-miss) generations are capped per-user when logged in, else per-IP."""
     key = _key(req.title, req.cuisine)
     dest = IMAGE_DIR / f"{key}.png"
     rel_url = f"/api/recipe-image/img/{key}.png"
@@ -84,8 +86,14 @@ async def generate_recipe_image(req: GenerateImageRequest, current_user: User = 
     if not api_key:
         raise HTTPException(status_code=500, detail="Image generation not configured")
 
-    # M2: cap uncached (paid) generations per user per day.
-    await check_and_increment_daily_image_cap(current_user.id)
+    # 6.2 cost control: cap uncached (paid) generations. Per-user when authenticated,
+    # otherwise per client IP so anonymous callers still can't run up the bill.
+    if current_user:
+        identity = current_user.id
+    else:
+        fwd = request.headers.get("x-forwarded-for")
+        identity = f"ip:{(fwd.split(',')[0].strip() if fwd else (request.client.host if request.client else 'unknown'))}"
+    await check_and_increment_daily_image_cap(identity)
 
     specs = _dish_specs(req.title, req.cuisine)
     ingredients_str = ", ".join([i for i in req.ingredients[:6] if i]) or "as typical for this dish"

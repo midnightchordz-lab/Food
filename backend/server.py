@@ -119,6 +119,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Additive, non-breaking security layer (Deep Security Audit 47-vector hardening).
+# Added AFTER CORS so CORS remains the outermost middleware and its headers are
+# applied even to security rejections.
+from security_middleware import security_middleware
+app.middleware("http")(security_middleware)
+
 # Startup event - create database indexes and start scheduler
 @app.on_event("startup")
 async def startup_event():
