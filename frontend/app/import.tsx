@@ -99,6 +99,28 @@ export default function ImportRecipe() {
     onError: () => toast.show('Could not save recipe', 'error'),
   });
 
+  const openFullRecipe = () => {
+    if (!preview) return;
+    const ing = (preview.ingredients || []).map((i: any) => (typeof i === 'string' ? i : i?.name ? `${i.amount ? i.amount + ' ' : ''}${i.name}` : String(i)));
+    const steps = (preview.instructions || []).map((s: any) => (typeof s === 'string' ? s : s?.instruction || s?.text || s?.step || String(s)));
+    const parts: string[] = [];
+    if (ing.length) parts.push('## Ingredients', ...ing.map((x) => `- ${x}`), '');
+    if (steps.length) parts.push('## Instructions', ...steps.map((x, i) => `${i + 1}. ${x}`));
+    const content = parts.join('\n').trim() || (preview.description || 'No further details available.');
+    router.push({
+      pathname: '/recipe',
+      params: {
+        title: preview.name || 'Imported Recipe',
+        description: preview.description || '',
+        cuisine: preview.cuisine || 'International',
+        cooking_time: preview.totalTime || '',
+        difficulty: preview.difficulty || '',
+        image: preview.image_url || '',
+        content,
+      },
+    });
+  };
+
   // Non-subscribers see a paywall gate
   if (!isSubscribed) {
     return (
@@ -207,6 +229,8 @@ export default function ImportRecipe() {
                 <Text key={i} style={styles.li}>• {typeof ing === 'string' ? ing : ing?.name || JSON.stringify(ing)}</Text>
               ))}
               <View style={{ height: 20 }} />
+              <Button label="View full recipe" icon="book-open-variant" onPress={() => openFullRecipe()} testID="import-view-full" />
+              <View style={{ height: 10 }} />
               <Button label="Save to my collection" icon="heart" onPress={() => saveMut.mutate()} loading={saveMut.isPending} testID="import-save" />
               <View style={{ height: 10 }} />
               <Button label="Import another" variant="outline" icon="refresh" onPress={() => { setPreview(null); setUrl(''); setText(''); }} testID="import-again" />

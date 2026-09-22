@@ -39,15 +39,20 @@ export default function RecipeDetail() {
   const { isSubscribed } = useSubscription();
   const p = useLocalSearchParams<{
     title: string; description?: string; cuisine?: string; meal?: string; dietary?: string;
-    cooking_time?: string; difficulty?: string; ingredients?: string;
+    cooking_time?: string; difficulty?: string; ingredients?: string; content?: string; image?: string;
   }>();
 
   const title = String(p.title || 'Recipe');
+  const providedContent = p.content ? String(p.content) : '';
   const aiImg = useRecipeImage(title, String(p.cuisine || ''), String(p.description || ''));
-  const img = aiImg.data || foodImage(title, String(p.cuisine || ''));
+  const providedImg = p.image
+    ? (String(p.image).startsWith('/') ? `${process.env.EXPO_PUBLIC_BACKEND_URL}${p.image}` : String(p.image))
+    : '';
+  const img = providedImg || aiImg.data || foodImage(title, String(p.cuisine || ''));
 
   const { data, isLoading } = useQuery({
     queryKey: ['detailed-recipe', title],
+    enabled: !providedContent,
     queryFn: async () => {
       const res = await api.post('/recipes/detailed', {
         recipe_title: title,
@@ -58,6 +63,9 @@ export default function RecipeDetail() {
       return res.data.recipe as string;
     },
   });
+
+  const recipeContent = providedContent || data || '';
+  const loadingContent = !providedContent && isLoading;
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -115,7 +123,7 @@ export default function RecipeDetail() {
             testID="cook-mode"
             onPress={() => {
               if (!isSubscribed) { router.push('/paywall'); return; }
-              const steps = parseSteps(data || '');
+              const steps = parseSteps(recipeContent);
               if (!steps.length) { toast.show('Recipe steps are still loading', 'error'); return; }
               router.push({ pathname: '/cook', params: { title, steps: JSON.stringify(steps) } });
             }}
@@ -127,12 +135,12 @@ export default function RecipeDetail() {
 
           <View style={styles.divider} />
 
-          {isLoading ? (
+          {loadingContent ? (
             <View style={{ paddingVertical: 40 }}>
               <Loading label="Our chef is writing the full recipe…" />
             </View>
           ) : (
-            <Markdown content={data || ''} />
+            <Markdown content={recipeContent} />
           )}
         </View>
       </ScrollView>
