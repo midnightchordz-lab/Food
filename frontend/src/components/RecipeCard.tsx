@@ -85,7 +85,7 @@ export type RecipeCardData = {
 };
 
 export function RecipeCard({
-  recipe, onPress, onSave, saved, saving, onAddToCart, rating, onRate, verified,
+  recipe, onPress, onSave, saved, saving, onAddToCart, rating, onRate, verified, useAiImage,
 }: {
   recipe: RecipeCardData;
   onPress: () => void;
@@ -96,11 +96,22 @@ export function RecipeCard({
   rating?: number;
   onRate?: (value: number) => void;
   verified?: boolean;
+  useAiImage?: boolean;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const resolvedImageUrl = recipe.image_url && recipe.image_url.startsWith('/') ? `${BACKEND}${recipe.image_url}` : recipe.image_url;
-  const img = resolvedImageUrl || foodImage(recipe.title, recipe.cuisine);
+  // When opted in (e.g. Discover results), fetch the dish-accurate AI photo so each
+  // recipe gets its own image instead of a shared cuisine stock photo. The fast CDN
+  // photo shows instantly as a placeholder until the AI image is plated (backend-cached).
+  const ai = useRecipeImage(
+    recipe.title,
+    recipe.cuisine,
+    recipe.description,
+    recipe.ingredients,
+    !!useAiImage && !resolvedImageUrl,
+  );
+  const img = resolvedImageUrl || ai.data || foodImage(recipe.title, recipe.cuisine);
 
   return (
     <Pressable
