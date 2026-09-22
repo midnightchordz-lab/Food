@@ -42,8 +42,9 @@ SPECS_DB: dict[str, str] = {
     'taco': "Folded soft/hard tortilla | Visible filling (meat/beans), lettuce, cheese, salsa | Lime wedge | NOT a burrito, NOT a wrap",
     'burrito': "Large flour tortilla fully wrapped | Cut in half to show rice, beans, meat filling | NOT open tacos",
     'carbonara': "Spaghetti coated in creamy egg-cheese sauce | Pancetta/guanciale bits | Black pepper | Parmesan | NO green peas, NOT alfredo",
-    'butter chicken': "Rich orange-red creamy tomato gravy | Tender chicken pieces | Cream swirl + coriander | Served with naan/rice on side | NOT dry curry",
+    'butter chicken': "MUST SHOW rich creamy orange-red tomato gravy | tender chicken pieces in the sauce | cream swirl + coriander | naan/rice alongside. MUST NOT be dry, grilled, or a clear broth",
     'curry': "Sauce-based dish in a bowl | Visible gravy coating protein/veg | Garnish of coriander | Rice or naan alongside",
+    'green curry': "MUST SHOW creamy GREEN coconut sauce | chicken/tofu pieces | Thai basil + green chili | jasmine rice on side. MUST NOT be red or yellow curry, NOT clear broth",
     'dumpling': "Pleated steamed/pan-fried dumplings | Glossy wrappers | Dipping sauce dish | Served in bamboo steamer or plate",
     'salad': "Fresh crisp leaves and vegetables | Vibrant colours | Light dressing sheen | Served in a bowl or plate | NOT cooked",
     'pancake': "Stack of fluffy round pancakes | Butter pat melting | Maple syrup drizzle | Berries optional | NOT crepes",
@@ -84,7 +85,8 @@ async def generate_recipe_image(req: GenerateImageRequest):
     specs = _dish_specs(req.title, req.cuisine)
     ingredients_str = ", ".join([i for i in req.ingredients[:6] if i]) or "as typical for this dish"
 
-    prompt = f"""GENERATE: Professional food photograph of {req.title}
+    def build_prompt(extra: str = "") -> str:
+        return f"""GENERATE: Professional food photograph of {req.title}
 DISH INFO:
 - Name: {req.title}
 - Cuisine: {req.cuisine or 'International'}
@@ -105,23 +107,46 @@ QUALITY STANDARDS:
 STYLE:
 - Authentic {req.cuisine or 'home-style'} presentation
 - High-end restaurant plating
-- Immediately recognizable as {req.title}"""
+- Immediately recognizable as {req.title}
+{extra}
+VALIDATION (do this after generating): confirm the image clearly shows {req.title} with its main ingredients visible, authentic style, correct plating and colours, and is NOT confused with a similar dish. On the FINAL text line output exactly "VALIDATION: VERIFIED" if it matches, otherwise "VALIDATION: REJECTED - <short reason>"."""
 
+    fallback_bytes = None
+    extra = ""
     try:
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"img-{key}",
-            system_message="You are a professional food photographer. Generate high-quality food images that are authentic and immediately recognizable as the named dish.",
-        )
-        chat.with_model("gemini", MODEL).with_params(modalities=["image", "text"])
-        _text, images = await chat.send_message_multimodal_response(UserMessage(text=prompt))
-        if not images:
-            raise HTTPException(status_code=502, detail="No image returned")
-        image_bytes = base64.b64decode(images[0]["data"])
-        with open(dest, "wb") as f:
-            f.write(image_bytes)
-        logging.info(f"Generated recipe image for '{req.title}' -> {rel_url}")
-        return {"url": rel_url, "cached": False}
+        for attempt in range(2):
+            chat = LlmChat(
+                api_key=api_key,
+                session_id=f"img-{key}-{attempt}",
+                system_message="You are a professional food photographer and strict image validator. Generate high-quality food images that are immediately recognizable as the named dish, and honestly validate them.",
+            )
+            chat.with_model("gemini", MODEL).with_params(modalities=["image", "text"])
+            text, images = await chat.send_message_multimodal_response(UserMessage(text=build_prompt(extra)))
+            if not images:
+                continue
+            image_bytes = base64.b64decode(images[0]["data"])
+            fallback_bytes = image_bytes  # always keep the latest so the user still gets an image
+            verdict = (text or "").upper()
+            rejected = "REJECTED" in verdict and "VERIFIED" not in verdict
+            if rejected and attempt == 0:
+                logging.info(f"Image for '{req.title}' self-rejected ({text[:120]}); regenerating")
+                extra = (
+                    f"PREVIOUS ATTEMPT WAS REJECTED because: {text[:200]}. "
+                    f"Regenerate MORE carefully and strictly follow the VISUAL SPECIFICATIONS for {req.title}."
+                )
+                continue
+            with open(dest, "wb") as f:
+                f.write(image_bytes)
+            logging.info(f"Generated recipe image for '{req.title}' -> {rel_url} (validated={not rejected})")
+            return {"url": rel_url, "cached": False, "validated": not rejected}
+
+        # Exhausted attempts: still return the best image we produced.
+        if fallback_bytes:
+            with open(dest, "wb") as f:
+                f.write(fallback_bytes)
+            logging.info(f"Saved best-effort image for '{req.title}' after validation retries")
+            return {"url": rel_url, "cached": False, "validated": False}
+        raise HTTPException(status_code=502, detail="No image returned")
     except HTTPException:
         raise
     except Exception as e:
