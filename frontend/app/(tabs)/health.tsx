@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -31,6 +31,7 @@ export default function Health() {
 
   const [dtype, setDtype] = useState('type2');
   const [dietary, setDietary] = useState('balanced');
+  const [swapping, setSwapping] = useState<string | null>(null);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['diabetes-plan'],
@@ -51,6 +52,24 @@ export default function Health() {
     },
     onError: () => toast.show('Could not generate plan. Try again.', 'error'),
   });
+
+  const swapMut = useMutation({
+    mutationFn: async ({ day, meal_type }: { day: string; meal_type: string }) => {
+      const res = await api.post('/mobile-diabetes/swap', { day, meal_type });
+      return res.data as { plan: Plan };
+    },
+    onSuccess: (res) => {
+      queryClient.setQueryData(['diabetes-plan'], { has_plan: true, plan: res.plan });
+      toast.show('Swapped for a fresh option', 'success');
+    },
+    onError: () => toast.show('Could not swap this meal. Try again.', 'error'),
+    onSettled: () => setSwapping(null),
+  });
+
+  const doSwap = (day: string, meal_type: string) => {
+    setSwapping(`${day}-${meal_type}`);
+    swapMut.mutate({ day, meal_type });
+  };
 
   const flagColor = (flag: string) =>
     flag === 'safe' ? colors.success : flag === 'caution' ? colors.accent : colors.danger;
@@ -151,36 +170,54 @@ export default function Health() {
               {plan.days.map((d) => (
                 <View key={d.day} style={styles.dayCard}>
                   <Text style={styles.dayTitle}>{d.day}</Text>
-                  {d.meals.map((m) => (
-                    <Pressable
-                      key={m.type}
-                      style={styles.mealRow}
-                      testID={`diabetes-meal-${d.day}-${m.type}`}
-                      onPress={() => router.push({
-                        pathname: '/recipe',
-                        params: {
-                          title: m.name,
-                          meal: m.type,
-                          description: m.note || '',
-                          dietary: plan.dietary_preference || 'Any',
-                        },
-                      })}
-                    >
-                      <View style={[styles.flagDot, { backgroundColor: flagColor(m.flag) }]} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.mealType}>{m.type}</Text>
-                        <Text style={styles.mealName} numberOfLines={2}>{m.name}</Text>
-                        {m.note ? <Text style={styles.mealNote} numberOfLines={2}>{m.note}</Text> : null}
+                  {d.meals.map((m) => {
+                    const key = `${d.day}-${m.type}`;
+                    return (
+                      <View key={m.type} style={styles.mealRow}>
+                        <Pressable
+                          style={styles.mealMain}
+                          testID={`diabetes-meal-${key}`}
+                          onPress={() => router.push({
+                            pathname: '/recipe',
+                            params: {
+                              title: m.name,
+                              meal: m.type,
+                              description: m.note || '',
+                              dietary: plan.dietary_preference || 'Any',
+                              carbs: String(m.net_carbs),
+                              flag: m.flag,
+                            },
+                          })}
+                        >
+                          <View style={[styles.flagDot, { backgroundColor: flagColor(m.flag) }]} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.mealType}>{m.type}</Text>
+                            <Text style={styles.mealName} numberOfLines={2}>{m.name}</Text>
+                            {m.note ? <Text style={styles.mealNote} numberOfLines={2}>{m.note}</Text> : null}
+                          </View>
+                          <View style={[styles.carbBadge, { backgroundColor: flagColor(m.flag) + '22' }]}>
+                            <Text style={[styles.carbText, { color: flagColor(m.flag) }]}>{m.net_carbs}g</Text>
+                          </View>
+                        </Pressable>
+                        <Pressable
+                          style={styles.swapBtn}
+                          testID={`diabetes-swap-${key}`}
+                          hitSlop={6}
+                          disabled={!!swapping}
+                          onPress={() => doSwap(d.day, m.type)}
+                        >
+                          {swapping === key ? (
+                            <ActivityIndicator size="small" color={colors.primary} />
+                          ) : (
+                            <Icon name="shuffle-variant" size={18} color={colors.primary} />
+                          )}
+                        </Pressable>
                       </View>
-                      <View style={[styles.carbBadge, { backgroundColor: flagColor(m.flag) + '22' }]}>
-                        <Text style={[styles.carbText, { color: flagColor(m.flag) }]}>{m.net_carbs}g</Text>
-                      </View>
-                      <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
-                    </Pressable>
-                  ))}
+                    );
+                  })}
                 </View>
               ))}
-              <Text style={styles.disclaimer}>Estimates only — always follow your care team&apos;s guidance.</Text>
+              <Text style={styles.disclaimer}>Tap a meal for the full recipe · shuffle to swap it.{'\n'}Estimates only — always follow your care team&apos;s guidance.</Text>
             </>
           ) : null}
         </ScrollView>
@@ -213,7 +250,9 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   legendText: { fontFamily: f.bodyMedium, fontSize: 12.5, color: colors.mutedForeground },
   dayCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 16, marginBottom: 12 },
   dayTitle: { fontFamily: f.serif, fontSize: 22, color: colors.foreground, marginBottom: 10 },
-  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
+  mealMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  swapBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   flagDot: { width: 10, height: 10, borderRadius: 5 },
   mealType: { fontFamily: f.bodySemiBold, fontSize: 11.5, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.4 },
   mealName: { fontFamily: f.body, fontSize: 15, color: colors.foreground, marginTop: 1 },

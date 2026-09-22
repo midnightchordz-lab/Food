@@ -1,0 +1,33 @@
+{
+  "summary": "Backend regression for Mobile Diabetes Planner endpoints (POST/GET /api/mobile-diabetes/plan + POST /api/mobile-diabetes/swap) — 9/9 pytest passed against the public preview URL. Plan generation returns a 7-day (Mon..Sun) structure with each meal carrying name, net_carbs (int), flag in {safe, caution, spike}, note, and avg_carbs_per_day is set. GET returns has_plan=true with the same persisted plan after generation. Swap replaces the target slot with a differently-named AI-generated meal (verified name inequality), returns {meal, plan}, persists to DB (subsequent GET reflects the swap), and recomputes avg_carbs_per_day = round(sum(net_carbs)/7). Invalid day ('Funday') and invalid meal_type ('Brunch') both return 404. Swap when no plan exists returns 404. All three endpoints return 401 without a Bearer token.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_mobile_diabetes_swap.py",
+    "/app/test_reports/pytest/pytest_mobile_diabetes_swap.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "mobile_diabetes.py swap endpoint: minor cost/UX concern — invalid day/meal_type currently triggers an LLM call *before* the 404 (LLM result is discarded when no slot matches). Consider pre-validating req.day in DAYS and req.meal_type in MEAL_TYPES up front to save a paid LLM roundtrip.",
+    "swap handler uses case-insensitive matching for day/meal_type; safe. avg_carbs_per_day is deterministically recomputed from the mutated plan. Good.",
+    "GET /api/mobile-diabetes/plan uses projection {_id:0} so no Mongo ObjectId leak. Good.",
+    "_generate_plan enforces server-side flag computation via _flag_for, so client-declared flags cannot lie. Good."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_mobile_diabetes_swap.py (new)"
+  ],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "not tested (backend-only request)"},
+  "seed_data_creation": "Registered two throwaway users TEST_diab_swap_<uuid>@example.com and TEST_diab_noplan_<uuid>@example.com (password Test1234!).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Mobile Diabetes Planner swap endpoint contract fully covered by /app/backend/tests/test_mobile_diabetes_swap.py. Plan generation is slow (~5-8s via gpt-4o-mini) — reuse the module-scoped `generated_plan` fixture rather than regenerating per test. Swap for invalid day/meal_type still incurs one LLM call before 404 — main agent may want to short-circuit-validate day in DAYS and meal_type in MEAL_TYPES at the top of swap_diabetes_meal.",
+  "rca_of_issue": ""
+}

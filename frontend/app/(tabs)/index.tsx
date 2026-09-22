@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +10,7 @@ import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { RecipeCard } from '@/src/components/RecipeCard';
+import { PressableScale } from '@/src/components/PressableScale';
 import { useSubscription } from '@/src/lib/revenuecat';
 import { MOODS, MEAL_TYPES, DIETARY_PREFS, CUISINES, StructuredRecipe } from '@/src/constants/data';
 
@@ -222,19 +224,22 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
               <Text style={styles.q}>Pick the feeling that fits right now</Text>
               <View style={styles.moodGrid}>
                 {MOODS.map((mObj) => (
-                  <Pressable
+                  <PressableScale
                     key={mObj.id}
                     testID={`mood-${mObj.id}`}
                     onPress={() => { setMood(mObj.id); setStep('meal'); }}
-                    style={({ pressed }) => [styles.moodCard, pressed && { transform: [{ scale: 0.97 }] }]}
+                    style={styles.moodCard}
                   >
-                    <Image source={{ uri: mObj.image }} style={styles.moodImg} contentFit="cover" transition={200} cachePolicy="memory-disk" recyclingKey={mObj.id} />
-                    <View style={[styles.moodDot, { backgroundColor: mObj.color }]}>
-                      <Icon name={mObj.icon} size={16} color="#3A322B" />
+                    <View style={styles.moodImgWrap}>
+                      <Image source={{ uri: mObj.image }} style={styles.moodImg} contentFit="cover" transition={200} cachePolicy="memory-disk" recyclingKey={mObj.id} />
+                      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.28)']} style={styles.moodImgFade} />
+                      <View style={[styles.moodDot, { backgroundColor: mObj.color }]}>
+                        <Icon name={mObj.icon} size={16} color="#3A322B" />
+                      </View>
                     </View>
                     <Text style={styles.moodLabel}>{mObj.label}</Text>
                     <Text style={styles.moodDesc} numberOfLines={1}>{mObj.description}</Text>
-                  </Pressable>
+                  </PressableScale>
                 ))}
               </View>
             </>
@@ -384,11 +389,16 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   quickTitle: { fontFamily: f.bodyBold, fontSize: 15, color: colors.foreground },
   quickDesc: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, marginTop: 2, lineHeight: 17 },
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16 },
-  moodCard: { width: '48%', backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: 12, overflow: 'hidden' },
-  moodImg: { width: '100%', height: 90, borderRadius: radius.md, backgroundColor: colors.secondary },
-  moodDot: { position: 'absolute', top: 20, right: 20, width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  moodLabel: { fontFamily: f.serif, fontSize: 20, color: colors.foreground, marginTop: 10 },
-  moodDesc: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, marginTop: 1 },
+  moodCard: {
+    width: '48%', backgroundColor: colors.card, borderRadius: radius.xl, padding: 10, paddingBottom: 14,
+    shadowColor: '#2D2A26', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3,
+  },
+  moodImgWrap: { width: '100%', height: 104, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.secondary },
+  moodImg: { width: '100%', height: '100%' },
+  moodImgFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 40 },
+  moodDot: { position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  moodLabel: { fontFamily: f.serif, fontSize: 21, color: colors.foreground, marginTop: 10, marginLeft: 4 },
+  moodDesc: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, marginTop: 1, marginLeft: 4 },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginBottom: 12, marginLeft: -4 },
   backText: { fontFamily: f.bodyMedium, fontSize: 14, color: colors.mutedForeground },
   choiceRow: { flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1.5, borderRadius: radius.md, padding: 14 },

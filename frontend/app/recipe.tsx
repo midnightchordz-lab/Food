@@ -40,6 +40,7 @@ export default function RecipeDetail() {
   const p = useLocalSearchParams<{
     title: string; description?: string; cuisine?: string; meal?: string; dietary?: string;
     cooking_time?: string; difficulty?: string; ingredients?: string; content?: string; image?: string;
+    carbs?: string; flag?: string;
   }>();
 
   const title = String(p.title || 'Recipe');
@@ -74,6 +75,11 @@ export default function RecipeDetail() {
 
   const recipeContent = providedContent || data || '';
   const loadingContent = !providedContent && isLoading;
+
+  const carbs = p.carbs != null && p.carbs !== '' ? Number(p.carbs) : null;
+  const flag = p.flag ? String(p.flag) : '';
+  const flagColor = flag === 'safe' ? colors.success : flag === 'caution' ? colors.accent : flag === 'spike' ? colors.danger : colors.primary;
+  const flagLabel = flag === 'safe' ? 'Steady' : flag === 'caution' ? 'Watch' : flag === 'spike' ? 'Spike risk' : '';
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -151,6 +157,21 @@ export default function RecipeDetail() {
             {p.difficulty ? <Meta icon="chef-hat" text={String(p.difficulty)} /> : null}
           </View>
           {p.description ? <Text style={styles.desc}>{String(p.description)}</Text> : null}
+
+          {carbs != null ? (
+            <View style={[styles.carbBanner, { backgroundColor: flagColor + '18', borderColor: flagColor + '55' }]}>
+              <View style={[styles.carbDot, { backgroundColor: flagColor }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.carbBannerValue}>{carbs}g net carbs</Text>
+                <Text style={styles.carbBannerSub}>Blood-sugar impact</Text>
+              </View>
+              {flagLabel ? (
+                <View style={[styles.carbFlag, { backgroundColor: flagColor }]}>
+                  <Text style={styles.carbFlagText}>{flagLabel}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
 
           <Pressable style={styles.saveBtn} onPress={() => saveMut.mutate()} testID="save-detail" disabled={saveMut.isPending}>
             <Icon name="heart-outline" size={18} color={colors.accent} />
@@ -269,6 +290,12 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.mutedForeground },
   desc: { fontFamily: f.body, fontSize: 15, color: colors.mutedForeground, marginTop: 14, lineHeight: 22 },
+  carbBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, borderWidth: 1, borderRadius: radius.md, paddingVertical: 12, paddingHorizontal: 14 },
+  carbDot: { width: 12, height: 12, borderRadius: 6 },
+  carbBannerValue: { fontFamily: f.bodyBold, fontSize: 16, color: colors.foreground },
+  carbBannerSub: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, marginTop: 1 },
+  carbFlag: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  carbFlagText: { fontFamily: f.bodySemiBold, fontSize: 12.5, color: '#FFFFFF' },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 18, backgroundColor: colors.accentSoft, borderRadius: 999, paddingVertical: 13 },
   saveText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.accent },
   cookBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10, backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 13 },

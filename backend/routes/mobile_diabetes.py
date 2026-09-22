@@ -132,6 +132,121 @@ async def _generate_plan(diabetes_type: str, dietary: str, exclusions: list[str]
     }
 
 
+class SwapMealRequest(BaseModel):
+    day: str
+    meal_type: str
+
+
+async def _generate_one_meal(diabetes_type: str, dietary: str, meal_type: str,
+                             avoid_names: list[str], exclusions: list[str]) -> dict:
+    """Generate a single alternative diabetes-friendly meal for a given slot."""
+    guide = DIABETES_GUIDELINES.get(diabetes_type, DIABETES_GUIDELINES["type2"])
+    max_carbs = guide["max_carbs_per_meal"]
+
+    exclusion_line = ""
+    if exclusions:
+        exclusion_line = f" NEVER include these ingredients (allergies/exclusions): {', '.join(exclusions)}."
+    avoid_line = ""
+    if avoid_names:
+        avoid_line = f" Do NOT suggest any of these dishes: {', '.join(avoid_names)}."
+
+    system_msg = (
+        f"You are a certified diabetes dietitian for {guide['name']}. "
+        f"Suggest ONE {meal_type.lower()} that keeps net carbs at or below {max_carbs}g "
+        f"and favours a low glycemic index (<{guide['max_glycemic_index']}). "
+        f"Dietary preference: {dietary}.{exclusion_line}{avoid_line}\n"
+        "Return ONLY valid JSON (no markdown) in EXACTLY this shape:\n"
+        '{"name":"Dish name","net_carbs":30,"note":"one short reason it is blood-sugar friendly"}\n'
+        "net_carbs is an integer grams estimate. Keep the dish name real and appetising. Keep the note under 12 words."
+    )
+
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+
+    chat = LlmChat(
+        api_key=api_key,
+        session_id=f"mobile-diabetes-swap-{uuid.uuid4().hex[:8]}",
+        system_message=system_msg,
+    )
+    chat.with_model("openai", "gpt-4o-mini")
+    raw = await chat.send_message(UserMessage(text=f"Suggest a different {meal_type.lower()} as JSON."))
+
+    parsed = _extract_json(raw)
+    if not parsed or "name" not in parsed:
+        raise HTTPException(status_code=502, detail="Could not swap this meal, please try again")
+
+    try:
+        nc = int(round(float(parsed.get("net_carbs", max_carbs))))
+    except Exception:
+        nc = max_carbs
+    nc = max(0, min(nc, 200))
+    return {
+        "type": meal_type,
+        "name": str(parsed.get("name", "Balanced meal")).strip(),
+        "net_carbs": nc,
+        "gi": guide["max_glycemic_index"],
+        "flag": _flag_for(nc, max_carbs),
+        "note": str(parsed.get("note", "")).strip(),
+    }
+
+
+@router.post("/swap")
+async def swap_diabetes_meal(req: SwapMealRequest, current_user: User = Depends(get_current_user)):
+    doc = await db.mobile_diabetes_plans.find_one({"user_id": current_user.id})
+    if not doc or not doc.get("plan"):
+        raise HTTPException(status_code=404, detail="No plan to update")
+
+    plan = doc["plan"]
+    diabetes_type = plan.get("diabetes_type", "type2")
+    dietary = plan.get("dietary_preference", "balanced")
+
+    # Validate the target slot exists BEFORE spending an LLM call.
+    slot_exists = any(
+        str(d.get("day", "")).lower() == req.day.lower()
+        and any(str(m.get("type", "")).lower() == req.meal_type.lower() for m in d.get("meals", []))
+        for d in plan.get("days", [])
+    )
+    if not slot_exists:
+        raise HTTPException(status_code=404, detail="Meal slot not found")
+
+    exclusions = await get_user_excluded_ingredients(current_user.id)
+
+    # Names to avoid: all meals of this type across the week (so swaps stay varied).
+    avoid = []
+    for d in plan.get("days", []):
+        for m in d.get("meals", []):
+            if str(m.get("type", "")).lower() == req.meal_type.lower():
+                avoid.append(str(m.get("name", "")))
+    avoid = [a for a in avoid if a][:12]
+
+    new_meal = await _generate_one_meal(diabetes_type, dietary, req.meal_type, avoid, exclusions)
+
+    # Replace the meal in the target day and recompute the average.
+    replaced = False
+    total_carbs = 0
+    meal_count = 0
+    for d in plan.get("days", []):
+        for i, m in enumerate(d.get("meals", [])):
+            if str(d.get("day", "")).lower() == req.day.lower() and str(m.get("type", "")).lower() == req.meal_type.lower():
+                d["meals"][i] = new_meal
+                replaced = True
+            cur = d["meals"][i]
+            total_carbs += int(cur.get("net_carbs", 0))
+            meal_count += 1
+
+    if not replaced:
+        raise HTTPException(status_code=404, detail="Meal slot not found")
+
+    plan["avg_carbs_per_day"] = round(total_carbs / 7) if meal_count else 0
+
+    await db.mobile_diabetes_plans.update_one(
+        {"user_id": current_user.id},
+        {"$set": {"plan": plan}},
+    )
+    return {"meal": new_meal, "plan": plan}
+
+
 @router.post("/plan")
 async def generate_diabetes_plan(req: DiabetesPlanRequest, current_user: User = Depends(get_current_user)):
     exclusions = await get_user_excluded_ingredients(current_user.id)
