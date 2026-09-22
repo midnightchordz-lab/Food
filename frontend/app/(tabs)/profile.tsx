@@ -110,6 +110,12 @@ export default function Profile() {
             <Text style={styles.rowLabel}>Privacy Policy</Text>
             <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
           </Pressable>
+          <View style={styles.rowDivider} />
+          <Pressable style={styles.linkRow} onPress={() => router.push({ pathname: '/legal', params: { type: 'refund' } })} testID="open-refund">
+            <View style={styles.rowIcon}><Icon name="cash-refund" size={19} color={colors.primary} /></View>
+            <Text style={styles.rowLabel}>Refund Policy</Text>
+            <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+          </Pressable>
         </View>
 
         <View style={{ marginTop: 20 }}>

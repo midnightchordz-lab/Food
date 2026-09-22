@@ -1,12 +1,13 @@
 // Content sourced from moodfood.in (Terms, Privacy Policy, Support) — Feb 20, 2026.
 // Bundled locally so the screens work offline and load instantly.
 
-export type LegalKey = 'terms' | 'privacy' | 'support';
+export type LegalKey = 'terms' | 'privacy' | 'support' | 'refund';
 
 export const LEGAL_META: Record<LegalKey, { title: string; subtitle: string; icon: string }> = {
   terms: { title: 'Terms & Conditions', subtitle: 'Last updated: February 20, 2026', icon: 'file-document-outline' },
   privacy: { title: 'Privacy Policy', subtitle: 'Last updated: February 20, 2026', icon: 'shield-lock-outline' },
   support: { title: 'Support', subtitle: "We're here if something's not working", icon: 'lifebuoy' },
+  refund: { title: 'Refund Policy', subtitle: 'Last updated: February 20, 2026', icon: 'cash-refund' },
 };
 
 export const SUPPORT_EMAIL = 'support@moodfood.in';
@@ -161,6 +162,40 @@ Email us the original link, photo, or video along with what came out wrong — i
 
 ### How does Family Plan sharing work?
 The account holder can invite family members from the app's Family settings, up to the plan's member limit. Invited members get their own moods and preferences, shared meal plans and shopping lists.`,
+
+  refund: `Except where stated below or required by applicable law, all purchases of MoodFood subscriptions are **final and non-refundable**.
+
+## 1. Money-Back Guarantee
+If you subscribed directly through our website (not through the App Store or Google Play) and a money-back option was shown to you at checkout, you may qualify for a refund if **all** of the following are true:
+- You email us at support@moodfood.in within **30 days** of your original purchase, and before your current subscription period ends.
+- You actually used MoodFood for at least **14 consecutive days**, and can show it — a short screen recording or a few screenshots of your meal plan history, chat sessions, or saved recipes is enough to demonstrate genuine use.
+
+We'll review what you send and reply by email with our decision.
+
+**This guarantee does not cover:** changing your mind about the product, or not liking what it recommended; and billing surprises you could have avoided — not realizing a trial would convert to a paid subscription, that the plan renews automatically, or that the app is a paid product. Please review your plan and trial terms before subscribing.
+
+## 2. General Refund Rules
+Outside of the money-back guarantee above, fees already paid are non-refundable and non-exchangeable, except as set out below or as your local law requires.
+
+### If you're in California or Connecticut (US)
+You may cancel your purchase any time before midnight of the third business day after buying, and we'll return your payment in full.
+
+### If you're in the European Union
+You have **14 days** to withdraw from your purchase without giving a reason and at no cost. This period runs from the date of purchase — or, if you started with a free trial, from the day the trial began.
+
+To withdraw, email us at support@moodfood.in before the 14 days are up. Sending your notice before the deadline is all that's needed to meet it.
+
+If you withdraw, we'll refund everything you paid within 14 days of hearing from you, using your original payment method, at no extra cost to you — unless you've separately agreed to a different arrangement.
+
+If you were shown and agreed in advance to start receiving the service immediately (before the 14 days ran out) and acknowledged that doing so would end your withdrawal right, you won't be eligible for a refund on digital content already delivered, and only a prorated refund on an ongoing digital service — unless what we provided was faulty.
+
+### If you're in Brazil
+Under Brazil's consumer protection law, you can cancel your purchase within **7 calendar days** of buying, for any reason. We'll refund the full amount promptly, using the same payment method you originally used, unless we've agreed otherwise with you.
+
+## 3. How to Request a Refund
+**Bought through the App Store?** Apple handles those refunds directly — use Apple's own refund request process, since we're not able to issue App Store refunds ourselves.
+
+**Bought through Google Play or directly on our website?** Email support@moodfood.in and our team will take it from there.`,
 };
 
 // Support "topic" shortcuts that pre-fill an email subject.

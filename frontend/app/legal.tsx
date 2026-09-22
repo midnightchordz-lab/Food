@@ -53,7 +53,7 @@ export default function LegalScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const { type } = useLocalSearchParams<{ type: LegalKey }>();
-  const key: LegalKey = type === 'privacy' || type === 'support' ? type : 'terms';
+  const key: LegalKey = type === 'privacy' || type === 'support' || type === 'refund' ? type : 'terms';
   const meta = LEGAL_META[key];
 
   const emailSupport = (subject?: string) => {
