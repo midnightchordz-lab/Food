@@ -66,6 +66,7 @@ from routes.push import router as push_router
 from routes.mobile_voice import router as mobile_voice_router
 from routes.mobile_diabetes import router as mobile_diabetes_router
 from routes.mobile_fridge import router as mobile_fridge_router
+from routes.quick_recipes import router as quick_recipes_router
 from services.scheduled_tasks import router as scheduled_tasks_router, start_scheduler, stop_scheduler
 
 # Include all routers with /api prefix
@@ -97,6 +98,7 @@ app.include_router(push_router, prefix="/api")
 app.include_router(mobile_voice_router, prefix="/api")
 app.include_router(mobile_diabetes_router, prefix="/api")
 app.include_router(mobile_fridge_router, prefix="/api")
+app.include_router(quick_recipes_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(

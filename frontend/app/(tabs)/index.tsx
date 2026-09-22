@@ -199,6 +199,14 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
           {step === 'mood' && (
             <>
+              <Pressable style={styles.quickBanner} testID="open-quick" onPress={() => router.push('/quick')}>
+                <View style={styles.quickBannerIcon}><Icon name="lightning-bolt" size={22} color={colors.primaryForeground} /></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.quickBannerTitle}>10-minute meals</Text>
+                  <Text style={styles.quickBannerDesc}>In a rush? Get recipes you can cook fast</Text>
+                </View>
+                <Icon name="chevron-right" size={22} color={colors.primaryForeground} />
+              </Pressable>
               <View style={styles.quickRow}>
                 <Pressable style={styles.quickCard} testID="snap-dish" onPress={() => router.push('/import?tab=photo')}>
                   <View style={styles.quickIcon}><Icon name="camera-iris" size={22} color={colors.primary} /></View>
@@ -367,6 +375,10 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 6 },
   q: { fontFamily: f.serifMedium, fontSize: 24, color: colors.foreground, marginBottom: 18, lineHeight: 30 },
   quickRow: { flexDirection: 'row', gap: 12, marginBottom: 22 },
+  quickBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primary, borderRadius: radius.lg, padding: 16, marginBottom: 12 },
+  quickBannerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  quickBannerTitle: { fontFamily: f.bodyBold, fontSize: 16, color: colors.primaryForeground },
+  quickBannerDesc: { fontFamily: f.body, fontSize: 12.5, color: colors.primaryForeground, opacity: 0.9, marginTop: 1 },
   quickCard: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 14 },
   quickIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   quickTitle: { fontFamily: f.bodyBold, fontSize: 15, color: colors.foreground },
