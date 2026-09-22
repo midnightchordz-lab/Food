@@ -71,7 +71,7 @@ export default function RecipeDetail() {
       return [];
     }
   })();
-  const aiImg = useRecipeImage(title, String(p.cuisine || ''), String(p.description || ''), providedIngredients, isSubscribed && !providedImg);
+  const aiImg = useRecipeImage(title, String(p.cuisine || ''), String(p.description || ''), providedIngredients, !providedImg);
   const img = providedImg || aiImg.data || foodImage(title, String(p.cuisine || ''));
 
   const { data, isLoading } = useQuery({

@@ -11,18 +11,22 @@ const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL;
 // Curated, fast-loading direct Unsplash CDN food photos (source.unsplash.com is retired
 // and hangs, so we never use it). We pick a relevant photo by keyword, else deterministically.
 const FOOD_IMAGES: { kw: string[]; url: string }[] = [
-  { kw: ['salad', 'greens', 'bowl', 'vegan', 'vegetable', 'veg'], url: 'photo-1512621776951-a57141f2eefd' },
-  { kw: ['soup', 'stew', 'broth', 'ramen', 'noodle'], url: 'photo-1547592166-23ac45744acd' },
-  { kw: ['chicken', 'meat', 'beef', 'pork', 'steak', 'grill', 'bbq', 'drumstick'], url: 'photo-1432139555190-58524dae6a55' },
-  { kw: ['pasta', 'spaghetti', 'italian', 'noodles'], url: 'photo-1621996346565-e3dbc646d9a9' },
+  // Cuisine/dish-specific buckets FIRST so e.g. "butter chicken" doesn't grab a grilled-meat photo.
+  { kw: ['butter chicken', 'tikka', 'masala', 'paneer', 'korma', 'biryani', 'dal', 'curry', 'indian', 'tandoori'], url: 'photo-1585937421612-70a008356fbe' },
   { kw: ['pizza'], url: 'photo-1513104890138-7c749659a591' },
+  { kw: ['pasta', 'spaghetti', 'italian', 'lasagna', 'risotto'], url: 'photo-1621996346565-e3dbc646d9a9' },
+  { kw: ['taco', 'mexican', 'burrito', 'wrap', 'quesadilla', 'enchilada'], url: 'photo-1565299624946-b28f40a0ae38' },
+  { kw: ['pad thai', 'thai', 'green curry', 'tom yum', 'asian', 'stir fry', 'stir-fry'], url: 'photo-1585937421612-70a008356fbe' },
+  { kw: ['sushi', 'teriyaki', 'katsu', 'ramen', 'miso', 'japanese', 'noodle'], url: 'photo-1547592166-23ac45744acd' },
+  { kw: ['salad', 'greens', 'bowl', 'vegan', 'vegetable', 'veg'], url: 'photo-1512621776951-a57141f2eefd' },
+  { kw: ['soup', 'stew', 'broth', 'chowder'], url: 'photo-1547592166-23ac45744acd' },
   { kw: ['fish', 'salmon', 'seafood', 'shrimp', 'prawn'], url: 'photo-1467003909585-2f8a72700288' },
-  { kw: ['breakfast', 'egg', 'omelette', 'pancake', 'oat', 'toast'], url: 'photo-1525351484163-7529414344d8' },
-  { kw: ['dessert', 'cake', 'sweet', 'chocolate', 'cookie', 'pudding'], url: 'photo-1488477181946-6428a0291777' },
-  { kw: ['rice', 'curry', 'indian', 'biryani', 'thai', 'asian'], url: 'photo-1585937421612-70a008356fbe' },
-  { kw: ['taco', 'mexican', 'burrito', 'wrap'], url: 'photo-1565299624946-b28f40a0ae38' },
-  { kw: ['sandwich', 'burger', 'lunch'], url: 'photo-1568901346375-23c9450c58cd' },
-  { kw: ['smoothie', 'drink', 'juice', 'beverage'], url: 'photo-1610970881699-44a5587cabec' },
+  { kw: ['pancake', 'waffle', 'oat', 'toast', 'omelette', 'breakfast', 'egg'], url: 'photo-1525351484163-7529414344d8' },
+  { kw: ['dessert', 'cake', 'sweet', 'chocolate', 'cookie', 'pudding', 'brownie'], url: 'photo-1488477181946-6428a0291777' },
+  { kw: ['sandwich', 'burger'], url: 'photo-1568901346375-23c9450c58cd' },
+  { kw: ['smoothie', 'juice', 'beverage', 'latte', 'coffee'], url: 'photo-1610970881699-44a5587cabec' },
+  // Generic grilled-meat bucket LAST — only when nothing more specific matched.
+  { kw: ['steak', 'grill', 'bbq', 'beef', 'pork', 'chicken', 'meat', 'drumstick', 'kebab', 'skewer'], url: 'photo-1432139555190-58524dae6a55' },
 ];
 const FALLBACK_FOOD = [
   'photo-1504674900247-0877df9cc836',
