@@ -45,9 +45,15 @@ export function foodImage(title: string, cuisine?: string) {
 }
 
 // Fetches (and caches on the backend) an AI-generated food photo for the recipe.
-export function useRecipeImage(title: string, cuisine?: string, description?: string, enabled = true, ingredients?: string[]) {
+export function useRecipeImage(
+  title: string,
+  cuisine?: string,
+  description?: string,
+  ingredients?: string[],
+  enabled = true,
+) {
   return useQuery({
-    queryKey: ['recipe-image', title, cuisine],
+    queryKey: ['recipe-image', title, cuisine, ingredients?.join(',')],
     enabled: enabled && !!title,
     staleTime: Infinity,
     retry: 1,
@@ -71,6 +77,7 @@ export type RecipeCardData = {
   difficulty?: string;
   cuisine?: string;
   image_url?: string;
+  ingredients?: string[];
 };
 
 export function RecipeCard({
