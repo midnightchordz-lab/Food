@@ -7,16 +7,14 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
-from datetime import datetime, timezone
 import os
 import base64
 import hashlib
 import logging
 
-from pymongo import ReturnDocument
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
-from .deps import db, User, get_current_user
+from .deps import User, get_current_user, check_and_increment_daily_image_cap
 
 router = APIRouter(prefix="/recipe-image", tags=["AI Recipe Image"])
 
@@ -24,20 +22,6 @@ IMAGE_DIR = Path("/app/backend/generated/recipe-images")
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL = "gemini-3.1-flash-image-preview"
-
-DAILY_IMAGE_GEN_CAP = 30  # per-user cap on uncached (paid) generations
-
-
-async def _check_and_increment_daily_cap(user_id: str) -> None:
-    today = datetime.now(timezone.utc).date().isoformat()
-    doc = await db.image_gen_usage.find_one_and_update(
-        {"user_id": user_id, "date": today},
-        {"$inc": {"count": 1}},
-        upsert=True,
-        return_document=ReturnDocument.AFTER,
-    )
-    if doc and doc.get("count", 0) > DAILY_IMAGE_GEN_CAP:
-        raise HTTPException(status_code=429, detail="Daily image generation limit reached")
 
 
 class GenerateImageRequest(BaseModel):
@@ -101,7 +85,7 @@ async def generate_recipe_image(req: GenerateImageRequest, current_user: User = 
         raise HTTPException(status_code=500, detail="Image generation not configured")
 
     # M2: cap uncached (paid) generations per user per day.
-    await _check_and_increment_daily_cap(current_user.id)
+    await check_and_increment_daily_image_cap(current_user.id)
 
     specs = _dish_specs(req.title, req.cuisine)
     ingredients_str = ", ".join([i for i in req.ingredients[:6] if i]) or "as typical for this dish"

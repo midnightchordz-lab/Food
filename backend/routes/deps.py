@@ -14,6 +14,8 @@ import logging
 import asyncio
 import warnings
 
+from pymongo import ReturnDocument
+
 # Suppress passlib bcrypt version warning
 warnings.filterwarnings("ignore", message=".*error reading bcrypt version.*")
 
@@ -38,6 +40,22 @@ if not SECRET_KEY:
     raise RuntimeError("JWT_SECRET_KEY environment variable is required")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
+
+# Shared per-user daily cap for paid AI image generation (M2). Both image route
+# files import this so all generation paths share ONE budget, not one each.
+DAILY_IMAGE_GEN_CAP = 30
+
+
+async def check_and_increment_daily_image_cap(user_id: str) -> None:
+    today = datetime.now(timezone.utc).date().isoformat()
+    doc = await db.image_gen_usage.find_one_and_update(
+        {"user_id": user_id, "date": today},
+        {"$inc": {"count": 1}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER,
+    )
+    if doc and doc.get("count", 0) > DAILY_IMAGE_GEN_CAP:
+        raise HTTPException(status_code=429, detail="Daily image generation limit reached")
 
 
 async def check_rate_limit(key: str, max_requests: int, window_seconds: int) -> None:

@@ -16,7 +16,7 @@ import ipaddress
 import socket
 from urllib.parse import urlparse
 
-from routes.deps import get_current_user, User
+from routes.deps import get_current_user, User, require_admin_user, check_and_increment_daily_image_cap
 
 router = APIRouter()
 
@@ -297,6 +297,8 @@ async def generate_recipe_image_endpoint(request: ImageGenerationRequest, curren
     Returns a data URL with the generated image.
     """
     try:
+        # M2: cap paid generations per user per day.
+        await check_and_increment_daily_image_cap(current_user.id)
         from ai_image_service import get_or_generate_recipe_image
         
         result = await get_or_generate_recipe_image(
@@ -318,6 +320,9 @@ async def generate_batch_images(request: BatchImageRequest, current_user: User =
     Useful for pre-generating images when displaying recipe lists.
     """
     try:
+        # M2: the cap counts per image, not per call.
+        for _ in request.recipes:
+            await check_and_increment_daily_image_cap(current_user.id)
         from ai_image_service import batch_generate_images
         
         recipes = [
@@ -338,12 +343,15 @@ async def generate_batch_images(request: BatchImageRequest, current_user: User =
 
 
 @router.get("/cached/{recipe_name}")
-async def get_cached_image(recipe_name: str, cuisine: str = ""):
+async def get_cached_image(recipe_name: str, cuisine: str = "", current_user: User = Depends(get_current_user)):
     """
     Get a cached image for a recipe if it exists.
     Returns the cached image or triggers generation.
     """
     try:
+        # M2: this can trigger a paid generation on a cache miss, so it must be
+        # authenticated and counted against the same per-user daily cap.
+        await check_and_increment_daily_image_cap(current_user.id)
         from ai_image_service import get_or_generate_recipe_image
         
         result = await get_or_generate_recipe_image(
@@ -353,14 +361,17 @@ async def get_cached_image(recipe_name: str, cuisine: str = ""):
         
         return result
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/cache")
-async def clear_image_cache(recipe_name: Optional[str] = None):
+async def clear_image_cache(recipe_name: Optional[str] = None, admin: User = Depends(require_admin_user)):
     """
     Clear the image cache - all images or for a specific recipe.
+    Operational action — admin only (M2: prevents cache-wipe abuse).
     """
     try:
         from ai_image_service import clear_recipe_image_cache
