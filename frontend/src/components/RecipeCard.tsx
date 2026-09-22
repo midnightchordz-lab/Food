@@ -45,14 +45,19 @@ export function foodImage(title: string, cuisine?: string) {
 }
 
 // Fetches (and caches on the backend) an AI-generated food photo for the recipe.
-export function useRecipeImage(title: string, cuisine?: string, description?: string, enabled = true) {
+export function useRecipeImage(title: string, cuisine?: string, description?: string, enabled = true, ingredients?: string[]) {
   return useQuery({
     queryKey: ['recipe-image', title, cuisine],
     enabled: enabled && !!title,
     staleTime: Infinity,
     retry: 1,
     queryFn: async () => {
-      const res = await api.post('/recipe-image/ai-generate', { title, cuisine: cuisine || '', description: description || '' });
+      const res = await api.post('/recipe-image/ai-generate', {
+        title,
+        cuisine: cuisine || '',
+        description: description || '',
+        ingredients: ingredients || [],
+      });
       return `${BACKEND}${res.data.url}` as string;
     },
   });

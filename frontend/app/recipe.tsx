@@ -47,7 +47,15 @@ export default function RecipeDetail() {
   const providedImg = p.image
     ? (String(p.image).startsWith('/') ? `${process.env.EXPO_PUBLIC_BACKEND_URL}${p.image}` : String(p.image))
     : '';
-  const aiImg = useRecipeImage(title, String(p.cuisine || ''), String(p.description || ''), isSubscribed && !providedImg);
+  const providedIngredients = (() => {
+    try {
+      const arr = p.ingredients ? JSON.parse(String(p.ingredients)) : [];
+      return Array.isArray(arr) ? arr.map((x) => (typeof x === 'string' ? x : x?.name || '')).filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  })();
+  const aiImg = useRecipeImage(title, String(p.cuisine || ''), String(p.description || ''), isSubscribed && !providedImg, providedIngredients);
   const img = providedImg || aiImg.data || foodImage(title, String(p.cuisine || ''));
 
   const { data, isLoading } = useQuery({

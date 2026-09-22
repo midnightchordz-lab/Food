@@ -26,6 +26,41 @@ class GenerateImageRequest(BaseModel):
     title: str
     cuisine: str = ""
     description: str = ""
+    ingredients: list[str] = []
+
+
+# Per-dish visual specs so the model renders the RIGHT dish (biryani != curry, etc.).
+# Matched by substring against the lowercased title.
+SPECS_DB: dict[str, str] = {
+    'biryani': "Layered long-grain rice MUST be visible | Saffron-yellow AND white grains | Whole spices (cardamom, bay leaf) | Fried onions on top | Served in a handi/plate | NOT a curry, NOT plain pulao",
+    'pad thai': "Wide flat rice noodles | Scrambled egg mixed through | Crushed peanuts ON TOP | Fresh bean sprouts | Lime wedge on side | Orange-brown tamarind glaze | NOT lo mein, NOT spaghetti",
+    'ramen': "Deep ceramic bowl | Steaming savoury broth | Curly wheat noodles | Halved soft-boiled egg | Sliced chashu pork | Nori + scallions | Steam rising | NOT pho",
+    'pho': "Large bowl of clear beef broth | Flat rice noodles | Thin beef slices | Fresh basil, lime, bean sprouts on the side | NOT ramen",
+    'sushi': "Neat pieces of nigiri/rolls | Glossy rice | Fresh fish slices | Served on a wooden board or slate | Soy dish + pickled ginger + wasabi | NOT a rice bowl",
+    'pizza': "Round flatbread with melted cheese | Visible crust/cornicione | Toppings on top | Slightly charred spots | Whole or a pulled slice | NOT flatbread wrap",
+    'burger': "Stacked bun, patty, cheese, lettuce, tomato | Sesame bun | Side of fries optional | NOT a sandwich",
+    'taco': "Folded soft/hard tortilla | Visible filling (meat/beans), lettuce, cheese, salsa | Lime wedge | NOT a burrito, NOT a wrap",
+    'burrito': "Large flour tortilla fully wrapped | Cut in half to show rice, beans, meat filling | NOT open tacos",
+    'carbonara': "Spaghetti coated in creamy egg-cheese sauce | Pancetta/guanciale bits | Black pepper | Parmesan | NO green peas, NOT alfredo",
+    'butter chicken': "Rich orange-red creamy tomato gravy | Tender chicken pieces | Cream swirl + coriander | Served with naan/rice on side | NOT dry curry",
+    'curry': "Sauce-based dish in a bowl | Visible gravy coating protein/veg | Garnish of coriander | Rice or naan alongside",
+    'dumpling': "Pleated steamed/pan-fried dumplings | Glossy wrappers | Dipping sauce dish | Served in bamboo steamer or plate",
+    'salad': "Fresh crisp leaves and vegetables | Vibrant colours | Light dressing sheen | Served in a bowl or plate | NOT cooked",
+    'pancake': "Stack of fluffy round pancakes | Butter pat melting | Maple syrup drizzle | Berries optional | NOT crepes",
+    'french toast': "Thick golden-brown battered bread slices | Dusting of icing sugar | Syrup + berries | NOT plain toast",
+    'tiramisu': "Layered coffee-soaked ladyfingers + mascarpone | Cocoa dusting on top | Served in a glass or square slice",
+    'paella': "Wide shallow pan | Saffron-yellow rice | Mussels, prawns, chicken visible | Lemon wedges | NOT risotto",
+    'omelette': "Folded fluffy egg | Melted cheese/filling peeking out | Herbs on top | NOT scrambled",
+    'smoothie': "Thick blended drink in a glass | Vibrant fruit colour | Straw | Fruit garnish | NOT juice",
+}
+
+
+def _dish_specs(title: str, cuisine: str) -> str:
+    t = title.lower()
+    for key, spec in SPECS_DB.items():
+        if key in t:
+            return spec
+    return f"Authentic, immediately-recognizable {cuisine or 'home-style'} presentation of {title}"
 
 
 def _key(title: str, cuisine: str) -> str:
@@ -46,15 +81,38 @@ async def generate_recipe_image(req: GenerateImageRequest):
     if not api_key:
         raise HTTPException(status_code=500, detail="Image generation not configured")
 
-    prompt = (
-        f"A beautiful, appetizing professional food photograph of \"{req.title}\", "
-        f"{req.cuisine + ' cuisine, ' if req.cuisine else ''}"
-        f"plated elegantly on a rustic table with warm natural lighting, shallow depth of field, "
-        f"overhead editorial food-magazine style. {req.description[:200]}"
-    ).strip()
+    specs = _dish_specs(req.title, req.cuisine)
+    ingredients_str = ", ".join([i for i in req.ingredients[:6] if i]) or "as typical for this dish"
+
+    prompt = f"""GENERATE: Professional food photograph of {req.title}
+DISH INFO:
+- Name: {req.title}
+- Cuisine: {req.cuisine or 'International'}
+- Ingredients: {ingredients_str}
+CRITICAL RULES (MUST FOLLOW):
+1. Image MUST show EXACTLY {req.title} - not a similar dish
+2. Professional food photography quality
+3. 45-degree overhead angle
+4. Restaurant-quality plating
+5. Sharp focus, appetizing appearance
+VISUAL SPECIFICATIONS:
+{specs}
+QUALITY STANDARDS:
+- Lighting: Natural, warm, appropriate for {req.cuisine or 'the dish'}
+- Background: Clean, neutral
+- Colors: Accurate to how the dish actually looks
+- No text, watermarks, or logos
+STYLE:
+- Authentic {req.cuisine or 'home-style'} presentation
+- High-end restaurant plating
+- Immediately recognizable as {req.title}"""
 
     try:
-        chat = LlmChat(api_key=api_key, session_id=f"img-{key}", system_message="You are a professional food photographer.")
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"img-{key}",
+            system_message="You are a professional food photographer. Generate high-quality food images that are authentic and immediately recognizable as the named dish.",
+        )
         chat.with_model("gemini", MODEL).with_params(modalities=["image", "text"])
         _text, images = await chat.send_message_multimodal_response(UserMessage(text=prompt))
         if not images:
