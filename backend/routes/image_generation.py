@@ -3,7 +3,7 @@ Recipe Image Generation API Routes
 Provides endpoints for AI-powered recipe image generation with Google Images fallback
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query, Depends
 from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List, Optional
@@ -12,11 +12,36 @@ import os
 import httpx
 import base64
 import hashlib
+import ipaddress
+import socket
+from urllib.parse import urlparse
+
+from routes.deps import get_current_user, User
 
 router = APIRouter()
 
 # Simple in-memory cache for proxied images
 _image_proxy_cache = {}
+
+
+def _is_safe_url(url: str) -> bool:
+    """Reject anything that isn't a plain https URL to a public host (C2: SSRF guard)."""
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+    if parsed.scheme != "https" or not parsed.hostname:
+        return False
+    try:
+        infos = socket.getaddrinfo(parsed.hostname, None)
+    except socket.gaierror:
+        return False
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if (ip.is_private or ip.is_loopback or ip.is_link_local
+                or ip.is_reserved or ip.is_multicast):
+            return False
+    return True
 
 
 class ImageGenerationRequest(BaseModel):
@@ -39,8 +64,10 @@ class FastImageRequest(BaseModel):
 async def proxy_image(url: str = Query(..., description="External image URL to proxy")):
     """
     Proxy external images to avoid CORS and referrer policy issues.
-    Caches images in memory for performance.
+    Caches images in memory for performance. SSRF-guarded (C2).
     """
+    if not _is_safe_url(url):
+        raise HTTPException(status_code=400, detail="URL not allowed")
     try:
         # Create cache key from URL
         cache_key = hashlib.md5(url.encode()).hexdigest()
@@ -54,22 +81,34 @@ async def proxy_image(url: str = Query(..., description="External image URL to p
                 headers={"Cache-Control": "public, max-age=86400"}
             )
         
-        # Fetch the image
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+        # Fetch the image (don't follow redirects blindly)
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
             response = await client.get(
                 url,
                 headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                     "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
-                    "Referer": ""  # Empty referrer to bypass some blocks
                 }
             )
+            # Re-validate one redirect hop instead of following blindly.
+            if response.status_code in (301, 302, 303, 307, 308):
+                location = response.headers.get("location", "")
+                if not _is_safe_url(location):
+                    raise HTTPException(status_code=400, detail="Redirect target not allowed")
+                response = await client.get(location, headers={"Accept": "image/*"})
+
             response.raise_for_status()
             
             # Determine content type
             content_type = response.headers.get("content-type", "image/jpeg")
             if ";" in content_type:
                 content_type = content_type.split(";")[0].strip()
+            if not content_type.startswith("image/"):
+                raise HTTPException(status_code=400, detail="URL did not return an image")
+
+            # Cap size to avoid using this as a bandwidth amplifier
+            if len(response.content) > 10 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="Image too large")
             
             # Cache the image (limit cache size)
             if len(_image_proxy_cache) > 100:
@@ -91,12 +130,14 @@ async def proxy_image(url: str = Query(..., description="External image URL to p
             
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail="Failed to fetch image")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image proxy error: {str(e)}")
 
 
 @router.post("/fast")
-async def get_fast_recipe_image(request: FastImageRequest):
+async def get_fast_recipe_image(request: FastImageRequest, current_user: User = Depends(get_current_user)):
     """
     Get a recipe image quickly using Google Images search.
     Falls back to AI generation if enabled and no good images found.
@@ -169,7 +210,7 @@ class BatchImageRequestV2(BaseModel):
 
 
 @router.post("/batch")
-async def get_batch_recipe_images(request: BatchImageRequestV2):
+async def get_batch_recipe_images(request: BatchImageRequestV2, current_user: User = Depends(get_current_user)):
     """
     Get images for multiple recipes at once, ensuring each recipe gets a UNIQUE image.
     This prevents the issue where similar dishes get the same image.
@@ -235,7 +276,8 @@ async def get_batch_recipe_images(request: BatchImageRequestV2):
 async def get_fast_recipe_image_get(
     recipe_name: str,
     cuisine: str = Query("", description="Cuisine type"),
-    use_ai_fallback: bool = Query(True, description="Fall back to AI if no Google Images found")
+    use_ai_fallback: bool = Query(True, description="Fall back to AI if no Google Images found"),
+    current_user: User = Depends(get_current_user)
 ):
     """
     GET endpoint for fast recipe image (Google Images with AI fallback)
@@ -245,11 +287,11 @@ async def get_fast_recipe_image_get(
         cuisine=cuisine,
         use_ai_fallback=use_ai_fallback
     )
-    return await get_fast_recipe_image(request)
+    return await get_fast_recipe_image(request, current_user)
 
 
 @router.post("/generate")
-async def generate_recipe_image_endpoint(request: ImageGenerationRequest):
+async def generate_recipe_image_endpoint(request: ImageGenerationRequest, current_user: User = Depends(get_current_user)):
     """
     Generate an AI-powered image for a specific recipe.
     Returns a data URL with the generated image.
@@ -270,7 +312,7 @@ async def generate_recipe_image_endpoint(request: ImageGenerationRequest):
 
 
 @router.post("/generate-batch")
-async def generate_batch_images(request: BatchImageRequest):
+async def generate_batch_images(request: BatchImageRequest, current_user: User = Depends(get_current_user)):
     """
     Generate images for multiple recipes.
     Useful for pre-generating images when displaying recipe lists.

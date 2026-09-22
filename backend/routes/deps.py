@@ -1,7 +1,7 @@
 """
 Shared dependencies and utilities for all routes
 """
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 import os
 import jwt
+import hmac
 import uuid
 import logging
 import asyncio
@@ -38,6 +39,40 @@ if not SECRET_KEY:
     raise RuntimeError("JWT_SECRET_KEY environment variable is required")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
+
+# Admin gate for internal/ops endpoints (C1). Fails closed if unconfigured.
+ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY")
+
+
+async def require_admin(x_admin_key: str = Header(None)):
+    """Require callers to send X-Admin-Key matching ADMIN_API_KEY.
+    An unconfigured admin key must NEVER mean 'anyone is admin'."""
+    if not ADMIN_API_KEY:
+        raise HTTPException(status_code=503, detail="Admin access not configured")
+    if not x_admin_key or not hmac.compare_digest(x_admin_key, ADMIN_API_KEY):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return True
+
+
+async def check_rate_limit(key: str, max_requests: int, window_seconds: int) -> None:
+    """Simple per-key sliding-window throttle backed by the rate_limits collection."""
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(seconds=window_seconds)
+    doc = await db.rate_limits.find_one_and_update(
+        {"key": key, "window_start": {"$gte": window_start.isoformat()}},
+        {"$inc": {"count": 1}},
+        upsert=False,
+    )
+    if doc is None:
+        # No active window — start a fresh one.
+        await db.rate_limits.update_one(
+            {"key": key},
+            {"$set": {"key": key, "window_start": now.isoformat(), "count": 1}},
+            upsert=True,
+        )
+        return
+    if doc.get("count", 0) >= max_requests:
+        raise HTTPException(status_code=429, detail="Too many requests — try again later")
 
 # ============== DATABASE INDEXES ==============
 

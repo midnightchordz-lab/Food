@@ -102,11 +102,19 @@ app.include_router(mobile_diabetes_router, prefix="/api")
 app.include_router(mobile_fridge_router, prefix="/api")
 app.include_router(quick_recipes_router, prefix="/api")
 
-# CORS middleware
+# CORS middleware (M1): require an explicit origin list; never wildcard with credentials.
+cors_origins_env = os.environ.get('CORS_ORIGINS', '')
+cors_origins = [o.strip() for o in cors_origins_env.split(',') if o.strip() and o.strip() != '*']
+if not cors_origins:
+    if os.environ.get("ENVIRONMENT") == "production":
+        raise RuntimeError("CORS_ORIGINS must be set explicitly in production")
+    # Dev only — local Metro web origins used for preview/testing.
+    cors_origins = ["http://localhost:3000", "http://localhost:8081", "http://localhost:19006"]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

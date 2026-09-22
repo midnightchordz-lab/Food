@@ -13,7 +13,7 @@ from .deps import (
     db, User, UserRegister, UserLogin, Token, 
     PhoneSendOTP, PhoneVerifyOTP, PhoneLoginResponse,
     get_current_user, verify_password, get_password_hash, create_access_token,
-    SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_DAYS
+    SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_DAYS, check_rate_limit
 )
 
 # Add backend to path for services import
@@ -33,6 +33,9 @@ otp_storage = {}
 # Twilio phone number for sending SMS
 TWILIO_FROM_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '+19064011655')
 
+# H1: never return the OTP automatically. Explicit opt-in only, must be false in prod.
+DEBUG_RETURN_OTP = os.environ.get("AUTH_DEBUG_RETURN_OTP", "false").lower() == "true"
+
 
 @router.post("/register", response_model=Token)
 async def register(user: UserRegister):
@@ -51,8 +54,9 @@ async def register(user: UserRegister):
     AUTO-START TRIAL:
     After registration, automatically start 7-day trial for new users.
     """
-    # Check if user exists
-    existing = await db.users.find_one({"email": user.email})
+    # Check if user exists (L1: normalize email case)
+    email = user.email.lower().strip()
+    existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
@@ -64,7 +68,7 @@ async def register(user: UserRegister):
     # HARD DEFAULTS - NEVER NULL/UNDEFINED
     user_data = {
         "id": user_id,
-        "email": user.email,
+        "email": email,
         "name": user.name,
         "hashed_password": hashed_password,
         "dietary_restrictions": user.dietary_restrictions,
@@ -136,7 +140,8 @@ async def register(user: UserRegister):
 
 @router.post("/login", response_model=Token)
 async def login(user: UserLogin):
-    db_user = await db.users.find_one({"email": user.email})
+    email = user.email.lower().strip()
+    db_user = await db.users.find_one({"email": email})
     if not db_user or not verify_password(user.password, db_user.get("hashed_password", "")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
@@ -155,6 +160,9 @@ async def send_phone_otp(request: PhoneSendOTP):
     # Validate E.164 format
     if not phone.startswith('+') or len(phone) < 10:
         raise HTTPException(status_code=400, detail="Invalid phone number format. Use E.164 format: +1234567890")
+    
+    # M3: throttle OTP requests per phone number.
+    await check_rate_limit(f"otp:phone:{phone}", max_requests=5, window_seconds=3600)
     
     # Generate OTP
     otp = str(random.randint(100000, 999999))
@@ -191,19 +199,17 @@ async def send_phone_otp(request: PhoneSendOTP):
             }
         except Exception as e:
             logging.error(f"Twilio error: {e}")
-            logging.info(f"Fallback - Demo OTP for {phone}: {otp}")
-            return {
-                "status": "pending",
-                "message": "Demo mode: OTP generated (SMS failed, check server logs)",
-                "demo_otp": otp
-            }
+            if DEBUG_RETURN_OTP:
+                logging.warning(f"AUTH_DEBUG_RETURN_OTP is on — returning OTP for {phone[-4:]} in response")
+                return {"status": "pending", "message": "Demo mode (SMS failed)", "demo_otp": otp}
+            # H1: fail closed — never leak the code on delivery failure
+            raise HTTPException(status_code=502, detail="Couldn't send the verification code — try again")
     else:
-        logging.info(f"Demo OTP for {phone}: {otp}")
-        return {
-            "status": "pending", 
-            "message": "Demo mode: OTP generated (check server logs)",
-            "demo_otp": otp
-        }
+        if DEBUG_RETURN_OTP:
+            logging.warning(f"AUTH_DEBUG_RETURN_OTP is on — returning OTP for {phone[-4:]} in response")
+            return {"status": "pending", "message": "Demo mode", "demo_otp": otp}
+        # H1: fail closed instead of leaking the code
+        raise HTTPException(status_code=503, detail="SMS delivery is not available right now")
 
 
 @router.post("/phone/verify-otp", response_model=PhoneLoginResponse)

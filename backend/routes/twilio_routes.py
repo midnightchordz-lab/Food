@@ -7,7 +7,7 @@ import os
 import random
 import string
 
-from .deps import db, get_current_user, User
+from .deps import db, get_current_user, User, check_rate_limit
 
 router = APIRouter(prefix="/api/twilio", tags=["Twilio"])
 
@@ -45,6 +45,9 @@ async def send_otp(request: SendOTPRequest):
     """Send OTP to phone number for verification"""
     if not twilio_client:
         raise HTTPException(status_code=500, detail="Twilio not configured")
+    
+    # M3: throttle OTP requests per phone number.
+    await check_rate_limit(f"otp:twilio:{request.phone_number}", max_requests=5, window_seconds=3600)
     
     try:
         # Generate 6-digit OTP

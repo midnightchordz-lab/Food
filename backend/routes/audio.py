@@ -277,14 +277,17 @@ async def serve_audio_file(filename: str):
     Serve audio files directly with proper MIME type
     """
     try:
-        file_path = Path("/app/uploads/audio-cache") / filename
-        
+        # L3: validate the filename BEFORE touching the filesystem, resolve safely.
+        if "/" in filename or "\\" in filename or filename in ("..", "."):
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        cache_dir = Path("/app/uploads/audio-cache").resolve()
+        file_path = (cache_dir / filename).resolve()
+        if cache_dir not in file_path.parents and file_path != cache_dir:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="Audio file not found")
-        
-        # Security check - ensure filename doesn't escape directory
-        if ".." in filename or filename.startswith("/"):
-            raise HTTPException(status_code=400, detail="Invalid filename")
         
         async with aiofiles.open(str(file_path), 'rb') as f:
             content = await f.read()

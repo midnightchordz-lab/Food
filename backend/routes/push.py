@@ -9,10 +9,10 @@ import logging
 from datetime import datetime, timezone
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
-from routes.deps import db
+from routes.deps import db, User, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +29,19 @@ router = APIRouter(tags=["Push"])
 
 
 class RegisterPushBody(BaseModel):
-    user_id: str
     platform: str  # "android" | "ios"
     device_token: str
+    # user_id intentionally removed — derived server-side from the auth token (H2)
 
 
 @router.post("/register-push", status_code=201)
-async def register_push(body: RegisterPushBody):
-    resp = await _client.post("/api/v1/push/users/register", json=body.model_dump())
+async def register_push(body: RegisterPushBody, current_user: User = Depends(get_current_user)):
+    payload = {
+        "user_id": current_user.id,  # H2: from the token, never the client body
+        "platform": body.platform,
+        "device_token": body.device_token,
+    }
+    resp = await _client.post("/api/v1/push/users/register", json=payload)
     if resp.status_code == 401:
         raise HTTPException(500, "EMERGENT_PUSH_KEY missing or invalid")
     if resp.status_code >= 500:
@@ -46,16 +51,16 @@ async def register_push(body: RegisterPushBody):
     # Track opted-in users so scheduled jobs know who to notify.
     try:
         await db.push_users.update_one(
-            {"user_id": body.user_id},
+            {"user_id": current_user.id},
             {"$set": {
-                "user_id": body.user_id,
+                "user_id": current_user.id,
                 "platform": body.platform,
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }},
             upsert=True,
         )
     except Exception as e:
-        logger.warning(f"Could not persist push user {body.user_id}: {e}")
+        logger.warning(f"Could not persist push user {current_user.id}: {e}")
 
     return {"status": "registered"}
 

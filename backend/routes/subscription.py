@@ -14,7 +14,7 @@ import hmac
 
 import razorpay
 
-from .deps import db, User, get_current_user
+from .deps import db, User, get_current_user, require_admin
 
 # Add backend to path for services import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -736,7 +736,7 @@ async def get_transactions(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/stats")
+@router.get("/stats", dependencies=[Depends(require_admin)])
 async def get_subscription_stats():
     """Get subscription statistics (admin)"""
     try:
@@ -901,8 +901,23 @@ async def verify_razorpay_payment(
         
         if order["user_id"] != current_user.id:
             raise HTTPException(status_code=403, detail="Order does not belong to user")
-        
-        plan = get_plan_by_id(request.plan_id)
+
+        # C3: the plan being granted MUST come from the paid order, never the
+        # request body. A mismatch means the client is confused or probing.
+        if request.plan_id != order.get("plan_id"):
+            logging.warning(
+                f"Plan mismatch on verify-payment: order={order.get('plan_id')} "
+                f"requested={request.plan_id} order_id={request.razorpay_order_id} "
+                f"user={current_user.id}"
+            )
+            raise HTTPException(status_code=400, detail="Plan does not match order")
+
+        # Guard against replaying the same order through this path.
+        if order.get("status") == "paid":
+            raise HTTPException(status_code=400, detail="Order already processed")
+
+        plan_id = order["plan_id"]  # single source of truth for what was paid
+        plan = get_plan_by_id(plan_id)
         if not plan:
             raise HTTPException(status_code=400, detail="Invalid plan")
         
@@ -927,7 +942,7 @@ async def verify_razorpay_payment(
         subscription_doc = {
             "id": subscription_id,
             "user_id": current_user.id,
-            "plan_id": request.plan_id,
+            "plan_id": plan_id,
             "status": "active",
             "current_period_start": now.isoformat(),
             "current_period_end": period_end.isoformat(),
@@ -975,7 +990,7 @@ async def verify_razorpay_payment(
             db=db,
             user_id=current_user.id,
             old_plan=old_plan,
-            new_plan=request.plan_id,
+            new_plan=plan_id,
             reason="payment_verified",
             metadata={
                 "subscription_id": subscription_id,
@@ -987,7 +1002,7 @@ async def verify_razorpay_payment(
             }
         )
         
-        logging.info(f"Payment verified and subscription activated for user {current_user.id}, plan {request.plan_id}")
+        logging.info(f"Payment verified and subscription activated for user {current_user.id}, plan {plan_id}")
         
         subscription_doc.pop("_id", None)
         subscription_doc["plan"] = plan
@@ -1034,16 +1049,20 @@ async def razorpay_webhook(request: Request):
         body = await request.body()
         signature = request.headers.get('x-razorpay-signature', '')
         
-        # Verify webhook signature
-        webhook_secret = os.environ.get('RAZORPAY_WEBHOOK_SECRET', RAZORPAY_KEY_SECRET)
-        
+        # Verify webhook signature (M4): fail closed if the dedicated webhook
+        # secret isn't set — do NOT fall back to the API key secret.
+        webhook_secret = os.environ.get('RAZORPAY_WEBHOOK_SECRET')
+        if not webhook_secret:
+            logging.error("RAZORPAY_WEBHOOK_SECRET is not set — rejecting all webhooks")
+            raise HTTPException(status_code=503, detail="Webhook not configured")
+
         expected_signature = hmac.new(
             webhook_secret.encode(),
             body,
             hashlib.sha256
         ).hexdigest()
-        
-        if signature != expected_signature:
+
+        if not hmac.compare_digest(signature, expected_signature):
             logging.warning("[WEBHOOK_SAFETY] Invalid Razorpay webhook signature - REJECTED")
             log_security_event(
                 event_type=SecurityEvent.WEBHOOK_REJECTED_NO_PAYMENT,
@@ -1479,7 +1498,7 @@ async def get_invoice(
 
 # ============== ADMIN/MIGRATION ENDPOINTS ==============
 
-@router.post("/admin/fix-invalid-subscriptions")
+@router.post("/admin/fix-invalid-subscriptions", dependencies=[Depends(require_admin)])
 async def fix_invalid_subscriptions(
     hours_window: int = 24,
     dry_run: bool = True
@@ -1524,7 +1543,7 @@ async def fix_invalid_subscriptions(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/admin/subscription-integrity-check")
+@router.get("/admin/subscription-integrity-check", dependencies=[Depends(require_admin)])
 async def subscription_integrity_check():
     """
     ADMIN ENDPOINT: Comprehensive subscription integrity report.
@@ -1627,7 +1646,7 @@ async def subscription_integrity_check():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/admin/audit-logs")
+@router.get("/admin/audit-logs", dependencies=[Depends(require_admin)])
 async def get_audit_logs(
     user_id: Optional[str] = None,
     limit: int = 100
@@ -1664,7 +1683,7 @@ async def get_audit_logs(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/admin/audit-logs/user/{user_id}")
+@router.get("/admin/audit-logs/user/{user_id}", dependencies=[Depends(require_admin)])
 async def get_user_audit_logs(
     user_id: str,
     limit: int = 50

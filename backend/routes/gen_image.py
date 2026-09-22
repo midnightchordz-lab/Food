@@ -3,16 +3,20 @@ AI recipe image generation using Gemini Nano Banana (gemini-3.1-flash-image-prev
 Generated images are cached on disk and served under /api so they are reachable
 through the Kubernetes ingress (only /api/* is routed to the backend).
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
+from datetime import datetime, timezone
 import os
 import base64
 import hashlib
 import logging
 
+from pymongo import ReturnDocument
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+from .deps import db, User, get_current_user
 
 router = APIRouter(prefix="/recipe-image", tags=["AI Recipe Image"])
 
@@ -20,6 +24,20 @@ IMAGE_DIR = Path("/app/backend/generated/recipe-images")
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL = "gemini-3.1-flash-image-preview"
+
+DAILY_IMAGE_GEN_CAP = 30  # per-user cap on uncached (paid) generations
+
+
+async def _check_and_increment_daily_cap(user_id: str) -> None:
+    today = datetime.now(timezone.utc).date().isoformat()
+    doc = await db.image_gen_usage.find_one_and_update(
+        {"user_id": user_id, "date": today},
+        {"$inc": {"count": 1}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER,
+    )
+    if doc and doc.get("count", 0) > DAILY_IMAGE_GEN_CAP:
+        raise HTTPException(status_code=429, detail="Daily image generation limit reached")
 
 
 class GenerateImageRequest(BaseModel):
@@ -69,7 +87,7 @@ def _key(title: str, cuisine: str) -> str:
 
 
 @router.post("/ai-generate")
-async def generate_recipe_image(req: GenerateImageRequest):
+async def generate_recipe_image(req: GenerateImageRequest, current_user: User = Depends(get_current_user)):
     """Generate (or return cached) an AI food photo for a recipe. Returns a relative /api url."""
     key = _key(req.title, req.cuisine)
     dest = IMAGE_DIR / f"{key}.png"
@@ -81,6 +99,9 @@ async def generate_recipe_image(req: GenerateImageRequest):
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Image generation not configured")
+
+    # M2: cap uncached (paid) generations per user per day.
+    await _check_and_increment_daily_cap(current_user.id)
 
     specs = _dish_specs(req.title, req.cuisine)
     ingredients_str = ", ".join([i for i in req.ingredients[:6] if i]) or "as typical for this dish"

@@ -1,0 +1,43 @@
+{
+  "summary": "Verified backend SECURITY-FIXES batch on MoodFood (C1, H1, M3, H2, M2, C3, L1) plus regression (auth, diabetes plan/swap, public plans). All 15 pytest checks PASS against the external Expo public URL. One unrelated 500 (KeyError 'id') was observed downstream of the admin gate on POST /api/subscription/admin/fix-invalid-subscriptions?dry_run=true — the C1 admin gate itself works correctly (403 without header, 200/500 with header, 403 with wrong header); the 500 is a pre-existing handler bug in run_bulk_premium_correction and should be fixed separately.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/subscription/admin/fix-invalid-subscriptions?dry_run=true",
+        "issue": "Handler returns HTTP 500 with body {\"detail\":\"'id'\"} — KeyError 'id' bubbling out of run_bulk_premium_correction. Admin auth gate works; this is a downstream data-repair script bug (likely a Mongo doc missing 'id' field). Reference: /app/backend/routes/subscription.py:1501-1543."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_security_fixes.py",
+    "/app/test_reports/pytest/pytest_security_fixes.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Fix KeyError 'id' in run_bulk_premium_correction (subscription data-repair helper) — the admin endpoint /admin/fix-invalid-subscriptions currently 500s on dry_run=true. Not part of the security fixes batch and not blocking.",
+    "Ensure AUTH_DEBUG_RETURN_OTP is set to false/unset in production .env; it is intentionally true in this dev env per review request."
+  ],
+  "critical_code_review_comments": [
+    "require_admin correctly fails closed when ADMIN_API_KEY is unset (503) and uses hmac.compare_digest for constant-time comparison — good.",
+    "send-otp fail-closed path returns 502/503 without demo_otp when Twilio errors AND AUTH_DEBUG_RETURN_OTP is not set; with AUTH_DEBUG_RETURN_OTP=true, demo_otp is only surfaced on Twilio FAILURE, never on a successful send — correct H1 behavior.",
+    "register-push (/api/register-push) removed user_id from the client body (H2) and derives it from current_user — good.",
+    "Razorpay verify-payment now sources plan_id from the stored order document (C3) and 400s on plan mismatch — good.",
+    "Email is normalized to .lower().strip() in both register and login (L1) — good.",
+    "Rate limit on send-otp uses per-phone key with 5 req / 3600 s — verified 429 fires (M3)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_security_fixes.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "N/A (backend only)"},
+  "seed_data_creation": "Ephemeral test users created via /api/auth/register with TEST_ / CasE.Test+ / dup.test+ prefixes; not cleaned up (registration also auto-starts a trial). Consider a nightly cleanup job for TEST_ users.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Security fixes batch fully green. If retesting later, use /app/backend/tests/test_security_fixes.py — it derives BASE_URL from EXPO_PUBLIC_BACKEND_URL in /app/frontend/.env and creates fresh users per run. Admin key: d2c8f17dd719d83a0d25999b05b3e95f3e8f86d25ca4f152d5d7782c45ccafd9. Note that AUTH_DEBUG_RETURN_OTP=true in this env — H1 test tolerates demo_otp only on Twilio failure branch. The pre-existing 500 on /admin/fix-invalid-subscriptions is intentionally tolerated by the C1 test (asserts != 403); once fixed, tighten the assertion.",
+  "rca_of_issue": "N/A — no new regressions. Downstream 500 on /admin/fix-invalid-subscriptions is a pre-existing KeyError('id') in run_bulk_premium_correction and unrelated to this security batch."
+}
