@@ -19,6 +19,8 @@ type AuthState = {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   appleLogin: (identityToken: string, name?: string | null, email?: string | null) => Promise<void>;
+  sendPhoneOtp: (phone: string) => Promise<{ demo_otp?: string; message?: string }>;
+  phoneLogin: (phone: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -86,8 +88,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(res.data.user);
   }, [applyToken]);
 
+  const sendPhoneOtp = useCallback(async (phone: string) => {
+    const res = await api.post('/auth/phone/send-otp', { phone_number: phone });
+    return res.data as { demo_otp?: string; message?: string };
+  }, []);
+
+  const phoneLogin = useCallback(async (phone: string, code: string) => {
+    const res = await api.post('/auth/phone/verify-otp', { phone_number: phone, code });
+    await applyToken(res.data.access_token);
+    setUser(res.data.user);
+  }, [applyToken]);
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, sendPhoneOtp, phoneLogin, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

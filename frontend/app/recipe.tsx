@@ -98,7 +98,7 @@ export default function RecipeDetail() {
     <View style={styles.root}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }} showsVerticalScrollIndicator={false}>
         <View style={styles.heroWrap}>
-          <Image source={{ uri: img }} style={styles.hero} contentFit="cover" transition={250} />
+          <Image source={{ uri: img }} style={styles.hero} contentFit="cover" transition={250} cachePolicy="memory-disk" recyclingKey={img} />
           <Pressable style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={() => router.back()} testID="close-recipe" hitSlop={8}>
             <Icon name="close" size={22} color="#FFFFFF" />
           </Pressable>

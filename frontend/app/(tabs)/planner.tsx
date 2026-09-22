@@ -23,7 +23,21 @@ export default function Planner() {
   const { isSubscribed } = useSubscription();
 
   const [mood, setMood] = useState('cozy');
-  const [dietary, setDietary] = useState('vegetarian');
+  const [dietary, setDietary] = useState<string[]>(['vegetarian']);
+  const [dayPrefs, setDayPrefs] = useState<Record<string, string>>({});
+  const [showDays, setShowDays] = useState(false);
+
+  const toggleDietary = (id: string) => {
+    setDietary((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const setDayPref = (day: string, id: string) => {
+    setDayPrefs((prev) => {
+      const next = { ...prev };
+      if (!id || next[day] === id) delete next[day];
+      else next[day] = id;
+      return next;
+    });
+  };
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['weekly-plan'],
@@ -37,9 +51,10 @@ export default function Planner() {
     mutationFn: async () => {
       await api.post('/weekly-plan/generate', {
         mood,
-        dietary_preference: dietary,
+        dietary_preference: dietary.length ? dietary : ['non-vegetarian'],
         cuisine_preferences: [],
         focus_areas: [],
+        day_specific_preferences: Object.keys(dayPrefs).length ? dayPrefs : undefined,
       });
     },
     onSuccess: () => {
@@ -113,19 +128,60 @@ export default function Planner() {
                 </Pressable>
               ))}
             </ScrollView>
-            <Text style={[styles.controlTitle, { marginTop: 14 }]}>Dietary</Text>
+            <Text style={[styles.controlTitle, { marginTop: 14 }]}>Dietary <Text style={styles.controlHint}>· pick one or more</Text></Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-              {DIETARY_PREFS.map((d) => (
-                <Pressable
-                  key={d.id}
-                  testID={`plan-diet-${d.id}`}
-                  onPress={() => setDietary(d.id)}
-                  style={[styles.chip, { backgroundColor: dietary === d.id ? colors.accent : colors.secondary }]}
-                >
-                  <Text style={[styles.chipText, { color: dietary === d.id ? colors.accentForeground : colors.secondaryForeground }]}>{d.label}</Text>
-                </Pressable>
-              ))}
+              {DIETARY_PREFS.map((d) => {
+                const active = dietary.includes(d.id);
+                return (
+                  <Pressable
+                    key={d.id}
+                    testID={`plan-diet-${d.id}`}
+                    onPress={() => toggleDietary(d.id)}
+                    style={[styles.chip, styles.chipRowInner, { backgroundColor: active ? colors.accent : colors.secondary }]}
+                  >
+                    {active ? <Icon name="check" size={13} color={colors.accentForeground} /> : null}
+                    <Text style={[styles.chipText, { color: active ? colors.accentForeground : colors.secondaryForeground }]}>{d.label}</Text>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
+
+            <Pressable style={styles.dayToggle} onPress={() => setShowDays((v) => !v)} testID="toggle-day-prefs">
+              <Icon name="calendar-edit" size={18} color={colors.primary} />
+              <Text style={styles.dayToggleText}>Customise diet by day{Object.keys(dayPrefs).length ? ` (${Object.keys(dayPrefs).length})` : ''}</Text>
+              <Icon name={showDays ? 'chevron-up' : 'chevron-down'} size={20} color={colors.mutedForeground} />
+            </Pressable>
+            {showDays ? (
+              <View style={styles.dayPrefsBox}>
+                {DAYS.map((day) => (
+                  <View key={day} style={styles.dayPrefRow}>
+                    <Text style={styles.dayPrefLabel}>{day.slice(0, 3)}</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayChipRow}>
+                      <Pressable
+                        testID={`daypref-${day.toLowerCase()}-auto`}
+                        onPress={() => setDayPref(day, '')}
+                        style={[styles.dayChip, { backgroundColor: !dayPrefs[day] ? colors.primary : colors.secondary }]}
+                      >
+                        <Text style={[styles.dayChipText, { color: !dayPrefs[day] ? colors.primaryForeground : colors.secondaryForeground }]}>Auto</Text>
+                      </Pressable>
+                      {DIETARY_PREFS.map((d) => {
+                        const on = dayPrefs[day] === d.id;
+                        return (
+                          <Pressable
+                            key={d.id}
+                            testID={`daypref-${day.toLowerCase()}-${d.id}`}
+                            onPress={() => setDayPref(day, d.id)}
+                            style={[styles.dayChip, { backgroundColor: on ? colors.accent : colors.secondary }]}
+                          >
+                            <Text style={[styles.dayChipText, { color: on ? colors.accentForeground : colors.secondaryForeground }]}>{d.label}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                ))}
+              </View>
+            ) : null}
             <View style={{ height: 14 }} />
             <Button
               label={data?.has_plan ? 'Regenerate this week' : 'Generate this week'}
@@ -166,7 +222,7 @@ export default function Planner() {
                                 title: mealName,
                                 cuisine: 'International',
                                 meal: mt[0].toUpperCase() + mt.slice(1),
-                                dietary: dietary,
+                                dietary: dietary.join(', ') || 'Any',
                               },
                             })
                           }
@@ -213,6 +269,16 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 10 },
   controlCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 16, marginBottom: 16 },
   controlTitle: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.mutedForeground, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  controlHint: { fontFamily: f.body, fontSize: 11, color: colors.mutedForeground, textTransform: 'none', letterSpacing: 0 },
+  chipRowInner: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  dayToggle: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, paddingVertical: 6 },
+  dayToggleText: { flex: 1, fontFamily: f.bodySemiBold, fontSize: 14, color: colors.foreground },
+  dayPrefsBox: { marginTop: 6, gap: 6 },
+  dayPrefRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dayPrefLabel: { width: 34, fontFamily: f.bodySemiBold, fontSize: 12.5, color: colors.mutedForeground },
+  dayChipRow: { gap: 6, paddingRight: 8 },
+  dayChip: { borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6, flexShrink: 0 },
+  dayChipText: { fontFamily: f.bodyMedium, fontSize: 12, },
   chipRow: { gap: 8, paddingRight: 8 },
   chip: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, flexShrink: 0 },
   chipText: { fontFamily: f.bodyMedium, fontSize: 13 },

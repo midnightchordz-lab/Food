@@ -305,8 +305,13 @@ async def generate_weekly_plan(request: AIWeeklyPlanRequest, current_user: User 
         )
         plan_dict = plan.model_dump()
         plan_dict['created_at'] = plan_dict['created_at'].isoformat()
+        # Replace this week's plan so regenerating (e.g. after changing dietary) always wins,
+        # and clear any legacy duplicate docs for the same week.
+        await db.weekly_plans.delete_many(
+            {"user_id": current_user.id, "week_start": plan.week_start}
+        )
         await db.weekly_plans.insert_one(plan_dict)
-        
+
         return {"plan": plan, "message": "AI meal plan generated successfully!"}
     except Exception as e:
         logging.error(f"Error generating AI meal plan: {e}")

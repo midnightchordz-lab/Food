@@ -19,13 +19,50 @@ export default function Welcome() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
-  const { login, register } = useAuth();
+  const { login, register, sendPhoneOtp, phoneLogin } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const [phoneMode, setPhoneMode] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [phoneBusy, setPhoneBusy] = useState(false);
+
+  const sendCode = async () => {
+    if (!/^\+\d{7,15}$/.test(phone.trim())) {
+      toast.show('Enter your number in +countrycode format, e.g. +14155551234', 'error');
+      return;
+    }
+    setPhoneBusy(true);
+    try {
+      const res = await sendPhoneOtp(phone.trim());
+      setOtpSent(true);
+      if (res?.demo_otp) toast.show(`Demo code: ${res.demo_otp}`, 'info');
+      else toast.show('We texted you a 6-digit code', 'success');
+    } catch (e: any) {
+      toast.show(e?.response?.data?.detail || 'Could not send the code', 'error');
+    } finally {
+      setPhoneBusy(false);
+    }
+  };
+
+  const verifyCode = async () => {
+    if (code.trim().length < 4) { toast.show('Enter the code we sent you', 'error'); return; }
+    setPhoneBusy(true);
+    try {
+      await phoneLogin(phone.trim(), code.trim());
+      router.replace('/(tabs)');
+    } catch (e: any) {
+      toast.show(e?.response?.data?.detail || 'That code did not work', 'error');
+    } finally {
+      setPhoneBusy(false);
+    }
+  };
 
   const submit = async () => {
     if (!email.trim() || !password.trim() || (mode === 'signup' && !name.trim())) {
@@ -92,30 +129,59 @@ export default function Welcome() {
             ))}
           </View>
 
-          {mode === 'signup' && (
-            <Field icon="account-outline" placeholder="Your name" value={name} onChange={setName} testID="input-name" />
-          )}
-          <Field icon="email-outline" placeholder="Email address" value={email} onChange={setEmail} keyboardType="email-address" testID="input-email" />
-          <Field icon="lock-outline" placeholder="Password" value={password} onChange={setPassword} secure testID="input-password" />
+          {!phoneMode ? (
+            <>
+              {mode === 'signup' && (
+                <Field icon="account-outline" placeholder="Your name" value={name} onChange={setName} testID="input-name" />
+              )}
+              <Field icon="email-outline" placeholder="Email address" value={email} onChange={setEmail} keyboardType="email-address" testID="input-email" />
+              <Field icon="lock-outline" placeholder="Password" value={password} onChange={setPassword} secure testID="input-password" />
 
-          <View style={{ height: 8 }} />
-          <Button
-            label={mode === 'signup' ? 'Start cooking' : 'Welcome back'}
-            icon="arrow-right"
-            onPress={submit}
-            loading={busy}
-            testID="auth-submit"
-          />
+              <View style={{ height: 8 }} />
+              <Button
+                label={mode === 'signup' ? 'Start cooking' : 'Welcome back'}
+                icon="arrow-right"
+                onPress={submit}
+                loading={busy}
+                testID="auth-submit"
+              />
+            </>
+          ) : (
+            <>
+              <Field icon="phone-outline" placeholder="+1 415 555 1234" value={phone} onChange={setPhone} keyboardType="phone-pad" testID="input-phone" />
+              {otpSent ? (
+                <Field icon="numeric" placeholder="6-digit code" value={code} onChange={setCode} keyboardType="number-pad" testID="input-otp" />
+              ) : null}
+              <View style={{ height: 8 }} />
+              {!otpSent ? (
+                <Button label="Send code" icon="message-text-outline" onPress={sendCode} loading={phoneBusy} testID="phone-send" />
+              ) : (
+                <Button label="Verify & continue" icon="arrow-right" onPress={verifyCode} loading={phoneBusy} testID="phone-verify" />
+              )}
+              {otpSent ? (
+                <Pressable onPress={sendCode} style={styles.resendRow} testID="phone-resend">
+                  <Text style={styles.resendText}>Resend code</Text>
+                </Pressable>
+              ) : null}
+            </>
+          )}
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+          <Pressable
+            style={styles.altBtn}
+            testID="toggle-phone"
+            onPress={() => { setPhoneMode((v) => !v); setOtpSent(false); setCode(''); }}
+          >
+            <Icon name={phoneMode ? 'email-outline' : 'phone-outline'} size={18} color={colors.foreground} />
+            <Text style={styles.altBtnText}>{phoneMode ? 'Use email instead' : 'Continue with phone'}</Text>
+          </Pressable>
 
           {Platform.OS === 'ios' && (
-            <>
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
-              </View>
-              <AppleSignInButton />
-            </>
+            <AppleSignInButton />
           )}
 
           <Text style={styles.fineprint}>Free to use • 7-day premium trial included</Text>
@@ -186,4 +252,8 @@ const useStyles = makeStyles(({ colors }) => ({
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 18 },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
   dividerText: { fontFamily: fonts.body, fontSize: 13, color: colors.mutedForeground },
+  altBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, height: 54, marginBottom: 4 },
+  altBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.foreground },
+  resendRow: { alignItems: 'center', paddingVertical: 12 },
+  resendText: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.primary },
 }));

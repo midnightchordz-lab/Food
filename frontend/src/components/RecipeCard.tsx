@@ -9,10 +9,40 @@ import { useSubscription } from '@/src/lib/revenuecat';
 
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-// Deterministic food image for a recipe title using Unsplash source keywords.
+// Curated, fast-loading direct Unsplash CDN food photos (source.unsplash.com is retired
+// and hangs, so we never use it). We pick a relevant photo by keyword, else deterministically.
+const FOOD_IMAGES: { kw: string[]; url: string }[] = [
+  { kw: ['salad', 'greens', 'bowl', 'vegan', 'vegetable', 'veg'], url: 'photo-1512621776951-a57141f2eefd' },
+  { kw: ['soup', 'stew', 'broth', 'ramen', 'noodle'], url: 'photo-1547592166-23ac45744acd' },
+  { kw: ['chicken', 'meat', 'beef', 'pork', 'steak', 'grill', 'bbq', 'drumstick'], url: 'photo-1432139555190-58524dae6a55' },
+  { kw: ['pasta', 'spaghetti', 'italian', 'noodles'], url: 'photo-1621996346565-e3dbc646d9a9' },
+  { kw: ['pizza'], url: 'photo-1513104890138-7c749659a591' },
+  { kw: ['fish', 'salmon', 'seafood', 'shrimp', 'prawn'], url: 'photo-1467003909585-2f8a72700288' },
+  { kw: ['breakfast', 'egg', 'omelette', 'pancake', 'oat', 'toast'], url: 'photo-1525351484163-7529414344d8' },
+  { kw: ['dessert', 'cake', 'sweet', 'chocolate', 'cookie', 'pudding'], url: 'photo-1488477181946-6428a0291777' },
+  { kw: ['rice', 'curry', 'indian', 'biryani', 'thai', 'asian'], url: 'photo-1585937421612-70a008356fbe' },
+  { kw: ['taco', 'mexican', 'burrito', 'wrap'], url: 'photo-1565299624946-b28f40a0ae38' },
+  { kw: ['sandwich', 'burger', 'lunch'], url: 'photo-1568901346375-23c9450c58cd' },
+  { kw: ['smoothie', 'drink', 'juice', 'beverage'], url: 'photo-1610970881699-44a5587cabec' },
+];
+const FALLBACK_FOOD = [
+  'photo-1504674900247-0877df9cc836',
+  'photo-1476224203421-9ac39bcb3327',
+  'photo-1490645935967-10de6ba17061',
+  'photo-1546069901-ba9599a7e63c',
+];
+
+// Deterministic, reliable food image for a recipe title (direct Unsplash CDN, cached).
 export function foodImage(title: string, cuisine?: string) {
-  const q = encodeURIComponent(`${title} ${cuisine || ''} food dish`.trim());
-  return `https://source.unsplash.com/400x300/?${q}`;
+  const hay = `${title} ${cuisine || ''}`.toLowerCase();
+  const match = FOOD_IMAGES.find((f) => f.kw.some((k) => hay.includes(k)));
+  let id = match?.url;
+  if (!id) {
+    let h = 0;
+    for (let i = 0; i < hay.length; i++) h = (h * 31 + hay.charCodeAt(i)) >>> 0;
+    id = FALLBACK_FOOD[h % FALLBACK_FOOD.length];
+  }
+  return `https://images.unsplash.com/${id}?w=500&q=70&auto=format&fit=crop`;
 }
 
 // Fetches (and caches on the backend) an AI-generated food photo for the recipe.
@@ -66,7 +96,7 @@ export function RecipeCard({
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] }]}
     >
       <View>
-        <Image source={{ uri: img }} style={styles.img} contentFit="cover" transition={250} />
+        <Image source={{ uri: img }} style={styles.img} contentFit="cover" transition={250} cachePolicy="memory-disk" recyclingKey={img} />
         {!recipe.image_url && isSubscribed && aiImg.isLoading ? (
           <View style={styles.imgBadge}>
             <Icon name="creation" size={12} color="#FFFFFF" />

@@ -220,7 +220,7 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
                     onPress={() => { setMood(mObj.id); setStep('meal'); }}
                     style={({ pressed }) => [styles.moodCard, pressed && { transform: [{ scale: 0.97 }] }]}
                   >
-                    <Image source={{ uri: mObj.image }} style={styles.moodImg} contentFit="cover" transition={200} />
+                    <Image source={{ uri: mObj.image }} style={styles.moodImg} contentFit="cover" transition={200} cachePolicy="memory-disk" recyclingKey={mObj.id} />
                     <View style={[styles.moodDot, { backgroundColor: mObj.color }]}>
                       <Icon name={mObj.icon} size={16} color="#3A322B" />
                     </View>
