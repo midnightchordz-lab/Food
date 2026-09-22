@@ -1,0 +1,33 @@
+{
+  "summary": "Fridge Scanner -> INSTANT /recipe enhancement verified. BACKEND (5/5 passing, pytest_mobile_fridge.xml) POST /api/mobile-fridge/scan contract confirmed with a real fridge JPEG: returns {scan_id, ingredients[], recipes[]}; NEW assertion enforces that EVERY recipe carries a non-empty instructions[] whose entries are non-empty strings (which is what fridge.tsx openRecipe needs to build the pre-baked markdown content). Auth: missing header -> 403, bad bearer -> 401; empty image_data -> 400; invalid base64 -> 400/422/502. FRONTEND wiring code-reviewed (/app/frontend/app/fridge.tsx openRecipe lines 68-92 + /app/frontend/app/recipe.tsx line 46+55): (a) r.instructions is mapped via `s?.instruction || s?.text || s?.step || String(s)` so both plain-string and normalised {stepNumber,instruction,...} shapes are unwrapped; (b) parts array builds `## Ingredients`, `## Also grab`, `## Instructions` numbered list; (c) content is passed to /recipe ONLY when the joined markdown is non-empty (`...(content ? { content } : {})`); (d) recipe.tsx reads `providedContent = p.content` and its detailed-recipe useQuery has `enabled: !providedContent` so when content is passed there are ZERO POST /api/recipes/detailed calls; (e) regression fallback: a fridge recipe with NO instructions AND no ingredients_used AND no missing_ingredients yields empty content, so the content param is omitted -> providedContent === '' -> useQuery runs -> POST /api/recipes/detailed fires (correct fallback). UI sanity: app loads at public URL on 390x844 mobile viewport, /fridge lock screen renders (fridge-upgrade + fridge-close testIDs present), no console errors, and 0 POST /api/recipes/detailed calls observed during landing + fridge navigation. The Text-import 'View full recipe' shared /recipe path was proven end-to-end in iteration_109 (same providedContent code path — unaffected). Camera image cannot be injected via headless web per agent-to-agent context note, so the subscribed suggestion-card tap was validated by code review + backend contract test rather than a live scan.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_mobile_fridge.py",
+    "/app/test_reports/pytest/pytest_mobile_fridge.xml",
+    "/tmp/it110_home.png",
+    "/tmp/it110_fridge.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "fridge.tsx openRecipe correctly unwraps instructions with a defensive fallback chain (`s?.instruction || s?.text || s?.step || String(s)`) — matches import.tsx after the iteration_109 fix, so both premium quick-actions share identical mapper behaviour.",
+    "recipe.tsx `enabled: !providedContent` is the single switch that skips /api/recipes/detailed. Guard is boolean-tight: empty-string providedContent evaluates falsy, so useQuery runs, which is the intended regression fallback.",
+    "content param is only added when parts.join('\\n').trim() is non-empty — this cleanly separates the instant-render path from the regression fetch path with no ambiguity.",
+    "Router params pass the full markdown via URL query; for very long AI outputs this could theoretically hit URL length limits on web. Non-blocking; consider an in-memory handoff (already flagged in iteration_109 review).",
+    "New pytest assertion in test_mobile_fridge.py ensures each returned recipe's instructions[] is a non-empty list of non-empty strings — this is the exact backend contract the instant-render path depends on."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_mobile_fridge.py (added strict per-recipe instructions[] string assertion in TestFridgeContract.test_scan_returns_ingredients_and_recipes)"
+  ],
+  "success_rate": {"backend": "100% (5/5 pytest, including new non-empty instructions[] assertion)", "frontend": "3/3 review items verified: (1) openRecipe mapper+content wiring correct; (2) recipe.tsx skips /recipes/detailed when content is provided; (3) empty-instructions fallback still triggers /recipes/detailed. Import path unaffected (iter_109)."},
+  "seed_data_creation": "Registered fresh account fr_test+<ts>@example.com/Test1234 via /api/auth/register in pytest fixture. Uses /tmp/fridge.jpg (~180KB real Unsplash fridge photo, present) for the AI contract test; one fridge_scans document persisted per run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The instant-render Fridge->Recipe path piggybacks on the same providedContent branch already proven for the Text-import 'View full recipe' flow (iter_109). To fully e2e-verify the tap path in a headless browser you would need to seed a fake ScanResult into the /fridge screen state (e.g. via a debug hook or by mocking the /api/mobile-fridge/scan response with page.route). Camera capture is not exercisable headlessly. Backend contract test in /app/backend/tests/test_mobile_fridge.py now enforces the string-shape of instructions[] — if a future AI/prompt regression starts emitting objects, that test will fail and catch it before it reaches the client mapper. Run with: `EXPO_PUBLIC_BACKEND_URL=<public url> pytest backend/tests/test_mobile_fridge.py -v`. Note that conftest reads EXPO_PUBLIC_BACKEND_URL first, falling back to EXPO_BACKEND_URL — export at least one.",
+  "rca_of_issue": "N/A — enhancement verified working. openRecipe pre-bakes the markdown (Ingredients + Also grab + numbered Instructions) and passes it as the `content` param; recipe.tsx's useQuery for /api/recipes/detailed is gated by `enabled: !providedContent`, so when content is present the extra AI call is skipped and the recipe opens instantly. When content is absent (recipe has none of ingredients_used/missing_ingredients/instructions), the content param is omitted and recipe.tsx falls back to POST /api/recipes/detailed as before."
+}

@@ -66,6 +66,15 @@ export default function Fridge() {
   };
 
   const openRecipe = (r: FridgeRecipe) => {
+    const ing = (r.ingredients_used || []).map((i: any) => (typeof i === 'string' ? i : i?.name || String(i)));
+    const steps = (r.instructions || []).map((s: any) => (typeof s === 'string' ? s : s?.instruction || s?.text || s?.step || String(s)));
+    const parts: string[] = [];
+    if (ing.length) parts.push('## Ingredients', ...ing.map((x) => `- ${x}`), '');
+    if (r.missing_ingredients && r.missing_ingredients.length) {
+      parts.push('## Also grab', ...r.missing_ingredients.map((x) => `- ${x}`), '');
+    }
+    if (steps.length) parts.push('## Instructions', ...steps.map((x, i) => `${i + 1}. ${x}`));
+    const content = parts.join('\n').trim();
     router.push({
       pathname: '/recipe',
       params: {
@@ -76,7 +85,8 @@ export default function Fridge() {
         dietary: 'Any',
         cooking_time: r.cooking_time || '',
         difficulty: r.difficulty || '',
-        ingredients: JSON.stringify(r.ingredients_used || []),
+        ingredients: JSON.stringify(ing),
+        ...(content ? { content } : {}),
       },
     });
   };

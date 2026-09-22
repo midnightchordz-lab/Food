@@ -95,6 +95,16 @@ class TestFridgeContract:
         # no mongo _id leaking
         assert "_id" not in data
 
+        # NEW (iteration_110): fridge -> instant /recipe path depends on
+        # every returned recipe carrying a non-empty instructions[] of strings.
+        for idx, rr in enumerate(data["recipes"]):
+            assert isinstance(rr.get("instructions"), list), f"recipe[{idx}] instructions not a list: {rr}"
+            assert len(rr["instructions"]) >= 1, f"recipe[{idx}] has empty instructions[]"
+            for j, step in enumerate(rr["instructions"]):
+                assert isinstance(step, str) and step.strip(), (
+                    f"recipe[{idx}].instructions[{j}] not a non-empty string: {step!r}"
+                )
+
     def test_scan_empty_image_400(self, api_client, auth_token):
         r = api_client.post(
             f"{BASE_URL}/api/mobile-fridge/scan",
