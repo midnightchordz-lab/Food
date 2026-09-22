@@ -152,7 +152,20 @@ export default function Health() {
                 <View key={d.day} style={styles.dayCard}>
                   <Text style={styles.dayTitle}>{d.day}</Text>
                   {d.meals.map((m) => (
-                    <View key={m.type} style={styles.mealRow}>
+                    <Pressable
+                      key={m.type}
+                      style={styles.mealRow}
+                      testID={`diabetes-meal-${d.day}-${m.type}`}
+                      onPress={() => router.push({
+                        pathname: '/recipe',
+                        params: {
+                          title: m.name,
+                          meal: m.type,
+                          description: m.note || '',
+                          dietary: plan.dietary_preference || 'Any',
+                        },
+                      })}
+                    >
                       <View style={[styles.flagDot, { backgroundColor: flagColor(m.flag) }]} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.mealType}>{m.type}</Text>
@@ -162,7 +175,8 @@ export default function Health() {
                       <View style={[styles.carbBadge, { backgroundColor: flagColor(m.flag) + '22' }]}>
                         <Text style={[styles.carbText, { color: flagColor(m.flag) }]}>{m.net_carbs}g</Text>
                       </View>
-                    </View>
+                      <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+                    </Pressable>
                   ))}
                 </View>
               ))}
