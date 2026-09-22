@@ -1,0 +1,35 @@
+{
+  "summary": "Full-stack test of two new premium features: Voice AI Chef (hands-free Cook mode) and Diabetes-friendly weekly planner (Health tab). BACKEND: 7/7 pytest cases passed (pytest_voice_diabetes.xml). POST /api/mobile-voice/tts returns {url:/api/audio/file/mv_*.mp3} and the audio file responds 200 with audio/mpeg (13KB+ mp3 body); voice defaults gracefully when invalid; empty text -> 400. POST /api/mobile-diabetes/plan requires auth (403 when unauth), generates a plan in ~9s with all 7 days x 3 meals, each meal has {type, name, net_carbs:int, flag in [safe|caution|spike], note}; max_carbs_per_meal=45 (type2), avg_carbs_per_day computed, GET /api/mobile-diabetes/plan returns the persisted plan. FRONTEND (390x844 mobile viewport, fresh account cv_test+<ts>@example.com/Test1234): (1) FREE Health tab — diabetes-upgrade lock card visible, generate-diabetes-plan / dtype-* / ddiet-* chips ALL hidden — verified. (2) Tap diabetes-upgrade -> /paywall with paywall-subscribe present. (3) RC Test Store purchase: paywall-subscribe -> confirm-buy -> 'Test valid purchase' flips isSubscribed to true. (4) SUBSCRIBED Health — dtype-type2/type1/gestational/prediabetes chips + ddiet-balanced/vegetarian chips + generate-diabetes-plan button visible; lock card gone. (5) Generate diabetes plan (type2 + vegetarian) — plan rendered in ~9s with all seven day cards (Monday..Sunday), summary card ('87g Avg carbs/day', '<=45g Target/meal'), Steady/Watch/Spike-risk legend, 23 gram-badge matches (7*3 meal badges + 2 summary values), real dish names ('Chia Seed Pudding with Almond Milk', 'Quinoa Salad with Avocado and Spinach', 'Stuffed Bell Peppers with…') with italic notes. (6) FREE Voice AI Chef gating — Discover mood-happy -> choice-dinner -> choice-vegetarian -> cuisine-any -> recipe-card -> /recipe. cook-mode (Cook hands-free) button present under Save recipe; tapping as non-subscriber routes to /paywall (paywall-subscribe visible). (7) SUBSCRIBED Voice AI Chef — after purchase, tapping cook-mode opens /cook: 'HANDS-FREE COOKING' header + recipe title, 'Step N of N' progress line + progress bar, large step text ('Use shiitake or porcini mushrooms…'), Reading-aloud indicator, testIDs cook-playpause / cook-prev / cook-next / toggle-autoadvance / cook-close all present, 5 sequential TTS network calls to /api/mobile-voice/tts fire (one per step, auto-advance played through), no red-screen error, no crash. Both new premium features are fully working end-to-end. Emergent push endpoint returns 500 (expected — EMERGENT_PUSH_KEY=placeholder; explicitly out of scope per review request).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_voice_diabetes.py",
+    "/app/test_reports/pytest/pytest_voice_diabetes.xml",
+    "/tmp/dv_health_free.png",
+    "/tmp/dv_health_after_sub.png",
+    "/tmp/dv_health_plan.png",
+    "/tmp/dv_cook_paywall.png",
+    "/tmp/dv_cook.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "mobile_voice.py: TTS caches by md5(text|voice) on disk under /app/uploads/audio-cache and returns /api/audio/file/{name}.mp3 — good, avoids re-billing repeat playback. Length capped at 700 chars.",
+    "mobile_diabetes.py: normalises AI output server-side (day order Monday..Sunday, meal order Breakfast/Lunch/Dinner) and re-computes the safe/caution/spike flag against the diabetes-type's max_carbs_per_meal — deterministic even if AI gets creative. net_carbs clamped 0..200.",
+    "mobile_diabetes.py get_plan uses projection {_id:0} — clean, no ObjectId leak.",
+    "health.tsx correctly hides all controls for non-subscribers and only renders the diabetes-upgrade lock card; tapping routes to /paywall. Summary card + legend + day cards + carb badges all rendered when a plan exists.",
+    "recipe.tsx cook-mode button correctly guards on !isSubscribed -> router.push('/paywall'); when subscribed it parses numbered lines from AI markdown via parseSteps() (fallback to sentence-splitting) and passes steps JSON to /cook. If steps parse to empty, shows a toast 'Recipe steps are still loading' rather than navigating with an empty list — solid UX safeguard.",
+    "cook.tsx uses expo-audio (useAudioPlayer/useAudioPlayerStatus, setAudioModeAsync) — the correct new package (expo-av is deprecated). Per-step audio URLs are cached in a ref, and auto-advance is wired via status.didJustFinish with a finishedRef sentinel to prevent double-fires."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% — all 5 review scenarios verified end-to-end"},
+  "seed_data_creation": "Registered fresh accounts cv_test+<timestamp>@example.com / Test1234 via /api/auth/register for each run. Performed RevenueCat Test Store 'Test valid purchase' to flip isSubscribed=true. Generated one diabetes plan (type2 + vegetarian) which persisted to mobile_diabetes_plans collection.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Bottom tab labels 'Discover','Saved','Planner','Health','Profile' still have no testIDs — use page.get_by_text('<Name>', exact=True).first (safe on all screens where tab bar is visible; tabs are hidden while inside /recipe or /cook stack routes so click from within a stack route fails — navigate through tabs by first going Back). Purchase flow on web: paywall-subscribe click opens app confirm-modal (testID='confirm-buy') AND then the RevenueCat Test Store overlay whose 'Test valid purchase' button has no testID — must click by visible text. After purchase the paywall may auto-close back to the caller route (e.g. staying on /recipe), so tab-nav may be unavailable — use in-place elements. For the Cook flow, wait for parseSteps input to be ready by polling for 'Recipe Information' or a leading '1. ' in body innerText before clicking cook-mode; otherwise the button shows 'Recipe steps are still loading' toast and does not navigate.",
+  "rca_of_issue": "N/A — no bugs found. Both new premium features working correctly on backend + frontend."
+}

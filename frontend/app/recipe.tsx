@@ -5,9 +5,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
-import { makeStyles, useTheme, fonts } from '@/src/theme';
+import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Loading, useToast } from '@/src/components/ui';
 import { foodImage, useRecipeImage } from '@/src/components/RecipeCard';
+import { useSubscription } from '@/src/lib/revenuecat';
+
+// Extract ordered cooking steps from the AI recipe markdown.
+function parseSteps(md: string): string[] {
+  if (!md) return [];
+  const lines = md.split('\n');
+  const numbered = lines
+    .map((l) => l.trim())
+    .filter((l) => /^\d+\.\s+/.test(l))
+    .map((l) => l.replace(/^\d+\.\s+/, '').replace(/\*\*/g, '').trim())
+    .filter(Boolean);
+  if (numbered.length >= 2) return numbered;
+  // Fallback: split the whole text into sentences.
+  const clean = md.replace(/[#*`>-]/g, ' ').replace(/\s+/g, ' ').trim();
+  return clean
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 12)
+    .slice(0, 25);
+}
 
 export default function RecipeDetail() {
   const insets = useSafeAreaInsets();
@@ -16,6 +36,7 @@ export default function RecipeDetail() {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { isSubscribed } = useSubscription();
   const p = useLocalSearchParams<{
     title: string; description?: string; cuisine?: string; meal?: string; dietary?: string;
     cooking_time?: string; difficulty?: string; ingredients?: string;
@@ -87,6 +108,21 @@ export default function RecipeDetail() {
           <Pressable style={styles.saveBtn} onPress={() => saveMut.mutate()} testID="save-detail" disabled={saveMut.isPending}>
             <Icon name="heart-outline" size={18} color={colors.accent} />
             <Text style={styles.saveText}>{saveMut.isPending ? 'Saving…' : 'Save recipe'}</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.cookBtn}
+            testID="cook-mode"
+            onPress={() => {
+              if (!isSubscribed) { router.push('/paywall'); return; }
+              const steps = parseSteps(data || '');
+              if (!steps.length) { toast.show('Recipe steps are still loading', 'error'); return; }
+              router.push({ pathname: '/cook', params: { title, steps: JSON.stringify(steps) } });
+            }}
+          >
+            <Icon name="microphone" size={18} color={colors.primaryForeground} />
+            <Text style={styles.cookText}>Cook hands-free</Text>
+            {!isSubscribed ? <Icon name="crown" size={15} color={colors.primaryForeground} /> : null}
           </Pressable>
 
           <View style={styles.divider} />
@@ -180,6 +216,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   desc: { fontFamily: f.body, fontSize: 15, color: colors.mutedForeground, marginTop: 14, lineHeight: 22 },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 18, backgroundColor: colors.accentSoft, borderRadius: 999, paddingVertical: 13 },
   saveText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.accent },
+  cookBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10, backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 13 },
+  cookText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.primaryForeground },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 22 },
   h1: { fontFamily: f.serif, fontSize: 26, color: colors.foreground, marginTop: 12, marginBottom: 4 },
   h2: { fontFamily: f.serif, fontSize: 22, color: colors.foreground, marginTop: 16, marginBottom: 4 },

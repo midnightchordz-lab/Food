@@ -24,6 +24,10 @@ export default function TabsLayout() {
           <NativeTabs.Trigger.Icon sf="calendar" />
           <NativeTabs.Trigger.Label>Planner</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="health">
+          <NativeTabs.Trigger.Icon sf="heart.text.square.fill" />
+          <NativeTabs.Trigger.Label>Health</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
         <NativeTabs.Trigger name="profile">
           <NativeTabs.Trigger.Icon sf="person.fill" />
           <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
@@ -59,6 +63,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="planner"
         options={{ title: 'Planner', tabBarIcon: ({ color, size }) => <Icon name="calendar-month" size={size} color={color} /> }}
+      />
+      <Tabs.Screen
+        name="health"
+        options={{ title: 'Health', tabBarIcon: ({ color, size }) => <Icon name="heart-pulse" size={size} color={color} /> }}
       />
       <Tabs.Screen
         name="profile"

@@ -26,7 +26,9 @@
     "android": {
       "package": "in.moodfood.app",
       "googleServicesFile": "./google-services.json",
-      "permissions": ["android.permission.CAMERA"],
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#F9F8F6",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -57,7 +59,8 @@
         {
           "color": "#C87D56"
         }
-      ]
+      ],
+      "expo-audio"
     ]
   }
 }

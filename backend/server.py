@@ -63,6 +63,8 @@ from routes.gen_image import router as gen_image_router
 from routes.apple_auth import router as apple_auth_router
 from routes.mobile_import import router as mobile_import_router
 from routes.push import router as push_router
+from routes.mobile_voice import router as mobile_voice_router
+from routes.mobile_diabetes import router as mobile_diabetes_router
 from services.scheduled_tasks import router as scheduled_tasks_router, start_scheduler, stop_scheduler
 
 # Include all routers with /api prefix
@@ -91,6 +93,8 @@ app.include_router(gen_image_router, prefix="/api")
 app.include_router(apple_auth_router, prefix="/api")
 app.include_router(mobile_import_router, prefix="/api")
 app.include_router(push_router, prefix="/api")
+app.include_router(mobile_voice_router, prefix="/api")
+app.include_router(mobile_diabetes_router, prefix="/api")
 
 # CORS middleware
 app.add_middleware(
