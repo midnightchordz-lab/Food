@@ -1,7 +1,7 @@
 """
 Shared dependencies and utilities for all routes
 """
-from fastapi import Depends, HTTPException, Header
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
@@ -9,7 +9,6 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 import os
 import jwt
-import hmac
 import uuid
 import logging
 import asyncio
@@ -39,19 +38,6 @@ if not SECRET_KEY:
     raise RuntimeError("JWT_SECRET_KEY environment variable is required")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
-
-# Admin gate for internal/ops endpoints (C1). Fails closed if unconfigured.
-ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY")
-
-
-async def require_admin(x_admin_key: str = Header(None)):
-    """Require callers to send X-Admin-Key matching ADMIN_API_KEY.
-    An unconfigured admin key must NEVER mean 'anyone is admin'."""
-    if not ADMIN_API_KEY:
-        raise HTTPException(status_code=503, detail="Admin access not configured")
-    if not x_admin_key or not hmac.compare_digest(x_admin_key, ADMIN_API_KEY):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return True
 
 
 async def check_rate_limit(key: str, max_requests: int, window_seconds: int) -> None:
@@ -232,6 +218,7 @@ class User(BaseModel):
     name: str
     dietary_restrictions: List[str] = []
     cuisine_preferences: List[str] = []
+    is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserRegister(BaseModel):
@@ -325,6 +312,32 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except Exception as e:
         logging.error(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Authentication failed")
+
+
+async def require_admin_user(current_user: "User" = Depends(get_current_user)) -> "User":
+    """Authorize an authenticated user as an admin.
+    Authorization is DB-authoritative (get_current_user loads the live user),
+    so a token issued before demotion won't retain admin. 403 for non-admins,
+    401 (from get_current_user) for missing/invalid tokens."""
+    if not getattr(current_user, "is_admin", False):
+        raise HTTPException(status_code=403, detail="Administrator role required")
+    return current_user
+
+
+async def bootstrap_admins() -> int:
+    """Idempotently promote accounts listed in ADMIN_BOOTSTRAP_EMAILS to admin.
+    Never demotes anyone; safe to run on every startup. Returns count promoted."""
+    raw = os.environ.get("ADMIN_BOOTSTRAP_EMAILS", "")
+    emails = sorted({v.strip().lower() for v in raw.split(",") if v.strip()})
+    if not emails:
+        return 0
+    result = await db.users.update_many(
+        {"email": {"$in": emails}, "is_admin": {"$ne": True}},
+        {"$set": {"is_admin": True}},
+    )
+    if result.modified_count:
+        logging.info(f"bootstrap_admins: promoted {result.modified_count} account(s) to admin")
+    return result.modified_count
 
 # ============== HELPER FUNCTIONS ==============
 

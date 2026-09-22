@@ -122,8 +122,9 @@ app.add_middleware(
 # Startup event - create database indexes and start scheduler
 @app.on_event("startup")
 async def startup_event():
-    from routes.deps import create_indexes
+    from routes.deps import create_indexes, bootstrap_admins
     await create_indexes()
+    await bootstrap_admins()
     await start_scheduler()
     logger.info("Application started with database indexes and scheduled tasks")
 

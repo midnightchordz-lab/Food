@@ -14,7 +14,7 @@ import hmac
 
 import razorpay
 
-from .deps import db, User, get_current_user, require_admin
+from .deps import db, User, get_current_user, require_admin_user
 
 # Add backend to path for services import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -736,8 +736,8 @@ async def get_transactions(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/stats", dependencies=[Depends(require_admin)])
-async def get_subscription_stats():
+@router.get("/stats")
+async def get_subscription_stats(admin: User = Depends(require_admin_user)):
     """Get subscription statistics (admin)"""
     try:
         total_subscribers = await db.user_subscriptions.count_documents({
@@ -1498,10 +1498,11 @@ async def get_invoice(
 
 # ============== ADMIN/MIGRATION ENDPOINTS ==============
 
-@router.post("/admin/fix-invalid-subscriptions", dependencies=[Depends(require_admin)])
+@router.post("/admin/fix-invalid-subscriptions")
 async def fix_invalid_subscriptions(
     hours_window: int = 24,
-    dry_run: bool = True
+    dry_run: bool = True,
+    admin: User = Depends(require_admin_user)
 ):
     """
     TARGETED DATA REPAIR SCRIPT (SAFE)
@@ -1523,6 +1524,7 @@ async def fix_invalid_subscriptions(
     - dry_run: If true (DEFAULT), only report without making changes
     """
     try:
+        logging.info(f"[ADMIN] fix-invalid-subscriptions run by {admin.email or admin.id} (dry_run={dry_run})")
         result = await run_bulk_premium_correction(
             db=db,
             hours_window=hours_window,
@@ -1543,8 +1545,8 @@ async def fix_invalid_subscriptions(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/admin/subscription-integrity-check", dependencies=[Depends(require_admin)])
-async def subscription_integrity_check():
+@router.get("/admin/subscription-integrity-check")
+async def subscription_integrity_check(admin: User = Depends(require_admin_user)):
     """
     ADMIN ENDPOINT: Comprehensive subscription integrity report.
     
@@ -1646,10 +1648,11 @@ async def subscription_integrity_check():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/admin/audit-logs", dependencies=[Depends(require_admin)])
+@router.get("/admin/audit-logs")
 async def get_audit_logs(
     user_id: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
+    admin: User = Depends(require_admin_user)
 ):
     """
     ADMIN ENDPOINT: Get subscription plan change audit logs.
@@ -1683,10 +1686,11 @@ async def get_audit_logs(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/admin/audit-logs/user/{user_id}", dependencies=[Depends(require_admin)])
+@router.get("/admin/audit-logs/user/{user_id}")
 async def get_user_audit_logs(
     user_id: str,
-    limit: int = 50
+    limit: int = 50,
+    admin: User = Depends(require_admin_user)
 ):
     """
     ADMIN ENDPOINT: Get plan change history for a specific user.

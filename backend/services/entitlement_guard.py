@@ -933,6 +933,9 @@ async def run_bulk_premium_correction(
         })
         
         if current_sub:
+            # Skip malformed docs without an id (can't safely update/log).
+            if not current_sub.get("id"):
+                continue
             # Get the original payment and plan
             payment = await db.payment_transactions.find_one({
                 "user_id": user_id,
@@ -1016,10 +1019,14 @@ async def run_bulk_premium_correction(
     subscriptions = await db.user_subscriptions.find(query).to_list(length=10000)
     
     for sub in subscriptions:
-        user_id = sub["user_id"]
-        subscription_id = sub["id"]
-        plan_id = sub["plan_id"]
-        
+        user_id = sub.get("user_id")
+        subscription_id = sub.get("id")
+        plan_id = sub.get("plan_id")
+
+        # Skip malformed docs that can't be safely acted on.
+        if not user_id or not subscription_id or not plan_id:
+            continue
+
         # Skip if already checked in restoration phase
         if user_id in paid_users:
             continue
