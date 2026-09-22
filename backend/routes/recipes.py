@@ -86,6 +86,11 @@ class DetailedRecipeRequest(BaseModel):
     meal_type: str = "Dinner"
     dietary_pref: str = "Any"
 
+class NutritionRequest(BaseModel):
+    title: str
+    ingredients: List[str] = []
+    servings: int = 1
+
 class DiscoverRecipeRequest(BaseModel):
     cuisine: Optional[str] = None
     count: int = 12
@@ -169,6 +174,53 @@ async def get_detailed_recipe(request: DetailedRecipeRequest, current_user: User
     except Exception as e:
         logging.error(f"Error generating detailed recipe: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/nutrition")
+async def estimate_nutrition(request: NutritionRequest, current_user: User = Depends(get_current_user)):
+    """Quick per-serving calorie/macro estimate for a dish. Cached by title."""
+    import json as _json
+    import re as _re
+
+    title_lower = request.title.lower().strip()
+    cached = await db.recipe_nutrition.find_one({"title_lower": title_lower}, {"_id": 0})
+    if cached and cached.get("nutrition"):
+        return {"nutrition": cached["nutrition"], "cached": True}
+
+    ing_str = ", ".join([i for i in request.ingredients if i][:20]) or "typical ingredients"
+    system_msg = (
+        "You are a nutrition estimator. Given a dish and its ingredients, estimate the PER-SERVING "
+        "nutrition. Return ONLY valid JSON (no markdown) exactly like: "
+        '{"calories": 520, "protein_g": 32, "carbs_g": 45, "fat_g": 22}. '
+        "Integers only, realistic home-cooked portions."
+    )
+    try:
+        chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"nutrition-{uuid.uuid4().hex[:8]}",
+            system_message=system_msg,
+        )
+        chat.with_model("openai", "gpt-4o-mini")
+        raw = await chat.send_message(UserMessage(text=f"Dish: {request.title}\nIngredients: {ing_str}"))
+        m = _re.search(r"\{.*\}", raw or "", _re.DOTALL)
+        parsed = _json.loads(m.group(0)) if m else {}
+        nutrition = {
+            "calories": int(round(float(parsed.get("calories", 0)))),
+            "protein_g": int(round(float(parsed.get("protein_g", 0)))),
+            "carbs_g": int(round(float(parsed.get("carbs_g", 0)))),
+            "fat_g": int(round(float(parsed.get("fat_g", 0)))),
+        }
+    except Exception as e:
+        logging.error(f"Error estimating nutrition: {e}")
+        raise HTTPException(status_code=502, detail="Could not estimate nutrition")
+
+    await db.recipe_nutrition.update_one(
+        {"title_lower": title_lower},
+        {"$set": {"title": request.title, "title_lower": title_lower, "nutrition": nutrition,
+                  "created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+    return {"nutrition": nutrition, "cached": False}
 
 
 @router.post("/save", response_model=SavedRecipe)

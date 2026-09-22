@@ -81,7 +81,7 @@ export type RecipeCardData = {
 };
 
 export function RecipeCard({
-  recipe, onPress, onSave, saved, saving, onAddToCart, rating, onRate,
+  recipe, onPress, onSave, saved, saving, onAddToCart, rating, onRate, verified,
 }: {
   recipe: RecipeCardData;
   onPress: () => void;
@@ -91,6 +91,7 @@ export function RecipeCard({
   onAddToCart?: () => void;
   rating?: number;
   onRate?: (value: number) => void;
+  verified?: boolean;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -105,6 +106,12 @@ export function RecipeCard({
     >
       <View>
         <Image source={{ uri: img }} style={styles.img} contentFit="cover" transition={250} cachePolicy="memory-disk" recyclingKey={img} />
+        {verified ? (
+          <View style={styles.verifiedBadge}>
+            <Icon name="check-decagram" size={13} color="#FFFFFF" />
+            <Text style={styles.verifiedText}>Verified photo</Text>
+          </View>
+        ) : null}
         <View style={styles.actions}>
           {onAddToCart ? (
             <Pressable testID={`cart-${recipe.title}`} onPress={onAddToCart} style={styles.actionBtn} hitSlop={8}>
@@ -170,6 +177,11 @@ const useStyles = makeStyles(({ colors, radius }) => ({
     elevation: 2,
   },
   img: { width: '100%', height: 168, backgroundColor: colors.secondary },
+  verifiedBadge: {
+    position: 'absolute', left: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(46,125,50,0.92)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
+  },
+  verifiedText: { color: '#FFFFFF', fontFamily: fonts.bodySemiBold, fontSize: 11 },
   imgBadge: {
     position: 'absolute', left: 12, top: 12, flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4,

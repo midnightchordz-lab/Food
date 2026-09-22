@@ -30,6 +30,20 @@ function parseSteps(md: string): string[] {
     .slice(0, 25);
 }
 
+// Pull "- ingredient" bullets from the Ingredients section of the recipe markdown.
+function extractIngredients(md: string): string[] {
+  if (!md) return [];
+  const out: string[] = [];
+  let inIng = false;
+  for (const raw of md.split('\n')) {
+    const l = raw.trim();
+    if (/^#+\s*ingredients/i.test(l)) { inIng = true; continue; }
+    if (inIng && /^#+\s/.test(l)) break;
+    if (inIng && (l.startsWith('-') || l.startsWith('*'))) out.push(l.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim());
+  }
+  return out.filter(Boolean);
+}
+
 export default function RecipeDetail() {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
@@ -77,6 +91,18 @@ export default function RecipeDetail() {
   const recipeContent = providedContent || data || '';
   const loadingContent = !providedContent && isLoading;
 
+  // Quick per-serving nutrition estimate (cached backend-side by title).
+  const nutritionIngredients = providedIngredients.length ? providedIngredients : extractIngredients(recipeContent);
+  const nutrition = useQuery({
+    queryKey: ['nutrition', title],
+    enabled: !!title,
+    staleTime: 1000 * 60 * 60,
+    queryFn: async () => {
+      const res = await api.post('/recipes/nutrition', { title, ingredients: nutritionIngredients });
+      return res.data.nutrition as { calories: number; protein_g: number; carbs_g: number; fat_g: number };
+    },
+  });
+
   const carbs = p.carbs != null && p.carbs !== '' ? Number(p.carbs) : null;
   const flag = p.flag ? String(p.flag) : '';
   const flagColor = flag === 'safe' ? colors.success : flag === 'caution' ? colors.accent : flag === 'spike' ? colors.danger : colors.primary;
@@ -99,6 +125,7 @@ export default function RecipeDetail() {
           nutritional_highlights: 'Mood-boosting nutrients',
           dietary_info: [],
           cuisine_type: String(p.cuisine || ''),
+          image_url: p.image ? String(p.image) : (aiImg.data || foodImage(title, String(p.cuisine || ''))),
         },
       });
     },
@@ -111,15 +138,7 @@ export default function RecipeDetail() {
 
   const getShoppingIngredients = (): string[] => {
     if (providedIngredients.length) return providedIngredients;
-    const out: string[] = [];
-    let inIng = false;
-    for (const raw of recipeContent.split('\n')) {
-      const l = raw.trim();
-      if (/^#+\s*ingredients/i.test(l)) { inIng = true; continue; }
-      if (inIng && /^#+\s/.test(l)) break;
-      if (inIng && (l.startsWith('-') || l.startsWith('*'))) out.push(l.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim());
-    }
-    return out.filter(Boolean);
+    return extractIngredients(recipeContent);
   };
 
   const addToListMut = useMutation({
@@ -183,6 +202,27 @@ export default function RecipeDetail() {
             </View>
           ) : null}
 
+          <View style={styles.nutritionCard}>
+            <View style={styles.nutritionHeader}>
+              <Icon name="nutrition" size={16} color={colors.primary} />
+              <Text style={styles.nutritionTitle}>Nutrition snapshot</Text>
+              <Text style={styles.nutritionSub}>per serving</Text>
+            </View>
+            {nutrition.isLoading ? (
+              <Text style={styles.nutritionLoading}>Estimating…</Text>
+            ) : nutrition.data ? (
+              <View style={styles.nutritionRow}>
+                <NutritionStat value={`${nutrition.data.calories}`} unit="kcal" label="Calories" />
+                <NutritionStat value={`${nutrition.data.protein_g}g`} label="Protein" />
+                <NutritionStat value={`${nutrition.data.carbs_g}g`} label="Carbs" />
+                <NutritionStat value={`${nutrition.data.fat_g}g`} label="Fat" />
+              </View>
+            ) : (
+              <Text style={styles.nutritionLoading}>Estimate unavailable</Text>
+            )}
+            <Text style={styles.nutritionDisclaimer}>Approximate AI estimate</Text>
+          </View>
+
           <Pressable style={styles.saveBtn} onPress={() => saveMut.mutate()} testID="save-detail" disabled={saveMut.isPending}>
             <Icon name="heart-outline" size={18} color={colors.accent} />
             <Text style={styles.saveText}>{saveMut.isPending ? 'Saving…' : 'Save recipe'}</Text>
@@ -225,6 +265,17 @@ export default function RecipeDetail() {
     </View>
   );
 }
+
+function NutritionStat({ value, unit, label }: { value: string; unit?: string; label: string }) {
+  const styles = useStyles();
+  return (
+    <View style={styles.nutritionStat}>
+      <Text style={styles.nutritionValue}>{value}<Text style={styles.nutritionUnit}>{unit ? ` ${unit}` : ''}</Text></Text>
+      <Text style={styles.nutritionLabel}>{label}</Text>
+    </View>
+  );
+}
+
 
 function HeroMeta({ icon, text }: { icon: string; text: string }) {
   const styles = useStyles();
@@ -309,6 +360,17 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   carbBannerSub: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, marginTop: 1 },
   carbFlag: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   carbFlagText: { fontFamily: f.bodySemiBold, fontSize: 12.5, color: '#FFFFFF' },
+  nutritionCard: { marginTop: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: 14 },
+  nutritionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nutritionTitle: { fontFamily: f.bodyBold, fontSize: 14, color: colors.foreground },
+  nutritionSub: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, marginLeft: 'auto' },
+  nutritionRow: { flexDirection: 'row', marginTop: 12 },
+  nutritionStat: { flex: 1, alignItems: 'center' },
+  nutritionValue: { fontFamily: f.serif, fontSize: 20, color: colors.primary },
+  nutritionUnit: { fontFamily: f.body, fontSize: 11, color: colors.mutedForeground },
+  nutritionLabel: { fontFamily: f.bodyMedium, fontSize: 11.5, color: colors.mutedForeground, marginTop: 2 },
+  nutritionLoading: { fontFamily: f.body, fontSize: 13, color: colors.mutedForeground, marginTop: 10 },
+  nutritionDisclaimer: { fontFamily: f.body, fontSize: 10.5, color: colors.mutedForeground, marginTop: 10, textAlign: 'right' },
   saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 18, backgroundColor: colors.accentSoft, borderRadius: 999, paddingVertical: 13 },
   saveText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.accent },
   cookBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10, backgroundColor: colors.primary, borderRadius: 999, paddingVertical: 13 },

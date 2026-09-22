@@ -187,6 +187,7 @@ export default function Quick() {
                   ingredients: r.ingredients,
                   image_url: r.image_url || undefined,
                 }}
+                verified={!!r.image_validated}
                 onPress={() => openRecipe(r)}
               />
             ))}
