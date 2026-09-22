@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoodFood — When Feelings Need Feeding</title>
+<meta name="description" content="MoodFood is the AI chef that listens to how you feel and cooks up recipes, meal plans and shopping lists to match — diabetes-friendly, fridge-aware, family-shared.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.8-9.1C.6 8.4 2.4 5 6 5c2 0 3.3 1 4 2 .7-1 2-2 4-2 3.6 0 5.4 3.4 3.8 6.9C19.5 16.4 12 21 12 21z"></path></svg>
+      </span>
+      MoodFood
+    </a>
+    <div class="nav-links">
+      <a href="moods.html">Moods</a>
+      <a href="features.html">Features</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="about.html">About</a>
+    </div>
+    <button class="nav-toggle" aria-label="Toggle menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2D2A26" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="block block-sage">
+  <div class="container hero-split">
+    <div class="hero-copy">
+      <span class="eyebrow">The AI chef that reads the room</span>
+      <h1>When feelings<br><em>need</em> feeding.</h1>
+      <p class="lede">MoodFood listens to how you actually feel and cooks up something for it — mood-matched recipes, diabetes-friendly plans, and a fridge scan for the nights you have nothing.</p>
+      <div class="row gap-16">
+        <a href="#" class="btn btn-ink">Get the app</a>
+        <a href="#mood-demo" class="btn btn-outline">See it in action</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-notch" aria-hidden="true"></div>
+          <div class="phone-body">
+            <div class="phone-tabs">
+              <span class="active">Discover</span>
+              <span>Saved</span>
+              <span>Log</span>
+            </div>
+            <div class="phone-search">Search how you're feeling…</div>
+            <div class="phone-card">
+              <span class="swatch" style="background:var(--mood-cozy)"></span>
+              <div class="meta">
+                <span class="name">Miso Butter Ramen</span>
+                <span class="sub">Cozy · 30 min</span>
+              </div>
+            </div>
+            <div class="phone-card">
+              <span class="swatch" style="background:var(--mood-happy)"></span>
+              <div class="meta">
+                <span class="name">Green Goddess Bowl</span>
+                <span class="sub">Happy · 20 min</span>
+              </div>
+            </div>
+            <div class="phone-card">
+              <span class="swatch" style="background:var(--mood-energetic)"></span>
+              <div class="meta">
+                <span class="name">Charred Chicken & Farro</span>
+                <span class="sub">Energetic · 25 min</span>
+              </div>
+            </div>
+            <div class="phone-navbar">
+              <span class="active">Chat</span>
+              <span>Recipes</span>
+              <span>Plan</span>
+              <span>Shop</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTERACTIVE MOOD DEMO -->
+<section id="mood-demo" class="block block-white">
+  <div class="container">
+    <div class="section-head centered">
+      <span class="eyebrow">Try it</span>
+      <h2>How are you feeling right now?</h2>
+      <p>Pick a mood below — this is the same match MoodFood's AI chef makes in the app, built from your mood, not just what's trending.</p>
+    </div>
+    <div class="mood-picker-card" style="max-width: 900px; margin: 0 auto;">
+      <div id="mood-chip-row" class="mood-chip-row"></div>
+      <div class="mood-result">
+        <div id="mood-result-thumb" class="thumb">MOOD</div>
+        <div class="stack" style="flex-grow: 1; gap: 6px;">
+          <div id="mood-result-profile" style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent);"></div>
+          <div id="mood-result-name" style="font-family: var(--font-display); font-size: 26px; font-weight: 600;"></div>
+          <div id="mood-result-note" style="font-size: 15px; color: var(--ink-muted); line-height: 1.5; max-width: 440px;"></div>
+        </div>
+        <a href="#" class="btn btn-primary" style="height: 46px; padding: 0 22px; flex-shrink: 0;">Open in app</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATEMENT BANNER -->
+<section class="block block-accent block-sm">
+  <div class="container">
+    <div class="banner-center">
+      <span class="icon-ring" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.8-9.1C.6 8.4 2.4 5 6 5c2 0 3.3 1 4 2 .7-1 2-2 4-2 3.6 0 5.4 3.4 3.8 6.9C19.5 16.4 12 21 12 21z"></path></svg>
+      </span>
+      <h2>Every plate starts with a feeling.</h2>
+      <p>MoodFood pairs how you feel with what you eat, then adapts it — diabetes-friendly where you need it, built from what's already in your fridge, planned for the whole family.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="block block-paper">
+  <div class="container">
+    <div class="section-head centered">
+      <span class="eyebrow">What people are saying</span>
+      <h2>It reads the room better than I do.</h2>
+    </div>
+    <div class="grid grid-3">
+      <div class="card">
+        <p style="font-size: 15px; line-height: 1.6; color: var(--ink);">"I told it I was stressed and didn't want to think. It gave me a five-ingredient pasta and didn't ask me twenty questions first."</p>
+        <div class="row gap-12 mt-24">
+          <span class="avatar">PN</span>
+          <div class="stack">
+            <span style="font-size: 14px; font-weight: 700;">Priya N.</span>
+            <span style="font-size: 13px; color: var(--ink-muted);">Home cook</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <p style="font-size: 15px; line-height: 1.6; color: var(--ink);">"The diabetes-friendly planning is the first meal planner that's actually made grocery shopping less stressful for my dad."</p>
+        <div class="row gap-12 mt-24">
+          <span class="avatar">MT</span>
+          <div class="stack">
+            <span style="font-size: 14px; font-weight: 700;">Marcus T.</span>
+            <span style="font-size: 13px; color: var(--ink-muted);">Caregiver</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <p style="font-size: 15px; line-height: 1.6; color: var(--ink);">"I scanned my fridge on a Tuesday with nothing planned and it built dinner out of what was already there. That alone is worth it."</p>
+        <div class="row gap-12 mt-24">
+          <span class="avatar">AR</span>
+          <div class="stack">
+            <span style="font-size: 14px; font-weight: 700;">Alex R.</span>
+            <span style="font-size: 13px; color: var(--ink-muted);">Grad student</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DARK CTA -->
+<section class="block block-ink">
+  <div class="container hero-split">
+    <div class="hero-copy">
+      <span class="eyebrow" style="color: var(--mood-cozy);">Talk it out</span>
+      <h1 style="color: var(--bg);">Talk to your <em>AI chef</em> about tonight.</h1>
+      <p class="lede" style="color: rgba(249,248,246,0.75);">No forms, no filters to click through. Just tell it how you feel, what's in the fridge, or who's coming for dinner — it takes it from there.</p>
+      <a href="#" class="btn btn-primary">Start a chat</a>
+    </div>
+    <div class="hero-visual">
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-notch" aria-hidden="true"></div>
+          <div class="phone-body">
+            <div class="phone-bubble from-ai">Hey — how are you feeling tonight?</div>
+            <div class="phone-bubble">Stressed. Don't want to cook much.</div>
+            <div class="phone-bubble from-ai">Got it — 15-minute garlic butter orzo, one pan, no chopping. Want the recipe?</div>
+            <div class="phone-bubble">Yes please.</div>
+            <div class="phone-navbar">
+              <span class="active">Chat</span>
+              <span>Recipes</span>
+              <span>Plan</span>
+              <span>Shop</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES TEASER -->
+<section class="block block-paper">
+  <div class="container">
+    <div class="row" style="justify-content: space-between; align-items: flex-end; margin-bottom: 40px; flex-wrap: wrap; gap: 20px;">
+      <div class="section-head" style="margin-bottom: 0;">
+        <span class="eyebrow">A kitchen that adapts to you</span>
+        <h2>More than a recipe box.</h2>
+      </div>
+      <a href="features.html" class="btn btn-ghost-ink">All features</a>
+    </div>
+    <div class="grid grid-4">
+      <div class="card card-soft">
+        <div class="feature-icon" style="background: var(--white);">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><path d="M21 11.5a8.4 8.4 0 01-8.9 8.4 9 9 0 01-3-.5L4 21l1.6-4.8A8.4 8.4 0 1121 11.5z"></path></svg>
+        </div>
+        <h3 style="font-size: 17px; margin: 16px 0 6px; font-weight: 700;">AI chef chat</h3>
+        <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.5;">A real conversation, not a filter menu.</p>
+      </div>
+      <div class="card card-soft">
+        <div class="feature-icon" style="background: var(--white);">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 4v5"></path></svg>
+        </div>
+        <h3 style="font-size: 17px; margin: 16px 0 6px; font-weight: 700;">Diabetes-friendly plans</h3>
+        <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.5;">Net carbs and glycemic index, built in.</p>
+      </div>
+      <div class="card card-soft">
+        <div class="feature-icon" style="background: var(--white);">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><rect x="4" y="7" width="16" height="13" rx="2"></rect><path d="M9 7V5a3 3 0 016 0v2"></path></svg>
+        </div>
+        <h3 style="font-size: 17px; margin: 16px 0 6px; font-weight: 700;">Fridge scanner</h3>
+        <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.5;">Snap what you have, cook with it.</p>
+      </div>
+      <div class="card card-soft">
+        <div class="feature-icon" style="background: var(--white);">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><circle cx="9" cy="7" r="3"></circle><circle cx="17" cy="7" r="3"></circle><path d="M2 21v-1a6 6 0 0112 0v1M12 21v-1a6 6 0 016-6"></path></svg>
+        </div>
+        <h3 style="font-size: 17px; margin: 16px 0 6px; font-weight: 700;">Family sharing</h3>
+        <p style="font-size: 14px; color: var(--ink-muted); line-height: 1.5;">One plan, everyone's moods included.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="brand" href="index.html">
+          <span class="brand-mark" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.8-9.1C.6 8.4 2.4 5 6 5c2 0 3.3 1 4 2 .7-1 2-2 4-2 3.6 0 5.4 3.4 3.8 6.9C19.5 16.4 12 21 12 21z"></path></svg>
+          </span>
+          MoodFood
+        </a>
+        <p>The AI chef that cooks up something for how you feel. When feelings need feeding.</p>
+        <div class="social-row mt-16">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4.2"></circle><circle cx="17" cy="7" r="1"></circle></svg></a>
+          <a href="#" aria-label="Video feed"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="9"></circle><path d="M10 8.5l6 3.5-6 3.5z"></path></svg></a>
+          <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M7 10v7M7 7v.01M11 17v-4.5a2.5 2.5 0 015 0V17"></path></svg></a>
+        </div>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <span class="head">Product</span>
+          <a href="moods.html">Moods</a>
+          <a href="features.html">Features</a>
+          <a href="pricing.html">Pricing</a>
+        </div>
+        <div class="footer-col">
+          <span class="head">Company</span>
+          <a href="about.html">About</a>
+          <a href="#">Careers</a>
+          <a href="#">Press</a>
+        </div>
+        <div class="footer-col">
+          <span class="head">Legal</span>
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="#">Terms</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 MoodFood. Eat how you feel.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/site.js"></script>
+<script src="assets/js/mood-picker.js"></script>
+</body>
+</html>
