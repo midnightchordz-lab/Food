@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import type { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
@@ -21,6 +20,15 @@ export const REVENUECAT_ENTITLEMENT_IDENTIFIER = 'pro';
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 export const rcEnabled = Platform.OS === 'ios' ? !isExpoGo : (Platform.OS === 'web' ? __DEV__ : false);
 
+// Lazy accessor: react-native-purchases is a NATIVE module. Its top-level code
+// builds a NativeEventEmitter the moment it is imported, which THROWS on Android
+// inside Expo Go (where the native module is absent) and freezes the app before
+// any rcEnabled guard can run. We therefore never `import` it statically — we
+// require it only when RevenueCat is actually enabled (iOS real build / web-dev).
+function getPurchases() {
+  return require('react-native-purchases').default;
+}
+
 function getRevenueCatApiKey() {
   if (!REVENUECAT_TEST_API_KEY || !REVENUECAT_IOS_API_KEY || !REVENUECAT_ANDROID_API_KEY) {
     throw new Error('RevenueCat public API keys not found — run the Setup section first');
@@ -33,6 +41,8 @@ function getRevenueCatApiKey() {
 
 export function initializeRevenueCat() {
   if (!rcEnabled) return;
+  const Purchases = getPurchases();
+  const { LOG_LEVEL } = require('react-native-purchases');
   Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
   Purchases.configure({ apiKey: getRevenueCatApiKey() });
 }
@@ -73,20 +83,21 @@ function useSubscriptionContext() {
 
   const customerInfoQuery = useQuery({
     queryKey: ['revenuecat', 'customer-info'],
-    queryFn: () => Purchases.getCustomerInfo(),
+    queryFn: () => getPurchases().getCustomerInfo(),
     enabled: rcEnabled,
     staleTime: 60 * 1000,
   });
 
   const offeringsQuery = useQuery({
     queryKey: ['revenuecat', 'offerings'],
-    queryFn: () => Purchases.getOfferings(),
+    queryFn: () => getPurchases().getOfferings(),
     enabled: rcEnabled,
     staleTime: 300 * 1000,
   });
 
   useEffect(() => {
     if (!rcEnabled) return;
+    const Purchases = getPurchases();
     const listener = (info: CustomerInfo) => queryClient.setQueryData(['revenuecat', 'customer-info'], info);
     Purchases.addCustomerInfoUpdateListener(listener);
     return () => {
@@ -99,7 +110,7 @@ function useSubscriptionContext() {
   // from originalAppUserId (which keeps the aliased anonymous value).
   const bindIdentity = useCallback(async (userId: string) => {
     if (!rcEnabled) return;
-    const { customerInfo } = await Purchases.logIn(userId);
+    const { customerInfo } = await getPurchases().logIn(userId);
     queryClient.setQueryData(['revenuecat', 'customer-info'], customerInfo);
     identityBoundRef.current = true;
     setIdentityBound(true);
@@ -107,6 +118,7 @@ function useSubscriptionContext() {
 
   const unbindIdentity = useCallback(async () => {
     if (!rcEnabled) return;
+    const Purchases = getPurchases();
     await Purchases.logOut();
     const info = await Purchases.getCustomerInfo();
     queryClient.setQueryData(['revenuecat', 'customer-info'], info);
@@ -117,7 +129,7 @@ function useSubscriptionContext() {
   const purchaseMutation = useMutation({
     mutationFn: async (packageToPurchase: PurchasesPackage) => {
       if (!identityBoundRef.current) throw new Error('identity_not_ready');
-      const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
+      const { customerInfo } = await getPurchases().purchasePackage(packageToPurchase);
       return customerInfo;
     },
     onSuccess: (customerInfo) => {
@@ -126,7 +138,7 @@ function useSubscriptionContext() {
   });
 
   const restoreMutation = useMutation({
-    mutationFn: () => Purchases.restorePurchases(),
+    mutationFn: () => getPurchases().restorePurchases(),
     onSuccess: (customerInfo) => {
       queryClient.setQueryData(['revenuecat', 'customer-info'], customerInfo);
     },
