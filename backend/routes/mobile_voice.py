@@ -13,7 +13,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from emergentintegrations.llm.openai import OpenAITextToSpeech
+from lazy_emergent import OpenAITextToSpeech
 
 logger = logging.getLogger(__name__)
 

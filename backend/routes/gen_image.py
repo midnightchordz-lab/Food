@@ -12,7 +12,7 @@ import base64
 import hashlib
 import logging
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from lazy_emergent import LlmChat, UserMessage
 
 from .deps import User, get_optional_user, check_and_increment_daily_image_cap
 

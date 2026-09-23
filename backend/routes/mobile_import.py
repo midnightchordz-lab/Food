@@ -10,7 +10,7 @@ import json
 import uuid
 import logging
 from datetime import datetime, timezone
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from lazy_emergent import LlmChat, UserMessage, ImageContent
 
 from .deps import User, get_current_user
 from .import_recipe import (

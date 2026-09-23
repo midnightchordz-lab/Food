@@ -15,7 +15,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from lazy_emergent import LlmChat, UserMessage
 
 from .deps import db, User, get_current_user
 from .exclusions import get_user_excluded_ingredients

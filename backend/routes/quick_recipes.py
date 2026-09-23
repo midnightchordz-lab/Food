@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from lazy_emergent import LlmChat, UserMessage
 
 from .deps import User, get_current_user, check_and_increment_daily_image_cap
 from .exclusions import get_user_excluded_ingredients

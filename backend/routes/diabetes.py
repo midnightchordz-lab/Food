@@ -10,7 +10,7 @@ import uuid
 import logging
 import sys
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from lazy_emergent import LlmChat, UserMessage
 
 from .deps import db, User, get_current_user
 from .exclusions import (

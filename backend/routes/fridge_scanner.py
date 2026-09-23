@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from lazy_emergent import LlmChat, UserMessage, ImageContent
 from .deps import db, get_current_user, User
 from .feature_gating import FeatureGate
 
