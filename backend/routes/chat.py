@@ -964,6 +964,17 @@ async def send_chat_message(request: ChatRequest, current_user: User = Depends(g
             
             # Check if user is asking for more/different recipes
             skip_cache = is_more_recipes_request(request.message)
+
+            # Discover "Show me different recipes" sends an ALREADY SHOWN list.
+            # Always skip cache for these and capture the titles so we can tell the
+            # model exactly which dishes to avoid repeating (issue: repeated recipes).
+            already_shown_titles = []
+            if "ALREADY SHOWN" in request.message:
+                skip_cache = True
+                import re as _re
+                _m = _re.search(r"ALREADY SHOWN[^:]*:\s*(.+)", request.message)
+                if _m:
+                    already_shown_titles = [t.strip() for t in _re.split(r"[;\n]", _m.group(1)) if t.strip()][:40]
             
             # Check cache first for faster response (skip if user wants more recipes)
             cache_key = get_cache_key(
@@ -1048,7 +1059,12 @@ FOOD RESTRICTIONS: Never suggest recipes containing: {exclusion_list}
             user_text = f"Generate {recipes_to_generate} {recipe_params['meal_type'].lower()} recipes for someone feeling {recipe_params['mood'].lower()}, preferring {recipe_params['dietary_pref'].lower()} {recipe_params['cuisines']} cuisine."
             if user_exclusions:
                 user_text += f" Avoid: {', '.join(user_exclusions)}."
-            logging.info(f"Recipe generation request: {recipe_params}, exclusions: {user_exclusions}, count: {recipes_to_generate}")
+            if already_shown_titles:
+                user_text += (
+                    f" Do NOT repeat or lightly rename any of these already-shown dishes: "
+                    f"{', '.join(already_shown_titles)}. Every recipe MUST be a brand-new, clearly different dish."
+                )
+            logging.info(f"Recipe generation request: {recipe_params}, exclusions: {user_exclusions}, count: {recipes_to_generate}, avoid_shown: {len(already_shown_titles)}")
         else:
             system_msg = get_system_message(current_user.dietary_restrictions, current_user.cuisine_preferences)
             if user_exclusions:

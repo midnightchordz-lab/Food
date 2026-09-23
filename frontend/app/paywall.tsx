@@ -49,13 +49,25 @@ export default function Paywall() {
   const doAndroidSubscribe = async () => {
     setAndroidBusy(true);
     try {
+      // Option A: tapping "Start 7-day free trial" grants the trial immediately —
+      // no payment/card required. Payment (Razorpay) is only needed once the free
+      // trial has already been used up.
+      const { data } = await api.post('/trial/activate', { platform: 'android' });
+      if (data?.premium) {
+        refetchPremium();
+        toast.show('Welcome to Premium! 🎉 Your 7-day free trial has started.', 'success');
+        router.back();
+        return;
+      }
+
+      // Free trial already used → collect payment via Razorpay to continue.
       await startRazorpaySubscription(androidSelected, {
         name: user?.name,
         email: user?.email,
         contact: (user as any)?.phone_number,
       });
       refetchPremium();
-      toast.show('Welcome to Premium! 🎉 Your 7-day free trial has started.', 'success');
+      toast.show('Welcome to Premium! 🎉', 'success');
       router.back();
     } catch (e: any) {
       const msg = String(e?.description || e?.message || '');

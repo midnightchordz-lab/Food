@@ -98,7 +98,7 @@ async def generate_recipe_image(req: GenerateImageRequest, request: Request, cur
     specs = _dish_specs(req.title, req.cuisine)
     ingredients_str = ", ".join([i for i in req.ingredients[:6] if i]) or "as typical for this dish"
 
-    def build_prompt(extra: str = "") -> str:
+    def build_prompt() -> str:
         return f"""GENERATE: Professional food photograph of {req.title}
 DISH INFO:
 - Name: {req.title}
@@ -120,46 +120,26 @@ QUALITY STANDARDS:
 STYLE:
 - Authentic {req.cuisine or 'home-style'} presentation
 - High-end restaurant plating
-- Immediately recognizable as {req.title}
-{extra}
-VALIDATION (do this after generating): confirm the image clearly shows {req.title} with its main ingredients visible, authentic style, correct plating and colours, and is NOT confused with a similar dish. On the FINAL text line output exactly "VALIDATION: VERIFIED" if it matches, otherwise "VALIDATION: REJECTED - <short reason>"."""
+- Immediately recognizable as {req.title}"""
 
-    fallback_bytes = None
-    extra = ""
+    # Single generation (no self-validation retry) so images arrive ~2x faster.
+    # The detailed dish specs above keep the result accurate; results are cached
+    # on disk so every subsequent view is instant.
     try:
-        for attempt in range(2):
-            chat = LlmChat(
-                api_key=api_key,
-                session_id=f"img-{key}-{attempt}",
-                system_message="You are a professional food photographer and strict image validator. Generate high-quality food images that are immediately recognizable as the named dish, and honestly validate them.",
-            )
-            chat.with_model("gemini", MODEL).with_params(modalities=["image", "text"])
-            text, images = await chat.send_message_multimodal_response(UserMessage(text=build_prompt(extra)))
-            if not images:
-                continue
-            image_bytes = base64.b64decode(images[0]["data"])
-            fallback_bytes = image_bytes  # always keep the latest so the user still gets an image
-            verdict = (text or "").upper()
-            rejected = "REJECTED" in verdict and "VERIFIED" not in verdict
-            if rejected and attempt == 0:
-                logging.info(f"Image for '{req.title}' self-rejected ({text[:120]}); regenerating")
-                extra = (
-                    f"PREVIOUS ATTEMPT WAS REJECTED because: {text[:200]}. "
-                    f"Regenerate MORE carefully and strictly follow the VISUAL SPECIFICATIONS for {req.title}."
-                )
-                continue
-            with open(dest, "wb") as f:
-                f.write(image_bytes)
-            logging.info(f"Generated recipe image for '{req.title}' -> {rel_url} (validated={not rejected})")
-            return {"url": rel_url, "cached": False, "validated": not rejected}
-
-        # Exhausted attempts: still return the best image we produced.
-        if fallback_bytes:
-            with open(dest, "wb") as f:
-                f.write(fallback_bytes)
-            logging.info(f"Saved best-effort image for '{req.title}' after validation retries")
-            return {"url": rel_url, "cached": False, "validated": False}
-        raise HTTPException(status_code=502, detail="No image returned")
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"img-{key}",
+            system_message="You are a professional food photographer. Generate a single high-quality, appetizing image that is immediately recognizable as the named dish.",
+        )
+        chat.with_model("gemini", MODEL).with_params(modalities=["image", "text"])
+        _text, images = await chat.send_message_multimodal_response(UserMessage(text=build_prompt()))
+        if not images:
+            raise HTTPException(status_code=502, detail="No image returned")
+        image_bytes = base64.b64decode(images[0]["data"])
+        with open(dest, "wb") as f:
+            f.write(image_bytes)
+        logging.info(f"Generated recipe image for '{req.title}' -> {rel_url}")
+        return {"url": rel_url, "cached": False}
     except HTTPException:
         raise
     except Exception as e:

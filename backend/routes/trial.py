@@ -407,3 +407,80 @@ async def check_premium_access(current_user: User = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Access check error: {e}")
         raise HTTPException(status_code=500, detail="Failed to check access")
+
+
+
+class TrialActivateResponse(BaseModel):
+    """Response for the one-tap trial activation used by the paywall CTA."""
+    success: bool
+    premium: bool
+    trial_used: bool
+    reason: str
+    days_remaining: int = 0
+    trial_ends: Optional[str] = None
+
+
+@router.post("/activate", response_model=TrialActivateResponse)
+async def activate_trial(
+    request: TrialStartRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    POST /api/trial/activate
+
+    One-tap trial activation for the paywall "Start 7-day free trial" button.
+    Idempotently ensures a premium `trialing` subscription exists (this is what
+    /subscription/current reads for premium), reusing auto_start_trial_if_eligible.
+
+    Returns premium=True when the user now has (or already had) an active trial or
+    a paid plan. Returns trial_used=True when the free trial was already consumed,
+    so the client can route the user to payment instead.
+    """
+    try:
+        now = datetime.now(timezone.utc)
+
+        # 1) If the user already has an active/trialing premium subscription, they
+        #    are premium right now — report success without touching anything.
+        existing = await db.user_subscriptions.find_one({
+            "user_id": current_user.id,
+            "status": {"$in": ["active", "trialing"]},
+            "plan_id": {"$ne": "free"},
+        })
+        if existing:
+            days_remaining = 0
+            trial_ends = existing.get("trial_end") or existing.get("current_period_end")
+            end_raw = existing.get("trial_end") or existing.get("current_period_end")
+            if end_raw:
+                try:
+                    end_dt = datetime.fromisoformat(str(end_raw).replace('Z', '+00:00'))
+                    if end_dt > now:
+                        days_remaining = max(1, int((end_dt - now).total_seconds() / 86400) + 1)
+                    else:
+                        existing = None  # expired — fall through to (2)
+                except Exception:
+                    pass
+            if existing:
+                return TrialActivateResponse(
+                    success=True, premium=True, trial_used=False,
+                    reason="Trial already active", days_remaining=days_remaining, trial_ends=trial_ends,
+                )
+
+        # 2) Otherwise try to start a fresh trial (creates the premium `trialing`
+        #    subscription record that /subscription/current reads).
+        result = await auto_start_trial_if_eligible(current_user.id, request.platform or "android")
+        reason = result.get("reason", "")
+
+        premium = bool(result.get("started")) or reason in ("Trial already active", "Paid user")
+        trial_used = reason == "Already used trial"
+
+        return TrialActivateResponse(
+            success=True,
+            premium=premium,
+            trial_used=trial_used,
+            reason=reason or ("started" if result.get("started") else "unknown"),
+            days_remaining=result.get("days_remaining", 7 if premium else 0),
+            trial_ends=result.get("trial_ends"),
+        )
+    except Exception as e:
+        logger.error(f"Trial activate error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to activate trial")

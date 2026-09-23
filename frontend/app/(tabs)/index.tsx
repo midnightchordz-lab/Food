@@ -35,6 +35,7 @@ export default function Discover() {
   const [dietary, setDietary] = useState<string | null>(null);
   const [cuisine, setCuisine] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<StructuredRecipe[]>([]);
+  const [shownTitles, setShownTitles] = useState<string[]>([]);
   const [savedTitles, setSavedTitles] = useState<Record<string, boolean>>({});
 
   const sessionId = React.useRef(`session-${Date.now()}`).current;
@@ -54,13 +55,16 @@ export default function Discover() {
     const dp = DIETARY_PREFS.find((x) => x.id === dietary);
     const cu = cuisine === 'any' ? 'any cuisine' : CUISINES.find((x) => x.id === cuisine)?.label || 'any cuisine';
     const avoid = exclusions.length ? `\n- Avoid these ingredients entirely: ${exclusions.join(', ')}` : '';
+    const noRepeat = shownTitles.length
+      ? `\n- ALREADY SHOWN (do NOT repeat or lightly rename any of these): ${shownTitles.join('; ')}`
+      : '';
     return `[User Preferences]
 - Mood: ${m?.label} (${m?.description})
 - Meal Type: ${mt?.label}
 - Dietary Preference: ${dp?.label}
-- Cuisine(s): ${cu}${avoid}
+- Cuisine(s): ${cu}${avoid}${noRepeat}
 
-Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?.toLowerCase()} mood, are ${dp?.label?.toLowerCase()} friendly, and feature authentic ${cu} flavors. Give each a creative, appetizing name.${wantDifferent ? ' Show me completely DIFFERENT recipes than before.' : ''}`;
+Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?.toLowerCase()} mood, are ${dp?.label?.toLowerCase()} friendly, and feature authentic ${cu} flavors. Give each a creative, appetizing name.${wantDifferent || shownTitles.length ? ' Every recipe MUST be completely DIFFERENT from the already-shown list above — new dishes, not variations.' : ''}`;
   };
 
   const genMut = useMutation({
@@ -70,6 +74,7 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
     },
     onSuccess: (data) => {
       setRecipes(data);
+      setShownTitles((prev) => Array.from(new Set([...prev, ...data.map((r) => r.title)])).slice(-40));
       setStep('results');
     },
     onError: (e: any) => {
@@ -106,7 +111,7 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
   });
 
   const reset = () => {
-    setStep('mood'); setMood(null); setMeal(null); setDietary(null); setCuisine(null); setRecipes([]);
+    setStep('mood'); setMood(null); setMeal(null); setDietary(null); setCuisine(null); setRecipes([]); setShownTitles([]);
   };
 
   const regenerate = () => {
