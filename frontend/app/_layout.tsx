@@ -150,6 +150,7 @@ function ThemedStack() {
         <Stack.Screen name="index" />
         <Stack.Screen name="welcome" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="onboarding-allergies" options={{ animation: 'slide_from_bottom', gestureEnabled: false }} />
         <Stack.Screen name="recipe" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="exclusions" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="shopping" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

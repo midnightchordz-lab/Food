@@ -1,20 +1,35 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Tabs, useRouter } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTheme, fonts } from '@/src/theme';
 import { usesNativeTabs } from '@/src/navigation';
 import { useAuth } from '@/src/auth/AuthContext';
+import { onboardedKey } from '@/app/onboarding-allergies';
 import { Icon } from '@/src/components/ui';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
   const { user, loading } = useAuth();
   const router = useRouter();
+  const gateRef = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace('/welcome');
   }, [user, loading, router]);
+
+  // First-time users: ask about allergies once before they start cooking.
+  useEffect(() => {
+    if (loading || !user?.id || gateRef.current) return;
+    (async () => {
+      const seen = await AsyncStorage.getItem(onboardedKey(user.id));
+      if (!seen && !gateRef.current) {
+        gateRef.current = true;
+        router.replace('/onboarding-allergies');
+      }
+    })();
+  }, [user?.id, loading, router]);
 
   if (usesNativeTabs) {
     return (
