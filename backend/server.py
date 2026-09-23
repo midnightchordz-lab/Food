@@ -11,6 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from pathlib import Path
 import os
+import asyncio
 import logging
 
 # Load environment variables
@@ -128,11 +129,20 @@ app.middleware("http")(security_middleware)
 # Startup event - create database indexes and start scheduler
 @app.on_event("startup")
 async def startup_event():
-    from routes.deps import create_indexes, bootstrap_admins
-    await create_indexes()
-    await bootstrap_admins()
+    async def _warmup():
+        # DB index creation + admin bootstrap run in the background so the server
+        # can answer the readiness probe (/health) immediately on startup instead
+        # of waiting on Atlas round-trips (prevents transient probe races).
+        from routes.deps import create_indexes, bootstrap_admins
+        try:
+            await create_indexes()
+            await bootstrap_admins()
+        except Exception as e:
+            logger.error(f"DB warmup error (indexes/admin bootstrap): {e}")
+
+    asyncio.create_task(_warmup())
     await start_scheduler()
-    logger.info("Application started with database indexes and scheduled tasks")
+    logger.info("Application startup complete (DB warmup running in background)")
 
 # Shutdown event
 @app.on_event("shutdown")
