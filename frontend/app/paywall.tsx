@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,8 +8,16 @@ import type { PurchasesPackage } from 'react-native-purchases';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
+import { useAuth } from '@/src/auth/AuthContext';
+import { startRazorpaySubscription, type RzpPlanId } from '@/src/payments/razorpay';
 
 const HERO = 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=900&q=80';
+
+// Android uses Razorpay (iOS uses RevenueCat). INR pricing mirrors the iOS tiers.
+const ANDROID_PLANS: { id: RzpPlanId; name: string; price: string; period: string; annual?: boolean }[] = [
+  { id: 'premium_monthly', name: 'Monthly', price: '₹299', period: 'per month' },
+  { id: 'premium_annual', name: 'Annual', price: '₹2,499', period: 'per year', annual: true },
+];
 
 const PERKS = [
   { icon: 'infinity', title: 'Unlimited AI recipes', desc: 'Regenerate as many mood-matched recipes as you like' },
@@ -25,12 +33,38 @@ export default function Paywall() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
-  const { offerings, isSubscribed, purchase, restore, isPurchasing, isRestoring, identityReady } = useSubscription();
+  const { offerings, isSubscribed, purchase, restore, isPurchasing, isRestoring, identityReady, refetchPremium } = useSubscription();
+  const { user } = useAuth();
+  const isAndroid = Platform.OS === 'android';
 
   const currentOffering = offerings?.current;
   const packages = currentOffering?.availablePackages || [];
   const [selected, setSelected] = useState<string | null>(null);
   const [confirmPkg, setConfirmPkg] = useState<PurchasesPackage | null>(null);
+
+  // Android (Razorpay) plan selection + checkout.
+  const [androidSelected, setAndroidSelected] = useState<RzpPlanId>('premium_annual');
+  const [androidBusy, setAndroidBusy] = useState(false);
+
+  const doAndroidSubscribe = async () => {
+    setAndroidBusy(true);
+    try {
+      await startRazorpaySubscription(androidSelected, {
+        name: user?.name,
+        email: user?.email,
+        contact: (user as any)?.phone_number,
+      });
+      refetchPremium();
+      toast.show('Welcome to Premium! 🎉 Your 7-day free trial has started.', 'success');
+      router.back();
+    } catch (e: any) {
+      const msg = String(e?.description || e?.message || '');
+      if (e?.code === 0 || e?.code === 2 || /cancel/i.test(msg)) return; // user dismissed checkout
+      toast.show('Payment could not be completed', 'error');
+    } finally {
+      setAndroidBusy(false);
+    }
+  };
 
   const selectedPkg = packages.find((p) => p.identifier === selected) || packages[0];
 
@@ -101,6 +135,30 @@ export default function Paywall() {
               <Icon name="check-circle" size={22} color={colors.success} />
               <Text style={styles.activeText}>You're a Premium member. Enjoy!</Text>
             </View>
+          ) : isAndroid ? (
+            <View style={styles.plans}>
+              {ANDROID_PLANS.map((p) => {
+                const active = androidSelected === p.id;
+                return (
+                  <Pressable
+                    key={p.id}
+                    testID={`plan-${p.id}`}
+                    onPress={() => setAndroidSelected(p.id)}
+                    style={[styles.plan, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primarySoft : colors.card }]}
+                  >
+                    {p.annual ? <View style={styles.bestValue}><Text style={styles.bestValueText}>BEST VALUE</Text></View> : null}
+                    <View style={[styles.radio, { borderColor: active ? colors.primary : colors.borderStrong }]}>
+                      {active ? <View style={[styles.radioDot, { backgroundColor: colors.primary }]} /> : null}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.planName}>{p.name}</Text>
+                      <Text style={styles.planPeriod}>7-day free trial, then {p.period}</Text>
+                    </View>
+                    <Text style={styles.planPrice}>{p.price}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           ) : packages.length === 0 ? (
             <View style={styles.unavailable} testID="paywall-unavailable">
               <Text style={styles.unavailableText}>Subscription options are unavailable right now. Please try again later.</Text>
@@ -134,7 +192,23 @@ export default function Paywall() {
         </View>
       </ScrollView>
 
-      {!isSubscribed && packages.length > 0 ? (
+      {!isSubscribed && isAndroid ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
+          <Pressable
+            testID="paywall-subscribe-android"
+            disabled={androidBusy}
+            onPress={doAndroidSubscribe}
+            style={({ pressed }) => [styles.cta, { opacity: androidBusy ? 0.7 : pressed ? 0.9 : 1 }]}
+          >
+            {androidBusy ? <ActivityIndicator color={colors.accentForeground} /> : (
+              <Text style={styles.ctaText}>Start 7-day free trial</Text>
+            )}
+          </Pressable>
+          <Text style={styles.restoreText}>
+            Then {androidSelected === 'premium_annual' ? '₹2,499/year' : '₹299/month'} · auto-renews · cancel anytime
+          </Text>
+        </View>
+      ) : !isSubscribed && packages.length > 0 ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
           {!identityReady ? (
             <Text style={styles.identityWarn}>Sign in required before subscribing.</Text>

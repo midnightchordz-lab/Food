@@ -790,6 +790,53 @@ class RazorpayVerifyRequest(BaseModel):
     plan_id: str
 
 
+class RazorpaySubscriptionRequest(BaseModel):
+    plan_id: str  # premium_monthly | premium_annual
+
+
+class RazorpaySubscriptionVerifyRequest(BaseModel):
+    razorpay_payment_id: str
+    razorpay_subscription_id: str
+    razorpay_signature: str
+
+
+# Auto-renewing Razorpay subscription config (Android). iOS uses RevenueCat.
+RAZORPAY_TRIAL_DAYS = 7
+RAZORPAY_SUB_PLANS = {
+    "premium_monthly": {"period": "monthly", "interval": 1, "amount_paise": 29900, "total_count": 120},
+    "premium_annual": {"period": "yearly", "interval": 1, "amount_paise": 249900, "total_count": 10},
+}
+
+
+async def ensure_razorpay_plan(plan_id: str) -> str:
+    """Idempotently create (or reuse) the Razorpay Plan for a MoodFood plan and
+    return its Razorpay plan id (plan_xxx). Cached in db.razorpay_plans."""
+    cfg = RAZORPAY_SUB_PLANS.get(plan_id)
+    if not cfg:
+        raise HTTPException(status_code=400, detail="Invalid subscription plan")
+    existing = await db.razorpay_plans.find_one({"plan_id": plan_id})
+    if existing and existing.get("rp_plan_id"):
+        return existing["rp_plan_id"]
+    plan = get_plan_by_id(plan_id)
+    rp = razorpay_client.plan.create(data={
+        "period": cfg["period"],
+        "interval": cfg["interval"],
+        "item": {
+            "name": f"MoodFood {plan['display_name']}",
+            "amount": cfg["amount_paise"],
+            "currency": "INR",
+            "description": plan.get("description", ""),
+        },
+        "notes": {"plan_id": plan_id},
+    })
+    await db.razorpay_plans.update_one(
+        {"plan_id": plan_id},
+        {"$set": {"plan_id": plan_id, "rp_plan_id": rp["id"], "created_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True,
+    )
+    return rp["id"]
+
+
 @router.post("/razorpay/create-order")
 async def create_razorpay_order(
     request: RazorpayOrderRequest,
@@ -1020,6 +1067,173 @@ async def verify_razorpay_payment(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/razorpay/create-subscription")
+async def create_razorpay_subscription(
+    request: RazorpaySubscriptionRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Create an auto-renewing Razorpay subscription (Android) with a 7-day trial.
+    Returns the subscription_id to hand to RazorpayCheckout on the device."""
+    try:
+        if not razorpay_client:
+            raise HTTPException(status_code=500, detail="Razorpay not configured")
+        cfg = RAZORPAY_SUB_PLANS.get(request.plan_id)
+        if not cfg:
+            raise HTTPException(status_code=400, detail="Invalid subscription plan")
+        plan = get_plan_by_id(request.plan_id)
+        rp_plan_id = await ensure_razorpay_plan(request.plan_id)
+
+        # start_at in the future => Razorpay only charges after the free trial.
+        start_at = int((datetime.now(timezone.utc) + timedelta(days=RAZORPAY_TRIAL_DAYS)).timestamp())
+        sub = razorpay_client.subscription.create(data={
+            "plan_id": rp_plan_id,
+            "total_count": cfg["total_count"],
+            "quantity": 1,
+            "customer_notify": 1,
+            "start_at": start_at,
+            "notes": {"user_id": current_user.id, "plan_id": request.plan_id},
+        })
+
+        await db.razorpay_subscriptions.insert_one({
+            "id": sub["id"],
+            "user_id": current_user.id,
+            "plan_id": request.plan_id,
+            "rp_plan_id": rp_plan_id,
+            "status": "created",
+            "trial_end": (datetime.now(timezone.utc) + timedelta(days=RAZORPAY_TRIAL_DAYS)).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+        return {
+            "success": True,
+            "subscription": {"id": sub["id"], "key_id": RAZORPAY_KEY_ID},
+            "plan": {
+                "name": plan["display_name"],
+                "billing_cycle": plan["billing_cycle"],
+                "trial_days": RAZORPAY_TRIAL_DAYS,
+                "pricing_inr": plan["pricing_inr"],
+            },
+            "user": {"email": current_user.email, "name": current_user.name},
+        }
+    except razorpay.errors.BadRequestError as e:
+        logging.error(f"Razorpay subscription error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error creating Razorpay subscription: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/razorpay/verify-subscription")
+async def verify_razorpay_subscription(
+    request: RazorpaySubscriptionVerifyRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Verify the subscription authorization signature and start the user's
+    trial (premium access) immediately. Renewals are handled by the webhook."""
+    try:
+        if not razorpay_client:
+            raise HTTPException(status_code=500, detail="Razorpay not configured")
+
+        try:
+            razorpay_client.utility.verify_subscription_payment_signature({
+                "razorpay_payment_id": request.razorpay_payment_id,
+                "razorpay_subscription_id": request.razorpay_subscription_id,
+                "razorpay_signature": request.razorpay_signature,
+            })
+        except razorpay.errors.SignatureVerificationError:
+            logging.error(f"Subscription signature verification failed for {request.razorpay_subscription_id}")
+            raise HTTPException(status_code=400, detail="Payment verification failed")
+
+        sub = await db.razorpay_subscriptions.find_one({"id": request.razorpay_subscription_id})
+        if not sub:
+            raise HTTPException(status_code=400, detail="Subscription not found")
+        if sub["user_id"] != current_user.id:
+            raise HTTPException(status_code=403, detail="Subscription does not belong to user")
+
+        plan_id = sub["plan_id"]  # source of truth = server-created subscription
+        plan = get_plan_by_id(plan_id)
+        now = datetime.now(timezone.utc)
+        trial_end = now + timedelta(days=RAZORPAY_TRIAL_DAYS)
+
+        # Cancel any existing active/trialing subscription before granting the new one.
+        await db.user_subscriptions.update_many(
+            {"user_id": current_user.id, "status": {"$in": ["active", "trialing"]}},
+            {"$set": {"status": "canceled", "canceled_at": now.isoformat()}}
+        )
+
+        subscription_id = str(uuid.uuid4())
+        subscription_doc = {
+            "id": subscription_id,
+            "user_id": current_user.id,
+            "plan_id": plan_id,
+            "status": "trialing",
+            "source": EntitlementSource.RAZORPAY.value,
+            "current_period_start": now.isoformat(),
+            "current_period_end": trial_end.isoformat(),
+            "trial_start": now.isoformat(),
+            "trial_end": trial_end.isoformat(),
+            "cancel_at_period_end": False,
+            "payment_provider": "razorpay",
+            "payment_provider_id": request.razorpay_subscription_id,
+            "razorpay_subscription_id": request.razorpay_subscription_id,
+            "razorpay_payment_id": request.razorpay_payment_id,
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+        await db.user_subscriptions.insert_one(subscription_doc)
+
+        await db.razorpay_subscriptions.update_one(
+            {"id": request.razorpay_subscription_id},
+            {"$set": {"status": "authenticated", "payment_id": request.razorpay_payment_id, "updated_at": now.isoformat()}}
+        )
+
+        await db.payment_transactions.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "subscription_id": subscription_id,
+            "transaction_id": request.razorpay_payment_id,
+            "payment_provider": "razorpay",
+            "payment_provider_transaction_id": request.razorpay_payment_id,
+            "razorpay_subscription_id": request.razorpay_subscription_id,
+            "amount": plan["pricing_inr"],
+            "currency": "INR",
+            "status": "completed",
+            "transaction_type": "subscription",
+            "created_at": now.isoformat(),
+            "paid_at": now.isoformat(),
+        })
+
+        try:
+            await log_plan_change(
+                db=db, user_id=current_user.id, old_plan="free", new_plan=plan_id,
+                reason="razorpay_subscription_authenticated",
+                metadata={
+                    "subscription_id": subscription_id,
+                    "payment_id": request.razorpay_payment_id,
+                    "razorpay_subscription_id": request.razorpay_subscription_id,
+                    "payment_provider": "razorpay",
+                },
+            )
+        except Exception:
+            pass
+
+        logging.info(f"Razorpay subscription authenticated for user {current_user.id}, plan {plan_id}")
+        subscription_doc.pop("_id", None)
+        subscription_doc["plan"] = plan
+        return {
+            "success": True,
+            "message": f"Welcome to {plan['display_name']}! Your {RAZORPAY_TRIAL_DAYS}-day free trial has started.",
+            "subscription": subscription_doc,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error verifying Razorpay subscription: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/razorpay/config")
 async def get_razorpay_config():
     """Get Razorpay public configuration"""
@@ -1077,7 +1291,29 @@ async def razorpay_webhook(request: Request):
         event_type = event.get('event')
         
         logging.info(f"[WEBHOOK] Received Razorpay webhook: {event_type}")
-        
+
+        # Revocation events are always safe to process (they only REMOVE access),
+        # so handle them BEFORE the grant-only safety filter, which would otherwise
+        # reject them as non-payment events and skip the downgrade.
+        REVOKE_EVENTS = {
+            'subscription.cancelled', 'subscription.halted', 'subscription.paused',
+            'subscription.completed', 'subscription.expired',
+        }
+        if event_type in REVOKE_EVENTS:
+            now_rev = datetime.now(timezone.utc)
+            sub_entity = event.get('payload', {}).get('subscription', {}).get('entity', {})
+            rp_sub_id = sub_entity.get('id')
+            if rp_sub_id:
+                await db.user_subscriptions.update_one(
+                    {"payment_provider_id": rp_sub_id, "payment_provider": "razorpay"},
+                    {"$set": {"status": "canceled", "canceled_at": now_rev.isoformat(), "updated_at": now_rev.isoformat()}}
+                )
+                await db.razorpay_subscriptions.update_one(
+                    {"id": rp_sub_id}, {"$set": {"status": event_type.split('.')[-1], "updated_at": now_rev.isoformat()}}
+                )
+                logging.info(f"[WEBHOOK] Revoked Razorpay subscription {rp_sub_id} due to {event_type}")
+            return {"success": True, "revoked": True}
+
         # WEBHOOK SAFETY FILTER
         is_valid_event, validation_reason = validate_webhook_event(
             event_type=event_type,
@@ -1229,37 +1465,29 @@ async def razorpay_webhook(request: Request):
             # Razorpay subscription activated (for recurring)
             subscription = event['payload']['subscription']['entity']
             logging.info(f"Razorpay subscription activated: {subscription['id']}")
-            
-        elif event_type == 'subscription.cancelled':
-            # Razorpay subscription cancelled
-            subscription = event['payload']['subscription']['entity']
-            subscription_id = subscription['id']
-            
-            logging.info(f"Razorpay subscription cancelled: {subscription_id}")
-            
-            # Find and cancel in our database
-            await db.user_subscriptions.update_one(
-                {"payment_provider_id": subscription_id, "payment_provider": "razorpay"},
-                {"$set": {"status": "canceled", "canceled_at": now.isoformat(), "updated_at": now.isoformat()}}
-            )
-            
+
         elif event_type == 'subscription.charged':
-            # Recurring payment successful
+            # Recurring payment successful — extend by the plan's real billing cycle.
             subscription = event['payload']['subscription']['entity']
-            payment = event['payload'].get('payment', {}).get('entity', {})
-            
-            logging.info(f"Subscription charged: {subscription['id']}")
-            
-            # Extend subscription period
+            rp_sub_id = subscription['id']
+            logging.info(f"Subscription charged: {rp_sub_id}")
+
+            days = 30
+            our_sub = await db.razorpay_subscriptions.find_one({"id": rp_sub_id})
+            if our_sub:
+                plan = get_plan_by_id(our_sub.get("plan_id", ""))
+                if plan and plan.get("billing_cycle") == "annual":
+                    days = 365
+
             await db.user_subscriptions.update_one(
-                {"payment_provider_id": subscription['id'], "payment_provider": "razorpay"},
+                {"payment_provider_id": rp_sub_id, "payment_provider": "razorpay"},
                 {"$set": {
                     "status": "active",
-                    "current_period_end": (now + timedelta(days=30)).isoformat(),
+                    "current_period_end": (now + timedelta(days=days)).isoformat(),
                     "updated_at": now.isoformat()
                 }}
             )
-        
+
         return {"success": True, "received": True}
         
     except HTTPException:

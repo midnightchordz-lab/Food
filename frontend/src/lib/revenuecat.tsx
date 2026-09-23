@@ -4,6 +4,8 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import type { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/src/api/client';
+import { useAuth } from '@/src/auth/AuthContext';
 
 const REVENUECAT_TEST_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
 const REVENUECAT_IOS_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
@@ -12,11 +14,12 @@ const REVENUECAT_ANDROID_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_AP
 export const REVENUECAT_ENTITLEMENT_IDENTIFIER = 'pro';
 
 // react-native-purchases is a NATIVE module that is NOT bundled in Expo Go — its
-// native calls hang/crash on Android there (iOS just tolerates it). So we must
-// only touch the native SDK in a real build. Web preview keeps the Test Store
-// (browser mode). Enabled = web-dev preview OR a real native build (not Expo Go).
+// native calls hang/crash on Android there. Payments are split by platform:
+// iOS uses RevenueCat (Apple requirement), Android uses Razorpay. So RevenueCat
+// is enabled ONLY on iOS real builds, plus web-dev preview (Test Store browser
+// mode). Never on Android, never in Expo Go.
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-export const rcEnabled = Platform.OS === 'web' ? __DEV__ : !isExpoGo;
+export const rcEnabled = Platform.OS === 'ios' ? !isExpoGo : (Platform.OS === 'web' ? __DEV__ : false);
 
 function getRevenueCatApiKey() {
   if (!REVENUECAT_TEST_API_KEY || !REVENUECAT_IOS_API_KEY || !REVENUECAT_ANDROID_API_KEY) {
@@ -36,8 +39,28 @@ export function initializeRevenueCat() {
 
 function useSubscriptionContext() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [identityBound, setIdentityBound] = useState(false);
   const identityBoundRef = useRef(false);
+
+  // Backend is the source of truth for premium on Android (Razorpay) — and a
+  // safety net on iOS. Premium if the server subscription is a paid plan that is
+  // active or trialing. Refetches whenever the signed-in user changes.
+  const backendPremiumQuery = useQuery({
+    queryKey: ['premium', 'backend', user?.id ?? null],
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+    retry: 0,
+    queryFn: async () => {
+      const r = await api.get('/subscription/current');
+      const s = r.data?.subscription;
+      return !!(s && s.plan_id && s.plan_id !== 'free' && ['active', 'trialing'].includes(s.status));
+    },
+  });
+
+  const refetchPremium = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['premium', 'backend'] });
+  }, [queryClient]);
 
   const customerInfoQuery = useQuery({
     queryKey: ['revenuecat', 'customer-info'],
@@ -100,8 +123,9 @@ function useSubscriptionContext() {
     },
   });
 
-  const isSubscribed =
+  const rcSubscribed =
     customerInfoQuery.data?.entitlements.active?.[REVENUECAT_ENTITLEMENT_IDENTIFIER] !== undefined;
+  const isSubscribed = rcSubscribed || backendPremiumQuery.data === true;
 
   return {
     customerInfo: customerInfoQuery.data,
@@ -110,6 +134,7 @@ function useSubscriptionContext() {
     identityReady: identityBound,
     bindIdentity,
     unbindIdentity,
+    refetchPremium,
     isLoading: customerInfoQuery.isLoading || offeringsQuery.isLoading,
     purchase: purchaseMutation.mutateAsync,
     restore: restoreMutation.mutateAsync,

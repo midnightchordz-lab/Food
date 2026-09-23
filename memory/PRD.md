@@ -130,6 +130,13 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
   - Verified: register/login/me/refresh-rotation/reuse-detection all pass; admin stats 403 for non-admin. No behavior change.
 - [x] Legal pages re-verified (Terms + Support render cleanly via screenshot; Privacy shares the renderer) — 2026-06.
 
+- [x] Platform-split payments (2026-06): **iOS → RevenueCat, Android → Razorpay** auto-renewing subscriptions.
+  - RevenueCat gated to iOS-only (`rcEnabled = Platform.OS==='ios' ? !isExpoGo : web?__DEV__:false`) via `expo-constants` — fixes the Android "stuck forever in Expo Go" crash (native RC SDK not in Expo Go).
+  - Unified premium: `useSubscription().isSubscribed = RevenueCat entitlement (iOS) OR backend `/subscription/current` premium (Android/all)`. Added `refetchPremium()`.
+  - Backend (Razorpay Subscriptions): `ensure_razorpay_plan()` + `POST /subscription/razorpay/create-subscription` (7-day trial via future `start_at`) + `POST /subscription/razorpay/verify-subscription` (subscription-signature verified with API key secret, grants `trialing` premium, source=razorpay). Webhook now revokes on cancel/halt/pause/complete/expire (handled before the grant-only safety filter) and extends by real billing cycle on `subscription.charged`.
+  - Frontend `src/payments/razorpay.ts` uses native `react-native-razorpay` (Android only, lazy-required). Paywall is platform-aware: Android shows INR plans (₹299/mo, ₹2,499/yr, 7-day trial).
+  - Verified via curl: create→verify(200), bad-sig→400, `/current` reflects premium. ⚠️ Android checkout is NOT testable in Expo Go — requires a native Android build.
+
 ## Backlog
 ### P1
 - Wire food/exclusions preferences into Discover chips display (editor DONE).
