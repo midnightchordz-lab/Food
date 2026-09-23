@@ -85,3 +85,9 @@ android-sdk/
 
 # Node cache
 frontend/node_modules/.cache/
+.env
+.env.*
+*.env
+credentials.json
+*.key
+.credentials
