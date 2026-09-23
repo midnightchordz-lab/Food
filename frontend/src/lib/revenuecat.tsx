@@ -53,8 +53,17 @@ function useSubscriptionContext() {
     retry: 0,
     queryFn: async () => {
       const r = await api.get('/subscription/current');
-      const s = r.data?.subscription;
-      return !!(s && s.plan_id && s.plan_id !== 'free' && ['active', 'trialing'].includes(s.status));
+      const s = r.data?.subscription || {};
+      const premium = !!(s.plan_id && s.plan_id !== 'free' && ['active', 'trialing'].includes(s.status));
+      return {
+        premium,
+        status: s.status as string | undefined,
+        planId: s.plan_id as string | undefined,
+        source: s.source as string | undefined,
+        trialEnd: (s.trial_end || null) as string | null,
+        cancelAtPeriodEnd: !!s.cancel_at_period_end,
+        periodEnd: (s.current_period_end || null) as string | null,
+      };
     },
   });
 
@@ -125,12 +134,22 @@ function useSubscriptionContext() {
 
   const rcSubscribed =
     customerInfoQuery.data?.entitlements.active?.[REVENUECAT_ENTITLEMENT_IDENTIFIER] !== undefined;
-  const isSubscribed = rcSubscribed || backendPremiumQuery.data === true;
+  const premiumInfo = backendPremiumQuery.data;
+  const isSubscribed = rcSubscribed || premiumInfo?.premium === true;
+
+  // Days remaining in a Razorpay trial (for the "trial ending" banner). null if not trialing.
+  let trialDaysLeft: number | null = null;
+  if (premiumInfo?.status === 'trialing' && premiumInfo.trialEnd) {
+    const ms = new Date(premiumInfo.trialEnd).getTime() - Date.now();
+    trialDaysLeft = ms > 0 ? Math.ceil(ms / (24 * 60 * 60 * 1000)) : 0;
+  }
 
   return {
     customerInfo: customerInfoQuery.data,
     offerings: offeringsQuery.data,
     isSubscribed,
+    premiumInfo,
+    trialDaysLeft,
     identityReady: identityBound,
     bindIdentity,
     unbindIdentity,

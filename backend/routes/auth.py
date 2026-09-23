@@ -436,3 +436,42 @@ async def get_push_preferences(current_user: User = Depends(get_current_user)):
         "preferences": user.get("push_notifications", default_prefs) if user else default_prefs,
         "has_fcm_token": bool(user.get("fcm_token")) if user else False
     }
+
+
+
+@router.delete("/account")
+async def delete_account(current_user: User = Depends(get_current_user)):
+    """Permanently delete the signed-in user's account and all their personal
+    data (App Store review requirement). Idempotent; revokes all sessions."""
+    uid = current_user.id
+    now = datetime.now(timezone.utc)
+
+    # Remove all user-owned documents across collections.
+    user_data_collections = [
+        "saved_recipes", "user_subscriptions", "razorpay_subscriptions", "razorpay_orders",
+        "payment_transactions", "meal_preferences", "user_exclusions", "shopping_lists",
+        "weekly_plans", "imported_recipes", "chat_messages", "push_users", "feature_usage",
+        "daily_usage", "image_gen_usage", "usage_tracking", "user_usage", "recipe_ratings",
+        "fridge_scans", "diabetes_chat_messages", "diabetes_meal_preferences",
+        "diabetes_weekly_plans", "mobile_diabetes_plans", "meal_reminders", "used_recipes",
+        "recipe_subscriptions", "audit_logs", "auth_events", "otp_verifications",
+    ]
+    for coll in user_data_collections:
+        try:
+            await db[coll].delete_many({"user_id": uid})
+        except Exception:
+            pass
+
+    # Revoke every refresh token, then delete them and the user record.
+    try:
+        await db.refresh_tokens.update_many(
+            {"user_id": uid, "revoked_at": None},
+            {"$set": {"revoked_at": now, "revocation_reason": "account_deleted"}},
+        )
+        await db.refresh_tokens.delete_many({"user_id": uid})
+    except Exception:
+        pass
+
+    await db.users.delete_one({"id": uid})
+    logging.info(f"[ACCOUNT] Deleted account and personal data for user {uid}")
+    return {"success": True, "message": "Your account and all associated data have been permanently deleted."}

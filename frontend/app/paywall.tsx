@@ -207,6 +207,9 @@ export default function Paywall() {
           <Text style={styles.restoreText}>
             Then {androidSelected === 'premium_annual' ? '₹2,499/year' : '₹299/month'} · auto-renews · cancel anytime
           </Text>
+          <Pressable onPress={async () => { refetchPremium(); toast.show('Checking your subscription…', 'info'); }} testID="paywall-restore-android" style={styles.restore}>
+            <Text style={styles.restoreText}>Restore purchases</Text>
+          </Pressable>
         </View>
       ) : !isSubscribed && packages.length > 0 ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>

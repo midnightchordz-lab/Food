@@ -137,6 +137,12 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
   - Frontend `src/payments/razorpay.ts` uses native `react-native-razorpay` (Android only, lazy-required). Paywall is platform-aware: Android shows INR plans (₹299/mo, ₹2,499/yr, 7-day trial).
   - Verified via curl: create→verify(200), bad-sig→400, `/current` reflects premium. ⚠️ Android checkout is NOT testable in Expo Go — requires a native Android build.
 
+- [x] Subscription management suite (2026-06):
+  - **Manage/Cancel** — `POST /subscription/razorpay/cancel` (cancel_at_cycle_end, keeps access to period end). Profile shows a Manage row: Android → cancel, iOS → App Store subscriptions deep link. Verified: 200 + `cancel_at_period_end` flips true, access retained.
+  - **Account deletion** (App Store requirement) — `DELETE /auth/account` wipes user + all personal collections + revokes/deletes refresh tokens. Profile has a "Delete account" danger action with confirm. Verified: 200, token invalidated (401), login blocked.
+  - **Restore on Android** — paywall "Restore purchases" refetches server-side `/subscription/current` (premium is bound to the account, survives reinstall).
+  - **Trial-ending banner** — Discover shows a banner when a Razorpay trial has ≤3 days left (uses `trial_end`); `useSubscription()` now exposes `trialDaysLeft` + `premiumInfo`.
+
 ## Backlog
 ### P1
 - Wire food/exclusions preferences into Discover chips display (editor DONE).

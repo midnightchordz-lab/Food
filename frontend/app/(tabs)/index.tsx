@@ -26,7 +26,7 @@ export default function Discover() {
   const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { isSubscribed } = useSubscription();
+  const { isSubscribed, trialDaysLeft, premiumInfo } = useSubscription();
   const [regenCount, setRegenCount] = useState(0);
 
   const [step, setStep] = useState<Step>('mood');
@@ -171,6 +171,20 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
           </Pressable>
         )}
       </View>
+
+      {trialDaysLeft !== null && trialDaysLeft <= 3 ? (
+        <Pressable style={styles.trialBanner} onPress={() => router.push('/(tabs)/profile')} testID="trial-banner">
+          <Icon name="clock-alert-outline" size={17} color={colors.accent} />
+          <Text style={styles.trialBannerText}>
+            {trialDaysLeft <= 0
+              ? 'Your free trial ends today'
+              : `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your free trial`}
+            {premiumInfo?.cancelAtPeriodEnd
+              ? ' — then it ends'
+              : `, then ${premiumInfo?.planId === 'premium_annual' ? '₹2,499/yr' : '₹299/mo'}`}
+          </Text>
+        </Pressable>
+      ) : null}
 
       {step === 'results' ? (
         <ScrollView
@@ -418,4 +432,6 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   summaryChipText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.secondaryForeground },
   upsell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, backgroundColor: colors.accentSoft, borderRadius: 999, paddingVertical: 12 },
   upsellText: { fontFamily: f.bodySemiBold, fontSize: 14, color: colors.accent },
+  trialBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 20, marginBottom: 8, backgroundColor: colors.accentSoft, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14 },
+  trialBannerText: { flex: 1, fontFamily: f.bodyMedium, fontSize: 13, color: colors.accent },
 }));

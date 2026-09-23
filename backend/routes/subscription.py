@@ -1234,6 +1234,48 @@ async def verify_razorpay_subscription(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/razorpay/cancel")
+async def cancel_razorpay_subscription(current_user: User = Depends(get_current_user)):
+    """Cancel the user's Razorpay auto-renewing subscription at the end of the
+    current cycle. They keep premium until the period/trial ends, then it lapses."""
+    try:
+        if not razorpay_client:
+            raise HTTPException(status_code=500, detail="Razorpay not configured")
+
+        us = await db.user_subscriptions.find_one(
+            {"user_id": current_user.id, "payment_provider": "razorpay", "status": {"$in": ["active", "trialing"]}},
+            sort=[("created_at", -1)],
+        )
+        rp_sub_id = (us or {}).get("payment_provider_id")
+        if not rp_sub_id:
+            raise HTTPException(status_code=404, detail="No active Razorpay subscription found")
+
+        now = datetime.now(timezone.utc)
+        try:
+            # cancel_at_cycle_end=1 keeps access until the current period ends.
+            razorpay_client.subscription.cancel(rp_sub_id, {"cancel_at_cycle_end": 1})
+        except Exception as e:
+            logging.warning(f"Razorpay cancel warning for {rp_sub_id}: {e}")
+
+        await db.user_subscriptions.update_one(
+            {"user_id": current_user.id, "payment_provider_id": rp_sub_id},
+            {"$set": {"cancel_at_period_end": True, "updated_at": now.isoformat()}},
+        )
+        await db.razorpay_subscriptions.update_one(
+            {"id": rp_sub_id},
+            {"$set": {"status": "cancel_scheduled", "updated_at": now.isoformat()}},
+        )
+        return {
+            "success": True,
+            "message": "Your subscription won't renew. You keep Premium until the current period ends.",
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error cancelling Razorpay subscription: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/razorpay/config")
 async def get_razorpay_config():
     """Get Razorpay public configuration"""

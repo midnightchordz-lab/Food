@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Pressable, Platform, Linking, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
-import { Icon, Button } from '@/src/components/ui';
+import { Icon, Button, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
 
 export default function Profile() {
@@ -15,8 +15,69 @@ export default function Profile() {
   const styles = useStyles();
   const { colors } = useTheme();
   const router = useRouter();
-  const { user, logout } = useAuth();
-  const { isSubscribed } = useSubscription();
+  const { user, logout, deleteAccount } = useAuth();
+  const { isSubscribed, premiumInfo, refetchPremium } = useSubscription();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+
+  const onManageSubscription = () => {
+    if (Platform.OS === 'ios') {
+      Linking.openURL('https://apps.apple.com/account/subscriptions');
+      return;
+    }
+    if (premiumInfo?.cancelAtPeriodEnd) {
+      toast.show('Your subscription is already set to cancel.', 'info');
+      return;
+    }
+    Alert.alert(
+      'Cancel subscription?',
+      "You'll keep Premium until your current period ends, then it won't renew.",
+      [
+        { text: 'Keep Premium', style: 'cancel' },
+        {
+          text: 'Cancel renewal',
+          style: 'destructive',
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await api.post('/subscription/razorpay/cancel');
+              refetchPremium();
+              toast.show("Your subscription won't renew.", 'success');
+            } catch {
+              toast.show('Could not cancel. Please try again.', 'error');
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const onDeleteAccount = () => {
+    Alert.alert(
+      'Delete account?',
+      'This permanently deletes your account and all your data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await deleteAccount();
+              router.replace('/welcome');
+            } catch {
+              toast.show('Could not delete account. Please try again.', 'error');
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const { data: savedRecipes } = useQuery({
     queryKey: ['saved-recipes'],
@@ -60,6 +121,22 @@ export default function Profile() {
             </View>
           )}
         </Pressable>
+
+        {isSubscribed ? (
+          <View style={styles.card}>
+            <Pressable style={styles.linkRow} onPress={onManageSubscription} disabled={busy} testID="manage-subscription">
+              <View style={styles.rowIcon}><Icon name="credit-card-outline" size={19} color={colors.primary} /></View>
+              <Text style={styles.rowLabel}>
+                {Platform.OS === 'ios'
+                  ? 'Manage in App Store'
+                  : premiumInfo?.cancelAtPeriodEnd
+                  ? 'Renewal cancelled'
+                  : 'Cancel subscription'}
+              </Text>
+              <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.card}>
           {rows.map((r, i) => (
@@ -121,6 +198,10 @@ export default function Profile() {
         <View style={{ marginTop: 20 }}>
           <Button label="Sign out" variant="outline" icon="logout" onPress={() => { logout(); router.replace('/welcome'); }} testID="logout-btn" />
         </View>
+        <Pressable onPress={onDeleteAccount} disabled={busy} style={styles.deleteBtn} testID="delete-account-btn">
+          <Icon name="trash-can-outline" size={17} color={colors.danger} />
+          <Text style={styles.deleteText}>Delete account</Text>
+        </Pressable>
         <Text style={styles.version}>MoodFood • v1.0.0</Text>
       </ScrollView>
     </View>
@@ -150,5 +231,7 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15 },
   rowDivider: { height: 1, backgroundColor: colors.border },
   version: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, textAlign: 'center', marginTop: 20 },
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: 8 },
+  deleteText: { fontFamily: f.bodyMedium, fontSize: 14.5, color: colors.danger },
   groupLabel: { fontFamily: f.bodySemiBold, fontSize: 12.5, color: colors.mutedForeground, marginBottom: 8, marginLeft: 4, textTransform: 'uppercase', letterSpacing: 0.4 },
 }));

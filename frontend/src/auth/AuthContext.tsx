@@ -22,6 +22,7 @@ type AuthState = {
   sendPhoneOtp: (phone: string) => Promise<{ demo_otp?: string; message?: string }>;
   phoneLogin: (phone: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
 
@@ -98,6 +99,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await clearSession();
   }, [clearSession]);
 
+  const deleteAccount = useCallback(async () => {
+    await api.delete('/auth/account');
+    await clearSession();
+  }, [clearSession]);
+
   const appleLogin = useCallback(async (identityToken: string, name?: string | null, email?: string | null) => {
     const res = await api.post('/auth/apple', { identity_token: identityToken, name, email });
     await applyPair(res.data.access_token, res.data.refresh_token);
@@ -154,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [applyPair]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, googleLogin, sendPhoneOtp, phoneLogin, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, googleLogin, sendPhoneOtp, phoneLogin, logout, deleteAccount, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
