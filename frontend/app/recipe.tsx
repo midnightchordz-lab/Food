@@ -30,16 +30,36 @@ function parseSteps(md: string): string[] {
     .slice(0, 25);
 }
 
-// Pull "- ingredient" bullets from the Ingredients section of the recipe markdown.
+// Pull ingredient lines from the Ingredients section of the recipe markdown.
+// Robust to real AI output like "## 🥕 Ingredients" (emoji in the header) and
+// bold sub-sections inside the list (e.g. "**For the Sauce:**") which must NOT
+// truncate the list. Captures -/*/•/· bullets and numbered items; only stops at
+// a genuine next section (Instructions/Equipment/Notes/…).
 function extractIngredients(md: string): string[] {
   if (!md) return [];
   const out: string[] = [];
   let inIng = false;
+  const label = (s: string) => s.replace(/[^a-zA-Z ]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  const isHeadingLike = (raw: string) => /^#{1,6}\s/.test(raw) || /^\*\*[^*]+\*\*:?\s*$/.test(raw.trim());
+  const isStart = (raw: string) => {
+    const t = label(raw);
+    return (isHeadingLike(raw) || t === 'ingredients' || t === 'shopping list') && /\bingredients?\b/.test(t);
+  };
+  const isStop = (raw: string) => {
+    if (!isHeadingLike(raw)) return false;
+    const t = label(raw);
+    return /\b(instructions?|directions?|method|steps?|preparation|process|notes?|nutrition|tips?|equipment)\b/.test(t) || /^how to/.test(t);
+  };
   for (const raw of md.split('\n')) {
     const l = raw.trim();
-    if (/^#+\s*ingredients/i.test(l)) { inIng = true; continue; }
-    if (inIng && /^#+\s/.test(l)) break;
-    if (inIng && (l.startsWith('-') || l.startsWith('*'))) out.push(l.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim());
+    if (!l) continue;
+    if (!inIng) { if (isStart(l)) inIng = true; continue; }
+    if (isStop(l)) break;
+    if (/^([-*•·]|\d+[.)])\s+/.test(l)) {
+      out.push(l.replace(/^([-*•·]|\d+[.)])\s+/, '').replace(/\*\*/g, '').replace(/`/g, '').trim());
+    }
+    // Bold/plain sub-headers (e.g. "**For the Sauce:**") are skipped, not treated
+    // as the end of the section — so every group's ingredients are still captured.
   }
   return out.filter(Boolean);
 }
