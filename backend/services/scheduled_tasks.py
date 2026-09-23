@@ -12,14 +12,9 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Database connection
-from motor.motor_asyncio import AsyncIOMotorClient
-
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-DB_NAME = os.environ.get("DB_NAME", "moodfood")
-
-client = AsyncIOMotorClient(MONGO_URL)
-db = client[DB_NAME]
+# Database connection — reuse the single env-configured handle (no hardcoded
+# fallback URL/name) so background jobs always target the same DB as the app.
+from routes.db import db
 
 
 class ScheduledTasks:
@@ -55,6 +50,12 @@ class ScheduledTasks:
             return
         
         ScheduledTasks._is_running = True
+        # Seed the daily marker to today so the daily batch does NOT run on the
+        # first scheduler tick right after deploy — it runs at the next UTC
+        # midnight boundary. Keeps startup/readiness fast and avoids any bulk
+        # DB work during the deployment health-probe window.
+        if self.last_daily_reset is None:
+            self.last_daily_reset = datetime.now(timezone.utc).date()
         ScheduledTasks._task = asyncio.create_task(self._run_scheduler())
         logger.info("Scheduled tasks started")
     
@@ -196,31 +197,33 @@ class ScheduledTasks:
     
     async def cleanup_old_usage_records(self):
         """
-        Clean up usage records older than 3 months.
-        Keeps the database lean while maintaining recent history.
+        Retention for old usage records (older than 3 months). Non-destructive:
+        records are ARCHIVED (soft-deleted), never hard-deleted, so a deploy/startup
+        run can never irreversibly remove data from the production database.
         """
         now = datetime.now(timezone.utc)
         cutoff_date = (now - timedelta(days=90)).strftime("%Y-%m")
-        
+
         try:
-            # Delete old monthly usage records
-            result = await db.feature_usage.delete_many({
-                "month": {"$lt": cutoff_date}
-            })
-            
-            if result.deleted_count > 0:
-                logger.info(f"Cleaned up {result.deleted_count} old monthly usage records")
-            
-            # Delete old daily usage records (archived ones older than 30 days)
+            # Archive old monthly usage records (was a hard delete_many).
+            result = await db.feature_usage.update_many(
+                {"month": {"$lt": cutoff_date}, "archived": {"$ne": True}},
+                {"$set": {"archived": True, "archived_at": now.isoformat()}}
+            )
+
+            if result.modified_count > 0:
+                logger.info(f"Archived {result.modified_count} old monthly usage records")
+
+            # Archive old daily usage records (was a hard delete_many).
             daily_cutoff = (now - timedelta(days=30)).strftime("%Y-%m-%d")
-            daily_result = await db.daily_usage.delete_many({
-                "date": {"$lt": daily_cutoff},
-                "archived": True
-            })
-            
-            if daily_result.deleted_count > 0:
-                logger.info(f"Cleaned up {daily_result.deleted_count} old daily usage records")
-                
+            daily_result = await db.daily_usage.update_many(
+                {"date": {"$lt": daily_cutoff}, "retention_archived": {"$ne": True}},
+                {"$set": {"retention_archived": True, "retention_archived_at": now.isoformat()}}
+            )
+
+            if daily_result.modified_count > 0:
+                logger.info(f"Archived {daily_result.modified_count} old daily usage records")
+
         except Exception as e:
             logger.error(f"Error cleaning up old usage records: {e}")
     
