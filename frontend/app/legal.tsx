@@ -6,6 +6,8 @@ import { makeStyles, useTheme } from '@/src/theme';
 import { Icon } from '@/src/components/ui';
 import { LEGAL_CONTENT, LEGAL_META, LegalKey, SUPPORT_EMAIL, SUPPORT_TOPICS } from '@/src/content/legal';
 
+const ACCOUNT_DELETION_URL = `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/account-deletion`;
+
 function renderInline(text: string, styles: any, keyPrefix: string) {
   // Split on **bold** segments.
   const parts = text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
@@ -24,7 +26,6 @@ function renderInline(text: string, styles: any, keyPrefix: string) {
 
 function Markdown({ content }: { content: string }) {
   const styles = useStyles();
-  const { colors } = useTheme();
   const lines = content.split('\n');
   return (
     <View>
@@ -91,7 +92,7 @@ export default function LegalScreen() {
               <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
             </Pressable>
 
-            <Text style={styles.sectionLabel}>What's this about?</Text>
+            <Text style={styles.sectionLabel}>What can we help with?</Text>
             <View style={styles.topics}>
               {SUPPORT_TOPICS.map((t) => (
                 <Pressable key={t.label} style={styles.topicRow} onPress={() => emailSupport(t.subject)} testID={`support-topic-${t.subject}`}>
@@ -104,6 +105,16 @@ export default function LegalScreen() {
                 </Pressable>
               ))}
             </View>
+
+            <Text style={styles.sectionLabel}>Account</Text>
+            <Pressable style={styles.deleteCard} onPress={() => Linking.openURL(ACCOUNT_DELETION_URL).catch(() => {})} testID="support-delete-account">
+              <View style={styles.deleteIcon}><Icon name="trash-can-outline" size={20} color={colors.danger} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.deleteTitle}>Delete your account</Text>
+                <Text style={styles.deleteDesc}>Permanently remove your account and all your data</Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+            </Pressable>
           </>
         )}
 
@@ -140,4 +151,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   topicIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
   topicLabel: { fontFamily: f.bodyMedium, fontSize: 14.5, color: colors.foreground },
   topicDesc: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, marginTop: 1 },
+  deleteCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 14, marginBottom: 18 },
+  deleteIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  deleteTitle: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.danger },
+  deleteDesc: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, marginTop: 1 },
 }));
