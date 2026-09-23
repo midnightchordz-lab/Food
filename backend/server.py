@@ -146,6 +146,11 @@ async def shutdown_db_client():
 async def health_check():
     return {"status": "healthy", "version": "2.0.0"}
 
+@app.get("/health")
+async def root_health_check():
+    """Root-level health probe for the deployment platform (probes GET /health)."""
+    return {"status": "healthy", "version": "2.0.0"}
+
 # Mount static files for audio cache
 audio_cache_dir = Path("/app/uploads/audio-cache")
 audio_cache_dir.mkdir(parents=True, exist_ok=True)
