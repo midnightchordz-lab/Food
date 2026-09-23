@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import type { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,8 +11,12 @@ const REVENUECAT_ANDROID_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_AP
 
 export const REVENUECAT_ENTITLEMENT_IDENTIFIER = 'pro';
 
-// web preview uses the Test Store; production web has no store
-export const rcEnabled = Platform.OS !== 'web' || __DEV__;
+// react-native-purchases is a NATIVE module that is NOT bundled in Expo Go — its
+// native calls hang/crash on Android there (iOS just tolerates it). So we must
+// only touch the native SDK in a real build. Web preview keeps the Test Store
+// (browser mode). Enabled = web-dev preview OR a real native build (not Expo Go).
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+export const rcEnabled = Platform.OS === 'web' ? __DEV__ : !isExpoGo;
 
 function getRevenueCatApiKey() {
   if (!REVENUECAT_TEST_API_KEY || !REVENUECAT_IOS_API_KEY || !REVENUECAT_ANDROID_API_KEY) {
