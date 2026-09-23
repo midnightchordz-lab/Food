@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, Loading, EmptyState, useToast } from '@/src/components/ui';
+import { buildShoppingView, AISLE_ICON, type RawItem } from '@/src/utils/shopping';
 
 type Item = { name: string; checked: boolean };
 
@@ -54,8 +55,15 @@ export default function Shopping() {
     persist([{ name: v, checked: false }, ...list]);
     setInput('');
   };
-  const toggle = (name: string) => persist(list.map((i) => (i.name === name ? { ...i, checked: !i.checked } : i)));
-  const remove = (name: string) => persist(list.filter((i) => i.name !== name));
+  // Merged-row helpers operate on all underlying raw items the row represents.
+  const toggleRow = (names: string[], nextChecked: boolean) => {
+    const set = new Set(names);
+    persist(list.map((i) => (set.has(i.name) ? { ...i, checked: nextChecked } : i)));
+  };
+  const removeRow = (names: string[]) => {
+    const set = new Set(names);
+    persist(list.filter((i) => !set.has(i.name)));
+  };
   const clearChecked = () => {
     const remaining = list.filter((i) => !i.checked);
     persist(remaining);
@@ -63,6 +71,7 @@ export default function Shopping() {
   };
 
   const checkedCount = list.filter((i) => i.checked).length;
+  const sections = buildShoppingView(list as RawItem[]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -113,16 +122,25 @@ export default function Shopping() {
             keyboardShouldPersistTaps="handled"
             refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />}
           >
-            {list.map((item) => (
-              <Pressable key={item.name} style={styles.itemRow} onPress={() => toggle(item.name)} testID={`shop-item-${item.name}`}>
-                <View style={[styles.checkbox, item.checked && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-                  {item.checked ? <Icon name="check" size={15} color={colors.primaryForeground} /> : null}
+            {sections.map((section) => (
+              <View key={section.aisle} style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Icon name={AISLE_ICON[section.aisle] || 'basket-outline'} size={16} color={colors.mutedForeground} />
+                  <Text style={styles.sectionTitle}>{section.aisle}</Text>
+                  <Text style={styles.sectionCount}>{section.rows.length}</Text>
                 </View>
-                <Text style={[styles.itemText, item.checked && styles.itemTextChecked]}>{item.name}</Text>
-                <Pressable onPress={() => remove(item.name)} hitSlop={10} testID={`shop-remove-${item.name}`}>
-                  <Icon name="close" size={18} color={colors.mutedForeground} />
-                </Pressable>
-              </Pressable>
+                {section.rows.map((row) => (
+                  <Pressable key={row.key} style={styles.itemRow} onPress={() => toggleRow(row.names, !row.checked)} testID={`shop-item-${row.key}`}>
+                    <View style={[styles.checkbox, row.checked && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+                      {row.checked ? <Icon name="check" size={15} color={colors.primaryForeground} /> : null}
+                    </View>
+                    <Text style={[styles.itemText, row.checked && styles.itemTextChecked]}>{row.display}</Text>
+                    <Pressable onPress={() => removeRow(row.names)} hitSlop={10} testID={`shop-remove-${row.key}`}>
+                      <Icon name="close" size={18} color={colors.mutedForeground} />
+                    </Pressable>
+                  </Pressable>
+                ))}
+              </View>
             ))}
           </ScrollView>
         )}
@@ -141,6 +159,10 @@ const useStyles = makeStyles(({ colors, spacing, fonts: f }) => ({
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, paddingHorizontal: 16, height: 54 },
   input: { flex: 1, fontFamily: f.body, fontSize: 15, color: colors.foreground, height: '100%' },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 4 },
+  section: { marginBottom: 18 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, paddingHorizontal: 2 },
+  sectionTitle: { flex: 1, fontFamily: f.bodyBold, fontSize: 13, letterSpacing: 0.5, textTransform: 'uppercase', color: colors.mutedForeground },
+  sectionCount: { fontFamily: f.bodySemiBold, fontSize: 12, color: colors.mutedForeground },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 15, marginBottom: 10 },
   checkbox: { width: 24, height: 24, borderRadius: 7, borderWidth: 2, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center' },
   itemText: { flex: 1, fontFamily: f.bodyMedium, fontSize: 15.5, color: colors.foreground },

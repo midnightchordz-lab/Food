@@ -210,6 +210,104 @@ async def get_shopping_list(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class MealsIngredientsRequest(BaseModel):
+    meals: List[str] = Field(default_factory=list)
+
+
+@router.post("/shopping-list/from-meals")
+async def add_meals_ingredients_to_shopping_list(
+    request: MealsIngredientsRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Given a list of dish names (e.g. a day or a whole week from the planner),
+    generate the consolidated grocery ingredients (in ONE LLM call, with duplicate
+    ingredients merged and quantities summed) and add them to the user's shopping
+    list. Returns the ingredients and how many new items were added.
+    """
+    import json as _json
+    from lazy_emergent import LlmChat, UserMessage
+
+    meals = [m.strip() for m in (request.meals or []) if isinstance(m, str) and m.strip()]
+    # de-dup dish names while preserving order, cap to keep the call fast
+    seen = set()
+    meals = [m for m in meals if not (m.lower() in seen or seen.add(m.lower()))][:30]
+    if not meals:
+        return {"ingredients": [], "items_added": 0}
+
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="LLM not configured")
+
+    prompt = (
+        "You are a grocery-list assistant. For the following dishes, produce ONE consolidated "
+        "grocery shopping list with the ingredients needed to cook ALL of them.\n"
+        "Rules:\n"
+        "- Combine the SAME ingredient across dishes into a single entry and SUM the quantities.\n"
+        "- Each entry is a short shopping string like '3 onions', '500 g chicken', '2 tbsp olive oil'.\n"
+        "- Skip water and 'salt to taste'-style non-purchasable notes.\n"
+        "- Return ONLY a JSON array of strings, nothing else.\n\n"
+        f"Dishes: {', '.join(meals)}"
+    )
+
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"shop-{current_user.id}-{abs(hash(tuple(meals))) % 100000}",
+            system_message="You output only valid JSON arrays of grocery ingredient strings.",
+        ).with_model("openai", "gpt-4o-mini")
+        resp = await chat.send_message(UserMessage(text=prompt))
+        text = resp if isinstance(resp, str) else str(resp)
+        start, end = text.find("["), text.rfind("]")
+        ingredients: List[str] = []
+        if start != -1 and end != -1 and end > start:
+            try:
+                parsed = _json.loads(text[start:end + 1])
+                ingredients = [str(x).strip() for x in parsed if str(x).strip()]
+            except Exception:
+                ingredients = []
+        if not ingredients:
+            # fallback: line-based parse
+            ingredients = [
+                ln.strip("-*• \t").strip()
+                for ln in text.split("\n")
+                if ln.strip("-*• \t").strip() and len(ln.strip()) > 2
+            ][:60]
+    except Exception as e:
+        logging.error(f"from-meals ingredient generation failed: {e}")
+        raise HTTPException(status_code=502, detail="Could not build ingredient list")
+
+    # Merge into the user's shopping list (dedup by lowercased name).
+    existing_doc = await db.shopping_lists.find_one({"user_id": current_user.id}, {"_id": 0})
+    current_items = (existing_doc or {}).get("items", []) or []
+    have = {str(i.get("name", "")).strip().lower() for i in current_items}
+    additions = [
+        {"name": ing, "checked": False}
+        for ing in ingredients
+        if ing.lower() not in have and not have.__contains__(ing.lower())
+    ]
+    merged = current_items + additions
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    if existing_doc:
+        await db.shopping_lists.update_one(
+            {"user_id": current_user.id},
+            {"$set": {"items": merged, "updated_at": now_iso}},
+        )
+    else:
+        import uuid
+        await db.shopping_lists.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "items": merged,
+            "created_at": now_iso,
+            "updated_at": now_iso,
+        })
+
+    return {"ingredients": ingredients, "items_added": len(additions)}
+
+
+
 @router.get("/shopping-list/export")
 async def export_shopping_list_pdf(current_user: User = Depends(get_current_user)):
     try:

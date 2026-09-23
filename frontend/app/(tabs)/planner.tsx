@@ -79,21 +79,34 @@ export default function Planner() {
     return names;
   };
 
+  const addMeals = async (names: string[]) => {
+    const res = await api.post('/shopping-list/from-meals', { meals: names });
+    return (res.data?.items_added as number) ?? 0;
+  };
+
   const addWeekMut = useMutation({
-    mutationFn: async () => {
-      const names = collectMealNames();
-      const existing = await api.get('/shopping-list');
-      const current = (existing.data.items || []) as { name: string; checked: boolean }[];
-      const have = new Set(current.map((i) => i.name.toLowerCase()));
-      const additions = names.filter((n) => !have.has(n.toLowerCase())).map((n) => ({ name: n, checked: false }));
-      await api.post('/shopping-list', { items: [...current, ...additions] });
-      return additions.length;
+    mutationFn: () => addMeals(collectMealNames()),
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
+      toast.show(count ? `Added ${count} ingredients to your list` : 'Everything is already on your list', 'success');
+    },
+    onError: () => toast.show('Could not update shopping list', 'error'),
+  });
+
+  const [pendingDay, setPendingDay] = useState<string | null>(null);
+  const addDayMut = useMutation({
+    mutationFn: async (day: string) => {
+      setPendingDay(day);
+      const dm = meals[day] || meals[day.toLowerCase()] || {};
+      const names = MEALS.map((mt) => dm[mt]).filter((v) => v && typeof v === 'string') as string[];
+      return addMeals(names);
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
-      toast.show(count ? `Added ${count} meals to your list` : 'Everything is already on your list', 'success');
+      toast.show(count ? `Added ${count} ingredients to your list` : 'Everything is already on your list', 'success');
     },
-    onError: () => toast.show('Could not update shopping list', 'error'),
+    onError: () => toast.show('Could not add ingredients', 'error'),
+    onSettled: () => setPendingDay(null),
   });
 
   const visibleDays = isSubscribed ? DAYS : DAYS.slice(0, FREE_PREVIEW_DAYS);
@@ -235,6 +248,17 @@ export default function Planner() {
                         </Pressable>
                       );
                     })}
+                    {isSubscribed ? (
+                      <Pressable
+                        style={styles.addDayBtn}
+                        onPress={() => addDayMut.mutate(day)}
+                        disabled={pendingDay === day}
+                        testID={`add-day-${day.toLowerCase()}`}
+                      >
+                        <Icon name={pendingDay === day ? 'timer-sand' : 'cart-plus'} size={15} color={colors.primary} />
+                        <Text style={styles.addDayText}>{pendingDay === day ? 'Adding ingredients…' : "Add day's ingredients"}</Text>
+                      </Pressable>
+                    ) : null}
                   </View>
                 );
               })}
@@ -250,7 +274,7 @@ export default function Planner() {
 
               {data?.has_plan && isSubscribed ? (
                 <View style={{ marginTop: 4 }}>
-                  <Button label="Add week to shopping list" icon="cart-plus" variant="outline" onPress={() => addWeekMut.mutate()} loading={addWeekMut.isPending} testID="add-week-to-list" />
+                  <Button label="Add whole week's ingredients" icon="cart-plus" variant="outline" onPress={() => addWeekMut.mutate()} loading={addWeekMut.isPending} testID="add-week-to-list" />
                 </View>
               ) : null}
             </>
@@ -290,6 +314,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   mealTypePill: { width: 78, backgroundColor: colors.primarySoft, borderRadius: 999, paddingVertical: 5, alignItems: 'center' },
   mealTypeText: { fontFamily: f.bodySemiBold, fontSize: 11.5, color: colors.primary },
   mealName: { flex: 1, fontFamily: f.body, fontSize: 14.5, color: colors.foreground, lineHeight: 20 },
+  addDayBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, paddingVertical: 9, borderRadius: 10, backgroundColor: colors.secondary },
+  addDayText: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.primary },
   lockCard: { alignItems: 'center', gap: 8, backgroundColor: colors.accentSoft, borderRadius: radius.lg, padding: 22, marginTop: 4, marginBottom: 12 },
   lockTitle: { fontFamily: f.serif, fontSize: 22, color: colors.foreground, textAlign: 'center' },
   lockDesc: { fontFamily: f.body, fontSize: 13.5, color: colors.mutedForeground, textAlign: 'center', lineHeight: 20 },
