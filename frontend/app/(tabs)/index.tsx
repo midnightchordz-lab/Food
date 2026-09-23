@@ -26,7 +26,7 @@ export default function Discover() {
   const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { isSubscribed, trialDaysLeft, premiumInfo } = useSubscription();
+  const { isSubscribed, trialDaysLeft, trialExpired, premiumInfo } = useSubscription();
   const [regenCount, setRegenCount] = useState(0);
 
   const [step, setStep] = useState<Step>('mood');
@@ -177,17 +177,30 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
         )}
       </View>
 
-      {trialDaysLeft !== null && trialDaysLeft <= 3 ? (
-        <Pressable style={styles.trialBanner} onPress={() => router.push('/(tabs)/profile')} testID="trial-banner">
-          <Icon name="clock-alert-outline" size={17} color={colors.accent} />
-          <Text style={styles.trialBannerText}>
+      {isSubscribed && trialDaysLeft !== null ? (
+        <Pressable
+          style={[styles.trialBanner, trialDaysLeft <= 1 && styles.trialBannerUrgent]}
+          onPress={() => router.push('/paywall')}
+          testID="trial-banner"
+        >
+          <Icon name={trialDaysLeft <= 1 ? 'crown' : 'clock-outline'} size={17} color={colors.accent} />
+          <Text style={styles.trialBannerText} numberOfLines={2}>
             {trialDaysLeft <= 0
-              ? 'Your free trial ends today'
-              : `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your free trial`}
-            {premiumInfo?.cancelAtPeriodEnd
-              ? ' — then it ends'
-              : `, then ${premiumInfo?.planId === 'premium_annual' ? '₹2,499/yr' : '₹299/mo'}`}
+              ? 'Your free trial ends today — tap to keep Premium'
+              : trialDaysLeft === 1
+              ? 'Last day of your free trial — tap to continue Premium'
+              : `${trialDaysLeft} days left in your free trial`}
           </Text>
+          <Icon name="chevron-right" size={18} color={colors.accent} />
+        </Pressable>
+      ) : trialExpired ? (
+        <Pressable style={styles.trialEndedBanner} onPress={() => router.push('/paywall')} testID="trial-ended-banner">
+          <Icon name="crown" size={18} color={colors.accentForeground} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.trialEndedTitle}>Your free trial has ended</Text>
+            <Text style={styles.trialEndedDesc}>Continue Premium to keep unlimited recipes & meal plans</Text>
+          </View>
+          <View style={styles.trialEndedCta}><Text style={styles.trialEndedCtaText}>Continue</Text></View>
         </Pressable>
       ) : null}
 
@@ -438,5 +451,11 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   upsell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, backgroundColor: colors.accentSoft, borderRadius: 999, paddingVertical: 12 },
   upsellText: { fontFamily: f.bodySemiBold, fontSize: 14, color: colors.accent },
   trialBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 20, marginBottom: 8, backgroundColor: colors.accentSoft, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14 },
+  trialBannerUrgent: { borderWidth: 1.5, borderColor: colors.accent },
   trialBannerText: { flex: 1, fontFamily: f.bodyMedium, fontSize: 13, color: colors.accent },
+  trialEndedBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20, marginBottom: 8, backgroundColor: colors.accent, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14 },
+  trialEndedTitle: { fontFamily: f.bodyBold, fontSize: 14.5, color: colors.accentForeground },
+  trialEndedDesc: { fontFamily: f.body, fontSize: 12, color: colors.accentForeground, opacity: 0.9, marginTop: 1 },
+  trialEndedCta: { backgroundColor: colors.accentForeground, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
+  trialEndedCtaText: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.accent },
 }));

@@ -33,7 +33,7 @@ export default function Paywall() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
-  const { offerings, isSubscribed, purchase, restore, isPurchasing, isRestoring, identityReady, refetchPremium } = useSubscription();
+  const { offerings, isSubscribed, trialExpired, purchase, restore, isPurchasing, isRestoring, identityReady, refetchPremium } = useSubscription();
   const { user } = useAuth();
   const isAndroid = Platform.OS === 'android';
 
@@ -49,18 +49,19 @@ export default function Paywall() {
   const doAndroidSubscribe = async () => {
     setAndroidBusy(true);
     try {
-      // Option A: tapping "Start 7-day free trial" grants the trial immediately —
-      // no payment/card required. Payment (Razorpay) is only needed once the free
-      // trial has already been used up.
-      const { data } = await api.post('/trial/activate', { platform: 'android' });
-      if (data?.premium) {
-        refetchPremium();
-        toast.show('Welcome to Premium! 🎉 Your 7-day free trial has started.', 'success');
-        router.back();
-        return;
+      // If the free trial was already used, skip the trial grant and go straight
+      // to the Razorpay purchase to continue Premium.
+      if (!trialExpired) {
+        const { data } = await api.post('/trial/activate', { platform: 'android' });
+        if (data?.premium) {
+          refetchPremium();
+          toast.show('Welcome to Premium! 🎉 Your 7-day free trial has started.', 'success');
+          router.back();
+          return;
+        }
+        // data.trial_used → fall through to payment.
       }
 
-      // Free trial already used → collect payment via Razorpay to continue.
       await startRazorpaySubscription(androidSelected, {
         name: user?.name,
         email: user?.email,
@@ -164,7 +165,7 @@ export default function Paywall() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.planName}>{p.name}</Text>
-                      <Text style={styles.planPeriod}>7-day free trial, then {p.period}</Text>
+                      <Text style={styles.planPeriod}>{trialExpired ? p.period : `7-day free trial, then ${p.period}`}</Text>
                     </View>
                     <Text style={styles.planPrice}>{p.price}</Text>
                   </Pressable>
@@ -213,11 +214,13 @@ export default function Paywall() {
             style={({ pressed }) => [styles.cta, { opacity: androidBusy ? 0.7 : pressed ? 0.9 : 1 }]}
           >
             {androidBusy ? <ActivityIndicator color={colors.accentForeground} /> : (
-              <Text style={styles.ctaText}>Start 7-day free trial</Text>
+              <Text style={styles.ctaText}>{trialExpired ? `Continue Premium · ${androidSelected === 'premium_annual' ? '₹2,499/yr' : '₹299/mo'}` : 'Start 7-day free trial'}</Text>
             )}
           </Pressable>
           <Text style={styles.restoreText}>
-            Then {androidSelected === 'premium_annual' ? '₹2,499/year' : '₹299/month'} · auto-renews · cancel anytime
+            {trialExpired
+              ? 'Auto-renews · cancel anytime'
+              : `Then ${androidSelected === 'premium_annual' ? '₹2,499/year' : '₹299/month'} · auto-renews · cancel anytime`}
           </Text>
           <Pressable onPress={async () => { refetchPremium(); toast.show('Checking your subscription…', 'info'); }} testID="paywall-restore-android" style={styles.restore}>
             <Text style={styles.restoreText}>Restore purchases</Text>

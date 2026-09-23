@@ -79,7 +79,27 @@ function useSubscriptionContext() {
 
   const refetchPremium = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['premium', 'backend'] });
+    queryClient.invalidateQueries({ queryKey: ['trial', 'status'] });
   }, [queryClient]);
+
+  // Trial status (source of truth for the countdown + "trial ended" prompt).
+  const trialStatusQuery = useQuery({
+    queryKey: ['trial', 'status', user?.id ?? null],
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+    retry: 0,
+    queryFn: async () => {
+      const r = await api.get('/trial/status');
+      const t = r.data?.trial || {};
+      return {
+        isActive: !!t.isActive,
+        daysRemaining: typeof t.daysRemaining === 'number' ? t.daysRemaining : null,
+        trialEndsAt: (t.trialEndsAt || null) as string | null,
+        trialExpired: !!t.trialExpired,
+        canStartTrial: !!t.canStartTrial,
+      };
+    },
+  });
 
   const customerInfoQuery = useQuery({
     queryKey: ['revenuecat', 'customer-info'],
@@ -154,7 +174,12 @@ function useSubscriptionContext() {
   if (premiumInfo?.status === 'trialing' && premiumInfo.trialEnd) {
     const ms = new Date(premiumInfo.trialEnd).getTime() - Date.now();
     trialDaysLeft = ms > 0 ? Math.ceil(ms / (24 * 60 * 60 * 1000)) : 0;
+  } else if (trialStatusQuery.data?.isActive && typeof trialStatusQuery.data.daysRemaining === 'number') {
+    trialDaysLeft = trialStatusQuery.data.daysRemaining;
   }
+
+  // "Trial ended" — had a trial that expired and is not currently subscribed.
+  const trialExpired = !isSubscribed && trialStatusQuery.data?.trialExpired === true;
 
   return {
     customerInfo: customerInfoQuery.data,
@@ -162,6 +187,7 @@ function useSubscriptionContext() {
     isSubscribed,
     premiumInfo,
     trialDaysLeft,
+    trialExpired,
     identityReady: identityBound,
     bindIdentity,
     unbindIdentity,
