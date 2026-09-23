@@ -69,6 +69,7 @@ from routes.mobile_voice import router as mobile_voice_router
 from routes.mobile_diabetes import router as mobile_diabetes_router
 from routes.mobile_fridge import router as mobile_fridge_router
 from routes.quick_recipes import router as quick_recipes_router
+from routes.account_deletion import router as account_deletion_router
 from services.scheduled_tasks import router as scheduled_tasks_router, start_scheduler, stop_scheduler
 
 # Include all routers with /api prefix
@@ -84,6 +85,7 @@ app.include_router(image_router, prefix="/api/recipe-image")
 app.include_router(search_router, prefix="/api")
 app.include_router(recipe_library_router, prefix="/api")
 app.include_router(subscription_router, prefix="/api")
+app.include_router(account_deletion_router, prefix="/api")
 app.include_router(scheduled_tasks_router, prefix="/api")
 app.include_router(twilio_router)
 app.include_router(fridge_scanner_router)
