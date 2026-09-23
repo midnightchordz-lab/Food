@@ -3,6 +3,9 @@
     "name": "MoodFood",
     "slug": "moodfood",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "moodfood",
