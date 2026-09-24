@@ -11,18 +11,58 @@ import { Icon, Loading, useToast } from '@/src/components/ui';
 import { foodImage, useRecipeImage } from '@/src/components/RecipeCard';
 import { useSubscription } from '@/src/lib/revenuecat';
 
-// Extract ordered cooking steps from the AI recipe markdown.
+// Normalise a line for text-to-speech: drop markdown emphasis/backticks/leading hashes.
+function cleanStep(s: string): string {
+  return s.replace(/\*+/g, '').replace(/`/g, '').replace(/^[#>\s]+/, '').replace(/\s+/g, ' ').trim();
+}
+
+// Extract ordered cooking steps from an AI recipe. Handles BOTH formats we emit:
+//  • detailed recipes: "## Step-by-Step Instructions" then "**Step 1** (5 min)\n <instruction>\n *Visual Cue:* …"
+//  • quick / fridge recipes: "## Instructions" then "1. …", "2. …"
+// Falls back to sentence-splitting ONLY the instructions section so hands-free
+// never reads ingredients/tips/nutrition as if they were cooking steps.
 function parseSteps(md: string): string[] {
   if (!md) return [];
   const lines = md.split('\n');
-  const numbered = lines
-    .map((l) => l.trim())
-    .filter((l) => /^\d+\.\s+/.test(l))
-    .map((l) => l.replace(/^\d+\.\s+/, '').replace(/\*\*/g, '').trim())
-    .filter(Boolean);
+  const headingRe = /^#{1,6}\s/;
+  const isInstrHeading = (l: string) => headingRe.test(l) && /(instruction|direction|method|how to|step)/i.test(l);
+  const isOtherHeading = (l: string) => headingRe.test(l) && !isInstrHeading(l);
+
+  // Isolate the instructions section when present.
+  let start = -1;
+  for (let i = 0; i < lines.length; i++) { if (isInstrHeading(lines[i].trim())) { start = i + 1; break; } }
+  let end = lines.length;
+  if (start >= 0) { for (let i = start; i < lines.length; i++) { if (isOtherHeading(lines[i].trim())) { end = i; break; } } }
+  const scope = (start >= 0 ? lines.slice(start, end) : lines).map((l) => l.trim());
+
+  const stepHeaderRe = /^\*{0,2}\s*step\s+\d+/i; // "**Step 1** (5 minutes)" or "Step 1:"
+  const numberedRe = /^\d+[.)]\s+/;              // "1. do this"
+
+  // A) "**Step N**" block format — combine the header's inline text + following lines.
+  if (scope.some((l) => stepHeaderRe.test(l))) {
+    const out: string[] = [];
+    let cur: string[] = [];
+    const flush = () => { const t = cleanStep(cur.join(' ')); if (t.length > 2) out.push(t); cur = []; };
+    for (const l of scope) {
+      if (!l || headingRe.test(l)) continue;
+      if (stepHeaderRe.test(l)) {
+        flush();
+        let after = cleanStep(l.replace(stepHeaderRe, '')).replace(/^\([^)]*\)\s*/, '').replace(/^[:\-–]\s*/, '');
+        if (after) cur.push(after);
+      } else {
+        cur.push(l.replace(/^\*?\s*visual cue:?\*?/i, 'Look for:'));
+      }
+    }
+    flush();
+    if (out.length >= 2) return out;
+  }
+
+  // B) Numbered list — one step per numbered line.
+  const numbered = scope.filter((l) => numberedRe.test(l)).map((l) => cleanStep(l.replace(numberedRe, ''))).filter(Boolean);
   if (numbered.length >= 2) return numbered;
-  // Fallback: split the whole text into sentences.
-  const clean = md.replace(/[#*`>-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // C) Fallback: sentence-split the instructions scope only.
+  const clean = scope.join(' ').replace(/[#*`>_-]/g, ' ').replace(/\s+/g, ' ').trim();
   return clean
     .split(/(?<=[.!?])\s+/)
     .map((s) => s.trim())

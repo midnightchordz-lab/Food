@@ -28,10 +28,11 @@ SYSTEM_MSG = """You are an expert chef and food identifier. Analyze fridge / pan
 Respond ONLY with valid JSON (no markdown):
 {
   "ingredients": [{"name": "item", "category": "vegetable/fruit/dairy/meat/seafood/beverage/condiment/grain/snack/other", "quantity": "amount if visible"}],
-  "recipes": [{"title": "Recipe Name", "description": "Brief description", "cooking_time": "X mins", "difficulty": "Easy/Medium/Hard", "servings": "2-4", "ingredients_used": ["item1", "item2"], "missing_ingredients": ["optional item"], "instructions": ["Step 1...", "Step 2...", "Step 3..."]}]
+  "recipes": [{"title": "Recipe Name", "description": "2-3 sentence appetizing description", "cooking_time": "X mins", "difficulty": "Easy/Medium/Hard", "servings": "2-4", "ingredients_used": ["item1 with qty", "item2 with qty"], "missing_ingredients": ["optional item"], "instructions": ["Detailed step 1...", "Detailed step 2...", "..."]}]
 }
 
-Be concise. Identify 5-15 ingredients max. Suggest 3 recipes the user can mostly make with what is visible, each with 3-6 instruction steps."""
+Identify 5-15 ingredients max. Suggest 3 recipes the user can mostly make with what is visible.
+For EACH recipe, "instructions" MUST contain 6-9 DETAILED sequential steps. Every step is a full, clear sentence a beginner can follow, including the specific action, exact time (e.g. "simmer for 5 minutes"), heat level (e.g. "over medium heat"), quantities/measurements where relevant, and a doneness/sensory cue (e.g. "until the onions turn translucent"). Cover prep, cooking, seasoning, and plating. Do NOT compress the recipe into 2-3 short lines."""
 
 
 class FridgeScanRequest(BaseModel):

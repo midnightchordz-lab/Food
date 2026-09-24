@@ -116,12 +116,16 @@ export default function CookMode() {
     wasFinishedRef.current = finished;
   }, [status?.didJustFinish]);
 
-  // Advance once BOTH the 30s timer has elapsed AND the voice has finished.
+  // Advance when the per-step timer has elapsed AND the voice has settled. The
+  // voice is "settled" once it has finished playing, OR whenever it isn't
+  // actively playing (paused / muted / failed) — so a cook who doesn't want to
+  // listen or talk still auto-progresses on the timer alone.
   useEffect(() => {
-    if (autoAdvance && timerDone && audioDone && !isLastStep) {
+    const audioSettled = audioDone || (!status?.playing && !loadingAudio);
+    if (autoAdvance && timerDone && audioSettled && !isLastStep) {
       setIndex((v) => (v < steps.length - 1 ? v + 1 : v));
     }
-  }, [autoAdvance, timerDone, audioDone, isLastStep, steps.length]);
+  }, [autoAdvance, timerDone, audioDone, status?.playing, loadingAudio, isLastStep, steps.length]);
 
   const isPlaying = !!status?.playing;
 

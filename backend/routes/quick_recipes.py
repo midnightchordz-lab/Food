@@ -80,15 +80,22 @@ def _build_prompt(req: QuickRecipeRequest, exclusions: list[str]) -> str:
         "STRICT RULES:\n"
         "1. EVERY recipe total time MUST be <= 10 minutes. Skip anything longer.\n"
         "2. No marinading/rising/waiting; prioritise no-cook, stir-fry, quick saute, assembly.\n"
-        "3. Max 3-4 short steps. Use only common pantry items or the provided ones.\n"
-        "4. Recipe names MUST be SPECIFIC and DISTINCTIVE (e.g. 'Garlic Butter Cherry Tomato Pasta', "
+        "3. Write 5-8 DETAILED sequential steps. Each step MUST be a complete, clear sentence a "
+        "beginner can follow, with a specific action, the exact time (e.g. 'saute for 2 minutes'), "
+        "heat level (e.g. 'over medium-high heat'), quantities where relevant, and a sensory/doneness "
+        "cue (e.g. 'until golden and fragrant'). Do NOT compress the whole recipe into 1-2 lines even "
+        "for a 10-minute meal — break it into clear ordered actions from prep to plating.\n"
+        "4. Use only common pantry items or the provided ones.\n"
+        "5. Recipe names MUST be SPECIFIC and DISTINCTIVE (e.g. 'Garlic Butter Cherry Tomato Pasta', "
         "not 'Pasta') so they render good photos.\n\n"
         "Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:\n"
         '{"recipes":[{"name":"Specific Name","prep_minutes":3,"cook_minutes":4,"total_minutes":7,'
         '"cuisine":"Italian","difficulty":"Simple","ingredients":["item with qty"],'
-        '"instructions":["step 1","step 2","step 3"],"pro_tip":"one speed hack"}],'
+        '"instructions":["Detailed step with time & heat","Detailed step 2","Detailed step 3",'
+        '"Detailed step 4","Detailed step 5"],"pro_tip":"one speed hack"}],'
         '"speed_tips":["hack 1","hack 2","hack 3"]}\n'
-        f"Provide exactly {req.count} recipes, each with total_minutes <= 10 and 3-6 ingredients."
+        f"Provide exactly {req.count} recipes, each with total_minutes <= 10, 3-6 ingredients, "
+        "and 5-8 detailed instruction steps."
     )
 
 
@@ -203,12 +210,16 @@ def _build_validation_specs_prompt(req: QuickRecipeRequest, exclusions: list[str
         f"- Dietary: {req.dietary}\n- Cuisine: {req.cuisine}\n- Mood: {req.mood}\n"
         f"- Available ingredients: {ingredients_str}\n- Equipment: {req.equipment}.{exclusion_line}\n\n"
         "Recipe names MUST be SPECIFIC and DISTINCTIVE (e.g. 'Creamy Butter Chicken Curry', not 'Curry').\n"
+        "Each recipe's \"instructions\" MUST contain 5-8 DETAILED sequential steps. Every step is a full, "
+        "clear sentence with a specific action, exact time, heat level, quantities where relevant, and a "
+        "doneness/sensory cue. Do NOT compress the recipe into 1-2 lines.\n"
         "For EACH recipe include an image_spec with validation rules so a generated photo can be verified.\n\n"
         "Return ONLY valid JSON (no markdown) in EXACTLY this shape:\n"
         '{"recipes":[{'
         '"name":"Specific Name","prep_minutes":3,"cook_minutes":4,"total_minutes":7,'
         '"cuisine":"Italian","difficulty":"Simple","ingredients":["item with qty"],'
-        '"instructions":["step 1","step 2"],"pro_tip":"one speed hack",'
+        '"instructions":["Detailed step with time & heat","Detailed step 2","Detailed step 3",'
+        '"Detailed step 4","Detailed step 5"],"pro_tip":"one speed hack",'
         '"image_spec":{"prompt":"Professional food photo of the dish showing its key visuals",'
         '"visual_essence":"how the dish should look","must_show":["visual 1","visual 2","visual 3"],'
         '"must_not_show":["wrong dish 1","wrong style 2"],"validation_rule":"how to verify it is the correct dish"}'

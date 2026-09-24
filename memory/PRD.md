@@ -158,7 +158,10 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - Ingredient encyclopedia.
 
 ## Notes
-- Hands-free Cook Mode (`app/cook.tsx`): auto-advance uses a per-step timer (adjustable 15/30/60s, default 30) that also waits for the spoken step to finish (whichever is longer), with a live "Next in Xs" countdown and hard stop on the last step. Screen stays awake via `expo-keep-awake`. Continuous voice control (`src/lib/voice.ts`, `expo-speech-recognition@57.1.0`) listens for "next", "back/previous" and "repeat" — native-build only (no-op in Expo Go/web); mic + speech permissions configured via the `expo-speech-recognition` config plugin in `app.json`. NOTE: the old `@react-native-voice/voice` was removed — it broke the Android Gradle build (AGP 8 needs a `namespace`; that lib targets compileSdk 28 / jcenter).
+- Cooking steps: hands-free `parseSteps` (`app/recipe.tsx`) now parses BOTH the detailed-recipe `**Step N**` block format AND numbered lists, isolating the instructions section so it never reads ingredients/tips as steps. Backend prompts (`quick_recipes.py`, `mobile_fridge.py`) now require 5-9 detailed sentence-level steps with times/heat/cues.
+- Cook auto-advance (`app/cook.tsx`): advances on the per-step timer alone when audio isn't actively playing (paused/muted/failed), so silent cooks still progress; waits for the voice only while it's actually speaking.
+- Trial self-heal: `POST /api/trial/activate` recreates the premium trialing subscription (upsert) for any user still inside their trial window (per user-doc `trial_end_date`) even if `has_used_trial` is set — so a genuine trial user is never pushed to Razorpay. This fixed the "payment not supported" seen when the auto-start subscription record had desynced. `TRIAL_FEATURES` is now a shared constant in `trial.py`.
+- Hands-free Cook Mode: per-step timer adjustable 15/30/60s (default 30), keep-awake via `expo-keep-awake`, continuous voice control via `expo-speech-recognition@57.1.0` (native build only). `@react-native-voice/voice` was removed (broke AGP 8 Android build).
 - Apple Sign In works only on a real iOS build/device (not Expo Go, Android, or web).
 - AI images cached on backend disk by md5(title|cuisine); for production scale, move to object storage.
 - Test creds: /app/memory/test_credentials.md. Apple testing: /app/auth_testing.md.

@@ -49,9 +49,10 @@ export default function Paywall() {
   const doAndroidSubscribe = async () => {
     setAndroidBusy(true);
     try {
-      // If the free trial was already used, skip the trial grant and go straight
-      // to the Razorpay purchase to continue Premium.
-      if (!trialExpired) {
+      // Always try the trial endpoint first — it is idempotent and will grant (or
+      // self-heal) an in-window free trial WITHOUT any payment screen. Only a user
+      // who has genuinely used up their free trial falls through to Razorpay.
+      try {
         const { data } = await api.post('/trial/activate', { platform: 'android' });
         if (data?.premium) {
           refetchPremium();
@@ -59,7 +60,11 @@ export default function Paywall() {
           router.back();
           return;
         }
-        // data.trial_used → fall through to payment.
+        if (data?.trial_used) {
+          toast.show('Your free trial was already used — continue with a paid plan.', 'info');
+        }
+      } catch {
+        // Non-fatal: fall through to the paid checkout below.
       }
 
       await startRazorpaySubscription(androidSelected, {
@@ -73,6 +78,10 @@ export default function Paywall() {
     } catch (e: any) {
       const msg = String(e?.description || e?.message || '');
       if (e?.code === 0 || e?.code === 2 || /cancel/i.test(msg)) return; // user dismissed checkout
+      if (/no.*payment|not supported|unavailable|no method/i.test(msg)) {
+        toast.show('No payment method is available on your account right now. Please try again later.', 'error');
+        return;
+      }
       toast.show('Payment could not be completed', 'error');
     } finally {
       setAndroidBusy(false);

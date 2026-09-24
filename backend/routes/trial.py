@@ -19,6 +19,28 @@ router = APIRouter(prefix="/trial", tags=["Trial"])
 
 logger = logging.getLogger(__name__)
 
+# ALL premium features unlocked during the trial. Shared by auto-start and the
+# self-heal path in /activate so both create identical subscription records.
+TRIAL_FEATURES = {
+    "recipe_search_limit": -1,  # Unlimited
+    "premium_recipes_access": True,
+    "ad_free": True,
+    "ai_photo_recognition_enabled": True,
+    "ai_photo_recognition_limit": 100,
+    "ai_image_generation_enabled": True,
+    "ai_image_generation_limit": 50,
+    "meal_planner_weeks": 12,
+    "export_to_pdf": True,
+    "recipe_import": True,
+    "video_import": True,
+    "voice_guided_cooking": True,
+    "diabetes_module": True,
+    "priority_support": True,
+    "advanced_filters": True,
+    "family_members": 5,
+    "fridge_scanner": True,
+}
+
 
 class TrialStatusResponse(BaseModel):
     """Trial status response model"""
@@ -140,31 +162,10 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
         
         # ============ CREATE SUBSCRIPTION RECORD FOR FEATURE GATING ============
         # This is CRITICAL - the FeatureGate system reads from user_subscriptions
-        
-        # Define trial features (ALL premium features unlocked)
-        trial_features = {
-            "recipe_search_limit": -1,  # Unlimited
-            "premium_recipes_access": True,
-            "ad_free": True,
-            "ai_photo_recognition_enabled": True,
-            "ai_photo_recognition_limit": 100,
-            "ai_image_generation_enabled": True,
-            "ai_image_generation_limit": 50,
-            "meal_planner_weeks": 12,
-            "export_to_pdf": True,
-            "recipe_import": True,
-            "video_import": True,
-            "voice_guided_cooking": True,
-            "diabetes_module": True,
-            "priority_support": True,
-            "advanced_filters": True,
-            "family_members": 5,
-            "fridge_scanner": True
-        }
-        
+
         # Remove any existing subscription for this user (to avoid duplicates)
         await db.user_subscriptions.delete_many({"user_id": user_id})
-        
+
         # Create trial subscription
         subscription_doc = {
             "user_id": user_id,
@@ -176,7 +177,7 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
             "platform": platform,
-            "features": trial_features,
+            "features": TRIAL_FEATURES,
             "is_trial": True,
             "auto_started": True  # Mark as auto-started for tracking
         }
@@ -465,7 +466,56 @@ async def activate_trial(
                     reason="Trial already active", days_remaining=days_remaining, trial_ends=trial_ends,
                 )
 
-        # 2) Otherwise try to start a fresh trial (creates the premium `trialing`
+        # 2) Self-heal desync: the user may still be INSIDE their original 7-day
+        #    trial window (per the user document) while the premium subscription
+        #    record is missing/expired (e.g. the auto-start insert failed or was
+        #    cleaned up). In that case recreate the trialing subscription so a
+        #    genuine trial user is NEVER pushed to a payment screen.
+        user_doc = await db.users.find_one({"id": current_user.id})
+        end_raw = (user_doc or {}).get("trial_end_date")
+        if end_raw:
+            try:
+                end_dt = datetime.fromisoformat(str(end_raw).replace('Z', '+00:00'))
+            except Exception:
+                end_dt = None
+            if end_dt and end_dt > now:
+                days_remaining = max(1, int((end_dt - now).total_seconds() / 86400) + 1)
+                try:
+                    sub_doc = {
+                        "user_id": current_user.id,
+                        "plan_id": "premium_monthly",
+                        "status": "trialing",
+                        "source": "trial",
+                        "trial_start": (user_doc or {}).get("trial_start_date") or now.isoformat(),
+                        "trial_end": end_dt.isoformat(),
+                        "created_at": now.isoformat(),
+                        "updated_at": now.isoformat(),
+                        "platform": request.platform or "android",
+                        "features": TRIAL_FEATURES,
+                        "is_trial": True,
+                        "auto_started": False,
+                    }
+                    # Upsert so the user always ends up with exactly one premium
+                    # trialing record, even if a prior delete/insert half-failed.
+                    await db.user_subscriptions.update_one(
+                        {"user_id": current_user.id},
+                        {"$set": sub_doc},
+                        upsert=True,
+                    )
+                    await db.user_subscriptions.delete_many({
+                        "user_id": current_user.id,
+                        "status": {"$ne": "trialing"},
+                    })
+                except Exception as heal_err:
+                    logger.error(f"Trial self-heal failed for {current_user.id}: {heal_err}")
+                else:
+                    logger.info(f"♻️ Re-activated in-window trial subscription for user {current_user.id}")
+                    return TrialActivateResponse(
+                        success=True, premium=True, trial_used=False,
+                        reason="Trial re-activated", days_remaining=days_remaining, trial_ends=end_dt.isoformat(),
+                    )
+
+        # 3) Otherwise try to start a fresh trial (creates the premium `trialing`
         #    subscription record that /subscription/current reads).
         result = await auto_start_trial_if_eligible(current_user.id, request.platform or "android")
         reason = result.get("reason", "")
