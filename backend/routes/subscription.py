@@ -1152,9 +1152,24 @@ async def verify_razorpay_subscription(
         if sub["user_id"] != current_user.id:
             raise HTTPException(status_code=403, detail="Subscription does not belong to user")
 
+        now = datetime.now(timezone.utc)
+
+        # Replay guard (revenue integrity): the Razorpay subscription signature is a
+        # deterministic HMAC over (payment_id, subscription_id) that never expires and
+        # stays valid even after the subscription is cancelled. Without this, a user
+        # could verify once, cancel (so no charge), then replay the same signed request
+        # forever to keep re-granting a 7-day trial. Only a subscription still in its
+        # initial "created" state may be verified, and we claim it atomically so two
+        # concurrent requests cannot both pass.
+        claimed = await db.razorpay_subscriptions.update_one(
+            {"id": request.razorpay_subscription_id, "status": "created"},
+            {"$set": {"status": "authenticated", "payment_id": request.razorpay_payment_id, "updated_at": now.isoformat()}},
+        )
+        if claimed.modified_count != 1:
+            raise HTTPException(status_code=400, detail="Subscription already verified")
+
         plan_id = sub["plan_id"]  # source of truth = server-created subscription
         plan = get_plan_by_id(plan_id)
-        now = datetime.now(timezone.utc)
         trial_end = now + timedelta(days=RAZORPAY_TRIAL_DAYS)
 
         # Cancel any existing active/trialing subscription before granting the new one.
@@ -1183,11 +1198,6 @@ async def verify_razorpay_subscription(
             "updated_at": now.isoformat(),
         }
         await db.user_subscriptions.insert_one(subscription_doc)
-
-        await db.razorpay_subscriptions.update_one(
-            {"id": request.razorpay_subscription_id},
-            {"$set": {"status": "authenticated", "payment_id": request.razorpay_payment_id, "updated_at": now.isoformat()}}
-        )
 
         await db.payment_transactions.insert_one({
             "id": str(uuid.uuid4()),
