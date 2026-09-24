@@ -67,10 +67,13 @@
       "expo-audio",
       "expo-web-browser",
       [
-        "@react-native-voice/voice",
+        "expo-speech-recognition",
         {
           "microphonePermission": "Hear voice commands while cooking hands-free",
-          "speechRecognitionPermission": "Understand 'next' and 'repeat' while cooking"
+          "speechRecognitionPermission": "Understand 'next' and 'repeat' while cooking",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ]
     ]

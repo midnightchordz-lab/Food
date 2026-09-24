@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Platform, PermissionsAndroid, Linking } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 export type VoiceCommand = 'next' | 'back' | 'repeat';
 export type VoicePermission = 'unknown' | 'granted' | 'denied' | 'blocked';
 
-// @react-native-voice/voice is a NATIVE module: it is absent in Expo Go and on
-// web, where importing/using it throws. It only works in a real dev/prod build.
+// expo-speech-recognition ships a NATIVE module that is absent in Expo Go. It
+// only works in a real dev/prod build. We therefore lazy-require it inside the
+// effect and gate everything behind `voiceSupported`.
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 export const voiceSupported = (Platform.OS === 'ios' || Platform.OS === 'android') && !isExpoGo;
 
-function getVoice() {
+function getModule() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@react-native-voice/voice').default;
+  return require('expo-speech-recognition');
 }
 
 function parseCommand(text: string): VoiceCommand | null {
@@ -47,86 +48,87 @@ export function useVoiceCommands(active: boolean, onCommand: (cmd: VoiceCommand)
       return;
     }
 
-    const Voice = getVoice();
+    const { ExpoSpeechRecognitionModule } = getModule();
     let cancelled = false;
+    const subs: { remove: () => void }[] = [];
 
-    const fire = (text: string) => {
+    const fire = (text?: string) => {
+      if (!text) return;
       const cmd = parseCommand(text);
       if (!cmd) return;
       const now = Date.now();
-      // Debounce: partial + final results repeat the same word rapidly.
+      // Debounce: interim + final results repeat the same word rapidly.
       if (now - lastFireRef.current < 1600) return;
       lastFireRef.current = now;
       onCommandRef.current(cmd);
     };
 
-    const start = async () => {
+    const startRecognition = () => {
       if (cancelled) return;
       try {
-        await Voice.start('en-US');
-        setListening(true);
+        ExpoSpeechRecognitionModule.start({ lang: 'en-US', interimResults: true, continuous: true });
       } catch {
-        // ignore transient start errors; onSpeechError will retry
+        // transient; error/end listeners will retry
       }
     };
 
-    Voice.onSpeechResults = (e: { value?: string[] }) => {
-      for (const v of e.value || []) fire(v);
-    };
-    Voice.onSpeechPartialResults = (e: { value?: string[] }) => {
-      for (const v of e.value || []) fire(v);
-    };
-    Voice.onSpeechEnd = () => {
-      if (!cancelled) setTimeout(start, 250);
-    };
-    Voice.onSpeechError = (e: { error?: { code?: string; message?: string } }) => {
-      const code = String(e?.error?.code || e?.error?.message || '');
-      // Permission-related errors on iOS surface here.
-      if (/permission|denied|not-authorized|9|4/i.test(code) && /permission|denied|authoriz/i.test(code)) {
-        setPermission('blocked');
+    subs.push(ExpoSpeechRecognitionModule.addListener('start', () => setListening(true)));
+    subs.push(
+      ExpoSpeechRecognitionModule.addListener('result', (e: { results?: { transcript?: string }[] }) => {
+        for (const r of e?.results || []) fire(r?.transcript);
+      }),
+    );
+    subs.push(
+      ExpoSpeechRecognitionModule.addListener('end', () => {
         setListening(false);
-        return;
-      }
-      if (!cancelled) setTimeout(start, 600);
-    };
-
-    (async () => {
-      if (Platform.OS === 'android') {
-        try {
-          const already = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO);
-          if (already) {
-            setPermission('granted');
-          } else {
-            const res = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO);
-            if (res === PermissionsAndroid.RESULTS.GRANTED) {
-              setPermission('granted');
-            } else if (res === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-              setPermission('blocked');
-              return;
-            } else {
-              setPermission('denied');
-              return;
-            }
-          }
-        } catch {
-          setPermission('denied');
+        if (!cancelled) setTimeout(startRecognition, 250);
+      }),
+    );
+    subs.push(
+      ExpoSpeechRecognitionModule.addListener('error', (e: { error?: string }) => {
+        const code = String(e?.error || '');
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          setPermission('blocked');
+          setListening(false);
           return;
         }
-      } else {
-        // iOS prompts on first start(); assume grantable until an error says otherwise.
-        setPermission('granted');
+        // no-speech / network / aborted etc. — keep it alive.
+        if (!cancelled) setTimeout(startRecognition, 500);
+      }),
+    );
+
+    (async () => {
+      try {
+        let perm = await ExpoSpeechRecognitionModule.getPermissionsAsync();
+        if (!perm.granted) perm = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+        if (perm.granted) {
+          setPermission('granted');
+          startRecognition();
+        } else if (perm.canAskAgain === false) {
+          setPermission('blocked');
+        } else {
+          setPermission('denied');
+        }
+      } catch {
+        setPermission('denied');
       }
-      start();
     })();
 
     return () => {
       cancelled = true;
       setListening(false);
       try {
-        Voice.destroy().then(() => Voice.removeAllListeners());
+        ExpoSpeechRecognitionModule.abort();
       } catch {
         // ignore teardown errors
       }
+      subs.forEach((s) => {
+        try {
+          s.remove();
+        } catch {
+          // ignore
+        }
+      });
     };
   }, [active]);
 

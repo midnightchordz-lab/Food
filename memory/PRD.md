@@ -158,7 +158,7 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - Ingredient encyclopedia.
 
 ## Notes
-- Hands-free Cook Mode (`app/cook.tsx`): auto-advance uses a per-step timer (adjustable 15/30/60s, default 30) that also waits for the spoken step to finish (whichever is longer), with a live "Next in Xs" countdown and hard stop on the last step. Screen stays awake via `expo-keep-awake`. Continuous voice control (`src/lib/voice.ts`, `@react-native-voice/voice`) listens for "next", "back/previous" and "repeat" — native-build only (no-op in Expo Go/web); mic + speech permissions declared in `app.json`.
+- Hands-free Cook Mode (`app/cook.tsx`): auto-advance uses a per-step timer (adjustable 15/30/60s, default 30) that also waits for the spoken step to finish (whichever is longer), with a live "Next in Xs" countdown and hard stop on the last step. Screen stays awake via `expo-keep-awake`. Continuous voice control (`src/lib/voice.ts`, `expo-speech-recognition@57.1.0`) listens for "next", "back/previous" and "repeat" — native-build only (no-op in Expo Go/web); mic + speech permissions configured via the `expo-speech-recognition` config plugin in `app.json`. NOTE: the old `@react-native-voice/voice` was removed — it broke the Android Gradle build (AGP 8 needs a `namespace`; that lib targets compileSdk 28 / jcenter).
 - Apple Sign In works only on a real iOS build/device (not Expo Go, Android, or web).
 - AI images cached on backend disk by md5(title|cuisine); for production scale, move to object storage.
 - Test creds: /app/memory/test_credentials.md. Apple testing: /app/auth_testing.md.
