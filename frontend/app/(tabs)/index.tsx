@@ -215,7 +215,7 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
             <RecipeCard
               key={r.title}
               recipe={r}
-              useAiImage
+              validatedAiImage
               onPress={() => openRecipe(r)}
               onSave={() => saveMut.mutate(r)}
               saved={!!savedTitles[r.title]}

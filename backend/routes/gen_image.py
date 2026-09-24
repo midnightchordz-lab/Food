@@ -147,6 +147,64 @@ STYLE:
         raise HTTPException(status_code=500, detail="Image generation failed")
 
 
+@router.post("/ai-generate-validated")
+async def generate_recipe_image_validated(req: GenerateImageRequest, request: Request, current_user: User = Depends(get_optional_user)):
+    """Generate (or return cached) a SELF-VALIDATED AI food photo, using the exact
+    same pipeline as the 10-minute meals flow: an AI image_spec (must_show /
+    must_not_show / validation_rule) drives a generate-and-verify image call that
+    retries once on rejection. Returns {url, validated, proof}."""
+    key = _key(req.title, req.cuisine)
+    dest = IMAGE_DIR / f"{key}.png"
+    rel_url = f"/api/recipe-image/img/{key}.png"
+
+    if dest.exists() and dest.stat().st_size > 0:
+        return {"url": rel_url, "validated": True, "proof": "Cached verified image"}
+
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Image generation not configured")
+
+    # Same per-user (or per-IP) daily cap as /ai-generate, charged on cache-miss.
+    if current_user:
+        identity = current_user.id
+    else:
+        fwd = request.headers.get("x-forwarded-for")
+        identity = f"ip:{(fwd.split(',')[0].strip() if fwd else (request.client.host if request.client else 'unknown'))}"
+    await check_and_increment_daily_image_cap(identity)
+
+    # Lazy import to avoid a circular import (quick_recipes imports from gen_image).
+    from .quick_recipes import _generate_and_validate_image, _extract_json
+
+    ing = ", ".join([i for i in req.ingredients[:6] if i]) or "typical ingredients"
+    spec_prompt = (
+        f'For the dish "{req.title}" ({req.cuisine or "International"} cuisine; key ingredients: {ing}), '
+        "return ONLY valid JSON describing how to verify a generated food photo is the correct dish:\n"
+        '{"must_show":["visual 1","visual 2","visual 3"],"must_not_show":["wrong dish 1","wrong style 2"],'
+        '"validation_rule":"how to verify it is the correct dish"}\n'
+        "must_show: elements that PROVE it's the right dish. must_not_show: similar dishes / wrong styles to reject.\n"
+        "Examples: Butter Chicken must_show ['creamy tomato sauce','chicken chunks'] must_not_show ['grilled meat','steak']; "
+        "Biryani must_show ['layered rice','saffron color','fried onions'] must_not_show ['grilled fish','plain curry']."
+    )
+    image_spec: dict = {}
+    try:
+        spec_chat = LlmChat(
+            api_key=api_key,
+            session_id=f"imgspec-{key}",
+            system_message="You output only valid JSON.",
+        ).with_model("openai", "gpt-4o-mini")
+        spec_raw = await spec_chat.send_message(UserMessage(text=spec_prompt))
+        parsed = _extract_json(spec_raw)
+        if isinstance(parsed, dict):
+            image_spec = parsed
+    except Exception as e:
+        logging.error(f"Image spec generation failed for '{req.title}': {e}")
+
+    result = await _generate_and_validate_image(req.title, req.cuisine, req.ingredients, image_spec, api_key)
+    if not result:
+        raise HTTPException(status_code=500, detail="Image generation failed")
+    return result
+
+
 @router.get("/img/{name}")
 async def get_recipe_image(name: str):
     """Serve a cached generated image."""

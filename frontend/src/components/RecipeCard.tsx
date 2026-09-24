@@ -73,6 +73,37 @@ export function useRecipeImage(
   });
 }
 
+// Fetches (and caches on the backend) a SELF-VALIDATED AI food photo — same
+// pipeline as the 10-minute meals flow. Returns the url plus whether the image
+// passed the model's own verification (drives the "Verified photo" badge).
+export function useValidatedRecipeImage(
+  title: string,
+  cuisine?: string,
+  description?: string,
+  ingredients?: string[],
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ['recipe-image-validated', title, cuisine, ingredients?.join(',')],
+    enabled: enabled && !!title,
+    staleTime: Infinity,
+    retry: 1,
+    queryFn: async () => {
+      const res = await api.post('/recipe-image/ai-generate-validated', {
+        title,
+        cuisine: cuisine || '',
+        description: description || '',
+        ingredients: ingredients || [],
+      });
+      return {
+        url: `${BACKEND}${res.data.url}` as string,
+        validated: !!res.data.validated,
+        proof: (res.data.proof || '') as string,
+      };
+    },
+  });
+}
+
 export type RecipeCardData = {
   id?: string;
   title: string;
@@ -85,7 +116,7 @@ export type RecipeCardData = {
 };
 
 export function RecipeCard({
-  recipe, onPress, onSave, saved, saving, onAddToCart, rating, onRate, verified, useAiImage,
+  recipe, onPress, onSave, saved, saving, onAddToCart, rating, onRate, verified, useAiImage, validatedAiImage,
 }: {
   recipe: RecipeCardData;
   onPress: () => void;
@@ -97,6 +128,7 @@ export function RecipeCard({
   onRate?: (value: number) => void;
   verified?: boolean;
   useAiImage?: boolean;
+  validatedAiImage?: boolean;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -109,9 +141,18 @@ export function RecipeCard({
     recipe.cuisine,
     recipe.description,
     recipe.ingredients,
-    !!useAiImage && !resolvedImageUrl,
+    !!useAiImage && !validatedAiImage && !resolvedImageUrl,
   );
-  const img = resolvedImageUrl || ai.data || foodImage(recipe.title, recipe.cuisine);
+  // Self-validated variant (same logic as 10-minute meals) — also drives the badge.
+  const validatedAi = useValidatedRecipeImage(
+    recipe.title,
+    recipe.cuisine,
+    recipe.description,
+    recipe.ingredients,
+    !!validatedAiImage && !resolvedImageUrl,
+  );
+  const img = resolvedImageUrl || validatedAi.data?.url || ai.data || foodImage(recipe.title, recipe.cuisine);
+  const showVerified = verified || (!!validatedAiImage && validatedAi.data?.validated === true);
 
   return (
     <Pressable
@@ -121,7 +162,7 @@ export function RecipeCard({
     >
       <View>
         <Image source={{ uri: img }} style={styles.img} contentFit="cover" transition={250} cachePolicy="memory-disk" recyclingKey={img} />
-        {verified ? (
+        {showVerified ? (
           <View style={styles.verifiedBadge}>
             <Icon name="check-decagram" size={13} color="#FFFFFF" />
             <Text style={styles.verifiedText}>Verified photo</Text>
