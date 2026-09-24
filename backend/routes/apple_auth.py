@@ -105,6 +105,15 @@ async def apple_login(req: AppleLoginRequest, http_request: Request):
         new_user.pop("_id", None)
         user_data = new_user
 
+    # New Apple signups must get the same auto-started 7-day trial as email/OTP
+    # signups, otherwise they have no trial and are wrongly routed to payment.
+    if is_new_user:
+        try:
+            from .trial import auto_start_trial_if_eligible
+            await auto_start_trial_if_eligible(user_data["id"], "ios")
+        except Exception as trial_error:
+            logging.error(f"⚠️ Trial auto-start failed for Apple user {user_data.get('id')}: {trial_error}")
+
     pair = await issue_token_pair(user_data["id"], http_request)
     return {
         "access_token": pair["access_token"],
