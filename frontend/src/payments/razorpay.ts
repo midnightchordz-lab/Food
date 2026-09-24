@@ -19,12 +19,16 @@ export async function startRazorpaySubscription(planId: RzpPlanId, profile: Prof
 
   const { data: created } = await api.post('/subscription/razorpay/create-subscription', { plan_id: planId });
   const sub = created.subscription;
+  const trialDays = Number(created.plan?.trial_days || 0);
+  const description = trialDays > 0
+    ? `${created.plan.name} · ${trialDays}-day free trial`
+    : `${created.plan.name} subscription`;
 
   const options = {
     key: sub.key_id,
     subscription_id: sub.id,
     name: 'MoodFood',
-    description: `${created.plan.name} · ${created.plan.trial_days}-day free trial`,
+    description,
     prefill: {
       name: profile.name || '',
       email: profile.email || '',

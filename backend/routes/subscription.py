@@ -1083,16 +1083,29 @@ async def create_razorpay_subscription(
         plan = get_plan_by_id(request.plan_id)
         rp_plan_id = await ensure_razorpay_plan(request.plan_id)
 
-        # start_at in the future => Razorpay only charges after the free trial.
-        start_at = int((datetime.now(timezone.utc) + timedelta(days=RAZORPAY_TRIAL_DAYS)).timestamp())
-        sub = razorpay_client.subscription.create(data={
+        now = datetime.now(timezone.utc)
+
+        # ONE FREE TRIAL PER USER: every account already receives a 7-day trial at
+        # signup (auto_start_trial_if_eligible sets has_used_trial). If that trial
+        # was already consumed, the Razorpay subscription must charge immediately
+        # instead of granting a second free trial.
+        user_doc = await db.users.find_one({"id": current_user.id})
+        grant_trial = not bool((user_doc or {}).get("has_used_trial"))
+
+        sub_data = {
             "plan_id": rp_plan_id,
             "total_count": cfg["total_count"],
             "quantity": 1,
             "customer_notify": 1,
-            "start_at": start_at,
             "notes": {"user_id": current_user.id, "plan_id": request.plan_id},
-        })
+        }
+        trial_end_iso = None
+        if grant_trial:
+            # start_at in the future => Razorpay only charges after the free trial.
+            trial_end_dt = now + timedelta(days=RAZORPAY_TRIAL_DAYS)
+            sub_data["start_at"] = int(trial_end_dt.timestamp())
+            trial_end_iso = trial_end_dt.isoformat()
+        sub = razorpay_client.subscription.create(data=sub_data)
 
         await db.razorpay_subscriptions.insert_one({
             "id": sub["id"],
@@ -1100,8 +1113,9 @@ async def create_razorpay_subscription(
             "plan_id": request.plan_id,
             "rp_plan_id": rp_plan_id,
             "status": "created",
-            "trial_end": (datetime.now(timezone.utc) + timedelta(days=RAZORPAY_TRIAL_DAYS)).isoformat(),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "grant_trial": grant_trial,
+            "trial_end": trial_end_iso,
+            "created_at": now.isoformat(),
         })
 
         return {
@@ -1110,7 +1124,7 @@ async def create_razorpay_subscription(
             "plan": {
                 "name": plan["display_name"],
                 "billing_cycle": plan["billing_cycle"],
-                "trial_days": RAZORPAY_TRIAL_DAYS,
+                "trial_days": RAZORPAY_TRIAL_DAYS if grant_trial else 0,
                 "pricing_inr": plan["pricing_inr"],
             },
             "user": {"email": current_user.email, "name": current_user.name},
@@ -1170,7 +1184,21 @@ async def verify_razorpay_subscription(
 
         plan_id = sub["plan_id"]  # source of truth = server-created subscription
         plan = get_plan_by_id(plan_id)
-        trial_end = now + timedelta(days=RAZORPAY_TRIAL_DAYS)
+
+        # Honour the trial decision made at create time (one free trial per user).
+        grant_trial = sub.get("grant_trial", sub.get("trial_end") is not None)
+        if grant_trial:
+            status = "trialing"
+            trial_start_iso = now.isoformat()
+            period_end = now + timedelta(days=RAZORPAY_TRIAL_DAYS)
+            trial_end_iso = period_end.isoformat()
+        else:
+            # Repeat subscriber — already used their free trial. Charge starts now.
+            status = "active"
+            trial_start_iso = None
+            trial_end_iso = None
+            days = 365 if ("annual" in plan_id or "year" in plan_id) else 30
+            period_end = now + timedelta(days=days)
 
         # Cancel any existing active/trialing subscription before granting the new one.
         await db.user_subscriptions.update_many(
@@ -1183,12 +1211,12 @@ async def verify_razorpay_subscription(
             "id": subscription_id,
             "user_id": current_user.id,
             "plan_id": plan_id,
-            "status": "trialing",
+            "status": status,
             "source": EntitlementSource.RAZORPAY.value,
             "current_period_start": now.isoformat(),
-            "current_period_end": trial_end.isoformat(),
-            "trial_start": now.isoformat(),
-            "trial_end": trial_end.isoformat(),
+            "current_period_end": period_end.isoformat(),
+            "trial_start": trial_start_iso,
+            "trial_end": trial_end_iso,
             "cancel_at_period_end": False,
             "payment_provider": "razorpay",
             "payment_provider_id": request.razorpay_subscription_id,
