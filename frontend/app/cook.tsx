@@ -3,13 +3,17 @@ import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
+import { useKeepAwake } from 'expo-keep-awake';
 import { API_ROOT, api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, useToast } from '@/src/components/ui';
+import { useVoiceCommands, voiceSupported } from '@/src/lib/voice';
 
-const AUTO_ADVANCE_SECONDS = 30;
+const TIMER_OPTIONS = [15, 30, 60] as const;
+const DEFAULT_TIMER = 30;
 
 export default function CookMode() {
+  useKeepAwake();
   const insets = useSafeAreaInsets();
   const styles = useStyles();
   const { colors } = useTheme();
@@ -30,7 +34,9 @@ export default function CookMode() {
   const [index, setIndex] = useState(0);
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
-  const [remaining, setRemaining] = useState(AUTO_ADVANCE_SECONDS);
+  const [stepSeconds, setStepSeconds] = useState<number>(DEFAULT_TIMER);
+  const [voiceOn, setVoiceOn] = useState(true);
+  const [remaining, setRemaining] = useState(DEFAULT_TIMER);
   const [timerDone, setTimerDone] = useState(false);
   const [audioDone, setAudioDone] = useState(false);
 
@@ -75,18 +81,18 @@ export default function CookMode() {
     if (steps.length) loadAndPlay(index);
     setTimerDone(false);
     setAudioDone(false);
-    setRemaining(AUTO_ADVANCE_SECONDS);
+    setRemaining(stepSeconds);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  // Countdown timer: runs 30s per step while auto-advance is on (never on the last step).
+  // Countdown timer: runs `stepSeconds` per step while auto-advance is on (never on the last step).
   useEffect(() => {
     if (!autoAdvance || isLastStep) {
-      setRemaining(AUTO_ADVANCE_SECONDS);
+      setRemaining(stepSeconds);
       setTimerDone(false);
       return;
     }
-    setRemaining(AUTO_ADVANCE_SECONDS);
+    setRemaining(stepSeconds);
     setTimerDone(false);
     const id = setInterval(() => {
       setRemaining((r) => {
@@ -99,7 +105,7 @@ export default function CookMode() {
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [index, autoAdvance, isLastStep]);
+  }, [index, autoAdvance, isLastStep, stepSeconds]);
 
   // Track when the spoken audio for this step has finished (false->true edge).
   useEffect(() => {
@@ -130,6 +136,14 @@ export default function CookMode() {
 
   const goPrev = () => setIndex((v) => Math.max(0, v - 1));
   const goNext = () => setIndex((v) => Math.min(steps.length - 1, v + 1));
+
+  // Continuous hands-free voice control. onCommandRef inside the hook is refreshed
+  // every render, so this inline closure always sees the latest index/steps.
+  const { listening, permission, openSettings } = useVoiceCommands(voiceOn, (cmd) => {
+    if (cmd === 'next') setIndex((v) => Math.min(steps.length - 1, v + 1));
+    else if (cmd === 'back') setIndex((v) => Math.max(0, v - 1));
+    else loadAndPlay(index);
+  });
 
   if (!steps.length) {
     return (
@@ -186,6 +200,55 @@ export default function CookMode() {
           </View>
         )}
       </Pressable>
+
+      {autoAdvance && (
+        <View style={styles.timerRow}>
+          <Text style={styles.timerLabel}>Seconds per step</Text>
+          <View style={styles.timerOptions}>
+            {TIMER_OPTIONS.map((s) => (
+              <Pressable
+                key={s}
+                style={[styles.timerPill, stepSeconds === s && styles.timerPillActive]}
+                onPress={() => setStepSeconds(s)}
+                testID={`timer-${s}`}
+              >
+                <Text style={[styles.timerPillText, stepSeconds === s && styles.timerPillTextActive]}>{s}s</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
+      <Pressable style={styles.voiceRow} onPress={() => setVoiceOn((v) => !v)} testID="toggle-voice">
+        <Icon
+          name={voiceOn ? 'microphone' : 'microphone-off'}
+          size={20}
+          color={voiceOn ? colors.primary : colors.mutedForeground}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.autoText}>Voice control</Text>
+          <Text style={styles.voiceHint}>
+            {!voiceSupported
+              ? 'Say “next”, “back” or “repeat” — needs a real device build.'
+              : permission === 'blocked'
+              ? 'Microphone access is blocked in settings.'
+              : 'Say “next”, “back” or “repeat”.'}
+          </Text>
+        </View>
+        {voiceOn && voiceSupported && listening && permission !== 'blocked' && (
+          <View style={styles.countdownPill}>
+            <Icon name="access-point" size={14} color={colors.primary} />
+            <Text style={styles.countdownText}>Listening</Text>
+          </View>
+        )}
+      </Pressable>
+
+      {voiceOn && voiceSupported && permission === 'blocked' && (
+        <Pressable style={styles.settingsBtn} onPress={openSettings} testID="voice-open-settings">
+          <Icon name="cog" size={16} color={colors.primaryForeground} />
+          <Text style={styles.settingsBtnText}>Open Settings</Text>
+        </Pressable>
+      )}
 
       <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
         <Pressable
@@ -249,10 +312,21 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   audioLoadingText: { fontFamily: f.body, fontSize: 13, color: colors.mutedForeground },
   speakingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20 },
   speakingText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.primary },
-  autoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 16 },
+  autoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14 },
   autoText: { fontFamily: f.bodyMedium, fontSize: 14, color: colors.foreground },
   countdownPill: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto', backgroundColor: colors.secondary, borderRadius: radius.sm, paddingHorizontal: 10, paddingVertical: 5 },
   countdownText: { fontFamily: f.bodySemiBold, fontSize: 12, color: colors.primary },
+  timerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8 },
+  timerLabel: { fontFamily: f.bodyMedium, fontSize: 14, color: colors.foreground },
+  timerOptions: { flexDirection: 'row', gap: 8 },
+  timerPill: { minWidth: 48, alignItems: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 7 },
+  timerPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  timerPillText: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.foreground },
+  timerPillTextActive: { color: colors.primaryForeground },
+  voiceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
+  voiceHint: { fontFamily: f.body, fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
+  settingsBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: colors.primary, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 9, marginBottom: 6 },
+  settingsBtnText: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.primaryForeground },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28 },
   sideBtn: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   disabledBtn: { opacity: 0.4 },

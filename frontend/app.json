@@ -30,7 +30,8 @@
       "package": "in.moodfood.app",
       "googleServicesFile": "./google-services.json",
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#F9F8F6",
@@ -64,7 +65,14 @@
         }
       ],
       "expo-audio",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "Hear voice commands while cooking hands-free",
+          "speechRecognitionPermission": "Understand 'next' and 'repeat' while cooking"
+        }
+      ]
     ]
   }
 }
