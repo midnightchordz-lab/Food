@@ -7,6 +7,8 @@ import { API_ROOT, api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, useToast } from '@/src/components/ui';
 
+const AUTO_ADVANCE_SECONDS = 30;
+
 export default function CookMode() {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
@@ -28,11 +30,16 @@ export default function CookMode() {
   const [index, setIndex] = useState(0);
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
+  const [remaining, setRemaining] = useState(AUTO_ADVANCE_SECONDS);
+  const [timerDone, setTimerDone] = useState(false);
+  const [audioDone, setAudioDone] = useState(false);
 
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
   const wasFinishedRef = useRef(false);
   const cache = useRef<Record<number, string>>({});
+
+  const isLastStep = index >= steps.length - 1;
 
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
@@ -56,25 +63,59 @@ export default function CookMode() {
       player.play();
     } catch {
       toast.show('Could not play this step', 'error');
+      // Don't block auto-advance if the voice failed to load.
+      setAudioDone(true);
     } finally {
       setLoadingAudio(false);
     }
   };
 
-  // Play whenever the step changes.
+  // Play whenever the step changes, and reset the auto-advance trackers.
   useEffect(() => {
     if (steps.length) loadAndPlay(index);
+    setTimerDone(false);
+    setAudioDone(false);
+    setRemaining(AUTO_ADVANCE_SECONDS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  // Auto-advance exactly once per step, on the false->true edge of didJustFinish.
+  // Countdown timer: runs 30s per step while auto-advance is on (never on the last step).
+  useEffect(() => {
+    if (!autoAdvance || isLastStep) {
+      setRemaining(AUTO_ADVANCE_SECONDS);
+      setTimerDone(false);
+      return;
+    }
+    setRemaining(AUTO_ADVANCE_SECONDS);
+    setTimerDone(false);
+    const id = setInterval(() => {
+      setRemaining((r) => {
+        if (r <= 1) {
+          clearInterval(id);
+          setTimerDone(true);
+          return 0;
+        }
+        return r - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [index, autoAdvance, isLastStep]);
+
+  // Track when the spoken audio for this step has finished (false->true edge).
   useEffect(() => {
     const finished = !!status?.didJustFinish;
-    if (finished && !wasFinishedRef.current && autoAdvance) {
-      setIndex((v) => (v < steps.length - 1 ? v + 1 : v));
+    if (finished && !wasFinishedRef.current) {
+      setAudioDone(true);
     }
     wasFinishedRef.current = finished;
-  }, [status?.didJustFinish, autoAdvance, steps.length]);
+  }, [status?.didJustFinish]);
+
+  // Advance once BOTH the 30s timer has elapsed AND the voice has finished.
+  useEffect(() => {
+    if (autoAdvance && timerDone && audioDone && !isLastStep) {
+      setIndex((v) => (v < steps.length - 1 ? v + 1 : v));
+    }
+  }, [autoAdvance, timerDone, audioDone, isLastStep, steps.length]);
 
   const isPlaying = !!status?.playing;
 
@@ -136,6 +177,14 @@ export default function CookMode() {
       >
         <Icon name={autoAdvance ? 'checkbox-marked' : 'checkbox-blank-outline'} size={20} color={colors.primary} />
         <Text style={styles.autoText}>Auto-advance to the next step</Text>
+        {autoAdvance && !isLastStep && (
+          <View style={styles.countdownPill} testID="autoadvance-countdown">
+            <Icon name="timer-outline" size={14} color={colors.primary} />
+            <Text style={styles.countdownText}>
+              {timerDone && !audioDone ? 'Waiting for voice…' : `Next in ${remaining}s`}
+            </Text>
+          </View>
+        )}
       </Pressable>
 
       <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
@@ -202,6 +251,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   speakingText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.primary },
   autoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 16 },
   autoText: { fontFamily: f.bodyMedium, fontSize: 14, color: colors.foreground },
+  countdownPill: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto', backgroundColor: colors.secondary, borderRadius: radius.sm, paddingHorizontal: 10, paddingVertical: 5 },
+  countdownText: { fontFamily: f.bodySemiBold, fontSize: 12, color: colors.primary },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28 },
   sideBtn: { width: 60, height: 60, borderRadius: 30, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center' },
   disabledBtn: { opacity: 0.4 },

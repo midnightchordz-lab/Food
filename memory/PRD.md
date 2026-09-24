@@ -158,6 +158,7 @@ Mid-build additions requested by user: (1) AI recipe image generation (Gemini Na
 - Ingredient encyclopedia.
 
 ## Notes
+- Hands-free Cook Mode (`app/cook.tsx`): auto-advance now uses a 30s-minimum timer that waits for the spoken step to finish too (whichever is longer). Shows a live "Next in Xs" countdown pill, "Waiting for voice…" if the 30s elapse before the voice ends, and stops on the last step (no loop).
 - Apple Sign In works only on a real iOS build/device (not Expo Go, Android, or web).
 - AI images cached on backend disk by md5(title|cuisine); for production scale, move to object storage.
 - Test creds: /app/memory/test_credentials.md. Apple testing: /app/auth_testing.md.
