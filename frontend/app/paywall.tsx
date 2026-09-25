@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, Modal, ActivityIndicator, Platform }
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import type { PurchasesPackage } from 'react-native-purchases';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, useToast } from '@/src/components/ui';
@@ -33,9 +33,18 @@ export default function Paywall() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
+  const { payNow } = useLocalSearchParams<{ payNow?: string }>();
   const { offerings, isSubscribed, trialExpired, purchase, restore, isPurchasing, isRestoring, identityReady, refetchPremium } = useSubscription();
   const { user } = useAuth();
   const isAndroid = Platform.OS === 'android';
+  // "Pay now" = user wants to lock in a paid plan even though they already have
+  // a trial/premium, so we must go straight to checkout and NOT short-circuit on
+  // the free-trial activation.
+  const payNowMode = payNow === '1' || isSubscribed;
+  // Whether to show the checkout footer. Normally only for non-premium users, but
+  // also when a trial/premium user explicitly chose "pay now" to lock in a plan.
+  const showPay = !isSubscribed || payNow === '1';
+  const androidPriceLabel = androidSelected === 'premium_annual' ? '₹2,499/yr' : '₹299/mo';
 
   const currentOffering = offerings?.current;
   const packages = currentOffering?.availablePackages || [];
@@ -49,22 +58,23 @@ export default function Paywall() {
   const doAndroidSubscribe = async () => {
     setAndroidBusy(true);
     try {
-      // Always try the trial endpoint first — it is idempotent and will grant (or
-      // self-heal) an in-window free trial WITHOUT any payment screen. Only a user
-      // who has genuinely used up their free trial falls through to Razorpay.
-      try {
-        const { data } = await api.post('/trial/activate', { platform: 'android' });
-        if (data?.premium) {
-          refetchPremium();
-          toast.show('Welcome to Premium! 🎉 Your 7-day free trial has started.', 'success');
-          router.back();
-          return;
+      // Free-trial fast path: only when the user is NOT already premium and hasn't
+      // asked to pay now. It grants (or self-heals) the trial with no payment.
+      if (!payNowMode) {
+        try {
+          const { data } = await api.post('/trial/activate', { platform: 'android' });
+          if (data?.premium) {
+            refetchPremium();
+            toast.show('Welcome to Premium! 🎉 Your 7-day free trial has started.', 'success');
+            router.back();
+            return;
+          }
+          if (data?.trial_used) {
+            toast.show('Your free trial was already used — continue with a paid plan.', 'info');
+          }
+        } catch {
+          // Non-fatal: fall through to the paid checkout below.
         }
-        if (data?.trial_used) {
-          toast.show('Your free trial was already used — continue with a paid plan.', 'info');
-        }
-      } catch {
-        // Non-fatal: fall through to the paid checkout below.
       }
 
       await startRazorpaySubscription(androidSelected, {
@@ -214,7 +224,7 @@ export default function Paywall() {
         </View>
       </ScrollView>
 
-      {!isSubscribed && isAndroid ? (
+      {showPay && isAndroid ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
           <Pressable
             testID="paywall-subscribe-android"
@@ -223,11 +233,13 @@ export default function Paywall() {
             style={({ pressed }) => [styles.cta, { opacity: androidBusy ? 0.7 : pressed ? 0.9 : 1 }]}
           >
             {androidBusy ? <ActivityIndicator color={colors.accentForeground} /> : (
-              <Text style={styles.ctaText}>{trialExpired ? `Continue Premium · ${androidSelected === 'premium_annual' ? '₹2,499/yr' : '₹299/mo'}` : 'Start 7-day free trial'}</Text>
+              <Text style={styles.ctaText}>{payNowMode ? `Subscribe now · ${androidPriceLabel}` : trialExpired ? `Continue Premium · ${androidPriceLabel}` : 'Start 7-day free trial'}</Text>
             )}
           </Pressable>
           <Text style={styles.restoreText}>
-            {trialExpired
+            {payNowMode
+              ? `${androidSelected === 'premium_annual' ? '₹2,499/year' : '₹299/month'} · billed now · auto-renews · cancel anytime`
+              : trialExpired
               ? 'Auto-renews · cancel anytime'
               : `Then ${androidSelected === 'premium_annual' ? '₹2,499/year' : '₹299/month'} · auto-renews · cancel anytime`}
           </Text>
@@ -235,7 +247,7 @@ export default function Paywall() {
             <Text style={styles.restoreText}>Restore purchases</Text>
           </Pressable>
         </View>
-      ) : !isSubscribed && packages.length > 0 ? (
+      ) : showPay && packages.length > 0 ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
           {!identityReady ? (
             <Text style={styles.identityWarn}>Sign in required before subscribing.</Text>
@@ -247,7 +259,7 @@ export default function Paywall() {
             style={({ pressed }) => [styles.cta, { opacity: !identityReady ? 0.5 : pressed ? 0.9 : 1 }]}
           >
             {isPurchasing ? <ActivityIndicator color={colors.accentForeground} /> : (
-              <Text style={styles.ctaText}>{hasTrial(selectedPkg) ? 'Start 7-day free trial' : `Start Premium · ${selectedPkg?.product.priceString} ${periodLabel(selectedPkg!)}`}</Text>
+              <Text style={styles.ctaText}>{payNowMode ? `Subscribe now · ${selectedPkg?.product.priceString}` : hasTrial(selectedPkg) ? 'Start 7-day free trial' : `Start Premium · ${selectedPkg?.product.priceString} ${periodLabel(selectedPkg!)}`}</Text>
             )}
           </Pressable>
           <Pressable onPress={doRestore} disabled={isRestoring} testID="paywall-restore" style={styles.restore}>

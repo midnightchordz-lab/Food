@@ -16,9 +16,11 @@ export default function Profile() {
   const { colors } = useTheme();
   const router = useRouter();
   const { user, logout, deleteAccount } = useAuth();
-  const { isSubscribed, premiumInfo, refetchPremium } = useSubscription();
+  const { isSubscribed, premiumInfo, trialDaysLeft, refetchPremium } = useSubscription();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const isTrialing = premiumInfo?.status === 'trialing';
+  const isPaid = isSubscribed && !isTrialing;
 
   const onManageSubscription = () => {
     if (Platform.OS === 'ios') {
@@ -107,14 +109,24 @@ export default function Profile() {
           <Text style={styles.email}>{user?.email || 'Signed in'}</Text>
         </View>
 
-        <Pressable style={styles.premiumCard} onPress={() => router.push('/paywall')} testID="premium-card">
+        <Pressable style={styles.premiumCard} onPress={() => router.push(isTrialing ? { pathname: '/paywall', params: { payNow: '1' } } : '/paywall')} testID="premium-card">
           <View style={styles.premiumIcon}><Icon name="crown" size={22} color={colors.accentForeground} /></View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.premiumTitle}>{isSubscribed ? 'Premium active' : 'MoodFood Premium'}</Text>
-            <Text style={styles.premiumDesc}>{isSubscribed ? 'You have every feature unlocked' : 'Unlimited recipes, plans & more'}</Text>
+            <Text style={styles.premiumTitle}>{isPaid ? 'Premium active' : isTrialing ? 'Free trial active' : 'MoodFood Premium'}</Text>
+            <Text style={styles.premiumDesc}>
+              {isPaid
+                ? 'You have every feature unlocked'
+                : isTrialing
+                ? `${trialDaysLeft ?? 0} ${((trialDaysLeft ?? 0) === 1) ? 'day' : 'days'} left · tap to subscribe & keep Premium`
+                : 'Unlimited recipes, plans & more'}
+            </Text>
           </View>
-          {isSubscribed ? (
+          {isPaid ? (
             <Icon name="check-circle" size={22} color={colors.success} />
+          ) : isTrialing ? (
+            <View style={styles.trialRibbon}>
+              <Text style={styles.trialRibbonText}>{`${trialDaysLeft ?? 0}d left`}</Text>
+            </View>
           ) : (
             <View style={styles.trialRibbon}>
               <Text style={styles.trialRibbonText}>7 days free</Text>
@@ -122,7 +134,21 @@ export default function Profile() {
           )}
         </Pressable>
 
-        {isSubscribed ? (
+        {isTrialing ? (
+          <View style={styles.card}>
+            <Pressable
+              style={styles.linkRow}
+              onPress={() => router.push({ pathname: '/paywall', params: { payNow: '1' } })}
+              testID="subscribe-now"
+            >
+              <View style={styles.rowIcon}><Icon name="credit-card-outline" size={19} color={colors.primary} /></View>
+              <Text style={styles.rowLabel}>Subscribe now &amp; keep Premium</Text>
+              <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+            </Pressable>
+          </View>
+        ) : null}
+
+        {isPaid ? (
           <View style={styles.card}>
             <Pressable style={styles.linkRow} onPress={onManageSubscription} disabled={busy} testID="manage-subscription">
               <View style={styles.rowIcon}><Icon name="credit-card-outline" size={19} color={colors.primary} /></View>

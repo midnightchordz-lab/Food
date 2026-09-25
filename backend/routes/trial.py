@@ -523,6 +523,47 @@ async def activate_trial(
         premium = bool(result.get("started")) or reason in ("Trial already active", "Paid user")
         trial_used = reason == "Already used trial"
 
+        # 3b) BULLETPROOF HEAL: if we're about to say "trial already used" but the
+        #     user has NO subscription record at all, the trial was never actually
+        #     delivered (e.g. signup auto-start failed or set the flag but never
+        #     created the sub). A genuinely-consumed trial always leaves an
+        #     expired/canceled subscription doc, so zero docs == never trialed.
+        #     Grant it now so a real new user is NEVER pushed to payment.
+        if trial_used:
+            sub_count = await db.user_subscriptions.count_documents({"user_id": current_user.id})
+            if sub_count == 0:
+                end_date = now + timedelta(days=7)
+                await db.users.update_one(
+                    {"id": current_user.id},
+                    {"$set": {
+                        "trial_start_date": now.isoformat(),
+                        "trial_end_date": end_date.isoformat(),
+                        "has_used_trial": True,
+                        "trial_active": True,
+                        "entitlement_tier": "trial",
+                        "last_platform": request.platform or "android",
+                    }},
+                )
+                await db.user_subscriptions.insert_one({
+                    "user_id": current_user.id,
+                    "plan_id": "premium_monthly",
+                    "status": "trialing",
+                    "source": "trial",
+                    "trial_start": now.isoformat(),
+                    "trial_end": end_date.isoformat(),
+                    "created_at": now.isoformat(),
+                    "updated_at": now.isoformat(),
+                    "platform": request.platform or "android",
+                    "features": TRIAL_FEATURES,
+                    "is_trial": True,
+                    "auto_started": False,
+                })
+                logger.info(f"🩹 Force-granted trial (no subscription history) for user {current_user.id}")
+                return TrialActivateResponse(
+                    success=True, premium=True, trial_used=False,
+                    reason="Trial granted", days_remaining=7, trial_ends=end_date.isoformat(),
+                )
+
         return TrialActivateResponse(
             success=True,
             premium=premium,
