@@ -110,9 +110,17 @@ cors_origins_env = os.environ.get('CORS_ORIGINS', '')
 cors_origins = [o.strip() for o in cors_origins_env.split(',') if o.strip() and o.strip() != '*']
 if not cors_origins:
     if os.environ.get("ENVIRONMENT") == "production":
-        raise RuntimeError("CORS_ORIGINS must be set explicitly in production")
-    # Dev only — local Metro web origins used for preview/testing.
-    cors_origins = ["http://localhost:3000", "http://localhost:8081", "http://localhost:19006"]
+        # Do NOT crash the whole server if CORS_ORIGINS is unset in production —
+        # that would prevent uvicorn from binding and fail every /health probe
+        # (deploy failure). The mobile app calls the API same-origin/native where
+        # CORS is not enforced, so degrade safely to "no cross-origin allowed"
+        # instead of raising. Set CORS_ORIGINS in Secrets to enable web origins.
+        logger.warning("CORS_ORIGINS is not set in production — allowing no cross-origin requests. "
+                       "Set CORS_ORIGINS (comma-separated) to enable browser origins.")
+        cors_origins = []
+    else:
+        # Dev only — local Metro web origins used for preview/testing.
+        cors_origins = ["http://localhost:3000", "http://localhost:8081", "http://localhost:19006"]
 
 app.add_middleware(
     CORSMiddleware,
