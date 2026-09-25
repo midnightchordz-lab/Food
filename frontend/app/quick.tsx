@@ -188,6 +188,7 @@ export default function Quick() {
                   image_url: r.image_url || undefined,
                 }}
                 verified={!!r.image_validated}
+                validatedAiImage
                 onPress={() => openRecipe(r)}
               />
             ))}

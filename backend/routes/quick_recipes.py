@@ -357,11 +357,30 @@ async def generate_validated_quick_recipes(req: QuickRecipeRequest, current_user
     for _ in raw_recipes:
         await check_and_increment_daily_image_cap(current_user.id)
 
-    # STEP 2 — generate + validate all images IN PARALLEL.
-    results = await asyncio.gather(*[
-        _generate_and_validate_image(r["name"], r["cuisine"], r["ingredients"], r["image_spec"], api_key)
-        for r in raw_recipes
-    ])
+    # STEP 2 — generate + validate all images IN PARALLEL, but NEVER let slow or
+    # failed image generation block the recipes (the recipes are already ready).
+    # Each image is time-bounded, and the whole step has an overall cap; on
+    # timeout we return recipes without those images — the client shows a stock
+    # photo immediately and the verified photo appears once it's cached.
+    async def _safe_image(r):
+        try:
+            return await asyncio.wait_for(
+                _generate_and_validate_image(r["name"], r["cuisine"], r["ingredients"], r["image_spec"], api_key),
+                timeout=22,
+            )
+        except Exception as e:
+            logger.error(f"[Quick validated img] timeout/err for {r['name']}: {e}")
+            return None
+
+    try:
+        results = await asyncio.wait_for(
+            asyncio.gather(*[_safe_image(r) for r in raw_recipes], return_exceptions=True),
+            timeout=40,
+        )
+        results = [None if isinstance(x, Exception) else x for x in results]
+    except asyncio.TimeoutError:
+        logger.error("[Quick validated] image step timed out; returning recipes without images")
+        results = [None] * len(raw_recipes)
 
     out: list[ValidatedQuickRecipe] = []
     for r, img in zip(raw_recipes, results):
