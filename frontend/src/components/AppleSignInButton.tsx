@@ -36,7 +36,7 @@ export function AppleSignInButton() {
       const fullName = credential.fullName
         ? [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ')
         : null;
-      await appleLogin(credential.identityToken, fullName || null, credential.email || null);
+      await appleLogin(credential.identityToken, fullName || null, credential.email || null, credential.authorizationCode || null);
       router.replace('/(tabs)');
     } catch (e: any) {
       if (e?.code === 'ERR_REQUEST_CANCELED') return; // user cancelled

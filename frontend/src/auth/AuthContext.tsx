@@ -17,7 +17,7 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  appleLogin: (identityToken: string, name?: string | null, email?: string | null) => Promise<void>;
+  appleLogin: (identityToken: string, name?: string | null, email?: string | null, authorizationCode?: string | null) => Promise<void>;
   googleLogin: (sessionId: string) => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<{ demo_otp?: string; message?: string }>;
   phoneLogin: (phone: string, code: string) => Promise<void>;
@@ -104,8 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await clearSession();
   }, [clearSession]);
 
-  const appleLogin = useCallback(async (identityToken: string, name?: string | null, email?: string | null) => {
-    const res = await api.post('/auth/apple', { identity_token: identityToken, name, email });
+  const appleLogin = useCallback(async (identityToken: string, name?: string | null, email?: string | null, authorizationCode?: string | null) => {
+    const res = await api.post('/auth/apple', { identity_token: identityToken, name, email, authorization_code: authorizationCode });
     await applyPair(res.data.access_token, res.data.refresh_token);
     setUser(res.data.user);
   }, [applyPair]);

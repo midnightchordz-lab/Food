@@ -32,6 +32,16 @@ USER_DATA_COLLECTIONS = [
 async def purge_user_data(uid: str) -> None:
     """Permanently delete a user and all their personal data. Idempotent."""
     now = datetime.now(timezone.utc)
+    # Apple requires token revocation on account deletion (Guideline 5.1.1(v)).
+    # Do this first, while the user document still holds the refresh token.
+    try:
+        user = await db.users.find_one({"id": uid}, {"apple_refresh_token": 1})
+        apple_rt = (user or {}).get("apple_refresh_token")
+        if apple_rt:
+            from .apple_auth import revoke_apple_token
+            await revoke_apple_token(apple_rt)
+    except Exception as e:
+        logging.warning(f"[ACCOUNT] Apple token revoke skipped for {uid}: {e}")
     for coll in USER_DATA_COLLECTIONS:
         try:
             await db[coll].delete_many({"user_id": uid})
