@@ -86,7 +86,9 @@ class ElevenLabsService:
         if self._api_key is None:
             # Try to load from env, with fresh read
             from dotenv import load_dotenv
-            load_dotenv('/app/backend/.env', override=True)
+            # override=False so production Secrets always win over any bundled
+            # .env (prevents preview values from clobbering prod env at runtime).
+            load_dotenv('/app/backend/.env', override=False)
             self._api_key = os.environ.get('ELEVENLABS_API_KEY', '')
             logging.info(f"ElevenLabs API key loaded, length: {len(self._api_key)}")
             if not self._api_key:
