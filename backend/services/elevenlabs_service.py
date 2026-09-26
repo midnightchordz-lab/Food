@@ -84,9 +84,8 @@ class ElevenLabsService:
     def api_key(self):
         """Lazy-load API key to ensure env is loaded"""
         if self._api_key is None:
-            # Try to load from env, with fresh read
-            from dotenv import load_dotenv
-            load_dotenv('/app/backend/.env', override=True)
+            # Read from the already-loaded environment (deployment-injected values
+            # are the source of truth; never override them with the .env file).
             self._api_key = os.environ.get('ELEVENLABS_API_KEY', '')
             logging.info(f"ElevenLabs API key loaded, length: {len(self._api_key)}")
             if not self._api_key:

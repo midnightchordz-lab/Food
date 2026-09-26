@@ -97,8 +97,12 @@ async def seed_demo_account() -> None:
     if os.environ.get("DEMO_ACCOUNT_ENABLED", "true").strip().lower() in ("false", "0", "no"):
         return
 
-    email = os.environ.get("DEMO_ACCOUNT_EMAIL", "reviewer@moodfood.app").strip().lower()
-    password = os.environ.get("DEMO_ACCOUNT_PASSWORD", "Review@MoodFood2026")
+    # Credentials come only from the environment (deploy-time secrets in .env) —
+    # no defaults are baked into source. If they aren't provided, skip seeding.
+    email = os.environ.get("DEMO_ACCOUNT_EMAIL", "").strip().lower()
+    password = os.environ.get("DEMO_ACCOUNT_PASSWORD", "")
+    if not email or not password:
+        return
     now = datetime.now(timezone.utc)
     never_expires = "2099-12-31T23:59:59+00:00"
 
