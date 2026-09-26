@@ -5,13 +5,15 @@ and admin bootstrap.
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from typing import Optional
+from datetime import datetime, timezone
 import os
+import uuid
 import jwt
 import logging
 
 from .db import db
 from .models import User
-from .security import SECRET_KEY, ALGORITHM, security, security_optional
+from .security import SECRET_KEY, ALGORITHM, security, security_optional, get_password_hash
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -80,3 +82,80 @@ async def bootstrap_admins() -> int:
     if result.modified_count:
         logging.info(f"bootstrap_admins: promoted {result.modified_count} account(s) to admin")
     return result.modified_count
+
+
+async def seed_demo_account() -> None:
+    """Idempotently ensure the App Review / demo login exists with EVERYTHING
+    unlocked (top-tier `chef_pro`, never expires, admin). Runs on every startup
+    so the reviewer account is always present in the deployed build.
+
+    Controlled by env (all optional):
+      DEMO_ACCOUNT_ENABLED   (default "true"; set "false" to skip)
+      DEMO_ACCOUNT_EMAIL     (default "reviewer@moodfood.app")
+      DEMO_ACCOUNT_PASSWORD  (default "Review@MoodFood2026")
+    """
+    if os.environ.get("DEMO_ACCOUNT_ENABLED", "true").strip().lower() in ("false", "0", "no"):
+        return
+
+    email = os.environ.get("DEMO_ACCOUNT_EMAIL", "reviewer@moodfood.app").strip().lower()
+    password = os.environ.get("DEMO_ACCOUNT_PASSWORD", "Review@MoodFood2026")
+    now = datetime.now(timezone.utc)
+    never_expires = "2099-12-31T23:59:59+00:00"
+
+    existing = await db.users.find_one({"email": email})
+    user_id = existing["id"] if existing and existing.get("id") else str(uuid.uuid4())
+
+    # Entitlement fields that trial.py reads: top tier, no trial prompts, admin.
+    entitlement_fields = {
+        "is_admin": True,
+        "default_plan": "chef_pro",
+        "subscription_status": "active",
+        "trial_active": False,
+        "entitlement_tier": "chef_pro",
+        "has_used_trial": True,
+        "onboarding_completed": True,
+    }
+
+    if not existing:
+        await db.users.insert_one({
+            "id": user_id,
+            "email": email,
+            "name": "App Review (Demo)",
+            "hashed_password": get_password_hash(password),
+            "dietary_restrictions": [],
+            "cuisine_preferences": [],
+            "created_at": now.isoformat(),
+            **entitlement_fields,
+        })
+        logging.info(f"seed_demo_account: created demo/review account {email}")
+    else:
+        # Keep entitlement + admin correct without rehashing the password each boot.
+        await db.users.update_one({"id": user_id}, {"$set": entitlement_fields})
+        # Self-heal the password only if it's somehow missing (e.g. social-only doc).
+        if not existing.get("hashed_password"):
+            await db.users.update_one(
+                {"id": user_id}, {"$set": {"hashed_password": get_password_hash(password)}}
+            )
+
+    # Ensure exactly one active, non-expiring top-tier subscription that clears
+    # the entitlement guard (payment marker + valid source + far-future period).
+    active_sub = await db.user_subscriptions.find_one(
+        {"user_id": user_id, "status": "active", "plan_id": "chef_pro_annual"}
+    )
+    if not active_sub:
+        await db.user_subscriptions.delete_many({"user_id": user_id})
+        await db.user_subscriptions.insert_one({
+            "id": f"sub_demo_{user_id[:8]}",
+            "user_id": user_id,
+            "plan_id": "chef_pro_annual",
+            "status": "active",
+            "source": "admin",
+            "payment_provider": "razorpay",
+            "razorpay_payment_id": f"pay_demoreview{user_id[:10]}",
+            "current_period_start": now.isoformat(),
+            "current_period_end": never_expires,
+            "cancel_at_period_end": False,
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        })
+        logging.info(f"seed_demo_account: provisioned chef_pro subscription for {email}")

@@ -27,6 +27,7 @@ from .rate_limit import (
 )
 from .auth_deps import (
     get_current_user, get_optional_user, require_admin_user, bootstrap_admins,
+    seed_demo_account,
 )
 from .tokens import (
     issue_token_pair, rotate_refresh_token, revoke_refresh_token,
@@ -42,5 +43,6 @@ __all__ = [
     "verify_password", "get_password_hash", "create_access_token",
     "DAILY_IMAGE_GEN_CAP", "check_and_increment_daily_image_cap", "check_rate_limit",
     "get_current_user", "get_optional_user", "require_admin_user", "bootstrap_admins",
+    "seed_demo_account",
     "issue_token_pair", "rotate_refresh_token", "revoke_refresh_token",
 ]

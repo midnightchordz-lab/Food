@@ -143,10 +143,11 @@ async def startup_event():
         # DB index creation + admin bootstrap run in the background so the server
         # can answer the readiness probe (/health) immediately on startup instead
         # of waiting on Atlas round-trips (prevents transient probe races).
-        from routes.deps import create_indexes, bootstrap_admins
+        from routes.deps import create_indexes, bootstrap_admins, seed_demo_account
         try:
             await create_indexes()
             await bootstrap_admins()
+            await seed_demo_account()
         except Exception as e:
             logger.error(f"DB warmup error (indexes/admin bootstrap): {e}")
 
