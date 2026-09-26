@@ -137,25 +137,30 @@ async def seed_demo_account() -> None:
                 {"id": user_id}, {"$set": {"hashed_password": get_password_hash(password)}}
             )
 
-    # Ensure exactly one active, non-expiring top-tier subscription that clears
-    # the entitlement guard (payment marker + valid source + far-future period).
+    # Ensure a single active, non-expiring top-tier subscription that clears the
+    # entitlement guard (payment marker + valid source + far-future period).
+    # NON-DESTRUCTIVE: upsert the demo subscription in place (no deletes) so this
+    # is safe to run on every startup, including in production.
     active_sub = await db.user_subscriptions.find_one(
         {"user_id": user_id, "status": "active", "plan_id": "chef_pro_annual"}
     )
     if not active_sub:
-        await db.user_subscriptions.delete_many({"user_id": user_id})
-        await db.user_subscriptions.insert_one({
-            "id": f"sub_demo_{user_id[:8]}",
-            "user_id": user_id,
-            "plan_id": "chef_pro_annual",
-            "status": "active",
-            "source": "admin",
-            "payment_provider": "razorpay",
-            "razorpay_payment_id": f"pay_demoreview{user_id[:10]}",
-            "current_period_start": now.isoformat(),
-            "current_period_end": never_expires,
-            "cancel_at_period_end": False,
-            "created_at": now.isoformat(),
-            "updated_at": now.isoformat(),
-        })
-        logging.info(f"seed_demo_account: provisioned chef_pro subscription for {email}")
+        await db.user_subscriptions.update_one(
+            {"user_id": user_id, "source": "admin"},
+            {"$set": {
+                "id": f"sub_demo_{user_id[:8]}",
+                "user_id": user_id,
+                "plan_id": "chef_pro_annual",
+                "status": "active",
+                "source": "admin",
+                "payment_provider": "razorpay",
+                "razorpay_payment_id": f"pay_demoreview{user_id[:10]}",
+                "current_period_start": now.isoformat(),
+                "current_period_end": never_expires,
+                "cancel_at_period_end": False,
+                "updated_at": now.isoformat(),
+            },
+             "$setOnInsert": {"created_at": now.isoformat()}},
+            upsert=True,
+        )
+        logging.info(f"seed_demo_account: ensured chef_pro subscription for {email}")
