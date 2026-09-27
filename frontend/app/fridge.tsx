@@ -42,24 +42,26 @@ export default function Fridge() {
 
   const pickImage = async (fromCamera: boolean) => {
     try {
-      let perm;
-      if (fromCamera) {
-        perm = await ImagePicker.getCameraPermissionsAsync();
-        if (!perm.granted && perm.canAskAgain) perm = await ImagePicker.requestCameraPermissionsAsync();
-      } else {
-        perm = await ImagePicker.getMediaLibraryPermissionsAsync();
-        if (!perm.granted && perm.canAskAgain) perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      }
-      if (!perm.granted) {
-        toast.show(fromCamera ? 'Camera access is needed' : 'Photo access is needed', 'error');
-        if (!perm.canAskAgain) Linking.openSettings();
-        return;
-      }
       const opts: ImagePicker.ImagePickerOptions = { quality: 0.6, base64: true, mediaTypes: ['images'] };
-      const res = fromCamera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-      if (res.canceled || !res.assets?.[0]?.base64) return;
-      setResult(null);
-      scanMut.mutate(res.assets[0].base64);
+      if (fromCamera) {
+        let perm = await ImagePicker.getCameraPermissionsAsync();
+        if (!perm.granted && perm.canAskAgain) perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) {
+          toast.show('Camera access is needed', 'error');
+          if (!perm.canAskAgain) Linking.openSettings();
+          return;
+        }
+        const res = await ImagePicker.launchCameraAsync(opts);
+        if (res.canceled || !res.assets?.[0]?.base64) return;
+        setResult(null);
+        scanMut.mutate(res.assets[0].base64);
+      } else {
+        // Gallery path: Android system photo picker requires no permissions for single-pick
+        const res = await ImagePicker.launchImageLibraryAsync(opts);
+        if (res.canceled || !res.assets?.[0]?.base64) return;
+        setResult(null);
+        scanMut.mutate(res.assets[0].base64);
+      }
     } catch {
       toast.show('Could not open the camera', 'error');
     }
