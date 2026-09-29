@@ -67,6 +67,15 @@
       "expo-audio",
       "expo-web-browser",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      [
         "expo-speech-recognition",
         {
           "microphonePermission": "Hear voice commands while cooking hands-free",
@@ -75,7 +84,8 @@
             "com.google.android.googlequicksearchbox"
           ]
         }
-      ]
+      ],
+      "expo-build-properties"
     ]
   }
 }
