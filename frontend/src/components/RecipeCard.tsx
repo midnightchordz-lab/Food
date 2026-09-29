@@ -68,7 +68,10 @@ export function useRecipeImage(
         description: description || '',
         ingredients: ingredients || [],
       });
-      return `${BACKEND}${res.data.url}` as string;
+      const url = res.data.url as string;
+      // Backend can now return an absolute stock-photo URL (Unsplash) when AI
+      // generation times out or fails — only prepend BACKEND for a relative path.
+      return url.startsWith('/') ? `${BACKEND}${url}` : url;
     },
   });
 }
@@ -96,7 +99,7 @@ export function useValidatedRecipeImage(
         ingredients: ingredients || [],
       });
       return {
-        url: `${BACKEND}${res.data.url}` as string,
+        url: res.data.url.startsWith('/') ? `${BACKEND}${res.data.url}` : res.data.url as string,
         validated: !!res.data.validated,
         proof: (res.data.proof || '') as string,
       };

@@ -22,9 +22,12 @@ from lazy_emergent import LlmChat, UserMessage
 
 from .deps import User, get_current_user, check_and_increment_daily_image_cap
 from .exclusions import get_user_excluded_ingredients
-from .gen_image import IMAGE_DIR, MODEL, _key as image_key
+from .gen_image import IMAGE_DIR, MODEL, _key as image_key, load_cached_image, save_cached_image, _to_webp
 
 logger = logging.getLogger(__name__)
+
+# Hard cap per image before falling back to a stock photo
+IMAGE_GEN_TIMEOUT_SECONDS = 12
 
 router = APIRouter(prefix="/quick-recipes", tags=["Quick Recipes"])
 
@@ -238,9 +241,15 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
                                         image_spec: dict, api_key: str, max_attempts: int = 2):
     """Generate + self-validate one dish photo. Returns {url, validated, proof} or None."""
     key = image_key(name, cuisine)
-    dest = IMAGE_DIR / f"{key}.png"
-    rel_url = f"/api/recipe-image/img/{key}.png"
+    dest = IMAGE_DIR / f"{key}.webp"
+    rel_url = f"/api/recipe-image/img/{key}.webp"
     if dest.exists() and dest.stat().st_size > 0:
+        return {"url": rel_url, "validated": True, "proof": "Cached verified image"}
+
+    cached_bytes = await load_cached_image(key)
+    if cached_bytes:
+        with open(dest, "wb") as f:
+            f.write(cached_bytes)
         return {"url": rel_url, "validated": True, "proof": "Cached verified image"}
 
     must_show = ", ".join([str(x) for x in image_spec.get("must_show", [])]) or "the dish's signature elements"
@@ -276,7 +285,7 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
             continue
         if not images:
             continue
-        img_bytes = base64.b64decode(images[0]["data"])
+        img_bytes = _to_webp(base64.b64decode(images[0]["data"]))
         fallback = img_bytes
         verdict = (text or "").upper()
         rejected = "REJECTED" in verdict and "VERIFIED" not in verdict
@@ -285,6 +294,7 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
             continue
         with open(dest, "wb") as f:
             f.write(img_bytes)
+        await save_cached_image(key, name, cuisine, img_bytes, validated=not rejected)
         proof = ""
         if "VERIFIED" in verdict:
             idx = (text or "").upper().find("VERIFIED")
@@ -294,8 +304,29 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
     if fallback:
         with open(dest, "wb") as f:
             f.write(fallback)
+        await save_cached_image(key, name, cuisine, fallback, validated=False)
         return {"url": rel_url, "validated": False, "proof": "Best-effort image (validation inconclusive)"}
     return None
+
+
+async def _generate_and_validate_image_with_fallback(name: str, cuisine: str, ingredients: list[str],
+                                                      image_spec: dict, api_key: str):
+    """Same as _generate_and_validate_image, but time-bounded: falls back to a stock
+    photo instead of returning None so the card always shows something."""
+    try:
+        result = await asyncio.wait_for(
+            _generate_and_validate_image(name, cuisine, ingredients, image_spec, api_key),
+            timeout=IMAGE_GEN_TIMEOUT_SECONDS,
+        )
+        if result:
+            return result
+    except asyncio.TimeoutError:
+        logger.warning(f"[Quick validated img] timed out after {IMAGE_GEN_TIMEOUT_SECONDS}s for {name}, using stock photo")
+    except Exception as e:
+        logger.error(f"[Quick validated img] unexpected error for {name}: {e}")
+
+    from image_service import get_food_image
+    return {"url": get_food_image(name, cuisine), "validated": False, "proof": "Stock photo (AI photo unavailable right now)"}
 
 
 @router.post("/generate-validated", response_model=ValidatedQuickResponse)
@@ -364,12 +395,11 @@ async def generate_validated_quick_recipes(req: QuickRecipeRequest, current_user
     # photo immediately and the verified photo appears once it's cached.
     async def _safe_image(r):
         try:
-            return await asyncio.wait_for(
-                _generate_and_validate_image(r["name"], r["cuisine"], r["ingredients"], r["image_spec"], api_key),
-                timeout=22,
+            return await _generate_and_validate_image_with_fallback(
+                r["name"], r["cuisine"], r["ingredients"], r["image_spec"], api_key
             )
         except Exception as e:
-            logger.error(f"[Quick validated img] timeout/err for {r['name']}: {e}")
+            logger.error(f"[Quick validated img] unexpected error for {r['name']}: {e}")
             return None
 
     try:

@@ -7,14 +7,20 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
+from datetime import datetime, timezone
 import os
 import base64
 import hashlib
 import logging
+import asyncio
+import requests as _requests
+from PIL import Image
+import io
 
+from starlette.concurrency import run_in_threadpool
 from lazy_emergent import LlmChat, UserMessage
 
-from .deps import User, get_optional_user, check_and_increment_daily_image_cap
+from .deps import db, User, get_optional_user, check_and_increment_daily_image_cap
 
 router = APIRouter(prefix="/recipe-image", tags=["AI Recipe Image"])
 
@@ -22,6 +28,106 @@ IMAGE_DIR = Path("/app/backend/generated/recipe-images")
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL = "gemini-3.1-flash-image-preview"
+
+# Hard cap on image generation before falling back to a stock photo
+IMAGE_GEN_TIMEOUT_SECONDS = 15
+
+# WebP quality (25-34% smaller than PNG at equivalent quality)
+WEBP_QUALITY = 80
+
+
+def _to_webp(png_bytes: bytes) -> bytes:
+    """Re-encode raw PNG bytes from Gemini as WebP. Falls back to original on error."""
+    try:
+        img = Image.open(io.BytesIO(png_bytes))
+        img = img.convert('RGBA') if img.mode in ('RGBA', 'LA') else img.convert('RGB')
+        out = io.BytesIO()
+        img.save(out, format='WEBP', quality=WEBP_QUALITY, method=6)
+        return out.getvalue()
+    except Exception as e:
+        logging.error(f"WebP conversion failed, serving original bytes: {e}")
+        return png_bytes
+
+
+# NOT named "recipe_images" — that collection is used by the legacy OpenAI path
+# (ai_image_service.py/image_generation.py) whose cache-clear does delete_many({})
+# on it. Different name keeps this permanent cache safe from that operation.
+IMAGE_CACHE_COLLECTION = "verified_recipe_photos"
+
+# --- Object storage helpers (Fix 4) ---
+_STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
+_STORAGE_URL = _STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
+_EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
+_storage_key: str | None = None
+
+
+def _init_storage() -> str:
+    global _storage_key, _EMERGENT_KEY
+    if _storage_key:
+        return _storage_key
+    _EMERGENT_KEY = _EMERGENT_KEY or os.environ.get("EMERGENT_LLM_KEY")
+    resp = _requests.post(f"{_STORAGE_URL}/init", json={"emergent_key": _EMERGENT_KEY}, timeout=30)
+    resp.raise_for_status()
+    _storage_key = resp.json()["storage_key"]
+    return _storage_key
+
+
+def _put_object_sync(path: str, data: bytes) -> None:
+    key = _init_storage()
+    resp = _requests.put(
+        f"{_STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key, "Content-Type": "image/webp"},
+        data=data, timeout=60,
+    )
+    resp.raise_for_status()
+
+
+def _get_object_sync(path: str) -> bytes:
+    key = _init_storage()
+    resp = _requests.get(
+        f"{_STORAGE_URL}/objects/{path}",
+        headers={"X-Storage-Key": key}, timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.content
+
+
+def _obj_path(key: str) -> str:
+    return f"moodfood/recipe-images/{key}.webp"
+
+
+async def load_cached_image(key: str) -> bytes | None:
+    """Look up a previously generated image. Fetches bytes from object storage
+    using the path recorded in MongoDB. Returns None on any miss or error."""
+    try:
+        doc = await db[IMAGE_CACHE_COLLECTION].find_one({"_id": key}, {"storage_path": 1})
+        if not doc or not doc.get("storage_path"):
+            return None
+        return await run_in_threadpool(_get_object_sync, doc["storage_path"])
+    except Exception as e:
+        logging.error(f"Failed to load cached image for key {key}: {e}")
+        return None
+
+
+async def save_cached_image(key: str, title: str, cuisine: str, image_bytes: bytes, validated: bool) -> None:
+    """Upload image bytes to object storage and record the reference in MongoDB
+    so the image survives backend restarts and container replacements."""
+    try:
+        path = _obj_path(key)
+        await run_in_threadpool(_put_object_sync, path, image_bytes)
+        await db[IMAGE_CACHE_COLLECTION].update_one(
+            {"_id": key},
+            {"$set": {
+                "title": title,
+                "cuisine": cuisine,
+                "storage_path": path,
+                "validated": validated,
+                "created_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    except Exception as e:
+        logging.error(f"Failed to persist image to storage for key {key}: {e}")
 
 
 class GenerateImageRequest(BaseModel):
@@ -76,15 +182,23 @@ async def generate_recipe_image(req: GenerateImageRequest, request: Request, cur
     Auth is OPTIONAL for backwards-compatibility: cache hits are always served, and
     paid (cache-miss) generations are capped per-user when logged in, else per-IP."""
     key = _key(req.title, req.cuisine)
-    dest = IMAGE_DIR / f"{key}.png"
-    rel_url = f"/api/recipe-image/img/{key}.png"
+    dest = IMAGE_DIR / f"{key}.webp"
+    rel_url = f"/api/recipe-image/img/{key}.webp"
 
     if dest.exists() and dest.stat().st_size > 0:
         return {"url": rel_url, "cached": True}
 
+    cached_bytes = await load_cached_image(key)
+    if cached_bytes:
+        with open(dest, "wb") as f:
+            f.write(cached_bytes)
+        return {"url": rel_url, "cached": True}
+
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Image generation not configured")
+        from image_service import get_food_image
+        logging.error("Image generation not configured (missing EMERGENT_LLM_KEY); using stock photo")
+        return {"url": get_food_image(req.title, req.cuisine), "cached": False, "validated": False}
 
     # 6.2 cost control: cap uncached (paid) generations. Per-user when authenticated,
     # otherwise per client IP so anonymous callers still can't run up the bill.
@@ -122,10 +236,10 @@ STYLE:
 - High-end restaurant plating
 - Immediately recognizable as {req.title}"""
 
-    # Single generation (no self-validation retry) so images arrive ~2x faster.
-    # The detailed dish specs above keep the result accurate; results are cached
-    # on disk so every subsequent view is instant.
-    try:
+    # Single generation so images arrive fast; detailed specs keep results accurate.
+    # Wrapped in a timeout so a slow/hung Gemini call degrades to a stock photo
+    # instead of hanging the request.
+    async def _generate() -> dict | None:
         chat = LlmChat(
             api_key=api_key,
             session_id=f"img-{key}",
@@ -134,17 +248,27 @@ STYLE:
         chat.with_model("gemini", MODEL).with_params(modalities=["image", "text"])
         _text, images = await chat.send_message_multimodal_response(UserMessage(text=build_prompt()))
         if not images:
-            raise HTTPException(status_code=502, detail="No image returned")
-        image_bytes = base64.b64decode(images[0]["data"])
+            return None
+        image_bytes = _to_webp(base64.b64decode(images[0]["data"]))
         with open(dest, "wb") as f:
             f.write(image_bytes)
+        await save_cached_image(key, req.title, req.cuisine, image_bytes, validated=False)
         logging.info(f"Generated recipe image for '{req.title}' -> {rel_url}")
         return {"url": rel_url, "cached": False}
-    except HTTPException:
-        raise
+
+    def _stock_fallback() -> dict:
+        from image_service import get_food_image
+        return {"url": get_food_image(req.title, req.cuisine), "cached": False, "validated": False}
+
+    try:
+        result = await asyncio.wait_for(_generate(), timeout=IMAGE_GEN_TIMEOUT_SECONDS)
+        return result or _stock_fallback()
+    except asyncio.TimeoutError:
+        logging.warning(f"Recipe image generation timed out after {IMAGE_GEN_TIMEOUT_SECONDS}s for '{req.title}', using stock photo")
+        return _stock_fallback()
     except Exception as e:
-        logging.error(f"Recipe image generation failed for '{req.title}': {e}")
-        raise HTTPException(status_code=500, detail="Image generation failed")
+        logging.error(f"Recipe image generation failed for '{req.title}': {e}, using stock photo")
+        return _stock_fallback()
 
 
 @router.post("/ai-generate-validated")
@@ -154,15 +278,23 @@ async def generate_recipe_image_validated(req: GenerateImageRequest, request: Re
     must_not_show / validation_rule) drives a generate-and-verify image call that
     retries once on rejection. Returns {url, validated, proof}."""
     key = _key(req.title, req.cuisine)
-    dest = IMAGE_DIR / f"{key}.png"
-    rel_url = f"/api/recipe-image/img/{key}.png"
+    dest = IMAGE_DIR / f"{key}.webp"
+    rel_url = f"/api/recipe-image/img/{key}.webp"
 
     if dest.exists() and dest.stat().st_size > 0:
         return {"url": rel_url, "validated": True, "proof": "Cached verified image"}
 
+    cached_bytes = await load_cached_image(key)
+    if cached_bytes:
+        with open(dest, "wb") as f:
+            f.write(cached_bytes)
+        return {"url": rel_url, "validated": True, "proof": "Cached verified image"}
+
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Image generation not configured")
+        from image_service import get_food_image
+        logging.error("Image generation not configured; using stock photo")
+        return {"url": get_food_image(req.title, req.cuisine), "validated": False, "proof": "Stock photo (AI not configured)"}
 
     # Same per-user (or per-IP) daily cap as /ai-generate, charged on cache-miss.
     if current_user:
@@ -199,17 +331,34 @@ async def generate_recipe_image_validated(req: GenerateImageRequest, request: Re
     except Exception as e:
         logging.error(f"Image spec generation failed for '{req.title}': {e}")
 
-    result = await _generate_and_validate_image(req.title, req.cuisine, req.ingredients, image_spec, api_key)
-    if not result:
-        raise HTTPException(status_code=500, detail="Image generation failed")
-    return result
+    try:
+        result = await asyncio.wait_for(
+            _generate_and_validate_image(req.title, req.cuisine, req.ingredients, image_spec, api_key),
+            timeout=IMAGE_GEN_TIMEOUT_SECONDS,
+        )
+        if result:
+            return result
+    except asyncio.TimeoutError:
+        logging.warning(f"Validated image generation timed out for '{req.title}', using stock photo")
+    except Exception as e:
+        logging.error(f"Validated image generation failed for '{req.title}': {e}, using stock photo")
+    from image_service import get_food_image
+    return {"url": get_food_image(req.title, req.cuisine), "validated": False, "proof": "Stock photo (AI generation unavailable)"}
 
 
 @router.get("/img/{name}")
 async def get_recipe_image(name: str):
-    """Serve a cached generated image."""
-    safe = name.replace("..", "").replace("/", "")
+    """Serve a cached generated image, rehydrating from the persistent DB cache
+    if the local disk cache doesn't have it (e.g. right after a backend restart).
+    Supports both .webp (current) and legacy .png paths."""
+    safe = Path(name.replace("..", "").replace("/", "")).name
     path = IMAGE_DIR / safe
     if not path.exists():
-        raise HTTPException(status_code=404, detail="Image not found")
-    return FileResponse(str(path), media_type="image/png")
+        key = Path(safe).stem
+        cached_bytes = await load_cached_image(key)
+        if not cached_bytes:
+            raise HTTPException(status_code=404, detail="Image not found")
+        with open(path, "wb") as f:
+            f.write(cached_bytes)
+    media_type = "image/webp" if safe.endswith(".webp") else "image/png"
+    return FileResponse(str(path), media_type=media_type)
