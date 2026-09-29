@@ -31,8 +31,11 @@ MODEL = "gemini-3.1-flash-image-preview"
 
 # Hard cap on the two-attempt generate+validate loop below. Without this, a
 # slow/hung Gemini call had no ceiling — the request (and the frontend's 60s
-# axios wait, times a retry) could take up to ~2 minutes before failing.
-IMAGE_GEN_TIMEOUT_SECONDS = 15
+# axios wait, times a retry) could take up to ~2 minutes before failing. Set
+# well below that 60s axios timeout so our own graceful fallback below always
+# fires first, but generous enough that a normal (if slow) generation still
+# completes rather than falling back needlessly.
+IMAGE_GEN_TIMEOUT_SECONDS = 30
 
 # WebP quality setting (80 provides good balance of quality and size, matching
 # the same setting already used for AI-generated images elsewhere in this app).

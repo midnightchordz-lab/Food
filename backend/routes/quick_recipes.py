@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 # Hard cap on how long we'll wait for one recipe's AI photo before falling back
 # to a fast stock photo. Without this, a slow/hung Gemini call had no ceiling —
 # the request would just hang (or fail outright) instead of degrading gracefully.
-IMAGE_GEN_TIMEOUT_SECONDS = 12
+# Set well below the frontend's 60s axios timeout, but generous enough that a
+# normal (if slow) generation still completes rather than falling back needlessly.
+IMAGE_GEN_TIMEOUT_SECONDS = 30
 
 router = APIRouter(prefix="/quick-recipes", tags=["Quick Recipes"])
 
