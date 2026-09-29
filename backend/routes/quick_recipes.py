@@ -22,7 +22,7 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 from .deps import User, get_current_user, check_and_increment_daily_image_cap
 from .exclusions import get_user_excluded_ingredients
-from .gen_image import IMAGE_DIR, MODEL, _key as image_key
+from .gen_image import IMAGE_DIR, MODEL, _key as image_key, load_cached_image, save_cached_image
 
 logger = logging.getLogger(__name__)
 
@@ -237,6 +237,12 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
     if dest.exists() and dest.stat().st_size > 0:
         return {"url": rel_url, "validated": True, "proof": "Cached verified image"}
 
+    cached_bytes = await load_cached_image(key)
+    if cached_bytes:
+        with open(dest, "wb") as f:
+            f.write(cached_bytes)
+        return {"url": rel_url, "validated": True, "proof": "Cached verified image"}
+
     must_show = ", ".join([str(x) for x in image_spec.get("must_show", [])]) or "the dish's signature elements"
     must_not = ", ".join([str(x) for x in image_spec.get("must_not_show", [])]) or "any different dish"
     rule = image_spec.get("validation_rule", f"clearly recognizable as {name}")
@@ -279,6 +285,7 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
             continue
         with open(dest, "wb") as f:
             f.write(img_bytes)
+        await save_cached_image(key, name, cuisine, img_bytes, validated=not rejected)
         proof = ""
         if "VERIFIED" in verdict:
             idx = (text or "").upper().find("VERIFIED")
@@ -288,6 +295,7 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
     if fallback:
         with open(dest, "wb") as f:
             f.write(fallback)
+        await save_cached_image(key, name, cuisine, fallback, validated=False)
         return {"url": rel_url, "validated": False, "proof": "Best-effort image (validation inconclusive)"}
     return None
 

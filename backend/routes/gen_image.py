@@ -7,6 +7,8 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pathlib import Path
+from datetime import datetime, timezone
+from bson import Binary
 import os
 import base64
 import hashlib
@@ -16,7 +18,7 @@ import asyncio
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
-from .deps import User, get_optional_user, check_and_increment_daily_image_cap
+from .deps import db, User, get_optional_user, check_and_increment_daily_image_cap
 
 router = APIRouter(prefix="/recipe-image", tags=["AI Recipe Image"])
 
@@ -29,6 +31,39 @@ MODEL = "gemini-3.1-flash-image-preview"
 # slow/hung Gemini call had no ceiling — the request (and the frontend's 60s
 # axios wait, times a retry) could take up to ~2 minutes before failing.
 IMAGE_GEN_TIMEOUT_SECONDS = 15
+
+
+async def load_cached_image(key: str) -> bytes | None:
+    """Look up a previously generated image in the persistent DB cache. Local
+    disk (IMAGE_DIR) is wiped on every backend restart; the DB is not, so once
+    a dish's photo has been generated and verified anywhere, it never needs to
+    be generated again."""
+    try:
+        doc = await db.recipe_images.find_one({"_id": key}, {"data": 1})
+        return bytes(doc["data"]) if doc else None
+    except Exception as e:
+        logging.error(f"Failed to read cached image for key {key}: {e}")
+        return None
+
+
+async def save_cached_image(key: str, title: str, cuisine: str, image_bytes: bytes, validated: bool) -> None:
+    """Persist a generated image to the DB (in addition to local disk, which
+    only serves as a fast same-container cache for the rest of this backend
+    instance's lifetime)."""
+    try:
+        await db.recipe_images.update_one(
+            {"_id": key},
+            {"$set": {
+                "title": title,
+                "cuisine": cuisine,
+                "data": Binary(image_bytes),
+                "validated": validated,
+                "created_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    except Exception as e:
+        logging.error(f"Failed to persist image to DB for key {key}: {e}")
 
 
 class GenerateImageRequest(BaseModel):
@@ -90,6 +125,12 @@ async def generate_recipe_image(req: GenerateImageRequest, request: Request, cur
     rel_url = f"/api/recipe-image/img/{key}.png"
 
     if dest.exists() and dest.stat().st_size > 0:
+        return {"url": rel_url, "cached": True}
+
+    cached_bytes = await load_cached_image(key)
+    if cached_bytes:
+        with open(dest, "wb") as f:
+            f.write(cached_bytes)
         return {"url": rel_url, "cached": True}
 
     api_key = os.environ.get("EMERGENT_LLM_KEY")
@@ -164,6 +205,7 @@ VALIDATION (do this after generating): confirm the image clearly shows {req.titl
                 continue
             with open(dest, "wb") as f:
                 f.write(image_bytes)
+            await save_cached_image(key, req.title, req.cuisine, image_bytes, validated=not rejected)
             logging.info(f"Generated recipe image for '{req.title}' -> {rel_url} (validated={not rejected})")
             return {"url": rel_url, "cached": False, "validated": not rejected}
 
@@ -171,6 +213,7 @@ VALIDATION (do this after generating): confirm the image clearly shows {req.titl
         if fallback_bytes:
             with open(dest, "wb") as f:
                 f.write(fallback_bytes)
+            await save_cached_image(key, req.title, req.cuisine, fallback_bytes, validated=False)
             logging.info(f"Saved best-effort image for '{req.title}' after validation retries")
             return {"url": rel_url, "cached": False, "validated": False}
         return None  # no usable image from either attempt — caller falls back to a stock photo
@@ -192,9 +235,16 @@ VALIDATION (do this after generating): confirm the image clearly shows {req.titl
 
 @router.get("/img/{name}")
 async def get_recipe_image(name: str):
-    """Serve a cached generated image."""
+    """Serve a cached generated image, rehydrating from the persistent DB cache
+    if the local disk cache doesn't have it (e.g. right after a backend restart,
+    before anything has re-triggered generation for this dish)."""
     safe = name.replace("..", "").replace("/", "")
     path = IMAGE_DIR / safe
     if not path.exists():
-        raise HTTPException(status_code=404, detail="Image not found")
+        key = safe[:-4] if safe.endswith(".png") else safe
+        cached_bytes = await load_cached_image(key)
+        if not cached_bytes:
+            raise HTTPException(status_code=404, detail="Image not found")
+        with open(path, "wb") as f:
+            f.write(cached_bytes)
     return FileResponse(str(path), media_type="image/png")
