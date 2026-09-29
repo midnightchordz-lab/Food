@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from pathlib import Path
 from datetime import datetime, timezone
 from bson import Binary
+from PIL import Image
+import io
 import os
 import base64
 import hashlib
@@ -32,6 +34,35 @@ MODEL = "gemini-3.1-flash-image-preview"
 # axios wait, times a retry) could take up to ~2 minutes before failing.
 IMAGE_GEN_TIMEOUT_SECONDS = 15
 
+# WebP quality setting (80 provides good balance of quality and size, matching
+# the same setting already used for AI-generated images elsewhere in this app).
+WEBP_QUALITY = 80
+
+
+def _to_webp(png_bytes: bytes) -> bytes:
+    """Re-encode Gemini's raw PNG output as WebP (25-34% smaller at equivalent
+    quality) before it's written to disk or the persistent cache. Falls back to
+    the original PNG bytes on any conversion error (logged loudly since this
+    would then be served under a .webp name/content-type — harmless in practice
+    since image decoders sniff actual file bytes rather than trust the
+    extension, but worth knowing about if it ever shows up in logs)."""
+    try:
+        img = Image.open(io.BytesIO(png_bytes))
+        img = img.convert('RGBA') if img.mode in ('RGBA', 'LA') else img.convert('RGB')
+        out = io.BytesIO()
+        img.save(out, format='WEBP', quality=WEBP_QUALITY, method=6)
+        return out.getvalue()
+    except Exception as e:
+        logging.error(f"WebP conversion failed for a generated image, serving original PNG bytes under .webp name: {e}")
+        return png_bytes
+
+
+# NOTE: deliberately NOT named "recipe_images" — that collection already exists,
+# used by the legacy OpenAI-based image_generation.py/ai_image_service.py path,
+# whose clear_recipe_image_cache() does an unfiltered delete_many({}) on it. Using
+# a different name avoids that admin action silently wiping this cache too.
+IMAGE_CACHE_COLLECTION = "verified_recipe_photos"
+
 
 async def load_cached_image(key: str) -> bytes | None:
     """Look up a previously generated image in the persistent DB cache. Local
@@ -39,7 +70,7 @@ async def load_cached_image(key: str) -> bytes | None:
     a dish's photo has been generated and verified anywhere, it never needs to
     be generated again."""
     try:
-        doc = await db.recipe_images.find_one({"_id": key}, {"data": 1})
+        doc = await db[IMAGE_CACHE_COLLECTION].find_one({"_id": key}, {"data": 1})
         return bytes(doc["data"]) if doc else None
     except Exception as e:
         logging.error(f"Failed to read cached image for key {key}: {e}")
@@ -51,7 +82,7 @@ async def save_cached_image(key: str, title: str, cuisine: str, image_bytes: byt
     only serves as a fast same-container cache for the rest of this backend
     instance's lifetime)."""
     try:
-        await db.recipe_images.update_one(
+        await db[IMAGE_CACHE_COLLECTION].update_one(
             {"_id": key},
             {"$set": {
                 "title": title,
@@ -121,8 +152,8 @@ async def generate_recipe_image(req: GenerateImageRequest, request: Request, cur
     Auth is OPTIONAL for backwards-compatibility: cache hits are always served, and
     paid (cache-miss) generations are capped per-user when logged in, else per-IP."""
     key = _key(req.title, req.cuisine)
-    dest = IMAGE_DIR / f"{key}.png"
-    rel_url = f"/api/recipe-image/img/{key}.png"
+    dest = IMAGE_DIR / f"{key}.webp"
+    rel_url = f"/api/recipe-image/img/{key}.webp"
 
     if dest.exists() and dest.stat().st_size > 0:
         return {"url": rel_url, "cached": True}
@@ -192,7 +223,7 @@ VALIDATION (do this after generating): confirm the image clearly shows {req.titl
             text, images = await chat.send_message_multimodal_response(UserMessage(text=build_prompt(extra)))
             if not images:
                 continue
-            image_bytes = base64.b64decode(images[0]["data"])
+            image_bytes = _to_webp(base64.b64decode(images[0]["data"]))
             fallback_bytes = image_bytes  # always keep the latest so the user still gets an image
             verdict = (text or "").upper()
             rejected = "REJECTED" in verdict and "VERIFIED" not in verdict
@@ -237,14 +268,18 @@ VALIDATION (do this after generating): confirm the image clearly shows {req.titl
 async def get_recipe_image(name: str):
     """Serve a cached generated image, rehydrating from the persistent DB cache
     if the local disk cache doesn't have it (e.g. right after a backend restart,
-    before anything has re-triggered generation for this dish)."""
-    safe = name.replace("..", "").replace("/", "")
+    before anything has re-triggered generation for this dish). Serves both
+    .webp (current format) and .png (images generated before WebP conversion
+    was added, or already-saved recipes whose stored image_url still points
+    at a .png path) so nothing already served/saved breaks."""
+    safe = Path(name.replace("..", "").replace("/", "")).name
     path = IMAGE_DIR / safe
     if not path.exists():
-        key = safe[:-4] if safe.endswith(".png") else safe
+        key = Path(safe).stem
         cached_bytes = await load_cached_image(key)
         if not cached_bytes:
             raise HTTPException(status_code=404, detail="Image not found")
         with open(path, "wb") as f:
             f.write(cached_bytes)
-    return FileResponse(str(path), media_type="image/png")
+    media_type = "image/webp" if safe.endswith(".webp") else "image/png"
+    return FileResponse(str(path), media_type=media_type)

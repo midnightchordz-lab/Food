@@ -22,7 +22,7 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 from .deps import User, get_current_user, check_and_increment_daily_image_cap
 from .exclusions import get_user_excluded_ingredients
-from .gen_image import IMAGE_DIR, MODEL, _key as image_key, load_cached_image, save_cached_image
+from .gen_image import IMAGE_DIR, MODEL, _key as image_key, load_cached_image, save_cached_image, _to_webp
 
 logger = logging.getLogger(__name__)
 
@@ -232,8 +232,8 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
                                         image_spec: dict, api_key: str, max_attempts: int = 2):
     """Generate + self-validate one dish photo. Returns {url, validated, proof} or None."""
     key = image_key(name, cuisine)
-    dest = IMAGE_DIR / f"{key}.png"
-    rel_url = f"/api/recipe-image/img/{key}.png"
+    dest = IMAGE_DIR / f"{key}.webp"
+    rel_url = f"/api/recipe-image/img/{key}.webp"
     if dest.exists() and dest.stat().st_size > 0:
         return {"url": rel_url, "validated": True, "proof": "Cached verified image"}
 
@@ -276,7 +276,7 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
             continue
         if not images:
             continue
-        img_bytes = base64.b64decode(images[0]["data"])
+        img_bytes = _to_webp(base64.b64decode(images[0]["data"]))
         fallback = img_bytes
         verdict = (text or "").upper()
         rejected = "REJECTED" in verdict and "VERIFIED" not in verdict
