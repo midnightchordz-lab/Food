@@ -12,6 +12,8 @@ import base64
 import hashlib
 import logging
 
+import asyncio
+
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 from .deps import User, get_optional_user, check_and_increment_daily_image_cap
@@ -22,6 +24,11 @@ IMAGE_DIR = Path("/app/backend/generated/recipe-images")
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 MODEL = "gemini-3.1-flash-image-preview"
+
+# Hard cap on the two-attempt generate+validate loop below. Without this, a
+# slow/hung Gemini call had no ceiling — the request (and the frontend's 60s
+# axios wait, times a retry) could take up to ~2 minutes before failing.
+IMAGE_GEN_TIMEOUT_SECONDS = 15
 
 
 class GenerateImageRequest(BaseModel):
@@ -124,9 +131,11 @@ STYLE:
 {extra}
 VALIDATION (do this after generating): confirm the image clearly shows {req.title} with its main ingredients visible, authentic style, correct plating and colours, and is NOT confused with a similar dish. On the FINAL text line output exactly "VALIDATION: VERIFIED" if it matches, otherwise "VALIDATION: REJECTED - <short reason>"."""
 
-    fallback_bytes = None
-    extra = ""
-    try:
+    async def _generate() -> dict:
+        """Original two-attempt generate+validate loop, unchanged. Only the call
+        site below is new (bounds this with a timeout)."""
+        fallback_bytes = None
+        extra = ""
         for attempt in range(2):
             chat = LlmChat(
                 api_key=api_key,
@@ -160,6 +169,12 @@ VALIDATION (do this after generating): confirm the image clearly shows {req.titl
             logging.info(f"Saved best-effort image for '{req.title}' after validation retries")
             return {"url": rel_url, "cached": False, "validated": False}
         raise HTTPException(status_code=502, detail="No image returned")
+
+    try:
+        return await asyncio.wait_for(_generate(), timeout=IMAGE_GEN_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError:
+        logging.warning(f"Recipe image generation timed out after {IMAGE_GEN_TIMEOUT_SECONDS}s for '{req.title}'")
+        raise HTTPException(status_code=504, detail="Image generation timed out")
     except HTTPException:
         raise
     except Exception as e:
