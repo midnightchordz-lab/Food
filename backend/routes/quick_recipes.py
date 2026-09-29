@@ -27,7 +27,7 @@ from .gen_image import IMAGE_DIR, MODEL, _key as image_key, load_cached_image, s
 logger = logging.getLogger(__name__)
 
 # Hard cap per image before falling back to a stock photo
-IMAGE_GEN_TIMEOUT_SECONDS = 12
+IMAGE_GEN_TIMEOUT_SECONDS = 45
 
 router = APIRouter(prefix="/quick-recipes", tags=["Quick Recipes"])
 

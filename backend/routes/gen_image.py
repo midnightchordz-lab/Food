@@ -30,7 +30,7 @@ IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 MODEL = "gemini-3.1-flash-image-preview"
 
 # Hard cap on image generation before falling back to a stock photo
-IMAGE_GEN_TIMEOUT_SECONDS = 15
+IMAGE_GEN_TIMEOUT_SECONDS = 45
 
 # WebP quality (25-34% smaller than PNG at equivalent quality)
 WEBP_QUALITY = 80
