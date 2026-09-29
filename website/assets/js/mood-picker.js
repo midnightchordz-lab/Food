@@ -2,6 +2,22 @@
 // frontend/src/constants/data.ts — flavor profiles only, since actual
 // dishes are generated per-session by the AI chef, not a fixed list.
 (function () {
+  var EMOJI = {
+    happy: { char: '😄', label: 'Happy face' },
+    cozy: { char: '😌', label: 'Relieved, content face' },
+    stressed: { char: '😰', label: 'Anxious face' },
+    low: { char: '😔', label: 'Pensive face' },
+    energetic: { char: '😆', label: 'Laughing, energetic face' },
+    calm: { char: '😇', label: 'Serene face with halo' },
+    romantic: { char: '🥰', label: 'Smiling face with hearts' },
+    excited: { char: '🤩', label: 'Star-struck face' },
+  };
+
+  function emojiSpan(id, sizeClass) {
+    var e = EMOJI[id];
+    return '<span class="mood-emoji ' + sizeClass + '" role="img" aria-label="' + e.label + '">' + e.char + '</span>';
+  }
+
   var MOODS = [
     { id: 'happy', name: 'Happy', color: 'var(--mood-happy)', profile: 'Bright, vibrant flavors', note: 'Expect citrus, fresh herbs and a plate that looks as good as it tastes.' },
     { id: 'cozy', name: 'Cozy', color: 'var(--mood-cozy)', profile: 'Warm & comforting dishes', note: 'Slow-cooked, deeply seasoned food built for staying in.' },
@@ -23,13 +39,14 @@
 
     function render(activeId) {
       row.innerHTML = '';
-      MOODS.forEach(function (mood) {
+      MOODS.forEach(function (mood, i) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'mood-chip';
+        btn.style.setProperty('--emoji-delay', (i % 4) * 0.2 + 's');
         btn.setAttribute('aria-pressed', mood.id === activeId ? 'true' : 'false');
         btn.innerHTML =
-          '<span class="dot" style="background:' + mood.color + '"></span>' +
+          '<span class="dot" style="background:' + mood.color + '">' + emojiSpan(mood.id, 'mood-emoji-sm') + '</span>' +
           '<span class="label">' + mood.name + '</span>';
         btn.addEventListener('click', function () { setActive(mood.id); });
         row.appendChild(btn);
@@ -39,6 +56,7 @@
       resultProfile.textContent = active.profile;
       resultNote.textContent = active.note;
       resultThumb.style.background = active.color;
+      resultThumb.innerHTML = emojiSpan(active.id, 'mood-emoji-lg');
     }
 
     function setActive(id) { render(id); }
