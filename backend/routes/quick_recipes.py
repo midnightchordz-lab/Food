@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # the request would just hang (or fail outright) instead of degrading gracefully.
 # Set well below the frontend's 60s axios timeout, but generous enough that a
 # normal (if slow) generation still completes rather than falling back needlessly.
-IMAGE_GEN_TIMEOUT_SECONDS = 30
+IMAGE_GEN_TIMEOUT_SECONDS = 45
 
 router = APIRouter(prefix="/quick-recipes", tags=["Quick Recipes"])
 

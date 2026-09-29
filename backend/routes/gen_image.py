@@ -35,7 +35,7 @@ MODEL = "gemini-3.1-flash-image-preview"
 # well below that 60s axios timeout so our own graceful fallback below always
 # fires first, but generous enough that a normal (if slow) generation still
 # completes rather than falling back needlessly.
-IMAGE_GEN_TIMEOUT_SECONDS = 30
+IMAGE_GEN_TIMEOUT_SECONDS = 45
 
 # WebP quality setting (80 provides good balance of quality and size, matching
 # the same setting already used for AI-generated images elsewhere in this app).
