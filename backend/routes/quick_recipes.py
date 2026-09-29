@@ -26,6 +26,11 @@ from .gen_image import IMAGE_DIR, MODEL, _key as image_key
 
 logger = logging.getLogger(__name__)
 
+# Hard cap on how long we'll wait for one recipe's AI photo before falling back
+# to a fast stock photo. Without this, a slow/hung Gemini call had no ceiling —
+# the request would just hang (or fail outright) instead of degrading gracefully.
+IMAGE_GEN_TIMEOUT_SECONDS = 12
+
 router = APIRouter(prefix="/quick-recipes", tags=["Quick Recipes"])
 
 
@@ -287,6 +292,29 @@ async def _generate_and_validate_image(name: str, cuisine: str, ingredients: lis
     return None
 
 
+async def _generate_and_validate_image_with_fallback(name: str, cuisine: str, ingredients: list[str],
+                                                       image_spec: dict, api_key: str):
+    """Same as _generate_and_validate_image, but bounded: if AI generation takes
+    too long or fails entirely, fall back to an existing curated/stock photo
+    instead of leaving the image blank. The verified-photo path itself is
+    unchanged — this only adds a ceiling on worst-case latency and a safety net
+    for total failures, both of which previously left the image not loading."""
+    try:
+        result = await asyncio.wait_for(
+            _generate_and_validate_image(name, cuisine, ingredients, image_spec, api_key),
+            timeout=IMAGE_GEN_TIMEOUT_SECONDS,
+        )
+        if result:
+            return result
+    except asyncio.TimeoutError:
+        logger.warning(f"[Quick validated img] timed out after {IMAGE_GEN_TIMEOUT_SECONDS}s for {name}, using stock photo")
+    except Exception as e:
+        logger.error(f"[Quick validated img] unexpected error for {name}: {e}")
+
+    from image_service import get_food_image
+    return {"url": get_food_image(name, cuisine), "validated": False, "proof": "Stock photo (AI photo unavailable right now)"}
+
+
 @router.post("/generate-validated", response_model=ValidatedQuickResponse)
 async def generate_validated_quick_recipes(req: QuickRecipeRequest, current_user: User = Depends(get_current_user)):
     """Two-step parallel pipeline: recipes+specs, then parallel image gen with validation."""
@@ -346,9 +374,11 @@ async def generate_validated_quick_recipes(req: QuickRecipeRequest, current_user
     for _ in raw_recipes:
         await check_and_increment_daily_image_cap(current_user.id)
 
-    # STEP 2 — generate + validate all images IN PARALLEL.
+    # STEP 2 — generate + validate all images IN PARALLEL, each bounded by a
+    # timeout with a stock-photo fallback so one slow/failed image can't hang
+    # or blank out the whole response.
     results = await asyncio.gather(*[
-        _generate_and_validate_image(r["name"], r["cuisine"], r["ingredients"], r["image_spec"], api_key)
+        _generate_and_validate_image_with_fallback(r["name"], r["cuisine"], r["ingredients"], r["image_spec"], api_key)
         for r in raw_recipes
     ])
 
