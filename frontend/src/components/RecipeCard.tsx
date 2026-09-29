@@ -68,7 +68,11 @@ export function useRecipeImage(
         description: description || '',
         ingredients: ingredients || [],
       });
-      return `${BACKEND}${res.data.url}` as string;
+      const url = res.data.url as string;
+      // The backend now falls back to an absolute stock-photo URL (e.g. Unsplash)
+      // when AI generation times out or fails, instead of only ever returning its
+      // own relative /api path — only prepend BACKEND for a relative path.
+      return url.startsWith('/') ? `${BACKEND}${url}` : url;
     },
   });
 }

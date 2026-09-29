@@ -79,7 +79,10 @@ def _key(title: str, cuisine: str) -> str:
 
 @router.post("/ai-generate")
 async def generate_recipe_image(req: GenerateImageRequest, request: Request, current_user: User = Depends(get_optional_user)):
-    """Generate (or return cached) an AI food photo for a recipe. Returns a relative /api url.
+    """Generate (or return cached) an AI food photo for a recipe. Returns a relative /api
+    url on success, or an absolute stock-photo URL if AI generation is unavailable/times
+    out/fails — this endpoint never errors out for image-generation reasons, only for
+    real failures (misconfiguration, rate limiting).
     Auth is OPTIONAL for backwards-compatibility: cache hits are always served, and
     paid (cache-miss) generations are capped per-user when logged in, else per-IP."""
     key = _key(req.title, req.cuisine)
@@ -91,7 +94,9 @@ async def generate_recipe_image(req: GenerateImageRequest, request: Request, cur
 
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="Image generation not configured")
+        from image_service import get_food_image
+        logging.error("Image generation not configured (missing EMERGENT_LLM_KEY); using stock photo")
+        return {"url": get_food_image(req.title, req.cuisine), "cached": False, "validated": False}
 
     # 6.2 cost control: cap uncached (paid) generations. Per-user when authenticated,
     # otherwise per client IP so anonymous callers still can't run up the bill.
@@ -168,18 +173,21 @@ VALIDATION (do this after generating): confirm the image clearly shows {req.titl
                 f.write(fallback_bytes)
             logging.info(f"Saved best-effort image for '{req.title}' after validation retries")
             return {"url": rel_url, "cached": False, "validated": False}
-        raise HTTPException(status_code=502, detail="No image returned")
+        return None  # no usable image from either attempt — caller falls back to a stock photo
+
+    def _stock_fallback() -> dict:
+        from image_service import get_food_image
+        return {"url": get_food_image(req.title, req.cuisine), "cached": False, "validated": False}
 
     try:
-        return await asyncio.wait_for(_generate(), timeout=IMAGE_GEN_TIMEOUT_SECONDS)
+        result = await asyncio.wait_for(_generate(), timeout=IMAGE_GEN_TIMEOUT_SECONDS)
+        return result or _stock_fallback()
     except asyncio.TimeoutError:
-        logging.warning(f"Recipe image generation timed out after {IMAGE_GEN_TIMEOUT_SECONDS}s for '{req.title}'")
-        raise HTTPException(status_code=504, detail="Image generation timed out")
-    except HTTPException:
-        raise
+        logging.warning(f"Recipe image generation timed out after {IMAGE_GEN_TIMEOUT_SECONDS}s for '{req.title}', using stock photo")
+        return _stock_fallback()
     except Exception as e:
-        logging.error(f"Recipe image generation failed for '{req.title}': {e}")
-        raise HTTPException(status_code=500, detail="Image generation failed")
+        logging.error(f"Recipe image generation failed for '{req.title}': {e}, using stock photo")
+        return _stock_fallback()
 
 
 @router.get("/img/{name}")
