@@ -7,6 +7,19 @@ import { API_ROOT, api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, useToast } from '@/src/components/ui';
 
+// Add-on: narration language picker. 'english' is the default/off state and
+// uses the original, unchanged /mobile-voice/tts endpoint; the other five
+// route through the new /mobile-voice/tts-multilingual add-on endpoint.
+type NarrationLanguage = 'english' | 'hindi' | 'mandarin' | 'spanish' | 'french' | 'arabic';
+const LANGUAGES: { key: NarrationLanguage; label: string }[] = [
+  { key: 'english', label: 'EN' },
+  { key: 'hindi', label: 'HI' },
+  { key: 'mandarin', label: 'ZH' },
+  { key: 'spanish', label: 'ES' },
+  { key: 'french', label: 'FR' },
+  { key: 'arabic', label: 'AR' },
+];
+
 export default function CookMode() {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
@@ -29,25 +42,45 @@ export default function CookMode() {
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
 
+  // Add-on: narration language. Defaults to 'english', which keeps the exact
+  // original behavior (calls the original /mobile-voice/tts endpoint below,
+  // completely unchanged) for anyone who doesn't touch the picker.
+  const [language, setLanguage] = useState<NarrationLanguage>('english');
+  const [translatedSteps, setTranslatedSteps] = useState<Record<string, string>>({});
+
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
   const wasFinishedRef = useRef(false);
-  const cache = useRef<Record<number, string>>({});
+  const cache = useRef<Record<string, string>>({});
 
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
   }, []);
 
-  const loadAndPlay = async (i: number) => {
+  const loadAndPlay = async (i: number, lang: NarrationLanguage) => {
     if (i < 0 || i >= steps.length) return;
     try {
-      let uri = cache.current[i];
+      const cacheKey = `${lang}-${i}`;
+      let uri = cache.current[cacheKey];
       if (!uri) {
         setLoadingAudio(true);
-        const res = await api.post('/mobile-voice/tts', { text: steps[i], voice: 'nova' });
-        const path = res.data?.url as string;
-        uri = path?.startsWith('http') ? path : `${API_ROOT.replace(/\/api$/, '')}${path}`;
-        cache.current[i] = uri;
+        if (lang === 'english') {
+          const res = await api.post('/mobile-voice/tts', { text: steps[i], voice: 'nova' });
+          const path = res.data?.url as string;
+          uri = path?.startsWith('http') ? path : `${API_ROOT.replace(/\/api$/, '')}${path}`;
+        } else {
+          const res = await api.post('/mobile-voice/tts-multilingual', {
+            text: steps[i],
+            language: lang,
+            voice: 'nova',
+          });
+          const path = res.data?.url as string;
+          uri = path?.startsWith('http') ? path : `${API_ROOT.replace(/\/api$/, '')}${path}`;
+          if (res.data?.translated_text) {
+            setTranslatedSteps((prev) => ({ ...prev, [cacheKey]: res.data.translated_text }));
+          }
+        }
+        cache.current[cacheKey] = uri;
       }
       // Mark that we're starting fresh playback for this step so a lingering
       // "didJustFinish" from the previous step can't trigger another advance.
@@ -61,11 +94,11 @@ export default function CookMode() {
     }
   };
 
-  // Play whenever the step changes.
+  // Play whenever the step or language changes.
   useEffect(() => {
-    if (steps.length) loadAndPlay(index);
+    if (steps.length) loadAndPlay(index, language);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  }, [index, language]);
 
   // Auto-advance exactly once per step, on the false->true edge of didJustFinish.
   useEffect(() => {
@@ -83,7 +116,7 @@ export default function CookMode() {
       player.pause();
     } else {
       if (status?.isLoaded) player.play();
-      else loadAndPlay(index);
+      else loadAndPlay(index, language);
     }
   };
 
@@ -113,9 +146,22 @@ export default function CookMode() {
         <Text style={styles.progressText}>Step {index + 1} of {steps.length}</Text>
       </View>
 
+      <View style={styles.langRow}>
+        {LANGUAGES.map((l) => (
+          <Pressable
+            key={l.key}
+            style={[styles.langChip, language === l.key && styles.langChipActive]}
+            onPress={() => setLanguage(l.key)}
+            testID={`cook-lang-${l.key}`}
+          >
+            <Text style={[styles.langChipText, language === l.key && styles.langChipTextActive]}>{l.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       <View style={styles.stepCard}>
         <Text style={styles.stepNumber}>{index + 1}</Text>
-        <Text style={styles.stepText}>{steps[index]}</Text>
+        <Text style={styles.stepText}>{translatedSteps[`${language}-${index}`] || steps[index]}</Text>
         {loadingAudio ? (
           <View style={styles.audioLoading}>
             <ActivityIndicator size="small" color={colors.primary} />
@@ -193,6 +239,11 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.secondary, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
   progressText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.mutedForeground, marginTop: 8 },
+  langRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  langChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.lg, backgroundColor: colors.secondary },
+  langChipActive: { backgroundColor: colors.primary },
+  langChipText: { fontFamily: f.bodySemiBold, fontSize: 12, color: colors.mutedForeground },
+  langChipTextActive: { color: colors.primaryForeground },
   stepCard: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 22, justifyContent: 'center' },
   stepNumber: { fontFamily: f.serif, fontSize: 48, color: colors.primary, marginBottom: 8 },
   stepText: { fontFamily: f.body, fontSize: 22, lineHeight: 32, color: colors.foreground },
