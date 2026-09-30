@@ -33,7 +33,7 @@ export default function ImportRecipe() {
   const { isSubscribed } = useSubscription();
 
   const params = useLocalSearchParams<{ tab?: string }>();
-  const initialTab = params.tab === 'photo' || params.tab === 'text' ? params.tab : 'link';
+  const initialTab = params.tab === 'photo' || params.tab === 'text' ? params.tab : 'text';
   const [tab, setTab] = useState<'link' | 'text' | 'photo'>(initialTab as 'link' | 'text' | 'photo');
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
@@ -144,7 +144,7 @@ export default function ImportRecipe() {
           {!preview ? (
             <>
               <View style={styles.segment}>
-                {(['link', 'text', 'photo'] as const).map((t) => (
+                {(['text', 'photo'] as const).map((t) => (
                   <Pressable key={t} testID={`import-tab-${t}`} onPress={() => setTab(t)} style={[styles.segBtn, tab === t && styles.segBtnActive]}>
                     <Icon name={t === 'link' ? 'link-variant' : t === 'text' ? 'text' : 'camera'} size={16} color={tab === t ? colors.foreground : colors.mutedForeground} />
                     <Text style={[styles.segText, tab === t && styles.segTextActive]}>{t === 'link' ? 'Link' : t === 'text' ? 'Text' : 'Photo'}</Text>
