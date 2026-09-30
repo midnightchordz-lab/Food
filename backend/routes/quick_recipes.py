@@ -384,20 +384,25 @@ async def generate_validated_quick_recipes(req: QuickRecipeRequest, current_user
     if not raw_recipes:
         raise HTTPException(status_code=502, detail="Could not generate valid recipes, please try again")
 
-    # Cost control: count each image against the per-user daily cap up front.
-    for _ in raw_recipes:
-        await check_and_increment_daily_image_cap(current_user.id)
-
     # STEP 2 — generate + validate all images IN PARALLEL, but NEVER let slow or
     # failed image generation block the recipes (the recipes are already ready).
-    # Each image is time-bounded, and the whole step has an overall cap; on
-    # timeout we return recipes without those images — the client shows a stock
-    # photo immediately and the verified photo appears once it's cached.
+    # Each image is time-bounded; on timeout or cap-exceeded we return a stock
+    # photo — the recipes always come back regardless of image outcome.
     async def _safe_image(r):
         try:
+            # Cap check is per-image inside here so hitting the limit on one
+            # image falls back to stock photo instead of crashing the whole request.
+            await check_and_increment_daily_image_cap(current_user.id)
             return await _generate_and_validate_image_with_fallback(
                 r["name"], r["cuisine"], r["ingredients"], r["image_spec"], api_key
             )
+        except HTTPException as e:
+            if e.status_code == 429:
+                from image_service import get_food_image
+                logger.info(f"[Quick validated img] daily cap reached for {r['name']}, using stock photo")
+                return {"url": get_food_image(r["name"], r["cuisine"]), "validated": False, "proof": "Stock photo (daily limit reached)"}
+            logger.error(f"[Quick validated img] HTTP error for {r['name']}: {e.detail}")
+            return None
         except Exception as e:
             logger.error(f"[Quick validated img] unexpected error for {r['name']}: {e}")
             return None
