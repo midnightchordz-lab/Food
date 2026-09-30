@@ -7,7 +7,7 @@ import { api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, Loading, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
-import { MOODS, DIETARY_PREFS } from '@/src/constants/data';
+import { MOODS, DIETARY_PREFS, CUISINES } from '@/src/constants/data';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const MEALS = ['breakfast', 'lunch', 'dinner'];
@@ -24,11 +24,17 @@ export default function Planner() {
 
   const [mood, setMood] = useState('cozy');
   const [dietary, setDietary] = useState<string[]>(['vegetarian']);
+  // Add-on: cuisine preference, same multi-select idea as mood/10-min recipes.
+  // Empty (the default) means "Variety" — identical to today's behavior.
+  const [cuisines, setCuisines] = useState<string[]>([]);
   const [dayPrefs, setDayPrefs] = useState<Record<string, string>>({});
   const [showDays, setShowDays] = useState(false);
 
   const toggleDietary = (id: string) => {
     setDietary((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const toggleCuisine = (id: string) => {
+    setCuisines((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
   const setDayPref = (day: string, id: string) => {
     setDayPrefs((prev) => {
@@ -52,7 +58,7 @@ export default function Planner() {
       await api.post('/weekly-plan/generate', {
         mood,
         dietary_preference: dietary.length ? dietary : ['non-vegetarian'],
-        cuisine_preferences: [],
+        cuisine_preferences: cuisines,
         focus_areas: [],
         day_specific_preferences: Object.keys(dayPrefs).length ? dayPrefs : undefined,
       });
@@ -141,6 +147,24 @@ export default function Planner() {
                   >
                     {active ? <Icon name="check" size={13} color={colors.accentForeground} /> : null}
                     <Text style={[styles.chipText, { color: active ? colors.accentForeground : colors.secondaryForeground }]}>{d.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <Text style={[styles.controlTitle, { marginTop: 14 }]}>Cuisine <Text style={styles.controlHint}>· optional, pick any</Text></Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+              {CUISINES.filter((c) => c.id !== 'any').map((c) => {
+                const active = cuisines.includes(c.id);
+                return (
+                  <Pressable
+                    key={c.id}
+                    testID={`plan-cuisine-${c.id}`}
+                    onPress={() => toggleCuisine(c.id)}
+                    style={[styles.chip, styles.chipRowInner, { backgroundColor: active ? colors.accent : colors.secondary }]}
+                  >
+                    {active ? <Icon name="check" size={13} color={colors.accentForeground} /> : null}
+                    <Text style={[styles.chipText, { color: active ? colors.accentForeground : colors.secondaryForeground }]}>{c.flag} {c.label}</Text>
                   </Pressable>
                 );
               })}

@@ -32,6 +32,9 @@ MEAL_TYPES = ["Breakfast", "Lunch", "Dinner"]
 class DiabetesPlanRequest(BaseModel):
     diabetes_type: str = "type2"
     dietary_preference: str = "balanced"
+    # Add-on: optional cuisine preference, same idea as mood/10-min recipes.
+    # Empty (the default) means no cuisine constraint — identical to today's behavior.
+    cuisine_preferences: list[str] = []
 
 
 def _flag_for(net_carbs: int, max_carbs: int) -> str:
@@ -54,18 +57,21 @@ def _extract_json(text: str):
         return None
 
 
-async def _generate_plan(diabetes_type: str, dietary: str, exclusions: list[str]) -> dict:
+async def _generate_plan(diabetes_type: str, dietary: str, exclusions: list[str], cuisine_preferences: list[str] | None = None) -> dict:
     guide = DIABETES_GUIDELINES.get(diabetes_type, DIABETES_GUIDELINES["type2"])
     max_carbs = guide["max_carbs_per_meal"]
 
     exclusion_line = ""
     if exclusions:
         exclusion_line = f"\nNEVER include these ingredients (allergies/exclusions): {', '.join(exclusions)}."
+    cuisine_line = ""
+    if cuisine_preferences:
+        cuisine_line = f"\nPreferred cuisines: {', '.join(cuisine_preferences)}. Favour these where it still keeps every meal blood-sugar friendly."
 
     system_msg = (
         f"You are a certified diabetes dietitian creating a 7-day meal plan for {guide['name']}. "
         f"Every meal must keep net carbs at or below {max_carbs}g and favour a low glycemic index (<{guide['max_glycemic_index']}). "
-        f"Dietary preference: {dietary}.{exclusion_line}\n"
+        f"Dietary preference: {dietary}.{exclusion_line}{cuisine_line}\n"
         "Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:\n"
         '{"days":[{"day":"Monday","meals":[{"type":"Breakfast","name":"Dish name","net_carbs":30,"note":"one short reason it is blood-sugar friendly"}]}]}\n'
         "Provide all 7 days (Monday..Sunday), each with 3 meals (Breakfast, Lunch, Dinner). "
@@ -126,6 +132,7 @@ async def _generate_plan(diabetes_type: str, dietary: str, exclusions: list[str]
         "diabetes_type": diabetes_type,
         "diabetes_label": guide["name"],
         "dietary_preference": dietary,
+        "cuisine_preferences": cuisine_preferences or [],
         "max_carbs_per_meal": max_carbs,
         "days": days_out,
         "avg_carbs_per_day": avg_per_day,
@@ -250,7 +257,7 @@ async def swap_diabetes_meal(req: SwapMealRequest, current_user: User = Depends(
 @router.post("/plan")
 async def generate_diabetes_plan(req: DiabetesPlanRequest, current_user: User = Depends(get_current_user)):
     exclusions = await get_user_excluded_ingredients(current_user.id)
-    plan = await _generate_plan(req.diabetes_type, req.dietary_preference, exclusions)
+    plan = await _generate_plan(req.diabetes_type, req.dietary_preference, exclusions, req.cuisine_preferences)
 
     today = datetime.now(timezone.utc)
     week_start = (today - timedelta(days=today.weekday())).strftime("%Y-%m-%d")
