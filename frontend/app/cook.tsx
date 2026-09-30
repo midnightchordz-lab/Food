@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
@@ -11,10 +11,39 @@ import { useVoiceCommands, voiceSupported } from '@/src/lib/voice';
 
 const TIMER_OPTIONS = [15, 30, 60] as const;
 const DEFAULT_TIMER = 30;
+// Ceiling for how long auto-advance will honor a step's own stated time (e.g.
+// "marinate for 15 minutes"). Above this, hands-free waiting stops being useful
+// (nobody wants the app just sitting there for an hour) — a step whose parsed
+// duration exceeds this still shows its real time in the countdown, but
+// auto-advance itself caps out here; the user (or a voice "next") moves on.
+const MAX_AUTO_ADVANCE_SECONDS = 5 * 60;
 
-// Add-on: narration language picker. 'english' is the default/off state and
-// uses the original, unchanged /mobile-voice/tts endpoint; the other five
-// route through the new /mobile-voice/tts-multilingual add-on endpoint.
+// Pulls a stated duration out of a step's own text ("marinate for 15 minutes",
+// "cook 5-7 min", "bake for 1 hour") so auto-advance can match the step's real
+// pace instead of one flat interval for every step. Returns null when no
+// duration is found, so the caller can fall back to the manual picker.
+function parseStepDurationSeconds(text: string): number | null {
+  const t = (text || '').toLowerCase();
+  const toSeconds = (value: number, unit: string): number => {
+    if (unit.startsWith('hour') || unit === 'hr' || unit === 'hrs') return value * 3600;
+    if (unit.startsWith('min')) return value * 60;
+    return value;
+  };
+  // Range form ("5-7 minutes", "5 to 7 min") — use the upper bound.
+  let m = t.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/);
+  if (m) return toSeconds(parseInt(m[2], 10), m[3]);
+  m = t.match(/(\d+)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/);
+  if (m) return toSeconds(parseInt(m[1], 10), m[2]);
+  return null;
+}
+
+function formatCountdown(totalSeconds: number): string {
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
 type NarrationLanguage = 'english' | 'hindi' | 'mandarin' | 'spanish' | 'french' | 'arabic';
 const LANGUAGES: { key: NarrationLanguage; label: string }[] = [
   { key: 'english', label: 'EN' },
@@ -47,10 +76,6 @@ export default function CookMode() {
   const [index, setIndex] = useState(0);
   const [loadingAudio, setLoadingAudio] = useState(false);
   const [autoAdvance, setAutoAdvance] = useState(true);
-
-  // Add-on: narration language. Defaults to 'english', which keeps the exact
-  // original behavior (calls the original /mobile-voice/tts endpoint below,
-  // completely unchanged) for anyone who doesn't touch the picker.
   const [language, setLanguage] = useState<NarrationLanguage>('english');
   const [translatedSteps, setTranslatedSteps] = useState<Record<string, string>>({});
   const [stepSeconds, setStepSeconds] = useState<number>(DEFAULT_TIMER);
@@ -63,15 +88,34 @@ export default function CookMode() {
   const status = useAudioPlayerStatus(player);
   const wasFinishedRef = useRef(false);
   const cache = useRef<Record<string, string>>({});
+  // Tags each loadAndPlay call so an older, still-in-flight request (e.g. one
+  // superseded by a "repeat" or a fast step change) can detect it's stale and
+  // discard its own result instead of racing the newer call for the player.
+  const requestIdRef = useRef(0);
 
   const isLastStep = index >= steps.length - 1;
+  const effectiveSeconds = useMemo(() => {
+    const parsed = parseStepDurationSeconds(steps[index] || '');
+    if (parsed == null) return stepSeconds;
+    return Math.max(5, Math.min(parsed, MAX_AUTO_ADVANCE_SECONDS));
+  }, [steps, index, stepSeconds]);
+  const usingRecipeTime = parseStepDurationSeconds(steps[index] || '') != null;
 
   useEffect(() => {
-    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+    // allowsRecording lets iOS put the session in .playAndRecord, which the
+    // speech recognizer also needs — without it, the player and the
+    // recognizer contend for the audio session (this is the direct cause of
+    // "could not be performed" errors from voice commands).
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      allowsRecording: true,
+      interruptionMode: 'mixWithOthers',
+    }).catch(() => {});
   }, []);
 
   const loadAndPlay = async (i: number, lang: NarrationLanguage) => {
     if (i < 0 || i >= steps.length) return;
+    const myRequestId = ++requestIdRef.current;
     try {
       const cacheKey = `${lang}-${i}`;
       let uri = cache.current[cacheKey];
@@ -83,9 +127,7 @@ export default function CookMode() {
           uri = path?.startsWith('http') ? path : `${API_ROOT.replace(/\/api$/, '')}${path}`;
         } else {
           const res = await api.post('/mobile-voice/tts-multilingual', {
-            text: steps[i],
-            language: lang,
-            voice: 'nova',
+            text: steps[i], language: lang, voice: 'nova',
           });
           const path = res.data?.url as string;
           uri = path?.startsWith('http') ? path : `${API_ROOT.replace(/\/api$/, '')}${path}`;
@@ -95,64 +137,62 @@ export default function CookMode() {
         }
         cache.current[cacheKey] = uri;
       }
-      // Mark that we're starting fresh playback for this step so a lingering
-      // "didJustFinish" from the previous step can't trigger another advance.
+      // A newer loadAndPlay call (repeat, a fast step change, ...) started
+      // and finished while this one was still awaiting its network request —
+      // let that one own the player instead of racing it.
+      if (myRequestId !== requestIdRef.current) return;
       wasFinishedRef.current = true;
       player.replace({ uri });
       player.play();
     } catch {
+      if (myRequestId !== requestIdRef.current) return;
       toast.show('Could not play this step', 'error');
-      // Don't block auto-advance if the voice failed to load.
       setAudioDone(true);
     } finally {
-      setLoadingAudio(false);
+      if (myRequestId === requestIdRef.current) setLoadingAudio(false);
     }
   };
 
-  // Play whenever the step or language changes.
-  useEffect(() => {
-    if (steps.length) loadAndPlay(index, language);
+  // Shared by the step/language-change effect below and the "repeat" handler,
+  // so repeating a step resets the countdown the same way moving to a step
+  // does — previously "repeat" called loadAndPlay directly, leaving the old
+  // countdown running toward its original deadline and letting auto-advance
+  // fire mid-replay.
+  const restartStep = (i: number, lang: NarrationLanguage) => {
     setTimerDone(false);
     setAudioDone(false);
-    setRemaining(stepSeconds);
+    setRemaining(effectiveSeconds);
+    loadAndPlay(i, lang);
+  };
+
+  useEffect(() => {
+    if (steps.length) restartStep(index, language);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, language]);
 
-  // Countdown timer: runs `stepSeconds` per step while auto-advance is on (never on the last step).
   useEffect(() => {
     if (!autoAdvance || isLastStep) {
-      setRemaining(stepSeconds);
+      setRemaining(effectiveSeconds);
       setTimerDone(false);
       return;
     }
-    setRemaining(stepSeconds);
+    setRemaining(effectiveSeconds);
     setTimerDone(false);
     const id = setInterval(() => {
       setRemaining((r) => {
-        if (r <= 1) {
-          clearInterval(id);
-          setTimerDone(true);
-          return 0;
-        }
+        if (r <= 1) { clearInterval(id); setTimerDone(true); return 0; }
         return r - 1;
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [index, autoAdvance, isLastStep, stepSeconds]);
+  }, [index, autoAdvance, isLastStep, effectiveSeconds]);
 
-  // Track when the spoken audio for this step has finished (false->true edge).
   useEffect(() => {
     const finished = !!status?.didJustFinish;
-    if (finished && !wasFinishedRef.current) {
-      setAudioDone(true);
-    }
+    if (finished && !wasFinishedRef.current) setAudioDone(true);
     wasFinishedRef.current = finished;
   }, [status?.didJustFinish]);
 
-  // Advance when the per-step timer has elapsed AND the voice has settled. The
-  // voice is "settled" once it has finished playing, OR whenever it isn't
-  // actively playing (paused / muted / failed) — so a cook who doesn't want to
-  // listen or talk still auto-progresses on the timer alone.
   useEffect(() => {
     const audioSettled = audioDone || (!status?.playing && !loadingAudio);
     if (autoAdvance && timerDone && audioSettled && !isLastStep) {
@@ -163,24 +203,23 @@ export default function CookMode() {
   const isPlaying = !!status?.playing;
 
   const togglePlay = () => {
-    if (isPlaying) {
-      player.pause();
-    } else {
-      if (status?.isLoaded) player.play();
-      else loadAndPlay(index, language);
-    }
+    if (isPlaying) player.pause();
+    else if (status?.isLoaded) player.play();
+    else loadAndPlay(index, language);
   };
 
   const goPrev = () => setIndex((v) => Math.max(0, v - 1));
   const goNext = () => setIndex((v) => Math.min(steps.length - 1, v + 1));
 
-  // Continuous hands-free voice control. onCommandRef inside the hook is refreshed
-  // every render, so this inline closure always sees the latest index/steps.
-  const { listening, permission, openSettings } = useVoiceCommands(voiceOn, (cmd) => {
-    if (cmd === 'next') setIndex((v) => Math.min(steps.length - 1, v + 1));
-    else if (cmd === 'back') setIndex((v) => Math.max(0, v - 1));
-    else loadAndPlay(index);
-  });
+  const { listening, permission, openSettings } = useVoiceCommands(
+    voiceOn,
+    (cmd) => {
+      if (cmd === 'next') setIndex((v) => Math.min(steps.length - 1, v + 1));
+      else if (cmd === 'back') setIndex((v) => Math.max(0, v - 1));
+      else restartStep(index, language);
+    },
+    isPlaying,
+  );
 
   if (!steps.length) {
     return (
@@ -197,92 +236,69 @@ export default function CookMode() {
   return (
     <View style={[styles.root, { paddingTop: insets.top + 12 }]}>
       <Header title={title} onClose={() => router.back()} />
-
       <View style={styles.progressWrap}>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${((index + 1) / steps.length) * 100}%` }]} />
         </View>
         <Text style={styles.progressText}>Step {index + 1} of {steps.length}</Text>
       </View>
-
       <View style={styles.langRow}>
         {LANGUAGES.map((l) => (
-          <Pressable
-            key={l.key}
-            style={[styles.langChip, language === l.key && styles.langChipActive]}
-            onPress={() => setLanguage(l.key)}
-            testID={`cook-lang-${l.key}`}
-          >
+          <Pressable key={l.key} style={[styles.langChip, language === l.key && styles.langChipActive]} onPress={() => setLanguage(l.key)} testID={`cook-lang-${l.key}`}>
             <Text style={[styles.langChipText, language === l.key && styles.langChipTextActive]}>{l.label}</Text>
           </Pressable>
         ))}
       </View>
-
       <View style={styles.stepCard}>
-        <Text style={styles.stepNumber}>{index + 1}</Text>
-        <Text style={styles.stepText}>{translatedSteps[`${language}-${index}`] || steps[index]}</Text>
-        {loadingAudio ? (
-          <View style={styles.audioLoading}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={styles.audioLoadingText}>Warming up the voice…</Text>
-          </View>
-        ) : (
-          <View style={styles.speakingRow}>
-            <Icon name={isPlaying ? 'volume-high' : 'volume-medium'} size={16} color={colors.primary} />
-            <Text style={styles.speakingText}>{isPlaying ? 'Reading aloud' : 'Paused'}</Text>
-          </View>
-        )}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.stepCardScroll}>
+          <Text style={styles.stepNumber}>{index + 1}</Text>
+          <Text style={styles.stepText}>{translatedSteps[`${language}-${index}`] || steps[index]}</Text>
+          {loadingAudio ? (
+            <View style={styles.audioLoading}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.audioLoadingText}>Warming up the voice…</Text>
+            </View>
+          ) : (
+            <View style={styles.speakingRow}>
+              <Icon name={isPlaying ? 'volume-high' : 'volume-medium'} size={16} color={colors.primary} />
+              <Text style={styles.speakingText}>{isPlaying ? 'Reading aloud' : 'Paused'}</Text>
+            </View>
+          )}
+        </ScrollView>
       </View>
-
-      <Pressable
-        style={styles.autoRow}
-        onPress={() => setAutoAdvance((v) => !v)}
-        testID="toggle-autoadvance"
-      >
+      <Pressable style={styles.autoRow} onPress={() => setAutoAdvance((v) => !v)} testID="toggle-autoadvance">
         <Icon name={autoAdvance ? 'checkbox-marked' : 'checkbox-blank-outline'} size={20} color={colors.primary} />
         <Text style={styles.autoText}>Auto-advance to the next step</Text>
         {autoAdvance && !isLastStep && (
           <View style={styles.countdownPill} testID="autoadvance-countdown">
             <Icon name="timer-outline" size={14} color={colors.primary} />
-            <Text style={styles.countdownText}>
-              {timerDone && !audioDone ? 'Waiting for voice…' : `Next in ${remaining}s`}
-            </Text>
+            <Text style={styles.countdownText}>{timerDone && !audioDone ? 'Waiting for voice…' : `Next in ${formatCountdown(remaining)}${usingRecipeTime ? ' (recipe time)' : ''}`}</Text>
           </View>
         )}
       </Pressable>
-
       {autoAdvance && (
-        <View style={styles.timerRow}>
-          <Text style={styles.timerLabel}>Seconds per step</Text>
-          <View style={styles.timerOptions}>
-            {TIMER_OPTIONS.map((s) => (
-              <Pressable
-                key={s}
-                style={[styles.timerPill, stepSeconds === s && styles.timerPillActive]}
-                onPress={() => setStepSeconds(s)}
-                testID={`timer-${s}`}
-              >
-                <Text style={[styles.timerPillText, stepSeconds === s && styles.timerPillTextActive]}>{s}s</Text>
-              </Pressable>
-            ))}
+        <View style={styles.timerBlock}>
+          <View style={styles.timerRow}>
+            <Text style={styles.timerLabel}>Seconds per step</Text>
+            <View style={styles.timerOptions}>
+              {TIMER_OPTIONS.map((s) => (
+                <Pressable key={s} style={[styles.timerPill, stepSeconds === s && styles.timerPillActive]} onPress={() => setStepSeconds(s)} testID={`timer-${s}`}>
+                  <Text style={[styles.timerPillText, stepSeconds === s && styles.timerPillTextActive]}>{s}s</Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
+          <Text style={styles.timerHint}>{'Used when a step has no stated time — steps like "marinate 15 min" use their own time instead.'}</Text>
         </View>
       )}
-
       <Pressable style={styles.voiceRow} onPress={() => setVoiceOn((v) => !v)} testID="toggle-voice">
-        <Icon
-          name={voiceOn ? 'microphone' : 'microphone-off'}
-          size={20}
-          color={voiceOn ? colors.primary : colors.mutedForeground}
-        />
+        <Icon name={voiceOn ? 'microphone' : 'microphone-off'} size={20} color={voiceOn ? colors.primary : colors.mutedForeground} />
         <View style={{ flex: 1 }}>
           <Text style={styles.autoText}>Voice control</Text>
           <Text style={styles.voiceHint}>
-            {!voiceSupported
-              ? 'Say “next”, “back” or “repeat” — needs a real device build.'
-              : permission === 'blocked'
-              ? 'Microphone access is blocked in settings.'
-              : 'Say “next”, “back” or “repeat”.'}
+            {!voiceSupported ? 'Say "next", "back" or "repeat" — needs a real device build.'
+              : permission === 'blocked' ? 'Microphone access is blocked in settings.'
+              : 'Say "next", "back" or "repeat".'}
           </Text>
         </View>
         {voiceOn && voiceSupported && listening && permission !== 'blocked' && (
@@ -292,34 +308,20 @@ export default function CookMode() {
           </View>
         )}
       </Pressable>
-
       {voiceOn && voiceSupported && permission === 'blocked' && (
         <Pressable style={styles.settingsBtn} onPress={openSettings} testID="voice-open-settings">
           <Icon name="cog" size={16} color={colors.primaryForeground} />
           <Text style={styles.settingsBtnText}>Open Settings</Text>
         </Pressable>
       )}
-
       <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
-        <Pressable
-          style={[styles.sideBtn, index === 0 && styles.disabledBtn]}
-          onPress={goPrev}
-          disabled={index === 0}
-          testID="cook-prev"
-        >
+        <Pressable style={[styles.sideBtn, index === 0 && styles.disabledBtn]} onPress={goPrev} disabled={index === 0} testID="cook-prev">
           <Icon name="skip-previous" size={26} color={index === 0 ? colors.mutedForeground : colors.foreground} />
         </Pressable>
-
         <Pressable style={styles.playBtn} onPress={togglePlay} testID="cook-playpause">
           <Icon name={isPlaying ? 'pause' : 'play'} size={34} color={colors.primaryForeground} />
         </Pressable>
-
-        <Pressable
-          style={[styles.sideBtn, index === steps.length - 1 && styles.disabledBtn]}
-          onPress={goNext}
-          disabled={index === steps.length - 1}
-          testID="cook-next"
-        >
+        <Pressable style={[styles.sideBtn, index === steps.length - 1 && styles.disabledBtn]} onPress={goNext} disabled={index === steps.length - 1} testID="cook-next">
           <Icon name="skip-next" size={26} color={index === steps.length - 1 ? colors.mutedForeground : colors.foreground} />
         </Pressable>
       </View>
@@ -360,7 +362,11 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   langChipActive: { backgroundColor: colors.primary },
   langChipText: { fontFamily: f.bodySemiBold, fontSize: 12, color: colors.mutedForeground },
   langChipTextActive: { color: colors.primaryForeground },
-  stepCard: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 22, justifyContent: 'center' },
+  // flex: 1 lets this card absorb whatever space is left, same as before — but
+  // now the long-text case scrolls WITHIN that space instead of overflowing
+  // past the card's edge into the rows below it (the reported overlap bug).
+  stepCard: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 22 },
+  stepCardScroll: { flexGrow: 1, justifyContent: 'center' },
   stepNumber: { fontFamily: f.serif, fontSize: 48, color: colors.primary, marginBottom: 8 },
   stepText: { fontFamily: f.body, fontSize: 22, lineHeight: 32, color: colors.foreground },
   audioLoading: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20 },
@@ -371,8 +377,10 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   autoText: { fontFamily: f.bodyMedium, fontSize: 14, color: colors.foreground },
   countdownPill: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto', backgroundColor: colors.secondary, borderRadius: radius.sm, paddingHorizontal: 10, paddingVertical: 5 },
   countdownText: { fontFamily: f.bodySemiBold, fontSize: 12, color: colors.primary },
-  timerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8 },
+  timerBlock: { paddingBottom: 8 },
+  timerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   timerLabel: { fontFamily: f.bodyMedium, fontSize: 14, color: colors.foreground },
+  timerHint: { fontFamily: f.body, fontSize: 11, color: colors.mutedForeground, marginTop: 4 },
   timerOptions: { flexDirection: 'row', gap: 8 },
   timerPill: { minWidth: 48, alignItems: 'center', borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 7 },
   timerPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },

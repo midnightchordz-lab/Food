@@ -5,14 +5,10 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 export type VoiceCommand = 'next' | 'back' | 'repeat';
 export type VoicePermission = 'unknown' | 'granted' | 'denied' | 'blocked';
 
-// expo-speech-recognition ships a NATIVE module that is absent in Expo Go. It
-// only works in a real dev/prod build. We therefore lazy-require it inside the
-// effect and gate everything behind `voiceSupported`.
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 export const voiceSupported = (Platform.OS === 'ios' || Platform.OS === 'android') && !isExpoGo;
 
 function getModule() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('expo-speech-recognition');
 }
 
@@ -24,15 +20,18 @@ function parseCommand(text: string): VoiceCommand | null {
   return null;
 }
 
-/**
- * Continuously listens for the words "next", "back/previous" and "repeat" while
- * `active` is true, firing `onCommand` (debounced) for each. Auto-restarts the
- * recognizer after every utterance so it stays hands-free. No-op unless running
- * in a real native build.
- */
-export function useVoiceCommands(active: boolean, onCommand: (cmd: VoiceCommand) => void) {
+export function useVoiceCommands(
+  active: boolean,
+  onCommand: (cmd: VoiceCommand) => void,
+  isNarrating: boolean = false,
+) {
   const onCommandRef = useRef(onCommand);
   onCommandRef.current = onCommand;
+  // Ref (not state) so the listener-setup effect below never needs isNarrating
+  // in its dependency array — recognition itself keeps running continuously;
+  // only whether a recognized command is ACTED on changes with narration state.
+  const isNarratingRef = useRef(isNarrating);
+  isNarratingRef.current = isNarrating;
 
   const [listening, setListening] = useState(false);
   const [permission, setPermission] = useState<VoicePermission>('unknown');
@@ -51,13 +50,32 @@ export function useVoiceCommands(active: boolean, onCommand: (cmd: VoiceCommand)
     const { ExpoSpeechRecognitionModule } = getModule();
     let cancelled = false;
     const subs: { remove: () => void }[] = [];
+    // Coordinates restarts scheduled from the 'error' and 'end' listeners so a
+    // single failed attempt (which commonly fires both events) can't schedule
+    // two overlapping restarts. Without this, error->500ms and end->250ms could
+    // both fire startRecognition() for the same failure, each restart colliding
+    // with the other and producing a near-continuous retry storm.
+    const retryTimeoutRef = { current: null as ReturnType<typeof setTimeout> | null };
+    const scheduleRestart = (delay: number) => {
+      if (cancelled) return;
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = setTimeout(() => {
+        retryTimeoutRef.current = null;
+        startRecognition();
+      }, delay);
+    };
 
     const fire = (text?: string) => {
       if (!text) return;
+      // Ignore anything heard while our own narration is playing through the
+      // speaker — otherwise the mic can pick up the app's own TTS audio (or a
+      // step that happens to contain a command word, e.g. "...go back to
+      // medium heat") and misfire a command. Recognition keeps running
+      // continuously; only acting on results is gated.
+      if (isNarratingRef.current) return;
       const cmd = parseCommand(text);
       if (!cmd) return;
       const now = Date.now();
-      // Debounce: interim + final results repeat the same word rapidly.
       if (now - lastFireRef.current < 1600) return;
       lastFireRef.current = now;
       onCommandRef.current(cmd);
@@ -81,7 +99,7 @@ export function useVoiceCommands(active: boolean, onCommand: (cmd: VoiceCommand)
     subs.push(
       ExpoSpeechRecognitionModule.addListener('end', () => {
         setListening(false);
-        if (!cancelled) setTimeout(startRecognition, 250);
+        if (!cancelled) scheduleRestart(250);
       }),
     );
     subs.push(
@@ -92,8 +110,7 @@ export function useVoiceCommands(active: boolean, onCommand: (cmd: VoiceCommand)
           setListening(false);
           return;
         }
-        // no-speech / network / aborted etc. — keep it alive.
-        if (!cancelled) setTimeout(startRecognition, 500);
+        if (!cancelled) scheduleRestart(500);
       }),
     );
 
@@ -117,18 +134,9 @@ export function useVoiceCommands(active: boolean, onCommand: (cmd: VoiceCommand)
     return () => {
       cancelled = true;
       setListening(false);
-      try {
-        ExpoSpeechRecognitionModule.abort();
-      } catch {
-        // ignore teardown errors
-      }
-      subs.forEach((s) => {
-        try {
-          s.remove();
-        } catch {
-          // ignore
-        }
-      });
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+      try { ExpoSpeechRecognitionModule.abort(); } catch {}
+      subs.forEach((s) => { try { s.remove(); } catch {} });
     };
   }, [active]);
 
