@@ -7,7 +7,7 @@ import { api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, Loading, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
-import { DIETARY_PREFS } from '@/src/constants/data';
+import { DIETARY_PREFS, CUISINES } from '@/src/constants/data';
 
 const DIABETES_TYPES = [
   { id: 'type2', label: 'Type 2' },
@@ -31,7 +31,14 @@ export default function Health() {
 
   const [dtype, setDtype] = useState('type2');
   const [dietary, setDietary] = useState('balanced');
+  // Add-on: cuisine preference, same idea as mood/10-min recipes. Empty (the
+  // default) means no cuisine constraint — identical to today's behavior.
+  const [cuisines, setCuisines] = useState<string[]>([]);
   const [swapping, setSwapping] = useState<string | null>(null);
+
+  const toggleCuisine = (id: string) => {
+    setCuisines((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['diabetes-plan'],
@@ -43,7 +50,7 @@ export default function Health() {
 
   const genMut = useMutation({
     mutationFn: async () => {
-      const res = await api.post('/mobile-diabetes/plan', { diabetes_type: dtype, dietary_preference: dietary });
+      const res = await api.post('/mobile-diabetes/plan', { diabetes_type: dtype, dietary_preference: dietary, cuisine_preferences: cuisines });
       return res.data;
     },
     onSuccess: () => {
@@ -128,6 +135,22 @@ export default function Health() {
                   <Text style={[styles.chipText, { color: dietary === d.id ? colors.accentForeground : colors.secondaryForeground }]}>{d.label}</Text>
                 </Pressable>
               ))}
+            </ScrollView>
+            <Text style={[styles.controlTitle, { marginTop: 14 }]}>Cuisine <Text style={styles.controlHint}>· optional, pick any</Text></Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+              {CUISINES.filter((c) => c.id !== 'any').map((c) => {
+                const active = cuisines.includes(c.id);
+                return (
+                  <Pressable
+                    key={c.id}
+                    testID={`health-cuisine-${c.id}`}
+                    onPress={() => toggleCuisine(c.id)}
+                    style={[styles.chip, { backgroundColor: active ? colors.accent : colors.secondary }]}
+                  >
+                    <Text style={[styles.chipText, { color: active ? colors.accentForeground : colors.secondaryForeground }]}>{c.flag} {c.label}</Text>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
             <View style={{ height: 14 }} />
             <Button
@@ -234,6 +257,7 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 10 },
   controlCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 16, marginBottom: 16 },
   controlTitle: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.mutedForeground, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  controlHint: { fontFamily: f.body, fontSize: 11, color: colors.mutedForeground, textTransform: 'none', letterSpacing: 0 },
   chipRow: { gap: 8, paddingRight: 8 },
   chip: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, flexShrink: 0 },
   chipText: { fontFamily: f.bodyMedium, fontSize: 13 },
