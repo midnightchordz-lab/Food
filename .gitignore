@@ -90,3 +90,6 @@ credentials.json
 .credentials
 # NOTE: .env files are intentionally NOT excluded here — they are required
 # for production deployment. See comment on line 38.
+.env
+.env.*
+*.env
