@@ -196,65 +196,76 @@ async def send_phone_otp(request: PhoneSendOTP):
     """Send OTP to phone number via Twilio SMS"""
     phone = request.phone_number.strip()
 
-    # Kill switch: block new signups only. Existing phone-only users can still
-    # log in — we look them up first so they're never locked out.
+    # Validate E.164 format early — applies to both paths.
+    if not phone.startswith('+') or len(phone) < 10:
+        raise HTTPException(status_code=400, detail="Invalid phone number format. Use E.164 format: +1234567890")
+
+    twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+    twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
+    verify_service_sid = os.environ.get('TWILIO_VERIFY_SERVICE_SID')
+
+    # ── Twilio Verify path (Fraud Guard enabled) ─────────────────────────────
+    # When TWILIO_VERIFY_SERVICE_SID is configured, Verify owns code generation
+    # and delivery entirely — we never see the code, so the kill switch and
+    # debug-return-OTP flags are both bypassed. Verify's own Fraud Guard handles
+    # abuse protection, making the separate PHONE_OTP_ENABLED kill switch
+    # redundant on this path.
+    if twilio_sid and twilio_token and verify_service_sid:
+        try:
+            from twilio.rest import Client
+            client = Client(twilio_sid, twilio_token)
+            verification = client.verify.v2.services(verify_service_sid).verifications.create(
+                to=phone, channel='sms'
+            )
+            logging.info(f"Twilio Verify: sent to {phone[-4:]}, status={verification.status}")
+            return {"status": verification.status, "message": "Verification code sent via SMS"}
+        except Exception as e:
+            logging.error(f"Twilio Verify send error: {e}")
+            raise HTTPException(status_code=502, detail="Couldn't send the verification code — try again")
+
+    # ── Legacy path (custom OTP + Messaging) ─────────────────────────────────
+    # Kill switch: block new signups only when Verify is not yet configured.
+    # Existing phone-only users can still log in — look them up first so they
+    # are never locked out.
     if not PHONE_OTP_ENABLED:
         existing = await db.users.find_one({"phone_number": phone})
         if not existing:
             raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email or Google to sign in.")
-    
-    # Validate E.164 format
-    if not phone.startswith('+') or len(phone) < 10:
-        raise HTTPException(status_code=400, detail="Invalid phone number format. Use E.164 format: +1234567890")
-    
+
     # M3: throttle OTP requests per phone number.
     await check_rate_limit(f"otp:phone:{phone}", max_requests=5, window_seconds=3600)
-    
+
     # Generate OTP
     otp = str(random.randint(100000, 999999))
-    
+
     # Store OTP locally (with expiration)
     otp_storage[phone] = {
         "code": otp,
         "expires": datetime.now(timezone.utc) + timedelta(minutes=10),
         "attempts": 0
     }
-    
-    # Check if Twilio is configured
-    twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
-    twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
-    
+
     if twilio_sid and twilio_token:
         try:
             from twilio.rest import Client
             client = Client(twilio_sid, twilio_token)
-            
-            # Send SMS with OTP
             message = client.messages.create(
                 body=f"Your MoodFood verification code is: {otp}. Valid for 10 minutes.",
                 from_=TWILIO_FROM_NUMBER,
                 to=phone
             )
-            
-            logging.info(f"SMS sent to {phone}, SID: {message.sid}, Status: {message.status}")
-            
-            return {
-                "status": "pending",
-                "message": "Verification code sent via SMS",
-                "sid": message.sid
-            }
+            logging.info(f"SMS sent to {phone[-4:]}, SID: {message.sid}, Status: {message.status}")
+            return {"status": "pending", "message": "Verification code sent via SMS", "sid": message.sid}
         except Exception as e:
             logging.error(f"Twilio error: {e}")
             if DEBUG_RETURN_OTP:
                 logging.warning(f"AUTH_DEBUG_RETURN_OTP is on — returning OTP for {phone[-4:]} in response")
                 return {"status": "pending", "message": "Demo mode (SMS failed)", "demo_otp": otp}
-            # H1: fail closed — never leak the code on delivery failure
             raise HTTPException(status_code=502, detail="Couldn't send the verification code — try again")
     else:
         if DEBUG_RETURN_OTP:
             logging.warning(f"AUTH_DEBUG_RETURN_OTP is on — returning OTP for {phone[-4:]} in response")
             return {"status": "pending", "message": "Demo mode", "demo_otp": otp}
-        # H1: fail closed instead of leaking the code
         raise HTTPException(status_code=503, detail="SMS delivery is not available right now")
 
 
@@ -263,28 +274,49 @@ async def verify_phone_otp(request: PhoneVerifyOTP, http_request: Request):
     """Verify OTP and login/register user"""
     phone = request.phone_number.strip()
     code = request.code.strip()
-    
+
+    twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+    twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
+    verify_service_sid = os.environ.get('TWILIO_VERIFY_SERVICE_SID')
+
     is_valid = False
-    
-    # Verify against stored OTP
-    if phone in otp_storage:
-        stored = otp_storage[phone]
-        if stored["expires"] > datetime.now(timezone.utc):
-            stored["attempts"] += 1
-            if stored["attempts"] > 5:
-                del otp_storage[phone]
-                raise HTTPException(status_code=400, detail="Too many attempts. Please request a new code.")
-            if stored["code"] == code:
-                is_valid = True
-                del otp_storage[phone]
-        else:
-            del otp_storage[phone]
-            raise HTTPException(status_code=400, detail="OTP expired. Please request a new code.")
+
+    # ── Twilio Verify path ────────────────────────────────────────────────────
+    if twilio_sid and twilio_token and verify_service_sid:
+        try:
+            from twilio.rest import Client
+            client = Client(twilio_sid, twilio_token)
+            check = client.verify.v2.services(verify_service_sid).verification_checks.create(
+                to=phone, code=code
+            )
+            is_valid = (check.status == 'approved')
+            logging.info(f"Twilio Verify check for {phone[-4:]}: status={check.status}")
+        except Exception as e:
+            logging.error(f"Twilio Verify check error: {e}")
+            raise HTTPException(status_code=502, detail="Could not verify the code — try again")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+
+    # ── Legacy path (otp_storage) ─────────────────────────────────────────────
     else:
-        raise HTTPException(status_code=400, detail="No OTP found for this number. Please request a code first.")
-    
-    if not is_valid:
-        raise HTTPException(status_code=400, detail="Invalid verification code")
+        if phone in otp_storage:
+            stored = otp_storage[phone]
+            if stored["expires"] > datetime.now(timezone.utc):
+                stored["attempts"] += 1
+                if stored["attempts"] > 5:
+                    del otp_storage[phone]
+                    raise HTTPException(status_code=400, detail="Too many attempts. Please request a new code.")
+                if stored["code"] == code:
+                    is_valid = True
+                    del otp_storage[phone]
+            else:
+                del otp_storage[phone]
+                raise HTTPException(status_code=400, detail="OTP expired. Please request a new code.")
+        else:
+            raise HTTPException(status_code=400, detail="No OTP found for this number. Please request a code first.")
+
+        if not is_valid:
+            raise HTTPException(status_code=400, detail="Invalid verification code")
     
     # Check if user exists
     existing_user = await db.users.find_one({"phone_number": phone}, {"_id": 0, "hashed_password": 0})
