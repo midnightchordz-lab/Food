@@ -8,10 +8,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import * as Localization from 'expo-localization';
 import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Button, Icon, useToast } from '@/src/components/ui';
 import { AppleSignInButton } from '@/src/components/AppleSignInButton';
+import { CountryCodePicker } from '@/src/components/CountryCodePicker';
+import { Country, DEFAULT_COUNTRY, findByIso2 } from '@/src/data/countryCodes';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -36,11 +39,22 @@ export default function Welcome() {
   const [busy, setBusy] = useState(false);
 
   const [phoneMode, setPhoneMode] = useState(false);
+  const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [phoneBusy, setPhoneBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+
+  useEffect(() => {
+    try {
+      const regionCode = Localization.getLocales()?.[0]?.regionCode;
+      const detected = findByIso2(regionCode);
+      if (detected) setCountry(detected);
+    } catch {
+      // Keep default country — detection is a convenience, not a requirement.
+    }
+  }, []);
 
   const handleGoogle = async () => {
     setGoogleBusy(true);
@@ -68,14 +82,17 @@ export default function Welcome() {
     }
   };
 
+  const fullPhone = `+${country.dial}${phone.replace(/\D/g, '')}`;
+
   const sendCode = async () => {
-    if (!/^\+\d{7,15}$/.test(phone.trim())) {
-      toast.show('Enter your number in +countrycode format, e.g. +14155551234', 'error');
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 6 || digits.length > 14) {
+      toast.show('Enter a valid phone number', 'error');
       return;
     }
     setPhoneBusy(true);
     try {
-      const res = await sendPhoneOtp(phone.trim());
+      const res = await sendPhoneOtp(fullPhone);
       setOtpSent(true);
       if (res?.demo_otp) toast.show(`Demo code: ${res.demo_otp}`, 'info');
       else toast.show('We texted you a 6-digit code', 'success');
@@ -90,7 +107,7 @@ export default function Welcome() {
     if (code.trim().length < 4) { toast.show('Enter the code we sent you', 'error'); return; }
     setPhoneBusy(true);
     try {
-      await phoneLogin(phone.trim(), code.trim());
+      await phoneLogin(fullPhone, code.trim());
       router.replace('/(tabs)');
     } catch (e: any) {
       toast.show(e?.response?.data?.detail || 'That code did not work', 'error');
@@ -191,7 +208,12 @@ export default function Welcome() {
             </>
           ) : (
             <>
-              <Field icon="phone-outline" placeholder="+1 415 555 1234" value={phone} onChange={setPhone} keyboardType="phone-pad" testID="input-phone" />
+              <View style={styles.phoneRow}>
+                <CountryCodePicker value={country} onSelect={setCountry} testID="country-picker" />
+                <View style={styles.phoneFieldWrap}>
+                  <Field icon="phone-outline" placeholder="98765 43210" value={phone} onChange={setPhone} keyboardType="phone-pad" testID="input-phone" />
+                </View>
+              </View>
               {otpSent ? (
                 <Field icon="numeric" placeholder="6-digit code" value={code} onChange={setCode} keyboardType="number-pad" testID="input-otp" />
               ) : null}
@@ -322,6 +344,8 @@ const useStyles = makeStyles(({ colors }) => ({
     backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
     borderRadius: 16, paddingHorizontal: 16, height: 56, marginBottom: 12,
   },
+  phoneRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  phoneFieldWrap: { flex: 1 },
   input: { flex: 1, fontFamily: fonts.body, fontSize: 15, color: colors.foreground, height: '100%' },
   fineprint: { fontFamily: fonts.body, fontSize: 12.5, color: colors.mutedForeground, textAlign: 'center', marginTop: 18 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20 },
