@@ -194,10 +194,14 @@ PHONE_OTP_ENABLED = os.environ.get("PHONE_OTP_ENABLED", "false").lower() == "tru
 @router.post("/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
     """Send OTP to phone number via Twilio SMS"""
-    if not PHONE_OTP_ENABLED:
-        raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email or Google to sign in.")
-
     phone = request.phone_number.strip()
+
+    # Kill switch: block new signups only. Existing phone-only users can still
+    # log in — we look them up first so they're never locked out.
+    if not PHONE_OTP_ENABLED:
+        existing = await db.users.find_one({"phone_number": phone})
+        if not existing:
+            raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email or Google to sign in.")
     
     # Validate E.164 format
     if not phone.startswith('+') or len(phone) < 10:
