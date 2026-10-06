@@ -195,15 +195,19 @@ async def logout(body: RefreshRequest):
 @router.post("/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
     """Send OTP to phone number via Twilio SMS"""
-    if not PHONE_OTP_ENABLED:
-        raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email or Google to sign in.")
-
     phone = request.phone_number.strip()
 
     # Validate E.164 format
     if not phone.startswith('+') or len(phone) < 10:
         raise HTTPException(status_code=400, detail="Invalid phone number format. Use E.164 format: +1234567890")
-    
+
+    # Kill switch blocks NEW signups only — existing phone-auth users (often
+    # with no other login method) must still be able to get back in.
+    if not PHONE_OTP_ENABLED:
+        existing_user = await db.users.find_one({"phone_number": phone}, {"_id": 0, "id": 1})
+        if not existing_user:
+            raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable for new accounts. Please use email or Google to sign in.")
+
     # M3: throttle OTP requests per phone number.
     await check_rate_limit(f"otp:phone:{phone}", max_requests=5, window_seconds=3600)
     
