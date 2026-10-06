@@ -37,6 +37,10 @@ TWILIO_FROM_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '+19064011655')
 # H1: never return the OTP automatically. Explicit opt-in only, must be false in prod.
 DEBUG_RETURN_OTP = os.environ.get("AUTH_DEBUG_RETURN_OTP", "false").lower() == "true"
 
+# Temporary kill switch while we sort out Twilio Verify / compliance — defaults OFF.
+# Set PHONE_OTP_ENABLED=true once phone sign-in is ready to resume.
+PHONE_OTP_ENABLED = os.environ.get("PHONE_OTP_ENABLED", "false").lower() == "true"
+
 
 @router.post("/register", response_model=Token)
 async def register(user: UserRegister, http_request: Request):
@@ -191,8 +195,11 @@ async def logout(body: RefreshRequest):
 @router.post("/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
     """Send OTP to phone number via Twilio SMS"""
+    if not PHONE_OTP_ENABLED:
+        raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email or Google to sign in.")
+
     phone = request.phone_number.strip()
-    
+
     # Validate E.164 format
     if not phone.startswith('+') or len(phone) < 10:
         raise HTTPException(status_code=400, detail="Invalid phone number format. Use E.164 format: +1234567890")
