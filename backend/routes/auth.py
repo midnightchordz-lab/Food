@@ -188,9 +188,15 @@ async def logout(body: RefreshRequest):
     return {"status": "logged_out"}
 
 
+PHONE_OTP_ENABLED = os.environ.get("PHONE_OTP_ENABLED", "false").lower() == "true"
+
+
 @router.post("/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
     """Send OTP to phone number via Twilio SMS"""
+    if not PHONE_OTP_ENABLED:
+        raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email or Google to sign in.")
+
     phone = request.phone_number.strip()
     
     # Validate E.164 format
