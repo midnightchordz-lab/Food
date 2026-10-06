@@ -85,7 +85,8 @@
           ]
         }
       ],
-      "expo-build-properties"
+      "expo-build-properties",
+      "expo-localization"
     ]
   }
 }

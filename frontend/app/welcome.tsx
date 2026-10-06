@@ -8,10 +8,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import * as ExpoLocalization from 'expo-localization';
 import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Button, Icon, useToast } from '@/src/components/ui';
 import { AppleSignInButton } from '@/src/components/AppleSignInButton';
+import { CountryCodePicker } from '@/src/components/CountryCodePicker';
+import { getCountryByRegion, CountryCode } from '@/src/constants/countryCodes';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -42,6 +45,16 @@ export default function Welcome() {
   const [phoneBusy, setPhoneBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
 
+  // Auto-detect country from device locale; user can override via the picker.
+  const [country, setCountry] = useState<CountryCode>(() => {
+    try {
+      const region = ExpoLocalization.getLocales?.()[0]?.regionCode;
+      return getCountryByRegion(region);
+    } catch {
+      return getCountryByRegion('IN');
+    }
+  });
+
   const handleGoogle = async () => {
     setGoogleBusy(true);
     try {
@@ -69,13 +82,15 @@ export default function Welcome() {
   };
 
   const sendCode = async () => {
-    if (!/^\+\d{7,15}$/.test(phone.trim())) {
-      toast.show('Enter your number in +countrycode format, e.g. +14155551234', 'error');
+    const digits = phone.trim().replace(/\s/g, '');
+    if (digits.length < 6 || digits.length > 14 || !/^\d+$/.test(digits)) {
+      toast.show('Enter your local number (digits only, no country code)', 'error');
       return;
     }
+    const e164 = `${country.dial}${digits}`;
     setPhoneBusy(true);
     try {
-      const res = await sendPhoneOtp(phone.trim());
+      const res = await sendPhoneOtp(e164);
       setOtpSent(true);
       if (res?.demo_otp) toast.show(`Demo code: ${res.demo_otp}`, 'info');
       else toast.show('We texted you a 6-digit code', 'success');
@@ -88,9 +103,11 @@ export default function Welcome() {
 
   const verifyCode = async () => {
     if (code.trim().length < 4) { toast.show('Enter the code we sent you', 'error'); return; }
+    const digits = phone.trim().replace(/\s/g, '');
+    const e164 = `${country.dial}${digits}`;
     setPhoneBusy(true);
     try {
-      await phoneLogin(phone.trim(), code.trim());
+      await phoneLogin(e164, code.trim());
       router.replace('/(tabs)');
     } catch (e: any) {
       toast.show(e?.response?.data?.detail || 'That code did not work', 'error');
@@ -191,7 +208,22 @@ export default function Welcome() {
             </>
           ) : (
             <>
-              <Field icon="phone-outline" placeholder="+1 415 555 1234" value={phone} onChange={setPhone} keyboardType="phone-pad" testID="input-phone" />
+              <View style={styles.phoneRow}>
+                <CountryCodePicker selected={country} onSelect={(c) => { setCountry(c); setOtpSent(false); }} />
+                <View style={styles.phoneField}>
+                  <TextInput
+                    testID="input-phone"
+                    style={styles.input}
+                    placeholder="Phone number"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={phone}
+                    onChangeText={(v) => { setPhone(v); setOtpSent(false); }}
+                    keyboardType="phone-pad"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+              </View>
               {otpSent ? (
                 <Field icon="numeric" placeholder="6-digit code" value={code} onChange={setCode} keyboardType="number-pad" testID="input-otp" />
               ) : null}
@@ -332,4 +364,10 @@ const useStyles = makeStyles(({ colors }) => ({
   altBtnText: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.foreground },
   resendRow: { alignItems: 'center', paddingVertical: 12 },
   resendText: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.primary },
+  phoneRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  phoneField: {
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 16, paddingHorizontal: 16, height: 56,
+  },
 }));
