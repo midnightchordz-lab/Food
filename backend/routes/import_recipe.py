@@ -338,28 +338,14 @@ Output ONLY valid JSON, no other text or markdown code blocks."""
         raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
 
 
-@router.post("/video")
-async def import_from_video(request: ImportVideoRequest, current_user: User = Depends(get_current_user)):
-    """Import a recipe from a video URL (YouTube, etc.)"""
+async def extract_recipe_from_video(video_url: str) -> Dict[str, Any]:
+    """Shared video->recipe extraction (YouTube, etc.), used by both the
+    legacy gated /import/video route and the unguarded /mobile-import/video route."""
     try:
-        # Check feature access - Video Import requires Chef Pro
-        access = await check_video_import_access(current_user.id)
-        if not access["allowed"]:
-            raise HTTPException(
-                status_code=403,
-                detail={
-                    "error": "feature_locked",
-                    "message": access["reason"],
-                    "feature": "video_import",
-                    "upgrade_to": access["upgrade_to"],
-                    "current_plan": access["current_plan"]
-                }
-            )
-        
         import httpx
         import re
-        
-        logging.info(f"Importing recipe from video: {request.video_url}")
+
+        logging.info(f"Importing recipe from video: {video_url}")
         
         llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
         
@@ -368,55 +354,55 @@ async def import_from_video(request: ImportVideoRequest, current_user: User = De
         channel_name = ""
         
         youtube_patterns = ['youtube.com', 'youtu.be']
-        is_youtube = any(p in request.video_url for p in youtube_patterns)
-        
+        is_youtube = any(p in video_url for p in youtube_patterns)
+
         if is_youtube:
             video_id = None
-            if 'youtu.be/' in request.video_url:
-                video_id = request.video_url.split('youtu.be/')[-1].split('?')[0]
-            elif 'v=' in request.video_url:
-                video_id = request.video_url.split('v=')[-1].split('&')[0]
-            elif 'shorts/' in request.video_url:
-                video_id = request.video_url.split('shorts/')[-1].split('?')[0]
-            
+            if 'youtu.be/' in video_url:
+                video_id = video_url.split('youtu.be/')[-1].split('?')[0]
+            elif 'v=' in video_url:
+                video_id = video_url.split('v=')[-1].split('&')[0]
+            elif 'shorts/' in video_url:
+                video_id = video_url.split('shorts/')[-1].split('?')[0]
+
             if video_id:
-                video_url = f"https://www.youtube.com/watch?v={video_id}"
-                
+                canonical_url = f"https://www.youtube.com/watch?v={video_id}"
+
                 try:
                     async with httpx.AsyncClient(timeout=10.0) as client:
-                        oembed_url = f"https://www.youtube.com/oembed?url={video_url}&format=json"
+                        oembed_url = f"https://www.youtube.com/oembed?url={canonical_url}&format=json"
                         response = await client.get(oembed_url)
-                        
+
                         if response.status_code == 200:
                             oembed_data = response.json()
                             video_title = oembed_data.get('title', 'Unknown')
                             channel_name = oembed_data.get('author_name', '')
-                        
+
                 except Exception as e:
                     logging.warning(f"oEmbed failed: {e}")
-                
+
                 try:
                     async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
                         response = await client.get(
-                            video_url,
+                            canonical_url,
                             headers={'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)'}
                         )
                         html = response.text
-                        
+
                         desc_match = re.search(r'"shortDescription":"((?:[^"\\]|\\.)*)"', html, re.DOTALL)
                         if desc_match:
                             video_description = desc_match.group(1)
                             video_description = video_description.encode().decode('unicode_escape')
                             video_description = video_description.replace('\\n', '\n')[:3000]
-                        
+
                 except Exception as e:
                     logging.warning(f"Page scrape failed: {e}")
-        
+
         video_info = f"""=== COOKING VIDEO INFORMATION ===
 
 Video Title: {video_title}
 Channel/Creator: {channel_name}
-Video URL: {request.video_url}
+Video URL: {video_url}
 
 Video Description:
 {video_description[:6000] if video_description else 'No description available - use the video title to identify the recipe'}
@@ -464,12 +450,12 @@ Output ONLY the JSON object for this recipe."""
             
             recipe = json.loads(json_match.strip())
             recipe['importMethod'] = 'video'
-            recipe['originalSource'] = request.video_url
+            recipe['originalSource'] = video_url
             recipe['importDate'] = datetime.now(timezone.utc).isoformat()
             recipe['videoTitle'] = video_title
             recipe['channelName'] = channel_name
-            
-            return {"recipe": recipe, "source": request.video_url, "videoTitle": video_title}
+
+            return {"recipe": recipe, "source": video_url, "videoTitle": video_title}
             
         except json.JSONDecodeError as e:
             logging.error(f"Failed to parse AI response: {e}")
@@ -480,6 +466,25 @@ Output ONLY the JSON object for this recipe."""
     except Exception as e:
         logging.error(f"Error importing from video: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/video")
+async def import_from_video(request: ImportVideoRequest, current_user: User = Depends(get_current_user)):
+    """Import a recipe from a video URL (YouTube, etc.)"""
+    # Check feature access - Video Import requires Chef Pro
+    access = await check_video_import_access(current_user.id)
+    if not access["allowed"]:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "feature_locked",
+                "message": access["reason"],
+                "feature": "video_import",
+                "upgrade_to": access["upgrade_to"],
+                "current_plan": access["current_plan"]
+            }
+        )
+    return await extract_recipe_from_video(request.video_url)
 
 
 @router.post("/text")

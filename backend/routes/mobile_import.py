@@ -17,8 +17,10 @@ from .import_recipe import (
     ImportURLRequest,
     ImportTextRequest,
     ImportImageRequest,
+    ImportVideoRequest,
     IMPORT_RECIPE_PROMPT,
     extract_recipe_from_url,
+    extract_recipe_from_video,
     convert_to_standard_recipe,
 )
 
@@ -34,6 +36,11 @@ async def mobile_import_from_url(request: ImportURLRequest, current_user: User =
         raise HTTPException(status_code=400, detail="Couldn't find a recipe on that page")
     recipe = await convert_to_standard_recipe(content, "url", request.url)
     return {"recipe": recipe, "source": request.url}
+
+
+@router.post("/video")
+async def mobile_import_from_video(request: ImportVideoRequest, current_user: User = Depends(get_current_user)):
+    return await extract_recipe_from_video(request.video_url)
 
 
 @router.post("/text")

@@ -42,7 +42,11 @@ export default function ImportRecipe() {
   const importMut = useMutation({
     mutationFn: async () => {
       if (tab === 'link') {
-        const res = await api.post('/mobile-import/url', { url: url.trim() });
+        const trimmed = url.trim();
+        const isYoutube = /(?:youtube\.com|youtu\.be)/i.test(trimmed);
+        const res = isYoutube
+          ? await api.post('/mobile-import/video', { video_url: trimmed })
+          : await api.post('/mobile-import/url', { url: trimmed });
         return res.data.recipe as ImportedRecipe;
       }
       const res = await api.post('/mobile-import/text', { recipe_text: text.trim() });
@@ -159,7 +163,7 @@ export default function ImportRecipe() {
                   <TextInput
                     testID="import-url"
                     style={styles.input}
-                    placeholder="https://example.com/recipe"
+                    placeholder="Recipe link or YouTube video"
                     placeholderTextColor={colors.mutedForeground}
                     value={url}
                     onChangeText={setUrl}
