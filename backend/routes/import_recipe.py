@@ -340,9 +340,8 @@ Output ONLY valid JSON, no other text or markdown code blocks."""
 
 @router.post("/video")
 async def import_from_video(request: ImportVideoRequest, current_user: User = Depends(get_current_user)):
-    """Import a recipe from a video URL (YouTube, etc.)"""
+    """Import a recipe from a video URL (YouTube, etc.) — Chef Pro gated"""
     try:
-        # Check feature access - Video Import requires Chef Pro
         access = await check_video_import_access(current_user.id)
         if not access["allowed"]:
             raise HTTPException(
@@ -355,68 +354,74 @@ async def import_from_video(request: ImportVideoRequest, current_user: User = De
                     "current_plan": access["current_plan"]
                 }
             )
-        
-        import httpx
-        import re
-        
-        logging.info(f"Importing recipe from video: {request.video_url}")
-        
-        llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
-        
-        video_title = "Unknown"
-        video_description = ""
-        channel_name = ""
-        
-        youtube_patterns = ['youtube.com', 'youtu.be']
-        is_youtube = any(p in request.video_url for p in youtube_patterns)
-        
-        if is_youtube:
-            video_id = None
-            if 'youtu.be/' in request.video_url:
-                video_id = request.video_url.split('youtu.be/')[-1].split('?')[0]
-            elif 'v=' in request.video_url:
-                video_id = request.video_url.split('v=')[-1].split('&')[0]
-            elif 'shorts/' in request.video_url:
-                video_id = request.video_url.split('shorts/')[-1].split('?')[0]
-            
-            if video_id:
-                video_url = f"https://www.youtube.com/watch?v={video_id}"
-                
-                try:
-                    async with httpx.AsyncClient(timeout=10.0) as client:
-                        oembed_url = f"https://www.youtube.com/oembed?url={video_url}&format=json"
-                        response = await client.get(oembed_url)
-                        
-                        if response.status_code == 200:
-                            oembed_data = response.json()
-                            video_title = oembed_data.get('title', 'Unknown')
-                            channel_name = oembed_data.get('author_name', '')
-                        
-                except Exception as e:
-                    logging.warning(f"oEmbed failed: {e}")
-                
-                try:
-                    async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
-                        response = await client.get(
-                            video_url,
-                            headers={'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)'}
-                        )
-                        html = response.text
-                        
-                        desc_match = re.search(r'"shortDescription":"((?:[^"\\]|\\.)*)"', html, re.DOTALL)
-                        if desc_match:
-                            video_description = desc_match.group(1)
-                            video_description = video_description.encode().decode('unicode_escape')
-                            video_description = video_description.replace('\\n', '\n')[:3000]
-                        
-                except Exception as e:
-                    logging.warning(f"Page scrape failed: {e}")
-        
-        video_info = f"""=== COOKING VIDEO INFORMATION ===
+        return await extract_recipe_from_video(request.video_url)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error importing from video: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def extract_recipe_from_video(video_url: str) -> Dict[str, Any]:
+    """Shared video extraction logic: oEmbed title/author + description scrape + AI recipe.
+    Called by both the legacy /import/video route (Chef-Pro gated) and the new
+    /mobile-import/video route (client-side gated via RevenueCat)."""
+    import httpx
+    import re
+
+    logging.info(f"Importing recipe from video: {video_url}")
+    llm_api_key = os.environ.get('EMERGENT_LLM_KEY')
+
+    video_title = "Unknown"
+    video_description = ""
+    channel_name = ""
+
+    youtube_patterns = ['youtube.com', 'youtu.be']
+    is_youtube = any(p in video_url for p in youtube_patterns)
+
+    if is_youtube:
+        video_id = None
+        if 'youtu.be/' in video_url:
+            video_id = video_url.split('youtu.be/')[-1].split('?')[0]
+        elif 'v=' in video_url:
+            video_id = video_url.split('v=')[-1].split('&')[0]
+        elif 'shorts/' in video_url:
+            video_id = video_url.split('shorts/')[-1].split('?')[0]
+
+        if video_id:
+            canonical = f"https://www.youtube.com/watch?v={video_id}"
+
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    oembed_url = f"https://www.youtube.com/oembed?url={canonical}&format=json"
+                    resp = await client.get(oembed_url)
+                    if resp.status_code == 200:
+                        oembed_data = resp.json()
+                        video_title = oembed_data.get('title', 'Unknown')
+                        channel_name = oembed_data.get('author_name', '')
+            except Exception as e:
+                logging.warning(f"oEmbed failed: {e}")
+
+            try:
+                async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                    resp = await client.get(
+                        canonical,
+                        headers={'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)'}
+                    )
+                    html = resp.text
+                    desc_match = re.search(r'"shortDescription":"((?:[^"\\]|\\.)*)"', html, re.DOTALL)
+                    if desc_match:
+                        video_description = desc_match.group(1)
+                        video_description = video_description.encode().decode('unicode_escape')
+                        video_description = video_description.replace('\\n', '\n')[:3000]
+            except Exception as e:
+                logging.warning(f"Page scrape failed: {e}")
+
+    video_info = f"""=== COOKING VIDEO INFORMATION ===
 
 Video Title: {video_title}
 Channel/Creator: {channel_name}
-Video URL: {request.video_url}
+Video URL: {video_url}
 
 Video Description:
 {video_description[:6000] if video_description else 'No description available - use the video title to identify the recipe'}
@@ -426,11 +431,11 @@ Video Description:
 Based on this YouTube cooking video, create a detailed recipe.
 The VIDEO TITLE clearly indicates what dish is being made: "{video_title}"
 Extract the recipe for this EXACT dish."""
-        
-        chat = LlmChat(
-            api_key=llm_api_key,
-            session_id=f"import-video-{uuid.uuid4().hex[:8]}",
-            system_message=f"""{IMPORT_RECIPE_PROMPT}
+
+    chat = LlmChat(
+        api_key=llm_api_key,
+        session_id=f"import-video-{uuid.uuid4().hex[:8]}",
+        system_message=f"""{IMPORT_RECIPE_PROMPT}
 
 SOURCE CONTEXT: You are extracting a recipe from a YouTube cooking video.
 
@@ -442,10 +447,10 @@ CRITICAL INSTRUCTIONS:
 5. Include detailed steps that would typically be shown in such a video
 
 NEVER return an error or refuse. ALWAYS create a valid recipe JSON based on the title."""
-        )
-        chat.with_model("openai", "gpt-4o-mini")
-        
-        prompt = f"""Create a detailed recipe based on this cooking video.
+    )
+    chat.with_model("openai", "gpt-4o-mini")
+
+    prompt = f"""Create a detailed recipe based on this cooking video.
 
 {video_info}
 
@@ -453,33 +458,24 @@ The recipe name should match the dish in the video title: "{video_title}"
 
 Output ONLY the JSON object for this recipe."""
 
-        response = await chat.send_message(UserMessage(text=prompt))
-        
-        try:
-            json_match = response
-            if "```json" in response:
-                json_match = response.split("```json")[1].split("```")[0]
-            elif "```" in response:
-                json_match = response.split("```")[1].split("```")[0]
-            
-            recipe = json.loads(json_match.strip())
-            recipe['importMethod'] = 'video'
-            recipe['originalSource'] = request.video_url
-            recipe['importDate'] = datetime.now(timezone.utc).isoformat()
-            recipe['videoTitle'] = video_title
-            recipe['channelName'] = channel_name
-            
-            return {"recipe": recipe, "source": request.video_url, "videoTitle": video_title}
-            
-        except json.JSONDecodeError as e:
-            logging.error(f"Failed to parse AI response: {e}")
-            raise HTTPException(status_code=500, detail="Failed to parse recipe from video")
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error importing from video: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    response = await chat.send_message(UserMessage(text=prompt))
+
+    try:
+        json_match = response
+        if "```json" in response:
+            json_match = response.split("```json")[1].split("```")[0]
+        elif "```" in response:
+            json_match = response.split("```")[1].split("```")[0]
+        recipe = json.loads(json_match.strip())
+        recipe['importMethod'] = 'video'
+        recipe['originalSource'] = video_url
+        recipe['importDate'] = datetime.now(timezone.utc).isoformat()
+        recipe['videoTitle'] = video_title
+        recipe['channelName'] = channel_name
+        return {"recipe": recipe, "source": video_url, "videoTitle": video_title}
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to parse AI response from video: {e}")
+        raise HTTPException(status_code=500, detail="Failed to parse recipe from video")
 
 
 @router.post("/text")

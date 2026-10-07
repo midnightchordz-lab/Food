@@ -33,7 +33,7 @@ export default function ImportRecipe() {
   const { isSubscribed } = useSubscription();
 
   const params = useLocalSearchParams<{ tab?: string }>();
-  const initialTab = params.tab === 'photo' || params.tab === 'text' ? params.tab : 'text';
+  const initialTab = params.tab === 'photo' || params.tab === 'text' ? params.tab : 'link';
   const [tab, setTab] = useState<'link' | 'text' | 'photo'>(initialTab as 'link' | 'text' | 'photo');
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
@@ -42,7 +42,13 @@ export default function ImportRecipe() {
   const importMut = useMutation({
     mutationFn: async () => {
       if (tab === 'link') {
-        const res = await api.post('/mobile-import/url', { url: url.trim() });
+        const trimmed = url.trim();
+        const isYouTube = /(?:youtube\.com|youtu\.be)/i.test(trimmed);
+        if (isYouTube) {
+          const res = await api.post('/mobile-import/video', { video_url: trimmed });
+          return res.data.recipe as ImportedRecipe;
+        }
+        const res = await api.post('/mobile-import/url', { url: trimmed });
         return res.data.recipe as ImportedRecipe;
       }
       const res = await api.post('/mobile-import/text', { recipe_text: text.trim() });
@@ -144,7 +150,7 @@ export default function ImportRecipe() {
           {!preview ? (
             <>
               <View style={styles.segment}>
-                {(['text', 'photo'] as const).map((t) => (
+                {(['link', 'text', 'photo'] as const).map((t) => (
                   <Pressable key={t} testID={`import-tab-${t}`} onPress={() => setTab(t)} style={[styles.segBtn, tab === t && styles.segBtnActive]}>
                     <Icon name={t === 'link' ? 'link-variant' : t === 'text' ? 'text' : 'camera'} size={16} color={tab === t ? colors.foreground : colors.mutedForeground} />
                     <Text style={[styles.segText, tab === t && styles.segTextActive]}>{t === 'link' ? 'Link' : t === 'text' ? 'Text' : 'Photo'}</Text>
@@ -158,7 +164,7 @@ export default function ImportRecipe() {
                   <TextInput
                     testID="import-url"
                     style={styles.input}
-                    placeholder="https://example.com/recipe"
+                    placeholder="Recipe link or YouTube video"
                     placeholderTextColor={colors.mutedForeground}
                     value={url}
                     onChangeText={setUrl}

@@ -17,9 +17,11 @@ from .import_recipe import (
     ImportURLRequest,
     ImportTextRequest,
     ImportImageRequest,
+    ImportVideoRequest,
     IMPORT_RECIPE_PROMPT,
     extract_recipe_from_url,
     convert_to_standard_recipe,
+    extract_recipe_from_video,
 )
 
 router = APIRouter(prefix="/mobile-import", tags=["Mobile Import"])
@@ -42,6 +44,12 @@ async def mobile_import_from_text(request: ImportTextRequest, current_user: User
         raise HTTPException(status_code=400, detail="Please paste a bit more recipe text")
     recipe = await convert_to_standard_recipe(request.recipe_text, "text", "User submitted")
     return {"recipe": recipe, "source": "User submitted text"}
+
+
+@router.post("/video")
+async def mobile_import_from_video(request: ImportVideoRequest, current_user: User = Depends(get_current_user)):
+    """YouTube-aware video import — client-side Premium gated via RevenueCat."""
+    return await extract_recipe_from_video(request.video_url)
 
 
 @router.post("/image")
