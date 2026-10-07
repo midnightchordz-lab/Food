@@ -253,6 +253,11 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
                   <Text style={styles.quickTitle}>Scan my fridge</Text>
                   <Text style={styles.quickDesc} numberOfLines={2}>Cook with what you already have</Text>
                 </Pressable>
+                <Pressable style={styles.quickCard} testID="youtube-import" onPress={() => router.push('/import')}>
+                  <View style={styles.quickIcon}><Icon name="youtube" size={22} color="#FF0000" /></View>
+                  <Text style={styles.quickTitle}>YouTube recipe</Text>
+                  <Text style={styles.quickDesc} numberOfLines={2}>Paste a video link to get the recipe</Text>
+                </Pressable>
               </View>
               <Text style={styles.q}>Pick the feeling that fits right now</Text>
               <View style={styles.moodGrid}>
@@ -417,10 +422,10 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   quickBannerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   quickBannerTitle: { fontFamily: f.bodyBold, fontSize: 16, color: colors.primaryForeground },
   quickBannerDesc: { fontFamily: f.body, fontSize: 12.5, color: colors.primaryForeground, opacity: 0.9, marginTop: 1 },
-  quickCard: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 14 },
-  quickIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  quickTitle: { fontFamily: f.bodyBold, fontSize: 15, color: colors.foreground },
-  quickDesc: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, marginTop: 2, lineHeight: 17 },
+  quickCard: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 12 },
+  quickIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  quickTitle: { fontFamily: f.bodyBold, fontSize: 13.5, color: colors.foreground },
+  quickDesc: { fontFamily: f.body, fontSize: 11.5, color: colors.mutedForeground, marginTop: 2, lineHeight: 15 },
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16 },
   moodCard: {
     width: '48%', backgroundColor: colors.card, borderRadius: radius.xl, padding: 10, paddingBottom: 14,
