@@ -12,6 +12,7 @@ export type User = {
   name: string;
   dietary_restrictions?: string[];
   cuisine_preferences?: string[];
+  dietary_preference?: string;
 };
 
 type AuthState = {
@@ -20,11 +21,12 @@ type AuthState = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  appleLogin: (identityToken: string, name?: string | null, email?: string | null) => Promise<void>;
+  appleLogin: (identityToken: string, name?: string | null, email?: string | null, authorizationCode?: string | null) => Promise<void>;
   googleLogin: (sessionId: string) => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<{ demo_otp?: string; message?: string }>;
   phoneLogin: (phone: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
 
@@ -41,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await setTokens(access, refresh);
   }, []);
 
-  // Set the user in state and cache it locally so the next cold start can show it instantly.
+  // Set the user in state and cache it locally so the next cold start shows instantly.
   const persistUser = useCallback((u: User) => {
     setUser(u);
     storage.set(USER_KEY, JSON.stringify(u));
@@ -88,32 +90,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (cachedUser) {
-        // Fast path: show the cached profile immediately, refresh it in the background.
+        // Fast path: show the cached profile immediately, refresh in the background.
         setUser(cachedUser);
         setLoading(false);
         try {
           const res = await api.get('/auth/me');
           persistUser(res.data);
         } catch (err: any) {
-          // Only a confirmed-invalid token (401, after the interceptor's own refresh
-          // attempt already failed) should log the user out. A network/timeout error
-          // must not — that would wrongly sign out a user with a perfectly valid
-          // session just because they briefly lost signal.
+          // Only a confirmed 401 (after interceptor's own refresh attempt already failed)
+          // should log the user out. A network/timeout error must not.
           if (err?.response?.status === 401) await clearSession();
         }
         return;
       }
 
-      // No cached profile yet (fresh install, or first launch after this update) —
-      // fetch once and block, same as before, so the app never renders with a user
-      // it hasn't actually fetched.
+      // No cache yet (fresh install / first launch after this update) — fetch and block.
       try {
         const res = await api.get('/auth/me');
         persistUser(res.data);
       } catch (err: any) {
         if (err?.response?.status === 401) await clearSession();
-        // Non-401 (network/timeout): leave the token in place and user unset —
-        // the next launch will have a cache-free retry rather than a forced logout.
+        // Non-401 (network/timeout): leave token in place, retry next launch.
       }
       setLoading(false);
     })();
@@ -139,8 +136,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await clearSession();
   }, [clearSession]);
 
-  const appleLogin = useCallback(async (identityToken: string, name?: string | null, email?: string | null) => {
-    const res = await api.post('/auth/apple', { identity_token: identityToken, name, email });
+  const deleteAccount = useCallback(async () => {
+    await api.delete('/auth/account');
+    await clearSession();
+  }, [clearSession]);
+
+  const appleLogin = useCallback(async (identityToken: string, name?: string | null, email?: string | null, authorizationCode?: string | null) => {
+    const res = await api.post('/auth/apple', { identity_token: identityToken, name, email, authorization_code: authorizationCode });
     await applyPair(res.data.access_token, res.data.refresh_token);
     persistUser(res.data.user);
   }, [applyPair, persistUser]);
@@ -195,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [applyPair, persistUser]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, googleLogin, sendPhoneOtp, phoneLogin, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, appleLogin, googleLogin, sendPhoneOtp, phoneLogin, logout, deleteAccount, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

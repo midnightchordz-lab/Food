@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +19,35 @@ const FREE_REGENERATIONS = 2;
 
 type Step = 'mood' | 'meal' | 'dietary' | 'cuisine' | 'results';
 
+// Maps a saved profile diet to the closest Discover option, used to pre-select
+// the dietary step so it reflects what the user already told us about themselves.
+const DIET_DEFAULT: Record<string, string> = {
+  'non-vegetarian': 'non-vegetarian',
+  'vegetarian': 'vegetarian',
+  'vegan': 'vegan',
+  'jain': 'vegetarian',
+  'halal': 'non-vegetarian',
+};
+
+// Discover options that contradict a given saved diet — picking one of these
+// triggers a one-time, non-blocking nudge rather than being silently allowed.
+const DIET_MISMATCH: Record<string, string[]> = {
+  'vegan': ['vegetarian', 'non-vegetarian', 'pescatarian', 'keto'],
+  'jain': ['non-vegetarian', 'pescatarian'],
+  'vegetarian': ['non-vegetarian', 'pescatarian'],
+};
+
+// Labels for saved-profile diet values not in DIETARY_PREFS (jain, halal).
+const DIET_LABEL: Record<string, string> = {
+  'non-vegetarian': 'Non-Vegetarian',
+  'vegetarian': 'Vegetarian',
+  'vegan': 'Vegan',
+  'jain': 'Jain',
+  'halal': 'Halal',
+};
+
+const dietMismatchShownKey = (userId: string) => `dietMismatchShown:${userId}`;
+
 export default function Discover() {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
@@ -26,7 +56,7 @@ export default function Discover() {
   const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { isSubscribed } = useSubscription();
+  const { isSubscribed, trialDaysLeft, trialExpired, premiumInfo } = useSubscription();
   const [regenCount, setRegenCount] = useState(0);
 
   const [step, setStep] = useState<Step>('mood');
@@ -35,7 +65,35 @@ export default function Discover() {
   const [dietary, setDietary] = useState<string | null>(null);
   const [cuisine, setCuisine] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<StructuredRecipe[]>([]);
+  const [shownTitles, setShownTitles] = useState<string[]>([]);
   const [savedTitles, setSavedTitles] = useState<Record<string, boolean>>({});
+
+  // Pre-select the dietary step from the user's saved diet, so it reflects
+  // what they already told us instead of starting blank every session.
+  useEffect(() => {
+    if (dietary === null && user?.dietary_preference) {
+      const mapped = DIET_DEFAULT[user.dietary_preference];
+      if (mapped) setDietary(mapped);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.dietary_preference]);
+
+  const selectDietary = (id: string) => {
+    setDietary(id);
+    setStep('cuisine');
+    const savedDiet = user?.dietary_preference;
+    const mismatches = savedDiet ? DIET_MISMATCH[savedDiet] : undefined;
+    if (user?.id && mismatches?.includes(id)) {
+      const key = dietMismatchShownKey(user.id);
+      AsyncStorage.getItem(key).then((shown) => {
+        if (!shown) {
+          AsyncStorage.setItem(key, '1');
+          const dp = DIET_LABEL[savedDiet] || savedDiet;
+          toast.show(`Heads up — this doesn't match your ${dp} diet`, 'info');
+        }
+      });
+    }
+  };
 
   const sessionId = React.useRef(`session-${Date.now()}`).current;
 
@@ -54,13 +112,16 @@ export default function Discover() {
     const dp = DIETARY_PREFS.find((x) => x.id === dietary);
     const cu = cuisine === 'any' ? 'any cuisine' : CUISINES.find((x) => x.id === cuisine)?.label || 'any cuisine';
     const avoid = exclusions.length ? `\n- Avoid these ingredients entirely: ${exclusions.join(', ')}` : '';
+    const noRepeat = shownTitles.length
+      ? `\n- ALREADY SHOWN (do NOT repeat or lightly rename any of these): ${shownTitles.join('; ')}`
+      : '';
     return `[User Preferences]
 - Mood: ${m?.label} (${m?.description})
 - Meal Type: ${mt?.label}
 - Dietary Preference: ${dp?.label}
-- Cuisine(s): ${cu}${avoid}
+- Cuisine(s): ${cu}${avoid}${noRepeat}
 
-Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?.toLowerCase()} mood, are ${dp?.label?.toLowerCase()} friendly, and feature authentic ${cu} flavors. Give each a creative, appetizing name.${wantDifferent ? ' Show me completely DIFFERENT recipes than before.' : ''}`;
+Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?.toLowerCase()} mood, are ${dp?.label?.toLowerCase()} friendly, and feature authentic ${cu} flavors. Give each a creative, appetizing name.${wantDifferent || shownTitles.length ? ' Every recipe MUST be completely DIFFERENT from the already-shown list above — new dishes, not variations.' : ''}`;
   };
 
   const genMut = useMutation({
@@ -70,6 +131,7 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
     },
     onSuccess: (data) => {
       setRecipes(data);
+      setShownTitles((prev) => Array.from(new Set([...prev, ...data.map((r) => r.title)])).slice(-40));
       setStep('results');
     },
     onError: (e: any) => {
@@ -106,7 +168,8 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
   });
 
   const reset = () => {
-    setStep('mood'); setMood(null); setMeal(null); setDietary(null); setCuisine(null); setRecipes([]);
+    const mapped = user?.dietary_preference ? DIET_DEFAULT[user.dietary_preference] : undefined;
+    setStep('mood'); setMood(null); setMeal(null); setDietary(mapped || null); setCuisine(null); setRecipes([]); setShownTitles([]);
   };
 
   const regenerate = () => {
@@ -172,6 +235,33 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
         )}
       </View>
 
+      {isSubscribed && trialDaysLeft !== null ? (
+        <Pressable
+          style={[styles.trialBanner, trialDaysLeft <= 1 && styles.trialBannerUrgent]}
+          onPress={() => router.push('/paywall')}
+          testID="trial-banner"
+        >
+          <Icon name={trialDaysLeft <= 1 ? 'crown' : 'clock-outline'} size={17} color={colors.accent} />
+          <Text style={styles.trialBannerText} numberOfLines={2}>
+            {trialDaysLeft <= 0
+              ? 'Your free trial ends today — tap to keep Premium'
+              : trialDaysLeft === 1
+              ? 'Last day of your free trial — tap to continue Premium'
+              : `${trialDaysLeft} days left in your free trial`}
+          </Text>
+          <Icon name="chevron-right" size={18} color={colors.accent} />
+        </Pressable>
+      ) : trialExpired ? (
+        <Pressable style={styles.trialEndedBanner} onPress={() => router.push('/paywall')} testID="trial-ended-banner">
+          <Icon name="crown" size={18} color={colors.accentForeground} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.trialEndedTitle}>Your free trial has ended</Text>
+            <Text style={styles.trialEndedDesc}>Continue Premium to keep unlimited recipes & meal plans</Text>
+          </View>
+          <View style={styles.trialEndedCta}><Text style={styles.trialEndedCtaText}>Continue</Text></View>
+        </Pressable>
+      ) : null}
+
       {step === 'results' ? (
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
@@ -183,6 +273,7 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
             <RecipeCard
               key={r.title}
               recipe={r}
+              validatedAiImage
               onPress={() => openRecipe(r)}
               onSave={() => saveMut.mutate(r)}
               saved={!!savedTitles[r.title]}
@@ -265,7 +356,7 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
               title="Any dietary preference?"
               items={DIETARY_PREFS}
               selected={dietary}
-              onSelect={(id) => { setDietary(id); setStep('cuisine'); }}
+              onSelect={selectDietary}
               onBack={() => setStep('meal')}
             />
           )}
@@ -422,4 +513,12 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   summaryChipText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.secondaryForeground },
   upsell: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 12, backgroundColor: colors.accentSoft, borderRadius: 999, paddingVertical: 12 },
   upsellText: { fontFamily: f.bodySemiBold, fontSize: 14, color: colors.accent },
+  trialBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 20, marginBottom: 8, backgroundColor: colors.accentSoft, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14 },
+  trialBannerUrgent: { borderWidth: 1.5, borderColor: colors.accent },
+  trialBannerText: { flex: 1, fontFamily: f.bodyMedium, fontSize: 13, color: colors.accent },
+  trialEndedBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20, marginBottom: 8, backgroundColor: colors.accent, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14 },
+  trialEndedTitle: { fontFamily: f.bodyBold, fontSize: 14.5, color: colors.accentForeground },
+  trialEndedDesc: { fontFamily: f.body, fontSize: 12, color: colors.accentForeground, opacity: 0.9, marginTop: 1 },
+  trialEndedCta: { backgroundColor: colors.accentForeground, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
+  trialEndedCtaText: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.accent },
 }));
