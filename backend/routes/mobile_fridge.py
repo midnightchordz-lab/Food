@@ -14,10 +14,11 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from lazy_emergent import LlmChat, UserMessage, ImageContent
 
 from .deps import db, User, get_current_user
 from .fridge_scanner import parse_combined_response
+from .exclusions import get_user_excluded_ingredients
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +29,11 @@ SYSTEM_MSG = """You are an expert chef and food identifier. Analyze fridge / pan
 Respond ONLY with valid JSON (no markdown):
 {
   "ingredients": [{"name": "item", "category": "vegetable/fruit/dairy/meat/seafood/beverage/condiment/grain/snack/other", "quantity": "amount if visible"}],
-  "recipes": [{"title": "Recipe Name", "description": "Brief description", "cooking_time": "X mins", "difficulty": "Easy/Medium/Hard", "servings": "2-4", "ingredients_used": ["item1", "item2"], "missing_ingredients": ["optional item"], "instructions": ["Step 1...", "Step 2...", "Step 3..."]}]
+  "recipes": [{"title": "Recipe Name", "description": "2-3 sentence appetizing description", "cooking_time": "X mins", "difficulty": "Easy/Medium/Hard", "servings": "2-4", "ingredients_used": ["item1 with qty", "item2 with qty"], "missing_ingredients": ["optional item"], "instructions": ["Detailed step 1...", "Detailed step 2...", "..."]}]
 }
 
-Be concise. Identify 5-15 ingredients max. Suggest 3 recipes the user can mostly make with what is visible, each with 3-6 instruction steps."""
+Identify 5-15 ingredients max. Suggest 3 recipes the user can mostly make with what is visible.
+For EACH recipe, "instructions" MUST contain 6-9 DETAILED sequential steps. Every step is a full, clear sentence a beginner can follow, including the specific action, exact time (e.g. "simmer for 5 minutes"), heat level (e.g. "over medium heat"), quantities/measurements where relevant, and a doneness/sensory cue (e.g. "until the onions turn translucent"). Cover prep, cooking, seasoning, and plating. Do NOT compress the recipe into 2-3 short lines."""
 
 
 class FridgeScanRequest(BaseModel):
@@ -76,6 +78,12 @@ async def scan_fridge(req: FridgeScanRequest, current_user: User = Depends(get_c
     image_bytes = _compress(image_bytes)
     image_b64 = base64.b64encode(image_bytes).decode("utf-8")
 
+    exclusions = await get_user_excluded_ingredients(current_user.id)
+    exclusion_line = (
+        f" NEVER use these ingredients (allergies/exclusions): {', '.join(exclusions)}."
+        if exclusions else ""
+    )
+
     chat = LlmChat(
         api_key=api_key,
         session_id=f"mobile-fridge-{current_user.id}-{uuid.uuid4().hex[:8]}",
@@ -85,7 +93,7 @@ async def scan_fridge(req: FridgeScanRequest, current_user: User = Depends(get_c
     try:
         response = await chat.send_message(
             UserMessage(
-                text="Identify all food ingredients in this photo and suggest 3 recipes I can make. Include cooking instructions.",
+                text=f"Identify all food ingredients in this photo and suggest 3 recipes I can make. Include cooking instructions.{exclusion_line}",
                 file_contents=[ImageContent(image_base64=image_b64)],
             )
         )
