@@ -86,7 +86,7 @@
 #      - Which tasks need testing (reference the test_plan)
 #      - Any authentication details or configuration needed
 #      - Specific test scenarios to focus on
-#      - Any known issues or edge cases to verify
+#    - Any known issues or edge cases to verify
 #
 # 5. Call the testing agent with specific instructions referring to test_result.md
 #
@@ -101,3 +101,100 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "MoodFood Expo React Native app - implement upcoming tasks: 1) Reactivate Subscription (cancelled users turn renewal back on), 2) Grace Messaging (show Premium ends on {date}), 3) Deletion Reasons (optional reason when deleting account), 4) Dietary Preference onboarding step (veg/vegan/halal choice)."
+
+backend:
+  - task: "dietary_preference field in user profile update"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/routes/auth.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added dietary_preference to allowed_fields in PUT /auth/profile endpoint. Previously only dietary_restrictions was allowed."
+
+  - task: "Reactivate subscription endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/routes/subscription.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "POST /subscription/reactivate endpoint already existed. It sets cancel_at_period_end=False in DB. Called from profile screen reactivate button."
+
+frontend:
+  - task: "Onboarding Dietary Preference screen"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/onboarding-diet.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "New screen with 5 diet options (Non-veg, Vegetarian, Vegan, Halal, Jain). Navigation gate added in (tabs)/_layout.tsx - shows after allergy onboarding. AsyncStorage key dietOnboarded:{userId} tracks completion. Skip button available."
+
+  - task: "Grace Messaging - Premium ends on date banner"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/(tabs)/profile.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "When cancelAtPeriodEnd=true, shows yellow banner with calendar icon: 'Your Premium ends on {date}. Reactivate to keep all features.' periodEnd from premiumInfo is formatted as human-readable date."
+
+  - task: "Reactivate Subscription UI"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/(tabs)/profile.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "When cancelAtPeriodEnd=true, profile shows 'Reactivate renewal' button (instead of Cancel). Calls POST /subscription/reactivate. On iOS redirects to App Store. Premium card shows 'Ending' ribbon and the period end date in description."
+
+  - task: "Deletion Reasons Modal"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/(tabs)/profile.tsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Clicking Delete account now shows a bottom-sheet Modal with 6 optional reasons (Too expensive, Not using it enough, Missing a feature, Privacy concerns, Technical issues, Other). After reason selection (optional), user proceeds to destructive confirmation Alert."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Onboarding Dietary Preference screen"
+    - "Grace Messaging - Premium ends on date banner"
+    - "Reactivate Subscription UI"
+    - "Deletion Reasons Modal"
+    - "dietary_preference field in user profile update"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Implemented 4 features: 1) Dietary Preference onboarding screen (onboarding-diet.tsx) - new screen shown after allergy onboarding with 5 diet options, 2) Grace Messaging in profile - yellow warning banner when subscription is set to cancel, shows the end date, 3) Reactivate Subscription - button replaces Cancel when cancelAtPeriodEnd=true, 4) Deletion Reasons Modal - bottom sheet with optional reasons before confirming account deletion. Backend: added dietary_preference to auth profile allowed fields. Test credentials in /app/memory/test_credentials.md."

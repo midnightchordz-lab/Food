@@ -15,6 +15,7 @@ class User(BaseModel):
     name: str
     dietary_restrictions: List[str] = []
     cuisine_preferences: List[str] = []
+    dietary_preference: Optional[str] = None
     is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

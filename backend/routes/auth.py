@@ -410,7 +410,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @router.put("/profile", response_model=User)
 async def update_profile(data: dict, current_user: User = Depends(get_current_user)):
-    allowed_fields = ["name", "dietary_restrictions", "cuisine_preferences", "phone_number", "whatsapp_notifications", "push_notifications"]
+    allowed_fields = ["name", "dietary_restrictions", "cuisine_preferences", "phone_number", "whatsapp_notifications", "push_notifications", "dietary_preference"]
     update_data = {k: v for k, v in data.items() if k in allowed_fields}
     
     if update_data:

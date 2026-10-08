@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, Linking, Alert } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, ScrollView, Pressable, Platform, Linking, Alert, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -9,6 +8,15 @@ import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
+
+const DELETION_REASONS = [
+  'Too expensive',
+  'Not using it enough',
+  'Missing a feature I need',
+  'Privacy concerns',
+  'Technical issues',
+  'Other',
+];
 
 export default function Profile() {
   const insets = useSafeAreaInsets();
@@ -19,15 +27,29 @@ export default function Profile() {
   const { isSubscribed, premiumInfo, trialDaysLeft, refetchPremium } = useSubscription();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [showDeletionModal, setShowDeletionModal] = useState(false);
+  const [deletionReason, setDeletionReason] = useState('');
   const isTrialing = premiumInfo?.status === 'trialing';
   const isPaid = isSubscribed && !isTrialing;
+  const isCancelPending = isPaid && !!premiumInfo?.cancelAtPeriodEnd;
+
+  // Format the period end date for grace messaging
+  const periodEndFormatted = React.useMemo(() => {
+    const raw = premiumInfo?.periodEnd;
+    if (!raw) return null;
+    try {
+      return new Date(raw).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
+      return null;
+    }
+  }, [premiumInfo?.periodEnd]);
 
   const onManageSubscription = () => {
     if (Platform.OS === 'ios') {
       Linking.openURL('https://apps.apple.com/account/subscriptions');
       return;
     }
-    if (premiumInfo?.cancelAtPeriodEnd) {
+    if (isCancelPending) {
       toast.show('Your subscription is already set to cancel.', 'info');
       return;
     }
@@ -56,7 +78,43 @@ export default function Profile() {
     );
   };
 
+  const onReactivate = () => {
+    if (Platform.OS === 'ios') {
+      Linking.openURL('https://apps.apple.com/account/subscriptions');
+      return;
+    }
+    Alert.alert(
+      'Reactivate renewal?',
+      "Your Premium subscription will continue to auto-renew going forward.",
+      [
+        { text: 'Not now', style: 'cancel' },
+        {
+          text: 'Reactivate',
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await api.post('/subscription/reactivate');
+              refetchPremium();
+              toast.show('Renewal reactivated! Premium continues.', 'success');
+            } catch {
+              toast.show('Could not reactivate. Please try again.', 'error');
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const onDeleteAccount = () => {
+    // Show deletion reasons modal first
+    setDeletionReason('');
+    setShowDeletionModal(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeletionModal(false);
     Alert.alert(
       'Delete account?',
       'This permanently deletes your account and all your data. This cannot be undone.',
@@ -114,14 +172,20 @@ export default function Profile() {
           <View style={{ flex: 1 }}>
             <Text style={styles.premiumTitle}>{isPaid ? 'Premium active' : isTrialing ? 'Free trial active' : 'MoodFood Premium'}</Text>
             <Text style={styles.premiumDesc}>
-              {isPaid
+              {isPaid && isCancelPending && periodEndFormatted
+                ? `Ends ${periodEndFormatted}`
+                : isPaid
                 ? 'You have every feature unlocked'
                 : isTrialing
                 ? `${trialDaysLeft ?? 0} ${((trialDaysLeft ?? 0) === 1) ? 'day' : 'days'} left · tap to subscribe & keep Premium`
                 : 'Unlimited recipes, plans & more'}
             </Text>
           </View>
-          {isPaid ? (
+          {isPaid && isCancelPending ? (
+            <View style={styles.cancelRibbon}>
+              <Text style={styles.cancelRibbonText}>Ending</Text>
+            </View>
+          ) : isPaid ? (
             <Icon name="check-circle" size={22} color={colors.success} />
           ) : isTrialing ? (
             <View style={styles.trialRibbon}>
@@ -133,6 +197,16 @@ export default function Profile() {
             </View>
           )}
         </Pressable>
+
+        {/* Grace messaging banner */}
+        {isCancelPending && periodEndFormatted ? (
+          <View style={styles.graceCard} testID="grace-banner">
+            <Icon name="calendar-clock" size={18} color={colors.warning} />
+            <Text style={styles.graceText}>
+              Your Premium ends on <Text style={{ fontFamily: fonts.bodyBold }}>{periodEndFormatted}</Text>. Reactivate to keep all features.
+            </Text>
+          </View>
+        ) : null}
 
         {isTrialing ? (
           <View style={styles.card}>
@@ -150,17 +224,21 @@ export default function Profile() {
 
         {isPaid ? (
           <View style={styles.card}>
-            <Pressable style={styles.linkRow} onPress={onManageSubscription} disabled={busy} testID="manage-subscription">
-              <View style={styles.rowIcon}><Icon name="credit-card-outline" size={19} color={colors.primary} /></View>
-              <Text style={styles.rowLabel}>
-                {Platform.OS === 'ios'
-                  ? 'Manage in App Store'
-                  : premiumInfo?.cancelAtPeriodEnd
-                  ? 'Renewal cancelled'
-                  : 'Cancel subscription'}
-              </Text>
-              <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
-            </Pressable>
+            {isCancelPending ? (
+              <Pressable style={styles.linkRow} onPress={onReactivate} disabled={busy} testID="reactivate-btn">
+                <View style={[styles.rowIcon, { backgroundColor: colors.accentSoft }]}><Icon name="refresh" size={19} color={colors.accent} /></View>
+                <Text style={[styles.rowLabel, { color: colors.success }]}>Reactivate renewal</Text>
+                <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+              </Pressable>
+            ) : (
+              <Pressable style={styles.linkRow} onPress={onManageSubscription} disabled={busy} testID="manage-subscription">
+                <View style={styles.rowIcon}><Icon name="credit-card-outline" size={19} color={colors.primary} /></View>
+                <Text style={styles.rowLabel}>
+                  {Platform.OS === 'ios' ? 'Manage in App Store' : 'Cancel subscription'}
+                </Text>
+                <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+              </Pressable>
+            )}
           </View>
         ) : null}
 
@@ -230,6 +308,50 @@ export default function Profile() {
         </Pressable>
         <Text style={styles.version}>MoodFood • v1.0.0</Text>
       </ScrollView>
+
+      {/* Deletion Reasons Modal */}
+      <Modal
+        visible={showDeletionModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDeletionModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowDeletionModal(false)}>
+          <Pressable style={styles.modalSheet} onPress={() => {}}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Before you go…</Text>
+            <Text style={styles.modalSubtitle}>Why are you deleting your account? (optional)</Text>
+            <View style={styles.reasonList}>
+              {DELETION_REASONS.map((r) => (
+                <Pressable
+                  key={r}
+                  testID={`reason-${r}`}
+                  style={[styles.reasonRow, deletionReason === r && styles.reasonRowActive]}
+                  onPress={() => setDeletionReason(deletionReason === r ? '' : r)}
+                >
+                  <Text style={[styles.reasonText, deletionReason === r && styles.reasonTextActive]}>{r}</Text>
+                  {deletionReason === r ? (
+                    <Icon name="check-circle" size={20} color={colors.primary} />
+                  ) : (
+                    <View style={styles.reasonCircle} />
+                  )}
+                </Pressable>
+              ))}
+            </View>
+            <View style={styles.modalActions}>
+              <Button
+                testID="deletion-confirm"
+                label="Delete my account"
+                variant="outline"
+                onPress={confirmDelete}
+              />
+              <Pressable style={styles.modalCancel} onPress={() => setShowDeletionModal(false)}>
+                <Text style={styles.modalCancelText}>Keep account</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -249,6 +371,20 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   premiumDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.mutedForeground, marginTop: 1 },
   trialRibbon: { backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   trialRibbonText: { fontFamily: fonts.bodyBold, fontSize: 11, color: colors.accentForeground, letterSpacing: 0.3 },
+  cancelRibbon: { backgroundColor: '#FEE2E2', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  cancelRibbonText: { fontFamily: fonts.bodyBold, fontSize: 11, color: colors.danger, letterSpacing: 0.3 },
+  graceCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    borderRadius: radius.lg,
+    padding: 14,
+    marginBottom: 14,
+  },
+  graceText: { flex: 1, fontFamily: f.body, fontSize: 13.5, color: colors.foreground, lineHeight: 20 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15 },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
   rowIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
@@ -260,4 +396,19 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: 8 },
   deleteText: { fontFamily: f.bodyMedium, fontSize: 14.5, color: colors.danger },
   groupLabel: { fontFamily: f.bodySemiBold, fontSize: 12.5, color: colors.mutedForeground, marginBottom: 8, marginLeft: 4, textTransform: 'uppercase', letterSpacing: 0.4 },
+  // Modal
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
+  modalSheet: { backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: 20 },
+  modalTitle: { fontFamily: f.serif, fontSize: 24, color: colors.foreground, textAlign: 'center', marginBottom: 6 },
+  modalSubtitle: { fontFamily: f.body, fontSize: 14, color: colors.mutedForeground, textAlign: 'center', marginBottom: 20 },
+  reasonList: { gap: 10, marginBottom: 24 },
+  reasonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.background, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 16, paddingVertical: 14 },
+  reasonRowActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  reasonText: { fontFamily: f.bodyMedium, fontSize: 15, color: colors.foreground },
+  reasonTextActive: { color: colors.primary },
+  reasonCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border },
+  modalActions: { gap: 8 },
+  modalCancel: { alignItems: 'center', paddingVertical: 14 },
+  modalCancelText: { fontFamily: f.bodyMedium, fontSize: 15, color: colors.mutedForeground },
 }));

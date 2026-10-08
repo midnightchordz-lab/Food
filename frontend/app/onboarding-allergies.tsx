@@ -8,6 +8,7 @@ import { api } from '@/src/api/client';
 import { useAuth } from '@/src/auth/AuthContext';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
+import { dietOnboardedKey } from '@/app/onboarding-diet';
 
 const COMMON = ['Eggs', 'Milk', 'Peanuts', 'Tree Nuts', 'Soy', 'Wheat', 'Fish', 'Shellfish', 'Sesame', 'Gluten', 'Pork', 'Beef', 'Mushroom', 'Onion', 'Garlic'];
 
@@ -50,7 +51,13 @@ export default function OnboardingAllergies() {
   const finish = async () => {
     if (user?.id) await AsyncStorage.setItem(onboardedKey(user.id), '1');
     queryClient.invalidateQueries({ queryKey: ['exclusions'] });
-    router.replace('/(tabs)');
+    // Proceed to diet preference onboarding if not done yet
+    const dietDone = user?.id ? await AsyncStorage.getItem(dietOnboardedKey(user.id)) : '1';
+    if (!dietDone) {
+      router.replace('/onboarding-diet');
+    } else {
+      router.replace('/(tabs)');
+    }
   };
 
   const saveMut = useMutation({

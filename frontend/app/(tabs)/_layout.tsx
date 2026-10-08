@@ -7,6 +7,7 @@ import { useTheme, fonts } from '@/src/theme';
 import { usesNativeTabs } from '@/src/navigation';
 import { useAuth } from '@/src/auth/AuthContext';
 import { onboardedKey } from '@/app/onboarding-allergies';
+import { dietOnboardedKey } from '@/app/onboarding-diet';
 import { Icon } from '@/src/components/ui';
 
 export default function TabsLayout() {
@@ -19,7 +20,7 @@ export default function TabsLayout() {
     if (!loading && !user) router.replace('/welcome');
   }, [user, loading, router]);
 
-  // First-time users: ask about allergies once before they start cooking.
+  // First-time users: ask about allergies then diet before they start cooking.
   useEffect(() => {
     if (loading || !user?.id || gateRef.current) return;
     (async () => {
@@ -27,6 +28,12 @@ export default function TabsLayout() {
       if (!seen && !gateRef.current) {
         gateRef.current = true;
         router.replace('/onboarding-allergies');
+        return;
+      }
+      const dietSeen = await AsyncStorage.getItem(dietOnboardedKey(user.id));
+      if (!dietSeen && !gateRef.current) {
+        gateRef.current = true;
+        router.replace('/onboarding-diet');
       }
     })();
   }, [user?.id, loading, router]);
