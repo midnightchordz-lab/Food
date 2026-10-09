@@ -194,6 +194,13 @@ PHONE_OTP_ENABLED = os.environ.get("PHONE_OTP_ENABLED", "false").lower() == "tru
 @router.post("/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
     """Send OTP to phone number via Twilio SMS"""
+    # EMERGENCY KILL SWITCH — phone sign-in hit repeated international SMS-
+    # pumping fraud via Twilio Verify (confirmed in Twilio Console usage logs).
+    # Hard-disabled here unconditionally, ahead of the Verify/legacy branch
+    # split, so no code path can reach Twilio regardless of env config. Remove
+    # once a safer provider or stronger abuse controls are in place.
+    raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email, Google, or Apple sign-in.")
+
     phone = request.phone_number.strip()
 
     # Validate E.164 format early — applies to both paths.

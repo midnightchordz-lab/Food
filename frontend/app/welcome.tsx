@@ -247,14 +247,6 @@ export default function Welcome() {
               <Icon name="google" size={19} color={colors.foreground} />
               <Text style={styles.altBtnText}>{googleBusy ? 'Connecting…' : 'Google'}</Text>
             </Pressable>
-            <Pressable
-              style={styles.altBtn}
-              testID="toggle-phone"
-              onPress={() => { setPhoneMode((v) => !v); setOtpSent(false); setCode(''); }}
-            >
-              <Icon name={phoneMode ? 'email-outline' : 'phone-outline'} size={19} color={colors.foreground} />
-              <Text style={styles.altBtnText}>{phoneMode ? 'Email' : 'Phone'}</Text>
-            </Pressable>
           </View>
 
           {Platform.OS === 'ios' && (
