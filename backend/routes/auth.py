@@ -224,6 +224,16 @@ async def send_phone_otp(request: PhoneSendOTP):
     # above. Trips the kill switch for everyone, not just this request.
     await check_and_trip_otp_circuit_breaker()
 
+    # Per-destination risk check (Twilio Lookup v2 sms_pumping_risk): the
+    # limits above react to volume already in flight — this looks at the
+    # number itself before we ever pay for a send. Silently pretend success
+    # on a high-risk number rather than sending (and rather than exposing to
+    # a prober that we detected it) — matches the "sent repeatedly, never
+    # verified" pattern that drained the account on 2026-10-09.
+    from .sms_pumping_check import is_high_risk_number
+    if await is_high_risk_number(phone):
+        return {"status": "pending", "message": "Verification code sent via SMS"}
+
     # ── Twilio Verify path (Fraud Guard enabled) ─────────────────────────────
     # When TWILIO_VERIFY_SERVICE_SID is configured, Verify owns code generation
     # and delivery entirely — we never see the code, so the kill switch and
