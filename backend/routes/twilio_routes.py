@@ -8,6 +8,7 @@ import random
 import string
 
 from .deps import db, get_current_user, User, check_rate_limit
+from .system_flags import is_phone_otp_enabled
 
 router = APIRouter(prefix="/api/twilio", tags=["Twilio"])
 
@@ -43,9 +44,11 @@ class SendMealPlanRequest(BaseModel):
 @router.post("/send-otp")
 async def send_otp(request: SendOTPRequest, current_user: User = Depends(get_current_user)):
     """Send OTP to phone number for verification (used by the phone-link flow — requires login)"""
-    # EMERGENCY KILL SWITCH — Twilio SMS temporarily disabled account-wide
-    # following repeated SMS-pumping fraud. See matching switch in auth.py.
-    raise HTTPException(status_code=503, detail="Phone verification is temporarily unavailable.")
+    # Shares the same DB-backed kill switch as /auth/phone/send-otp — see
+    # system_flags.py. Defaults to disabled following repeated SMS-pumping
+    # fraud; re-enable both together via POST /admin/system-flags/phone-otp.
+    if not await is_phone_otp_enabled():
+        raise HTTPException(status_code=503, detail="Phone verification is temporarily unavailable.")
 
     if not twilio_client:
         raise HTTPException(status_code=500, detail="Twilio not configured")

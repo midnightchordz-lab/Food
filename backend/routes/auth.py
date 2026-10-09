@@ -16,6 +16,7 @@ from .deps import (
     issue_token_pair, rotate_refresh_token, revoke_refresh_token,
     SECRET_KEY, ALGORITHM, check_rate_limit
 )
+from .system_flags import is_phone_otp_enabled, check_and_trip_otp_circuit_breaker
 
 # Add backend to path for services import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -194,12 +195,13 @@ PHONE_OTP_ENABLED = os.environ.get("PHONE_OTP_ENABLED", "false").lower() == "tru
 @router.post("/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
     """Send OTP to phone number via Twilio SMS"""
-    # EMERGENCY KILL SWITCH — phone sign-in hit repeated international SMS-
-    # pumping fraud via Twilio Verify (confirmed in Twilio Console usage logs).
-    # Hard-disabled here unconditionally, ahead of the Verify/legacy branch
-    # split, so no code path can reach Twilio regardless of env config. Remove
-    # once a safer provider or stronger abuse controls are in place.
-    raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email, Google, or Apple sign-in.")
+    # Kill switch — DB-backed flag, defaults to DISABLED. Phone sign-in hit
+    # repeated international SMS-pumping fraud via Twilio Verify (confirmed
+    # in Twilio Console usage logs); this stays off until an admin explicitly
+    # re-enables it (POST /admin/system-flags/phone-otp), and the circuit
+    # breaker below can flip it back off automatically if volume spikes again.
+    if not await is_phone_otp_enabled():
+        raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email, Google, or Apple sign-in.")
 
     phone = request.phone_number.strip()
 
@@ -216,6 +218,11 @@ async def send_phone_otp(request: PhoneSendOTP):
     # been observed rotating source IPs to stay under the per-IP limit while
     # hammering the same/different numbers, so a per-phone cap is required too.
     await check_rate_limit(f"otp:phone:{phone}", max_requests=5, window_seconds=3600)
+
+    # Global circuit breaker: catches aggregate volume across many different
+    # numbers that a distributed attacker can keep under the per-phone limit
+    # above. Trips the kill switch for everyone, not just this request.
+    await check_and_trip_otp_circuit_breaker()
 
     # ── Twilio Verify path (Fraud Guard enabled) ─────────────────────────────
     # When TWILIO_VERIFY_SERVICE_SID is configured, Verify owns code generation

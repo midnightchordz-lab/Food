@@ -14,10 +14,33 @@ from typing import Optional
 import logging
 
 from .deps import db, User, get_current_user
+from .trial_ledger import has_used_trial_identity, record_trial_identity
 
 router = APIRouter(prefix="/trial", tags=["Trial"])
 
 logger = logging.getLogger(__name__)
+
+# ALL premium features unlocked during the trial. Shared by auto-start and the
+# self-heal path in /activate so both create identical subscription records.
+TRIAL_FEATURES = {
+    "recipe_search_limit": -1,  # Unlimited
+    "premium_recipes_access": True,
+    "ad_free": True,
+    "ai_photo_recognition_enabled": True,
+    "ai_photo_recognition_limit": 100,
+    "ai_image_generation_enabled": True,
+    "ai_image_generation_limit": 50,
+    "meal_planner_weeks": 12,
+    "export_to_pdf": True,
+    "recipe_import": True,
+    "video_import": True,
+    "voice_guided_cooking": True,
+    "diabetes_module": True,
+    "priority_support": True,
+    "advanced_filters": True,
+    "family_members": 5,
+    "fridge_scanner": True,
+}
 
 
 class TrialStatusResponse(BaseModel):
@@ -78,7 +101,16 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
         # Already has used trial
         if user_data.get("has_used_trial"):
             return {"started": False, "reason": "Already used trial", "days_remaining": 0}
-        
+
+        # Deletion-abuse guard: this account's own `has_used_trial` flag can
+        # look clean (e.g. the previous account under this same email/phone/
+        # Apple ID was deleted, which wipes that flag along with everything
+        # else). Check the persistent identity ledger too — it survives
+        # account deletion on purpose.
+        if await has_used_trial_identity(user_data):
+            await db.users.update_one({"id": user_id}, {"$set": {"has_used_trial": True}})
+            return {"started": False, "reason": "Already used trial", "days_remaining": 0}
+
         # Paid user - doesn't need trial
         plan = user_data.get("default_plan", "free")
         if plan in ["pro", "team", "chef_pro"]:
@@ -140,31 +172,10 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
         
         # ============ CREATE SUBSCRIPTION RECORD FOR FEATURE GATING ============
         # This is CRITICAL - the FeatureGate system reads from user_subscriptions
-        
-        # Define trial features (ALL premium features unlocked)
-        trial_features = {
-            "recipe_search_limit": -1,  # Unlimited
-            "premium_recipes_access": True,
-            "ad_free": True,
-            "ai_photo_recognition_enabled": True,
-            "ai_photo_recognition_limit": 100,
-            "ai_image_generation_enabled": True,
-            "ai_image_generation_limit": 50,
-            "meal_planner_weeks": 12,
-            "export_to_pdf": True,
-            "recipe_import": True,
-            "video_import": True,
-            "voice_guided_cooking": True,
-            "diabetes_module": True,
-            "priority_support": True,
-            "advanced_filters": True,
-            "family_members": 5,
-            "fridge_scanner": True
-        }
-        
+
         # Remove any existing subscription for this user (to avoid duplicates)
         await db.user_subscriptions.delete_many({"user_id": user_id})
-        
+
         # Create trial subscription
         subscription_doc = {
             "user_id": user_id,
@@ -176,13 +187,15 @@ async def auto_start_trial_if_eligible(user_id: str, platform: str = "web") -> d
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
             "platform": platform,
-            "features": trial_features,
+            "features": TRIAL_FEATURES,
             "is_trial": True,
             "auto_started": True  # Mark as auto-started for tracking
         }
         
         await db.user_subscriptions.insert_one(subscription_doc)
-        
+
+        await record_trial_identity(user_data)
+
         logger.info(f"✅ Trial auto-started for user {user_id} from platform {platform}")
         logger.info("✅ Created trial subscription with premium features")
         
@@ -407,3 +420,177 @@ async def check_premium_access(current_user: User = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Access check error: {e}")
         raise HTTPException(status_code=500, detail="Failed to check access")
+
+
+
+class TrialActivateResponse(BaseModel):
+    """Response for the one-tap trial activation used by the paywall CTA."""
+    success: bool
+    premium: bool
+    trial_used: bool
+    reason: str
+    days_remaining: int = 0
+    trial_ends: Optional[str] = None
+
+
+@router.post("/activate", response_model=TrialActivateResponse)
+async def activate_trial(
+    request: TrialStartRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    POST /api/trial/activate
+
+    One-tap trial activation for the paywall "Start 7-day free trial" button.
+    Idempotently ensures a premium `trialing` subscription exists (this is what
+    /subscription/current reads for premium), reusing auto_start_trial_if_eligible.
+
+    Returns premium=True when the user now has (or already had) an active trial or
+    a paid plan. Returns trial_used=True when the free trial was already consumed,
+    so the client can route the user to payment instead.
+    """
+    try:
+        now = datetime.now(timezone.utc)
+
+        # 1) If the user already has an active/trialing premium subscription, they
+        #    are premium right now — report success without touching anything.
+        existing = await db.user_subscriptions.find_one({
+            "user_id": current_user.id,
+            "status": {"$in": ["active", "trialing"]},
+            "plan_id": {"$ne": "free"},
+        })
+        if existing:
+            days_remaining = 0
+            trial_ends = existing.get("trial_end") or existing.get("current_period_end")
+            end_raw = existing.get("trial_end") or existing.get("current_period_end")
+            if end_raw:
+                try:
+                    end_dt = datetime.fromisoformat(str(end_raw).replace('Z', '+00:00'))
+                    if end_dt > now:
+                        days_remaining = max(1, int((end_dt - now).total_seconds() / 86400) + 1)
+                    else:
+                        existing = None  # expired — fall through to (2)
+                except Exception:
+                    pass
+            if existing:
+                return TrialActivateResponse(
+                    success=True, premium=True, trial_used=False,
+                    reason="Trial already active", days_remaining=days_remaining, trial_ends=trial_ends,
+                )
+
+        # 2) Self-heal desync: the user may still be INSIDE their original 7-day
+        #    trial window (per the user document) while the premium subscription
+        #    record is missing/expired (e.g. the auto-start insert failed or was
+        #    cleaned up). In that case recreate the trialing subscription so a
+        #    genuine trial user is NEVER pushed to a payment screen.
+        user_doc = await db.users.find_one({"id": current_user.id})
+        end_raw = (user_doc or {}).get("trial_end_date")
+        if end_raw:
+            try:
+                end_dt = datetime.fromisoformat(str(end_raw).replace('Z', '+00:00'))
+            except Exception:
+                end_dt = None
+            if end_dt and end_dt > now:
+                days_remaining = max(1, int((end_dt - now).total_seconds() / 86400) + 1)
+                try:
+                    sub_doc = {
+                        "user_id": current_user.id,
+                        "plan_id": "premium_monthly",
+                        "status": "trialing",
+                        "source": "trial",
+                        "trial_start": (user_doc or {}).get("trial_start_date") or now.isoformat(),
+                        "trial_end": end_dt.isoformat(),
+                        "created_at": now.isoformat(),
+                        "updated_at": now.isoformat(),
+                        "platform": request.platform or "android",
+                        "features": TRIAL_FEATURES,
+                        "is_trial": True,
+                        "auto_started": False,
+                    }
+                    # Upsert so the user always ends up with exactly one premium
+                    # trialing record, even if a prior delete/insert half-failed.
+                    await db.user_subscriptions.update_one(
+                        {"user_id": current_user.id},
+                        {"$set": sub_doc},
+                        upsert=True,
+                    )
+                    await db.user_subscriptions.delete_many({
+                        "user_id": current_user.id,
+                        "status": {"$ne": "trialing"},
+                    })
+                except Exception as heal_err:
+                    logger.error(f"Trial self-heal failed for {current_user.id}: {heal_err}")
+                else:
+                    logger.info(f"♻️ Re-activated in-window trial subscription for user {current_user.id}")
+                    return TrialActivateResponse(
+                        success=True, premium=True, trial_used=False,
+                        reason="Trial re-activated", days_remaining=days_remaining, trial_ends=end_dt.isoformat(),
+                    )
+
+        # 3) Otherwise try to start a fresh trial (creates the premium `trialing`
+        #    subscription record that /subscription/current reads).
+        result = await auto_start_trial_if_eligible(current_user.id, request.platform or "android")
+        reason = result.get("reason", "")
+
+        premium = bool(result.get("started")) or reason in ("Trial already active", "Paid user")
+        trial_used = reason == "Already used trial"
+
+        # 3b) BULLETPROOF HEAL: if we're about to say "trial already used" but the
+        #     user has NO subscription record at all, the trial was never actually
+        #     delivered (e.g. signup auto-start failed or set the flag but never
+        #     created the sub). A genuinely-consumed trial always leaves an
+        #     expired/canceled subscription doc, so zero docs == never trialed.
+        #     Grant it now so a real new user is NEVER pushed to payment.
+        if trial_used:
+            sub_count = await db.user_subscriptions.count_documents({"user_id": current_user.id})
+            # Don't let the "never actually delivered" heal above double as a
+            # ledger bypass: a fresh account under a repeat identity also has
+            # sub_count == 0, but it genuinely did use a trial before (on the
+            # account that got deleted) — re-check the ledger here too.
+            user_doc_for_ledger = await db.users.find_one({"id": current_user.id})
+            already_used_identity = user_doc_for_ledger and await has_used_trial_identity(user_doc_for_ledger)
+            if sub_count == 0 and not already_used_identity:
+                end_date = now + timedelta(days=7)
+                await db.users.update_one(
+                    {"id": current_user.id},
+                    {"$set": {
+                        "trial_start_date": now.isoformat(),
+                        "trial_end_date": end_date.isoformat(),
+                        "has_used_trial": True,
+                        "trial_active": True,
+                        "entitlement_tier": "trial",
+                        "last_platform": request.platform or "android",
+                    }},
+                )
+                await db.user_subscriptions.insert_one({
+                    "user_id": current_user.id,
+                    "plan_id": "premium_monthly",
+                    "status": "trialing",
+                    "source": "trial",
+                    "trial_start": now.isoformat(),
+                    "trial_end": end_date.isoformat(),
+                    "created_at": now.isoformat(),
+                    "updated_at": now.isoformat(),
+                    "platform": request.platform or "android",
+                    "features": TRIAL_FEATURES,
+                    "is_trial": True,
+                    "auto_started": False,
+                })
+                await record_trial_identity(user_doc_for_ledger)
+                logger.info(f"🩹 Force-granted trial (no subscription history) for user {current_user.id}")
+                return TrialActivateResponse(
+                    success=True, premium=True, trial_used=False,
+                    reason="Trial granted", days_remaining=7, trial_ends=end_date.isoformat(),
+                )
+
+        return TrialActivateResponse(
+            success=True,
+            premium=premium,
+            trial_used=trial_used,
+            reason=reason or ("started" if result.get("started") else "unknown"),
+            days_remaining=result.get("days_remaining", 7 if premium else 0),
+            trial_ends=result.get("trial_ends"),
+        )
+    except Exception as e:
+        logger.error(f"Trial activate error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to activate trial")

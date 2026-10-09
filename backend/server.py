@@ -11,6 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from pathlib import Path
 import os
+import asyncio
 import logging
 
 # Load environment variables
@@ -68,6 +69,8 @@ from routes.mobile_voice import router as mobile_voice_router
 from routes.mobile_diabetes import router as mobile_diabetes_router
 from routes.mobile_fridge import router as mobile_fridge_router
 from routes.quick_recipes import router as quick_recipes_router
+from routes.account_deletion import router as account_deletion_router
+from routes.system_flags import router as system_flags_router, webhook_router as system_flags_webhook_router
 from services.scheduled_tasks import router as scheduled_tasks_router, start_scheduler, stop_scheduler
 
 # Include all routers with /api prefix
@@ -83,6 +86,9 @@ app.include_router(image_router, prefix="/api/recipe-image")
 app.include_router(search_router, prefix="/api")
 app.include_router(recipe_library_router, prefix="/api")
 app.include_router(subscription_router, prefix="/api")
+app.include_router(account_deletion_router, prefix="/api")
+app.include_router(system_flags_router, prefix="/api")
+app.include_router(system_flags_webhook_router, prefix="/api")
 app.include_router(scheduled_tasks_router, prefix="/api")
 app.include_router(twilio_router)
 app.include_router(fridge_scanner_router)
@@ -107,9 +113,17 @@ cors_origins_env = os.environ.get('CORS_ORIGINS', '')
 cors_origins = [o.strip() for o in cors_origins_env.split(',') if o.strip() and o.strip() != '*']
 if not cors_origins:
     if os.environ.get("ENVIRONMENT") == "production":
-        raise RuntimeError("CORS_ORIGINS must be set explicitly in production")
-    # Dev only — local Metro web origins used for preview/testing.
-    cors_origins = ["http://localhost:3000", "http://localhost:8081", "http://localhost:19006"]
+        # Do NOT crash the whole server if CORS_ORIGINS is unset in production —
+        # that would prevent uvicorn from binding and fail every /health probe
+        # (deploy failure). The mobile app calls the API same-origin/native where
+        # CORS is not enforced, so degrade safely to "no cross-origin allowed"
+        # instead of raising. Set CORS_ORIGINS in Secrets to enable web origins.
+        logger.warning("CORS_ORIGINS is not set in production — allowing no cross-origin requests. "
+                       "Set CORS_ORIGINS (comma-separated) to enable browser origins.")
+        cors_origins = []
+    else:
+        # Dev only — local Metro web origins used for preview/testing.
+        cors_origins = ["http://localhost:3000", "http://localhost:8081", "http://localhost:19006"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -128,11 +142,21 @@ app.middleware("http")(security_middleware)
 # Startup event - create database indexes and start scheduler
 @app.on_event("startup")
 async def startup_event():
-    from routes.deps import create_indexes, bootstrap_admins
-    await create_indexes()
-    await bootstrap_admins()
+    async def _warmup():
+        # DB index creation + admin bootstrap run in the background so the server
+        # can answer the readiness probe (/health) immediately on startup instead
+        # of waiting on Atlas round-trips (prevents transient probe races).
+        from routes.deps import create_indexes, bootstrap_admins, seed_demo_account
+        try:
+            await create_indexes()
+            await bootstrap_admins()
+            await seed_demo_account()
+        except Exception as e:
+            logger.error(f"DB warmup error (indexes/admin bootstrap): {e}")
+
+    asyncio.create_task(_warmup())
     await start_scheduler()
-    logger.info("Application started with database indexes and scheduled tasks")
+    logger.info("Application startup complete (DB warmup running in background)")
 
 # Shutdown event
 @app.on_event("shutdown")
@@ -145,6 +169,16 @@ async def shutdown_db_client():
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "version": "2.0.0"}
+
+@app.get("/health")
+async def root_health_check():
+    """Root-level health probe for the deployment platform (probes GET /health)."""
+    return {"status": "healthy", "version": "2.0.0"}
+
+@app.get("/")
+async def root():
+    """Root probe — some platform health checks hit '/' instead of '/health'."""
+    return {"status": "ok", "service": "moodfood-api"}
 
 # Mount static files for audio cache
 audio_cache_dir = Path("/app/uploads/audio-cache")
