@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body { margin: 0; padding: 0; background: transparent; }
+  </style>
+</head>
+<body>
+  <div id="turnstile-widget"></div>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" async defer></script>
+  <script>
+    // Runs inside a hidden RN WebView. Posts {type:'turnstile-token', token}
+    // or {type:'turnstile-error', error} back to the app via the standard
+    // react-native-webview message bridge. No UI is ever shown — mode is
+    // Invisible, so this never renders a visible challenge.
+    function post(message) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify(message));
+      }
+    }
+
+    window.onTurnstileLoad = function () {
+      try {
+        turnstile.render('#turnstile-widget', {
+          sitekey: '0x4AAAAAAFSS-lz34iP4mKhH',
+          size: 'invisible',
+          callback: function (token) {
+            post({ type: 'turnstile-token', token: token });
+          },
+          'error-callback': function (errorCode) {
+            post({ type: 'turnstile-error', error: String(errorCode) });
+          },
+          'expired-callback': function () {
+            post({ type: 'turnstile-error', error: 'expired' });
+          },
+        });
+      } catch (e) {
+        post({ type: 'turnstile-error', error: String(e) });
+      }
+    };
+  </script>
+</body>
+</html>

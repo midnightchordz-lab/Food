@@ -278,6 +278,10 @@ class UserLogin(BaseModel):
 
 class PhoneSendOTP(BaseModel):
     phone_number: str
+    # Cloudflare Turnstile token from the client's invisible challenge.
+    # Optional for now (gradual rollout — older app builds won't send it);
+    # verified when present, soft-logged when absent. See turnstile_check.py.
+    turnstile_token: Optional[str] = None
 
 class PhoneVerifyOTP(BaseModel):
     phone_number: str

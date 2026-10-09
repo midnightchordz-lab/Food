@@ -23,7 +23,7 @@ type AuthState = {
   register: (name: string, email: string, password: string) => Promise<void>;
   appleLogin: (identityToken: string, name?: string | null, email?: string | null, authorizationCode?: string | null) => Promise<void>;
   googleLogin: (sessionId: string) => Promise<void>;
-  sendPhoneOtp: (phone: string) => Promise<{ demo_otp?: string; message?: string }>;
+  sendPhoneOtp: (phone: string, turnstileToken?: string | null) => Promise<{ demo_otp?: string; message?: string }>;
   phoneLogin: (phone: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -185,8 +185,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [googleLogin]);
 
-  const sendPhoneOtp = useCallback(async (phone: string) => {
-    const res = await api.post('/auth/phone/send-otp', { phone_number: phone });
+  const sendPhoneOtp = useCallback(async (phone: string, turnstileToken?: string | null) => {
+    const res = await api.post('/auth/phone/send-otp', {
+      phone_number: phone,
+      ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
+    });
     return res.data as { demo_otp?: string; message?: string };
   }, []);
 

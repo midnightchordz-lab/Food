@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TextInput, ScrollView, KeyboardAvoidingView, Platform, Pressable,
 } from 'react-native';
@@ -14,6 +14,7 @@ import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Button, Icon, useToast } from '@/src/components/ui';
 import { AppleSignInButton } from '@/src/components/AppleSignInButton';
 import { CountryCodePicker } from '@/src/components/CountryCodePicker';
+import { TurnstileGate, TurnstileGateHandle } from '@/src/components/TurnstileGate';
 import { Country, DEFAULT_COUNTRY, findByIso2 } from '@/src/data/countryCodes';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -27,6 +28,7 @@ export default function Welcome() {
   const toast = useToast();
   const router = useRouter();
   const { login, register, sendPhoneOtp, phoneLogin, googleLogin, user } = useAuth();
+  const turnstileRef = useRef<TurnstileGateHandle>(null);
 
   useEffect(() => {
     if (user) router.replace('/(tabs)');
@@ -92,7 +94,8 @@ export default function Welcome() {
     }
     setPhoneBusy(true);
     try {
-      const res = await sendPhoneOtp(fullPhone);
+      const turnstileToken = await turnstileRef.current?.requestToken();
+      const res = await sendPhoneOtp(fullPhone, turnstileToken);
       setOtpSent(true);
       if (res?.demo_otp) toast.show(`Demo code: ${res.demo_otp}`, 'info');
       else toast.show('We texted you a 6-digit code', 'success');
@@ -136,6 +139,7 @@ export default function Welcome() {
 
   return (
     <View style={styles.root}>
+      <TurnstileGate ref={turnstileRef} />
       <View style={styles.heroWrap}>
         <Image source={{ uri: HERO }} style={styles.hero} contentFit="cover" transition={300} />
         <LinearGradient

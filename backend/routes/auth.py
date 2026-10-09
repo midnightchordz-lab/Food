@@ -203,6 +203,13 @@ async def send_phone_otp(request: PhoneSendOTP):
     if not await is_phone_otp_enabled():
         raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email, Google, or Apple sign-in.")
 
+    # Turnstile: the earliest possible gate, before rate limits or the Lookup
+    # check even run — blocks scripted/bot callers outright instead of just
+    # throttling them. Soft-enforced (see turnstile_check.py) during rollout.
+    from .turnstile_check import verify_turnstile_token
+    if not await verify_turnstile_token(request.turnstile_token):
+        raise HTTPException(status_code=403, detail="Could not verify this request. Please try again.")
+
     phone = request.phone_number.strip()
 
     # Validate E.164 format early — applies to both paths.

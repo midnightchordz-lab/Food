@@ -184,3 +184,6 @@ async def root():
 audio_cache_dir = Path("/app/uploads/audio-cache")
 audio_cache_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads/audio-cache", StaticFiles(directory=str(audio_cache_dir)), name="audio-cache")
+
+# Static pages (e.g. the hidden Turnstile challenge page loaded by the app's WebView)
+app.mount("/static", StaticFiles(directory=str(ROOT_DIR / "static_pages")), name="static-pages")
