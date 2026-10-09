@@ -41,8 +41,8 @@ class SendMealPlanRequest(BaseModel):
 # ============== PHONE VERIFICATION (OTP) ==============
 
 @router.post("/send-otp")
-async def send_otp(request: SendOTPRequest):
-    """Send OTP to phone number for verification"""
+async def send_otp(request: SendOTPRequest, current_user: User = Depends(get_current_user)):
+    """Send OTP to phone number for verification (used by the phone-link flow — requires login)"""
     if not twilio_client:
         raise HTTPException(status_code=500, detail="Twilio not configured")
     
@@ -87,8 +87,8 @@ async def send_otp(request: SendOTPRequest):
         raise HTTPException(status_code=500, detail=f"Error sending OTP: {str(e)}")
 
 @router.post("/verify-otp")
-async def verify_otp(request: VerifyOTPRequest):
-    """Verify OTP code"""
+async def verify_otp(request: VerifyOTPRequest, current_user: User = Depends(get_current_user)):
+    """Verify OTP code (used by the phone-link flow — requires login)"""
     try:
         # Find OTP record
         otp_record = await db.otp_verifications.find_one({

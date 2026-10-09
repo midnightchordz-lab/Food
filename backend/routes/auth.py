@@ -37,10 +37,6 @@ TWILIO_FROM_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '+19064011655')
 # H1: never return the OTP automatically. Explicit opt-in only, must be false in prod.
 DEBUG_RETURN_OTP = os.environ.get("AUTH_DEBUG_RETURN_OTP", "false").lower() == "true"
 
-# Temporary kill switch while we sort out Twilio Verify / compliance — defaults OFF.
-# Set PHONE_OTP_ENABLED=true once phone sign-in is ready to resume.
-PHONE_OTP_ENABLED = os.environ.get("PHONE_OTP_ENABLED", "false").lower() == "true"
-
 
 @router.post("/register", response_model=Token)
 async def register(user: UserRegister, http_request: Request):
@@ -192,12 +188,15 @@ async def logout(body: RefreshRequest):
     return {"status": "logged_out"}
 
 
+PHONE_OTP_ENABLED = os.environ.get("PHONE_OTP_ENABLED", "false").lower() == "true"
+
+
 @router.post("/phone/send-otp")
 async def send_phone_otp(request: PhoneSendOTP):
-    """Send OTP to phone number via Twilio Verify (falls back to legacy custom-OTP SMS if Verify isn't configured)"""
+    """Send OTP to phone number via Twilio SMS"""
     phone = request.phone_number.strip()
 
-    # Validate E.164 format
+    # Validate E.164 format early — applies to both paths.
     if not phone.startswith('+') or len(phone) < 10:
         raise HTTPException(status_code=400, detail="Invalid phone number format. Use E.164 format: +1234567890")
 
@@ -205,35 +204,42 @@ async def send_phone_otp(request: PhoneSendOTP):
     twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
     verify_service_sid = os.environ.get('TWILIO_VERIFY_SERVICE_SID')
 
-    # Twilio Verify has its own Fraud Guard / rate limiting, so the kill
-    # switch only applies to the legacy path below.
-    if not verify_service_sid and not PHONE_OTP_ENABLED:
-        existing_user = await db.users.find_one({"phone_number": phone}, {"_id": 0, "id": 1})
-        if not existing_user:
-            raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable for new accounts. Please use email or Google to sign in.")
-
-    # M3: throttle OTP requests per phone number.
+    # M3: throttle OTP requests per phone number. Applies to BOTH paths below —
+    # Verify's own Fraud Guard is not a substitute for this: fraud traffic has
+    # been observed rotating source IPs to stay under the per-IP limit while
+    # hammering the same/different numbers, so a per-phone cap is required too.
     await check_rate_limit(f"otp:phone:{phone}", max_requests=5, window_seconds=3600)
 
+    # ── Twilio Verify path (Fraud Guard enabled) ─────────────────────────────
+    # When TWILIO_VERIFY_SERVICE_SID is configured, Verify owns code generation
+    # and delivery entirely — we never see the code, so the kill switch and
+    # debug-return-OTP flags are both bypassed.
     if twilio_sid and twilio_token and verify_service_sid:
         try:
             from twilio.rest import Client
             client = Client(twilio_sid, twilio_token)
-
             verification = client.verify.v2.services(verify_service_sid).verifications.create(
                 to=phone, channel='sms'
             )
-
-            logging.info(f"Verify OTP sent to {phone}, status: {verification.status}")
-
+            logging.info(f"Twilio Verify: sent to {phone[-4:]}, status={verification.status}")
             return {"status": verification.status, "message": "Verification code sent via SMS"}
         except Exception as e:
-            logging.error(f"Twilio Verify error: {e}")
-            # H1: fail closed — never leak a code (Verify owns code generation, we never have one to leak)
+            logging.error(f"Twilio Verify send error: {e}")
             raise HTTPException(status_code=502, detail="Couldn't send the verification code — try again")
 
-    # ---- Legacy path: custom OTP + plain SMS (used only while Verify isn't configured) ----
+    # ── Legacy path (custom OTP + Messaging) ─────────────────────────────────
+    # Kill switch: block new signups only when Verify is not yet configured.
+    # Existing phone-only users can still log in — look them up first so they
+    # are never locked out.
+    if not PHONE_OTP_ENABLED:
+        existing = await db.users.find_one({"phone_number": phone})
+        if not existing:
+            raise HTTPException(status_code=503, detail="Phone sign-in is temporarily unavailable. Please use email or Google to sign in.")
+
+    # Generate OTP
     otp = str(random.randint(100000, 999999))
+
+    # Store OTP locally (with expiration)
     otp_storage[phone] = {
         "code": otp,
         "expires": datetime.now(timezone.utc) + timedelta(minutes=10),
@@ -244,32 +250,23 @@ async def send_phone_otp(request: PhoneSendOTP):
         try:
             from twilio.rest import Client
             client = Client(twilio_sid, twilio_token)
-
             message = client.messages.create(
                 body=f"Your MoodFood verification code is: {otp}. Valid for 10 minutes.",
                 from_=TWILIO_FROM_NUMBER,
                 to=phone
             )
-
-            logging.info(f"SMS sent to {phone}, SID: {message.sid}, Status: {message.status}")
-
-            return {
-                "status": "pending",
-                "message": "Verification code sent via SMS",
-                "sid": message.sid
-            }
+            logging.info(f"SMS sent to {phone[-4:]}, SID: {message.sid}, Status: {message.status}")
+            return {"status": "pending", "message": "Verification code sent via SMS", "sid": message.sid}
         except Exception as e:
             logging.error(f"Twilio error: {e}")
             if DEBUG_RETURN_OTP:
                 logging.warning(f"AUTH_DEBUG_RETURN_OTP is on — returning OTP for {phone[-4:]} in response")
                 return {"status": "pending", "message": "Demo mode (SMS failed)", "demo_otp": otp}
-            # H1: fail closed — never leak the code on delivery failure
             raise HTTPException(status_code=502, detail="Couldn't send the verification code — try again")
     else:
         if DEBUG_RETURN_OTP:
             logging.warning(f"AUTH_DEBUG_RETURN_OTP is on — returning OTP for {phone[-4:]} in response")
             return {"status": "pending", "message": "Demo mode", "demo_otp": otp}
-        # H1: fail closed instead of leaking the code
         raise HTTPException(status_code=503, detail="SMS delivery is not available right now")
 
 
@@ -279,26 +276,30 @@ async def verify_phone_otp(request: PhoneVerifyOTP, http_request: Request):
     phone = request.phone_number.strip()
     code = request.code.strip()
 
-    is_valid = False
-
     twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
     twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
     verify_service_sid = os.environ.get('TWILIO_VERIFY_SERVICE_SID')
 
+    is_valid = False
+
+    # ── Twilio Verify path ────────────────────────────────────────────────────
     if twilio_sid and twilio_token and verify_service_sid:
         try:
             from twilio.rest import Client
             client = Client(twilio_sid, twilio_token)
-
             check = client.verify.v2.services(verify_service_sid).verification_checks.create(
                 to=phone, code=code
             )
             is_valid = (check.status == 'approved')
+            logging.info(f"Twilio Verify check for {phone[-4:]}: status={check.status}")
         except Exception as e:
             logging.error(f"Twilio Verify check error: {e}")
+            raise HTTPException(status_code=502, detail="Could not verify the code — try again")
+        if not is_valid:
             raise HTTPException(status_code=400, detail="Invalid or expired verification code")
+
+    # ── Legacy path (otp_storage) ─────────────────────────────────────────────
     else:
-        # ---- Legacy path: check against locally stored OTP ----
         if phone in otp_storage:
             stored = otp_storage[phone]
             if stored["expires"] > datetime.now(timezone.utc):
@@ -315,8 +316,8 @@ async def verify_phone_otp(request: PhoneVerifyOTP, http_request: Request):
         else:
             raise HTTPException(status_code=400, detail="No OTP found for this number. Please request a code first.")
 
-    if not is_valid:
-        raise HTTPException(status_code=400, detail="Invalid verification code")
+        if not is_valid:
+            raise HTTPException(status_code=400, detail="Invalid verification code")
     
     # Check if user exists
     existing_user = await db.users.find_one({"phone_number": phone}, {"_id": 0, "hashed_password": 0})
@@ -410,7 +411,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 @router.put("/profile", response_model=User)
 async def update_profile(data: dict, current_user: User = Depends(get_current_user)):
-    allowed_fields = ["name", "dietary_restrictions", "cuisine_preferences", "phone_number", "whatsapp_notifications", "push_notifications"]
+    allowed_fields = ["name", "dietary_restrictions", "cuisine_preferences", "phone_number", "whatsapp_notifications", "push_notifications", "dietary_preference"]
     update_data = {k: v for k, v in data.items() if k in allowed_fields}
     
     if update_data:
@@ -478,3 +479,13 @@ async def get_push_preferences(current_user: User = Depends(get_current_user)):
         "preferences": user.get("push_notifications", default_prefs) if user else default_prefs,
         "has_fcm_token": bool(user.get("fcm_token")) if user else False
     }
+
+
+
+@router.delete("/account")
+async def delete_account(current_user: User = Depends(get_current_user)):
+    """Permanently delete the signed-in user's account and all their personal
+    data (App Store / Play requirement). Idempotent; revokes all sessions."""
+    from .account_deletion import purge_user_data
+    await purge_user_data(current_user.id)
+    return {"success": True, "message": "Your account and all associated data have been permanently deleted."}
