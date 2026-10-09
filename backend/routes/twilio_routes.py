@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from datetime import datetime
 import os
@@ -18,10 +17,10 @@ TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER')
 TWILIO_WHATSAPP_NUMBER = os.environ.get('TWILIO_WHATSAPP_NUMBER', '+14155238886')
 
-# Initialize Twilio client
-twilio_client = None
-if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
-    twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+# Initialize Twilio client — prefers a scoped Restricted API Key over the
+# account's Auth Token when both are configured; see .twilio_client.
+from .twilio_client import get_twilio_client
+twilio_client = get_twilio_client()
 
 # Request/Response Models
 class SendOTPRequest(BaseModel):

@@ -20,7 +20,6 @@ all still in place as the real backstops.
 """
 import logging
 import os
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -35,17 +34,15 @@ DEFAULT_RISK_THRESHOLD = int(os.environ.get("SMS_PUMPING_RISK_THRESHOLD", "75"))
 async def is_high_risk_number(phone: str, threshold: int = DEFAULT_RISK_THRESHOLD) -> bool:
     """True if this destination should be silently refused. Never raises —
     any failure to determine risk is treated as low-risk (fail open)."""
-    twilio_sid = os.environ.get("TWILIO_ACCOUNT_SID")
-    twilio_token = os.environ.get("TWILIO_AUTH_TOKEN")
-    if not (twilio_sid and twilio_token):
-        return False
-
     try:
         import asyncio
-        from twilio.rest import Client
+        from .twilio_client import get_twilio_client
+
+        client = get_twilio_client()
+        if client is None:
+            return False
 
         def _lookup():
-            client = Client(twilio_sid, twilio_token)
             return client.lookups.v2.phone_numbers(phone).fetch(fields="sms_pumping_risk")
 
         result = await asyncio.to_thread(_lookup)

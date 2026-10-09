@@ -240,8 +240,8 @@ async def send_phone_otp(request: PhoneSendOTP):
     # debug-return-OTP flags are both bypassed.
     if twilio_sid and twilio_token and verify_service_sid:
         try:
-            from twilio.rest import Client
-            client = Client(twilio_sid, twilio_token)
+            from .twilio_client import get_twilio_client
+            client = get_twilio_client()
             verification = client.verify.v2.services(verify_service_sid).verifications.create(
                 to=phone, channel='sms'
             )
@@ -272,8 +272,8 @@ async def send_phone_otp(request: PhoneSendOTP):
 
     if twilio_sid and twilio_token:
         try:
-            from twilio.rest import Client
-            client = Client(twilio_sid, twilio_token)
+            from .twilio_client import get_twilio_client
+            client = get_twilio_client()
             message = client.messages.create(
                 body=f"Your MoodFood verification code is: {otp}. Valid for 10 minutes.",
                 from_=TWILIO_FROM_NUMBER,
@@ -309,8 +309,8 @@ async def verify_phone_otp(request: PhoneVerifyOTP, http_request: Request):
     # ── Twilio Verify path ────────────────────────────────────────────────────
     if twilio_sid and twilio_token and verify_service_sid:
         try:
-            from twilio.rest import Client
-            client = Client(twilio_sid, twilio_token)
+            from .twilio_client import get_twilio_client
+            client = get_twilio_client()
             check = client.verify.v2.services(verify_service_sid).verification_checks.create(
                 to=phone, code=code
             )
