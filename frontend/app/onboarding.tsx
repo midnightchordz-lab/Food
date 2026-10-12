@@ -21,13 +21,15 @@ const MOOD_PAIRS = [
 const CYCLE_MS = 2400;
 const FADE_MS = 300;
 
-// Each badge gets its own color so the row reads as colorful, not a flat gray list.
-// Labels kept to one or two words — the icon carries most of the meaning.
+// Each badge gets its own tinted background so the row reads as colorful, not a flat
+// gray list — icon/text stay dark foreground throughout for reliable contrast against
+// every tint (some mood tokens are pale pastels; a colored icon on a same-hue pale
+// background washes out, which is why these don't use colorKey-tinted icons/text).
 const BADGES = [
-  { label: 'AI', icon: 'creation', colorKey: 'accent' as const, softKey: 'accentSoft' as const },
-  { label: 'Veg-Friendly', icon: 'leaf', colorKey: 'primary' as const, softKey: 'primarySoft' as const },
-  { label: 'Fridge Scan', icon: 'fridge-outline', colorKey: 'moodEnergetic' as const, softKey: 'moodEnergetic' as const },
-  { label: 'Free Trial', icon: 'gift-outline', colorKey: 'moodCelebratory' as const, softKey: 'moodCelebratory' as const },
+  { label: 'AI', icon: 'creation', softKey: 'accentSoft' as const },
+  { label: 'Veg-Friendly', icon: 'leaf', softKey: 'primarySoft' as const },
+  { label: 'Fridge Scan', icon: 'fridge-outline', softKey: 'moodEnergetic' as const },
+  { label: 'Free Trial', icon: 'gift-outline', softKey: 'moodCelebratory' as const },
 ];
 
 export default function Onboarding() {
@@ -73,7 +75,7 @@ export default function Onboarding() {
       <View style={styles.demoWrap}>
         <Animated.View style={[styles.demoCard, { opacity: fade, backgroundColor: `${moodColor}2E`, borderColor: `${moodColor}66` }]}>
           <View style={[styles.moodBadge, { backgroundColor: moodColor }]}>
-            <Icon name={current.icon} size={30} color={colors.primaryForeground} />
+            <Icon name={current.icon} size={30} color={colors.foreground} />
           </View>
           <View style={styles.demoTextCol}>
             <Text style={[styles.moodLabel, { color: moodColor }]}>{current.mood}</Text>
@@ -99,12 +101,11 @@ export default function Onboarding() {
 
       <View style={styles.badgesRow}>
         {BADGES.map((b) => {
-          const fg = colors[b.colorKey];
           const bg = colors[b.softKey];
           return (
-            <View key={b.label} style={[styles.badge, { backgroundColor: `${bg}55` }]}>
-              <Icon name={b.icon} size={15} color={fg} />
-              <Text style={[styles.badgeText, { color: fg }]}>{b.label}</Text>
+            <View key={b.label} style={[styles.badge, { backgroundColor: `${bg}CC` }]}>
+              <Icon name={b.icon} size={15} color={colors.foreground} />
+              <Text style={[styles.badgeText, { color: colors.foreground }]}>{b.label}</Text>
             </View>
           );
         })}
