@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Button, Icon } from '@/src/components/ui';
 import { storage } from '@/src/utils/storage';
@@ -20,7 +21,13 @@ const MOOD_PAIRS = [
 const CYCLE_MS = 2400;
 const FADE_MS = 300;
 
-const BADGES = ['AI-Powered', 'Veg · Vegan · Jain', 'Fridge Scanner', '7-Day Free Trial'];
+// Each badge gets its own color so the row reads as colorful, not a flat gray list.
+const BADGES = [
+  { label: 'AI-Powered', icon: 'creation', colorKey: 'accent' as const, softKey: 'accentSoft' as const },
+  { label: 'Veg · Vegan · Jain', icon: 'leaf', colorKey: 'primary' as const, softKey: 'primarySoft' as const },
+  { label: 'Fridge Scanner', icon: 'fridge-outline', colorKey: 'moodEnergetic' as const, softKey: 'moodEnergetic' as const },
+  { label: '7-Day Free Trial', icon: 'gift-outline', colorKey: 'moodCelebratory' as const, softKey: 'moodCelebratory' as const },
+];
 
 export default function Onboarding() {
   const insets = useSafeAreaInsets();
@@ -51,35 +58,56 @@ export default function Onboarding() {
   const moodColor = colors[current.colorKey];
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
+    <LinearGradient
+      colors={[colors.accentSoft, colors.background, colors.primarySoft]}
+      locations={[0, 0.45, 1]}
+      style={[styles.root, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
+    >
       <View style={styles.headlineWrap}>
         <Text style={styles.headlineSmall}>Tell us how you feel.</Text>
-        <Text style={styles.headlineBig}>We'll tell you what to cook.</Text>
+        <Text style={styles.headlineBig}>
+          We'll tell you <Text style={{ color: colors.accent }}>what to cook</Text>.
+        </Text>
       </View>
 
       <View style={styles.demoWrap}>
-        <Animated.View style={[styles.demoCard, { opacity: fade }]}>
+        <Animated.View style={[styles.demoCard, { opacity: fade, backgroundColor: `${moodColor}2E`, borderColor: `${moodColor}66` }]}>
           <View style={[styles.moodBadge, { backgroundColor: moodColor }]}>
-            <Icon name={current.icon} size={26} color={colors.primaryForeground} />
+            <Icon name={current.icon} size={30} color={colors.primaryForeground} />
           </View>
-          <Text style={styles.moodLabel}>{current.mood}</Text>
-          <Icon name="arrow-right-thin" size={22} color={colors.mutedForeground} />
-          <Text style={styles.dishLabel}>{current.dish}</Text>
+          <View style={styles.demoTextCol}>
+            <Text style={[styles.moodLabel, { color: moodColor }]}>{current.mood}</Text>
+            <View style={styles.dishRow}>
+              <Icon name="arrow-right-thin" size={18} color={colors.mutedForeground} />
+              <Text style={styles.dishLabel}>{current.dish}</Text>
+            </View>
+          </View>
         </Animated.View>
 
         <View style={styles.dotsRow}>
-          {MOOD_PAIRS.map((_, i) => (
-            <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
+          {MOOD_PAIRS.map((pair, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i === index && { backgroundColor: colors[pair.colorKey], width: 20 },
+              ]}
+            />
           ))}
         </View>
       </View>
 
       <View style={styles.badgesRow}>
-        {BADGES.map((b) => (
-          <View key={b} style={styles.badge}>
-            <Text style={styles.badgeText}>{b}</Text>
-          </View>
-        ))}
+        {BADGES.map((b) => {
+          const fg = colors[b.colorKey];
+          const bg = colors[b.softKey];
+          return (
+            <View key={b.label} style={[styles.badge, { backgroundColor: `${bg}55` }]}>
+              <Icon name={b.icon} size={15} color={fg} />
+              <Text style={[styles.badgeText, { color: fg }]}>{b.label}</Text>
+            </View>
+          );
+        })}
       </View>
 
       <View style={styles.ctaWrap}>
@@ -87,14 +115,13 @@ export default function Onboarding() {
         <View style={{ height: 10 }} />
         <Button label="Log in" variant="outline" onPress={() => finish('signin')} testID="onboarding-login" />
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const useStyles = makeStyles(({ colors, spacing, radius }) => ({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
     paddingHorizontal: spacing.lg,
     justifyContent: 'space-between',
   },
@@ -106,53 +133,52 @@ const useStyles = makeStyles(({ colors, spacing, radius }) => ({
   },
   headlineBig: {
     fontFamily: fonts.serif,
-    fontSize: 34,
+    fontSize: 36,
     color: colors.foreground,
     marginTop: 2,
-    lineHeight: 40,
+    lineHeight: 42,
   },
   demoWrap: { alignItems: 'center' },
   demoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
+    gap: 16,
+    borderWidth: 1.5,
+    borderRadius: radius.xl,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
     width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   moodBadge: {
-    width: 44,
-    height: 44,
+    width: 56,
+    height: 56,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  demoTextCol: { flex: 1, gap: 4 },
   moodLabel: {
-    fontFamily: fonts.bodySemiBold,
-    fontSize: 14.5,
-    color: colors.foreground,
+    fontFamily: fonts.bodyBold,
+    fontSize: 17,
   },
+  dishRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dishLabel: {
     fontFamily: fonts.bodySemiBold,
-    fontSize: 14.5,
-    color: colors.accent,
+    fontSize: 15.5,
+    color: colors.foreground,
     flexShrink: 1,
   },
-  dotsRow: { flexDirection: 'row', gap: 6, marginTop: 16 },
+  dotsRow: { flexDirection: 'row', gap: 6, marginTop: 18 },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.border,
-  },
-  dotActive: {
-    backgroundColor: colors.primary,
-    width: 18,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.borderStrong,
   },
   badgesRow: {
     flexDirection: 'row',
@@ -161,15 +187,16 @@ const useStyles = makeStyles(({ colors, spacing, radius }) => ({
     gap: 8,
   },
   badge: {
-    backgroundColor: colors.primarySoft,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
     borderRadius: radius.pill,
   },
   badgeText: {
-    fontFamily: fonts.bodyMedium,
+    fontFamily: fonts.bodySemiBold,
     fontSize: 12.5,
-    color: colors.foreground,
   },
   ctaWrap: { marginTop: spacing.md },
 }));
