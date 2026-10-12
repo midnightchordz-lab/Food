@@ -22,11 +22,12 @@ const CYCLE_MS = 2400;
 const FADE_MS = 300;
 
 // Each badge gets its own color so the row reads as colorful, not a flat gray list.
+// Labels kept to one or two words — the icon carries most of the meaning.
 const BADGES = [
-  { label: 'AI-Powered', icon: 'creation', colorKey: 'accent' as const, softKey: 'accentSoft' as const },
-  { label: 'Veg · Vegan · Jain', icon: 'leaf', colorKey: 'primary' as const, softKey: 'primarySoft' as const },
-  { label: 'Fridge Scanner', icon: 'fridge-outline', colorKey: 'moodEnergetic' as const, softKey: 'moodEnergetic' as const },
-  { label: '7-Day Free Trial', icon: 'gift-outline', colorKey: 'moodCelebratory' as const, softKey: 'moodCelebratory' as const },
+  { label: 'AI', icon: 'creation', colorKey: 'accent' as const, softKey: 'accentSoft' as const },
+  { label: 'Veg-Friendly', icon: 'leaf', colorKey: 'primary' as const, softKey: 'primarySoft' as const },
+  { label: 'Fridge Scan', icon: 'fridge-outline', colorKey: 'moodEnergetic' as const, softKey: 'moodEnergetic' as const },
+  { label: 'Free Trial', icon: 'gift-outline', colorKey: 'moodCelebratory' as const, softKey: 'moodCelebratory' as const },
 ];
 
 export default function Onboarding() {
@@ -64,9 +65,8 @@ export default function Onboarding() {
       style={[styles.root, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.headlineWrap}>
-        <Text style={styles.headlineSmall}>Tell us how you feel.</Text>
         <Text style={styles.headlineBig}>
-          We'll tell you <Text style={{ color: colors.accent }}>what to cook</Text>.
+          What's your <Text style={{ color: colors.accent }}>mood</Text>?
         </Text>
       </View>
 
@@ -126,11 +126,6 @@ const useStyles = makeStyles(({ colors, spacing, radius }) => ({
     justifyContent: 'space-between',
   },
   headlineWrap: { marginTop: spacing.md },
-  headlineSmall: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 17,
-    color: colors.mutedForeground,
-  },
   headlineBig: {
     fontFamily: fonts.serif,
     fontSize: 36,
