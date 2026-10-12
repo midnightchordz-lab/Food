@@ -10,26 +10,26 @@ import { storage } from '@/src/utils/storage';
 const ONBOARDED_KEY = 'moodfood_onboarded';
 
 // Real mood → dish pairs the app actually generates — not stock marketing copy.
-// Each ties to one of the brand's existing mood color tokens (see src/theme.ts).
+// Colors here are a bolder, more saturated palette specific to this screen — the
+// actual moodStressed/moodSad/etc. tokens in theme.ts are deliberately muted pastels
+// for the in-app mood picker, which reads as dull on a first-impression screen.
 const MOOD_PAIRS = [
-  { mood: 'Stressed', dish: 'Creamy Mac & Cheese', icon: 'emoticon-sad-outline', colorKey: 'moodStressed' as const },
-  { mood: 'Heartbroken', dish: 'Butter Chicken', icon: 'heart-broken', colorKey: 'moodSad' as const },
-  { mood: 'Post-Workout', dish: 'Protein Power Bowl', icon: 'arm-flex-outline', colorKey: 'moodEnergetic' as const },
-  { mood: 'Celebrating', dish: 'Paneer Biryani', icon: 'party-popper', colorKey: 'moodCelebratory' as const },
+  { mood: 'Stressed', dish: 'Creamy Mac & Cheese', icon: 'emoticon-sad-outline', vibrant: '#3DB88F' },
+  { mood: 'Heartbroken', dish: 'Butter Chicken', icon: 'heart-broken', vibrant: '#F0586A' },
+  { mood: 'Post-Workout', dish: 'Protein Power Bowl', icon: 'arm-flex-outline', vibrant: '#FF8C3B' },
+  { mood: 'Celebrating', dish: 'Paneer Biryani', icon: 'party-popper', vibrant: '#F5B300' },
 ];
 
 const CYCLE_MS = 2400;
 const FADE_MS = 300;
 
-// Each badge gets its own tinted background so the row reads as colorful, not a flat
-// gray list — icon/text stay dark foreground throughout for reliable contrast against
-// every tint (some mood tokens are pale pastels; a colored icon on a same-hue pale
-// background washes out, which is why these don't use colorKey-tinted icons/text).
+// Each badge gets its own vivid background so the row reads as colorful, not a flat
+// gray list — icon/text stay dark foreground for reliable contrast against every tint.
 const BADGES = [
-  { label: 'AI', icon: 'creation', softKey: 'accentSoft' as const },
-  { label: 'Veg-Friendly', icon: 'leaf', softKey: 'primarySoft' as const },
-  { label: 'Fridge Scan', icon: 'fridge-outline', softKey: 'moodEnergetic' as const },
-  { label: 'Free Trial', icon: 'gift-outline', softKey: 'moodCelebratory' as const },
+  { label: 'AI', icon: 'creation', vibrant: '#C66B3D' },
+  { label: 'Veg-Friendly', icon: 'leaf', vibrant: '#3DB88F' },
+  { label: 'Fridge Scan', icon: 'fridge-outline', vibrant: '#FF8C3B' },
+  { label: 'Free Trial', icon: 'gift-outline', vibrant: '#F5B300' },
 ];
 
 export default function Onboarding() {
@@ -75,7 +75,7 @@ export default function Onboarding() {
   };
 
   const current = MOOD_PAIRS[index];
-  const moodColor = colors[current.colorKey];
+  const moodColor = current.vibrant;
 
   return (
     <LinearGradient
@@ -109,7 +109,7 @@ export default function Onboarding() {
               key={i}
               style={[
                 styles.dot,
-                i === index && { backgroundColor: colors[pair.colorKey], width: 20 },
+                i === index && { backgroundColor: pair.vibrant, width: 20 },
               ]}
             />
           ))}
@@ -118,14 +118,13 @@ export default function Onboarding() {
 
       <View style={styles.badgesRow}>
         {BADGES.map((b, i) => {
-          const bg = colors[b.softKey];
           return (
             <Animated.View
               key={b.label}
               style={[
                 styles.badge,
                 {
-                  backgroundColor: `${bg}CC`,
+                  backgroundColor: `${b.vibrant}E6`,
                   opacity: trustAnims[i],
                   transform: [{ scale: trustAnims[i] }],
                 },
