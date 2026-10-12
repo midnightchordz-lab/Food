@@ -40,16 +40,33 @@ export default function Onboarding() {
 
   const [index, setIndex] = useState(0);
   const fade = useRef(new Animated.Value(1)).current;
+  const badgeScale = useRef(new Animated.Value(1)).current;
+  const trustAnims = useRef(BADGES.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
     const timer = setInterval(() => {
-      Animated.timing(fade, { toValue: 0, duration: FADE_MS, useNativeDriver: true }).start(() => {
+      Animated.parallel([
+        Animated.timing(fade, { toValue: 0, duration: FADE_MS, useNativeDriver: true }),
+        Animated.timing(badgeScale, { toValue: 0.7, duration: FADE_MS, useNativeDriver: true }),
+      ]).start(() => {
         setIndex((i) => (i + 1) % MOOD_PAIRS.length);
-        Animated.timing(fade, { toValue: 1, duration: FADE_MS, useNativeDriver: true }).start();
+        Animated.parallel([
+          Animated.timing(fade, { toValue: 1, duration: FADE_MS, useNativeDriver: true }),
+          // A little overshoot on the way back in — the "pop" that makes it feel alive.
+          Animated.spring(badgeScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true }),
+        ]).start();
       });
     }, CYCLE_MS);
     return () => clearInterval(timer);
-  }, [fade]);
+  }, [fade, badgeScale]);
+
+  // One-time staggered entrance for the trust badges on first mount.
+  useEffect(() => {
+    Animated.stagger(
+      90,
+      trustAnims.map((v) => Animated.spring(v, { toValue: 1, friction: 5, tension: 60, useNativeDriver: true }))
+    ).start();
+  }, [trustAnims]);
 
   const finish = async (mode: 'signup' | 'signin') => {
     await storage.set(ONBOARDED_KEY, '1');
@@ -74,9 +91,9 @@ export default function Onboarding() {
 
       <View style={styles.demoWrap}>
         <Animated.View style={[styles.demoCard, { opacity: fade, backgroundColor: `${moodColor}2E`, borderColor: `${moodColor}66` }]}>
-          <View style={[styles.moodBadge, { backgroundColor: moodColor }]}>
+          <Animated.View style={[styles.moodBadge, { backgroundColor: moodColor, transform: [{ scale: badgeScale }] }]}>
             <Icon name={current.icon} size={30} color={colors.foreground} />
-          </View>
+          </Animated.View>
           <View style={styles.demoTextCol}>
             <Text style={[styles.moodLabel, { color: moodColor }]}>{current.mood}</Text>
             <View style={styles.dishRow}>
@@ -100,13 +117,23 @@ export default function Onboarding() {
       </View>
 
       <View style={styles.badgesRow}>
-        {BADGES.map((b) => {
+        {BADGES.map((b, i) => {
           const bg = colors[b.softKey];
           return (
-            <View key={b.label} style={[styles.badge, { backgroundColor: `${bg}CC` }]}>
+            <Animated.View
+              key={b.label}
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: `${bg}CC`,
+                  opacity: trustAnims[i],
+                  transform: [{ scale: trustAnims[i] }],
+                },
+              ]}
+            >
               <Icon name={b.icon} size={15} color={colors.foreground} />
               <Text style={[styles.badgeText, { color: colors.foreground }]}>{b.label}</Text>
-            </View>
+            </Animated.View>
           );
         })}
       </View>
