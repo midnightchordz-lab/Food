@@ -148,6 +148,7 @@ function ThemedStack() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen name="welcome" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="recipe" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />

@@ -5,7 +5,7 @@ import {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as Localization from 'expo-localization';
@@ -27,6 +27,7 @@ export default function Welcome() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
+  const { mode: initialMode } = useLocalSearchParams<{ mode?: string }>();
   const { login, register, sendPhoneOtp, phoneLogin, googleLogin, user } = useAuth();
   const turnstileRef = useRef<TurnstileGateHandle>(null);
 
@@ -34,7 +35,7 @@ export default function Welcome() {
     if (user) router.replace('/(tabs)');
   }, [user, router]);
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signup');
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode === 'signin' ? 'signin' : 'signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
