@@ -12,20 +12,7 @@ import { useSubscription } from '@/src/lib/revenuecat';
 
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-type Cocktail = {
-  name: string;
-  description?: string;
-  glassware?: string;
-  method?: string;
-  ingredients?: string[];
-  garnish?: string;
-  instructions?: string[];
-  abv_estimate?: string;
-  mocktail_variant?: string;
-};
-
 type ImportedRecipe = {
-  content_type?: 'recipe' | 'cocktails';
   name?: string;
   description?: string;
   cuisine?: string;
@@ -34,9 +21,6 @@ type ImportedRecipe = {
   ingredients?: any[];
   instructions?: any[];
   image_url?: string;
-  // present when content_type === 'cocktails'
-  spirit_name?: string;
-  cocktails?: Cocktail[];
 };
 
 export default function ImportRecipe() {
@@ -227,46 +211,6 @@ export default function ImportRecipe() {
               ) : null}
               <Text style={styles.hint}>Our AI chef rewrites it into clear steps with timings and tips.</Text>
             </>
-          ) : preview.content_type === 'cocktails' ? (
-            <>
-              {preview.image_url ? (
-                <Image
-                  source={{ uri: preview.image_url.startsWith('/') ? `${BACKEND}${preview.image_url}` : preview.image_url }}
-                  style={styles.previewImg}
-                  contentFit="cover"
-                  transition={250}
-                />
-              ) : null}
-              <Text style={styles.previewTitle}>{preview.spirit_name || 'Your Spirit'}</Text>
-              <Text style={styles.previewDesc}>3 cocktails you can make with this</Text>
-              {(preview.cocktails || []).map((c, i) => (
-                <View key={i} style={styles.cocktailCard} testID={`cocktail-card-${i}`}>
-                  <Text style={styles.cocktailName}>{c.name}</Text>
-                  {c.description ? <Text style={styles.previewDesc}>{c.description}</Text> : null}
-                  <View style={styles.metaRow}>
-                    {c.glassware ? <Meta icon="glass-cocktail" text={c.glassware} /> : null}
-                    {c.method ? <Meta icon="shaker-outline" text={c.method} /> : null}
-                    {c.abv_estimate ? <Meta icon="percent" text={c.abv_estimate} /> : null}
-                  </View>
-                  {c.ingredients?.length ? (
-                    <>
-                      <Text style={styles.section}>Ingredients</Text>
-                      {c.ingredients.map((ing, j) => <Text key={j} style={styles.li}>• {ing}</Text>)}
-                    </>
-                  ) : null}
-                  {c.instructions?.length ? (
-                    <>
-                      <Text style={styles.section}>Method</Text>
-                      {c.instructions.map((step, j) => <Text key={j} style={styles.li}>{j + 1}. {step}</Text>)}
-                    </>
-                  ) : null}
-                  {c.garnish ? <Text style={styles.li}>Garnish: {c.garnish}</Text> : null}
-                  {c.mocktail_variant ? <Text style={styles.li}>Non-alcoholic version: {c.mocktail_variant}</Text> : null}
-                </View>
-              ))}
-              <View style={{ height: 10 }} />
-              <Button label="Scan another bottle" variant="outline" icon="refresh" onPress={() => { setPreview(null); setUrl(''); setText(''); }} testID="import-again" />
-            </>
           ) : (
             <>
               {preview.image_url ? (
@@ -351,8 +295,6 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   metaText: { fontFamily: f.bodyMedium, fontSize: 13, color: colors.mutedForeground },
   section: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.mutedForeground, marginTop: 22, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   li: { fontFamily: f.body, fontSize: 15, color: colors.foreground, lineHeight: 24 },
-  cocktailCard: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 16, marginTop: 16 },
-  cocktailName: { fontFamily: f.serif, fontSize: 22, color: colors.foreground },
   lockWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 8 },
   lockIcon: { width: 76, height: 76, borderRadius: 38, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   lockTitle: { fontFamily: f.serif, fontSize: 26, color: colors.foreground },
