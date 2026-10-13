@@ -316,6 +316,11 @@ Create 4 ORIGINAL ${mt?.label?.toLowerCase()} recipes that match the ${m?.label?
                   <Text style={styles.quickTitle}>YouTube recipe</Text>
                   <Text style={styles.quickDesc} numberOfLines={2}>Paste a video link to get the recipe</Text>
                 </Pressable>
+                <Pressable style={styles.quickCard} testID="mood-mixers" onPress={() => router.push('/mixers')}>
+                  <View style={styles.quickIcon}><Icon name="glass-cocktail" size={22} color="#8E5A9E" /></View>
+                  <Text style={styles.quickTitle}>Mood Mixers</Text>
+                  <Text style={styles.quickDesc} numberOfLines={2}>Snap a bottle to get 3 cocktails</Text>
+                </Pressable>
               </View>
               <Text style={styles.q}>Pick the feeling that fits right now</Text>
               <View style={styles.moodGrid}>
@@ -475,12 +480,12 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   exclBadgeText: { fontFamily: f.bodyMedium, fontSize: 12.5, color: colors.primary, flexShrink: 1 },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 6 },
   q: { fontFamily: f.serifMedium, fontSize: 24, color: colors.foreground, marginBottom: 18, lineHeight: 30 },
-  quickRow: { flexDirection: 'row', gap: 12, marginBottom: 22 },
+  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 22 },
   quickBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primary, borderRadius: radius.lg, padding: 16, marginBottom: 12 },
   quickBannerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   quickBannerTitle: { fontFamily: f.bodyBold, fontSize: 16, color: colors.primaryForeground },
   quickBannerDesc: { fontFamily: f.body, fontSize: 12.5, color: colors.primaryForeground, opacity: 0.9, marginTop: 1 },
-  quickCard: { flex: 1, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 12 },
+  quickCard: { flexBasis: '31%', flexGrow: 0, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: 12 },
   quickIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   quickTitle: { fontFamily: f.bodyBold, fontSize: 13.5, color: colors.foreground },
   quickDesc: { fontFamily: f.body, fontSize: 11.5, color: colors.mutedForeground, marginTop: 2, lineHeight: 15 },

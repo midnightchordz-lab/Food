@@ -68,6 +68,7 @@ from routes.push import router as push_router
 from routes.mobile_voice import router as mobile_voice_router
 from routes.mobile_diabetes import router as mobile_diabetes_router
 from routes.mobile_fridge import router as mobile_fridge_router
+from routes.mobile_mixology import router as mobile_mixology_router
 from routes.quick_recipes import router as quick_recipes_router
 from routes.account_deletion import router as account_deletion_router
 from routes.system_flags import router as system_flags_router, webhook_router as system_flags_webhook_router
@@ -106,6 +107,7 @@ app.include_router(push_router, prefix="/api")
 app.include_router(mobile_voice_router, prefix="/api")
 app.include_router(mobile_diabetes_router, prefix="/api")
 app.include_router(mobile_fridge_router, prefix="/api")
+app.include_router(mobile_mixology_router, prefix="/api")
 app.include_router(quick_recipes_router, prefix="/api")
 
 # CORS middleware (M1): require an explicit origin list; never wildcard with credentials.
