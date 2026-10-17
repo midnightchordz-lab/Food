@@ -333,21 +333,26 @@ _PREP_WORDS = (
     r'cut into cubes|cut into pieces|diced|chopped|minced|sliced|grated|'
     r'peeled|crushed|to taste|as needed|finely chopped|roughly chopped'
 )
+_NUM = r'[\d½¼¾⅓⅔⅛]+(?:[./]\d+)?'
 
 
 def clean_ingredient_name(name: str) -> str:
     """Reduce a recipe ingredient line to a bare product name a grocery
     search box can actually match, e.g. "Boneless chicken, cut into cubes"
-    -> "Boneless chicken", "2 cups Basmati rice" -> "Basmati rice".
+    -> "Boneless chicken", "2 cups Basmati rice" -> "Basmati rice",
+    "2 onions, finely chopped" -> "onions".
     """
     s = str(name).strip()
     # Drop parenthetical asides
     s = re.sub(r'\([^)]*\)', '', s)
-    # Drop a leading quantity/measurement
-    s = re.sub(
-        rf'^\s*[\d½¼¾⅓⅔⅛./\-\s]*\s*(?:{_QUANTITY_UNITS})\s+(?:of\s+)?',
-        '', s, flags=re.IGNORECASE
-    )
+    # Drop a leading quantity (number/fraction/range) unconditionally --
+    # not just when it's glued to a recognized unit word, since bare counts
+    # like "2 onions" or reversed orderings like "4 garlic cloves" have no
+    # unit word directly after the number for the old regex to anchor on.
+    s = re.sub(rf'^\s*{_NUM}(?:\s*-\s*{_NUM})?\s*', '', s)
+    # Then separately drop a leading unit word if one is now exposed
+    # (handles "2 cups rice" -> strip "2 " above, "cups " here -> "rice").
+    s = re.sub(rf'^(?:{_QUANTITY_UNITS})\.?\s+(?:of\s+)?', '', s, flags=re.IGNORECASE)
     # Keep only what's before a prep clause introduced by a comma
     s = s.split(',')[0]
     # Strip inline prep descriptors that weren't comma-separated
