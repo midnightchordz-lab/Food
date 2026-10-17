@@ -321,13 +321,70 @@ def get_apps_for_country(country_code: str) -> dict:
     }
 
 
+import re
+import urllib.parse
+
+_QUANTITY_UNITS = (
+    r'cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|lbs?|pounds?|g|grams?|'
+    r'kg|kilograms?|ml|l|liters?|litres?|cloves?|pinch(?:es)?|cans?|slices?|'
+    r'pieces?|sprigs?|bunch(?:es)?|stalks?'
+)
+_PREP_WORDS = (
+    r'cut into cubes|cut into pieces|diced|chopped|minced|sliced|grated|'
+    r'peeled|crushed|to taste|as needed|finely chopped|roughly chopped'
+)
+
+
+def clean_ingredient_name(name: str) -> str:
+    """Reduce a recipe ingredient line to a bare product name a grocery
+    search box can actually match, e.g. "Boneless chicken, cut into cubes"
+    -> "Boneless chicken", "2 cups Basmati rice" -> "Basmati rice".
+    """
+    s = str(name).strip()
+    # Drop parenthetical asides
+    s = re.sub(r'\([^)]*\)', '', s)
+    # Drop a leading quantity/measurement
+    s = re.sub(
+        rf'^\s*[\d½¼¾⅓⅔⅛./\-\s]*\s*(?:{_QUANTITY_UNITS})\s+(?:of\s+)?',
+        '', s, flags=re.IGNORECASE
+    )
+    # Keep only what's before a prep clause introduced by a comma
+    s = s.split(',')[0]
+    # Strip inline prep descriptors that weren't comma-separated
+    s = re.sub(rf'\b(?:{_PREP_WORDS})\b', '', s, flags=re.IGNORECASE)
+    s = re.sub(r'\s+', ' ', s).strip(' -,')
+    return s or str(name).strip()
+
+
 def build_delivery_url(app: dict, ingredients: list) -> str:
-    """Build delivery URL with ingredients as search query"""
-    # Join ingredient names for search
-    ingredient_names = [ing.get("name", ing) if isinstance(ing, dict) else str(ing) for ing in ingredients]
-    query = " ".join(ingredient_names[:5])  # Limit to first 5 for cleaner search
-    
-    import urllib.parse
+    """Build a delivery app search URL for a SINGLE product search.
+
+    Grocery search boxes match one product per query -- joining several
+    ingredient names into one query string (even cleaned) returns no
+    results on sites like BigBasket/Zepto. Use only the first ingredient;
+    callers that want one link per ingredient should use
+    build_delivery_urls() instead and let the user tap through each.
+    """
+    if not ingredients:
+        return app["search_url"].replace("{query}", "")
+    first = ingredients[0]
+    name = first.get("name", first) if isinstance(first, dict) else str(first)
+    query = clean_ingredient_name(name)
     encoded_query = urllib.parse.quote(query)
-    
     return app["search_url"].replace("{query}", encoded_query)
+
+
+def build_delivery_urls(app: dict, ingredients: list) -> list:
+    """Build one search URL per ingredient (cleaned), since these search
+    boxes only support a single product term at a time."""
+    out = []
+    for ing in ingredients:
+        name = ing.get("name", ing) if isinstance(ing, dict) else str(ing)
+        cleaned = clean_ingredient_name(name)
+        encoded_query = urllib.parse.quote(cleaned)
+        out.append({
+            "name": name,
+            "query": cleaned,
+            "url": app["search_url"].replace("{query}", encoded_query),
+        })
+    return out

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Loading, EmptyState, useToast } from '@/src/components/ui';
@@ -28,6 +28,8 @@ type DeliveryAppsResponse = {
   detected_from: string;
 };
 
+type UrlItem = { name: string; query: string; url: string };
+
 const REGION_CHOICES: { code: string; label: string }[] = [
   { code: 'IN', label: 'India' },
   { code: 'US', label: 'USA' },
@@ -44,7 +46,6 @@ export default function BuyIngredients() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const params = useLocalSearchParams<{ ingredients?: string; title?: string }>();
 
@@ -116,129 +117,182 @@ export default function BuyIngredients() {
     setCountryMut.mutate(code);
   };
 
-  const buildUrlMut = useMutation({
+  // Grocery search boxes only match one product per query -- a single combined
+  // search for several ingredients returns "No results found" on real sites
+  // (e.g. BigBasket). So picking an app builds one clean search link per
+  // ingredient instead, which the user opens one at a time.
+  const [selectedApp, setSelectedApp] = React.useState<DeliveryApp | null>(null);
+
+  const buildUrlsMut = useMutation({
     mutationFn: async (app: DeliveryApp) => {
       if (!selectedNames.length) throw new Error('no ingredients selected');
-      const res = await api.post('/shopping/build-url', {
+      const res = await api.post('/shopping/build-urls', {
         app_id: app.id,
         ingredients: selectedNames.map((name) => ({ name })),
         country_code: appsQuery.data?.country_code || 'DEFAULT',
       });
-      return res.data as { url: string; app_name: string };
-    },
-    onSuccess: (data) => {
-      Linking.openURL(data.url);
+      return res.data as { items: UrlItem[]; app_name: string };
     },
     onError: (e: any) => {
       if (e?.message === 'no ingredients selected') {
         toast.show('Select at least one ingredient first', 'error');
       } else {
-        toast.show(e?.response?.data?.detail || 'Could not open that app', 'error');
+        toast.show(e?.response?.data?.detail || 'Could not load search links', 'error');
       }
+      setSelectedApp(null);
     },
   });
+
+  const pickApp = (app: DeliveryApp) => {
+    if (!selectedNames.length) {
+      toast.show('Select at least one ingredient first', 'error');
+      return;
+    }
+    setSelectedApp(app);
+    buildUrlsMut.mutate(app);
+  };
+
+  // Keep the per-ingredient links in sync if the user tweaks their selection
+  // while an app is already open.
+  React.useEffect(() => {
+    if (selectedApp && selectedNames.length) {
+      buildUrlsMut.mutate(selectedApp);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNames.join('|')]);
 
   const loadingIngredients = providedIngredients.length === 0 && shoppingListQuery.isLoading;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} testID="buy-ing-close">
-          <Icon name="close" size={24} color={colors.foreground} />
+        <Pressable
+          onPress={() => (selectedApp ? setSelectedApp(null) : router.back())}
+          hitSlop={8}
+          testID="buy-ing-close"
+        >
+          <Icon name={selectedApp ? 'chevron-left' : 'close'} size={24} color={colors.foreground} />
         </Pressable>
-        <Text style={styles.headerTitle}>Buy Ingredients</Text>
+        <Text style={styles.headerTitle}>{selectedApp ? selectedApp.name : 'Buy Ingredients'}</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
-        {params.title ? <Text style={styles.subtitle}>For {String(params.title)}</Text> : null}
-
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.section}>What do you need?</Text>
-          {poolIngredients.length > 0 ? (
-            <Pressable onPress={toggleAll} hitSlop={8} testID="buy-ing-toggle-all">
-              <Text style={styles.toggleAll}>{allSelected ? 'Clear all' : 'Select all'}</Text>
-            </Pressable>
-          ) : null}
-        </View>
-
-        {loadingIngredients ? (
-          <Loading />
-        ) : poolIngredients.length === 0 ? (
-          <EmptyState icon="cart-outline" title="No ingredients yet" subtitle="Add ingredients to your shopping list first, or open this from a recipe." />
-        ) : (
-          <View style={styles.ingList}>
-            {poolIngredients.map((name) => (
-              <Pressable key={name} style={styles.ingRow} onPress={() => toggle(name)} testID={`buy-ing-${name}`}>
-                <View style={[styles.checkbox, selected[name] && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-                  {selected[name] ? <Icon name="check" size={14} color={colors.primaryForeground} /> : null}
-                </View>
-                <Text style={styles.ingText}>{name}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-
-        <View style={styles.divider} />
-
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.section}>Choose where to buy</Text>
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.regionRow} contentContainerStyle={{ gap: 8 }}>
-          {REGION_CHOICES.map((r) => {
-            const active = (appsQuery.data?.country_code || '') === r.code;
-            return (
-              <Pressable
-                key={r.code}
-                onPress={() => pickRegion(r.code)}
-                style={[styles.regionChip, active && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-                testID={`buy-ing-region-${r.code}`}
-              >
-                <Text style={[styles.regionChipText, active && { color: colors.primaryForeground }]}>{r.label}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {appsQuery.isLoading ? (
-          <Loading />
-        ) : appsQuery.data ? (
-          <>
-            <Text style={styles.regionLabel}>
-              Showing apps for {appsQuery.data.country}
-            </Text>
-            <View style={styles.appList}>
-              {appsQuery.data.apps.map((app) => (
+      {selectedApp ? (
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
+          <Text style={styles.subtitle}>
+            Grocery apps search one item at a time — tap each ingredient below to search it on {selectedApp.name}.
+          </Text>
+          {buildUrlsMut.isPending ? (
+            <Loading />
+          ) : (
+            <View style={styles.ingList}>
+              {(buildUrlsMut.data?.items || []).map((item) => (
                 <Pressable
-                  key={app.id}
-                  style={styles.appCard}
-                  onPress={() => buildUrlMut.mutate(app)}
-                  disabled={buildUrlMut.isPending || selectedNames.length === 0}
-                  testID={`buy-ing-app-${app.id}`}
+                  key={item.name}
+                  style={styles.urlRow}
+                  onPress={() => Linking.openURL(item.url)}
+                  testID={`buy-ing-open-${item.query}`}
                 >
-                  <View style={[styles.appLogoWrap, { backgroundColor: app.color }]}>
-                    <Image source={{ uri: app.logo }} style={styles.appLogo} contentFit="contain" />
+                  <View style={[styles.urlIcon, { backgroundColor: selectedApp.color }]}>
+                    <Icon name="magnify" size={16} color={selectedApp.text_color} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.appName}>{app.name}</Text>
-                    <Text style={styles.appTime}>{app.delivery_time} delivery</Text>
+                    <Text style={styles.ingText}>{item.name}</Text>
+                    <Text style={styles.urlQuery}>Search “{item.query}”</Text>
                   </View>
-                  {buildUrlMut.isPending && buildUrlMut.variables?.id === app.id ? (
-                    <Icon name="loading" size={20} color={colors.mutedForeground} />
-                  ) : (
-                    <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
-                  )}
+                  <Icon name="open-in-new" size={18} color={colors.mutedForeground} />
                 </Pressable>
               ))}
             </View>
-          </>
-        ) : null}
+          )}
+        </ScrollView>
+      ) : (
+        <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
+          {params.title ? <Text style={styles.subtitle}>For {String(params.title)}</Text> : null}
 
-        {selectedNames.length === 0 && poolIngredients.length > 0 ? (
-          <Text style={styles.hint}>Select at least one ingredient above to enable buying.</Text>
-        ) : null}
-      </ScrollView>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.section}>What do you need?</Text>
+            {poolIngredients.length > 0 ? (
+              <Pressable onPress={toggleAll} hitSlop={8} testID="buy-ing-toggle-all">
+                <Text style={styles.toggleAll}>{allSelected ? 'Clear all' : 'Select all'}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {loadingIngredients ? (
+            <Loading />
+          ) : poolIngredients.length === 0 ? (
+            <EmptyState icon="cart-outline" title="No ingredients yet" subtitle="Add ingredients to your shopping list first, or open this from a recipe." />
+          ) : (
+            <View style={styles.ingList}>
+              {poolIngredients.map((name) => (
+                <Pressable key={name} style={styles.ingRow} onPress={() => toggle(name)} testID={`buy-ing-${name}`}>
+                  <View style={[styles.checkbox, selected[name] && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+                    {selected[name] ? <Icon name="check" size={14} color={colors.primaryForeground} /> : null}
+                  </View>
+                  <Text style={styles.ingText}>{name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          <View style={styles.divider} />
+
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.section}>Choose where to buy</Text>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.regionRow} contentContainerStyle={{ gap: 8 }}>
+            {REGION_CHOICES.map((r) => {
+              const active = (appsQuery.data?.country_code || '') === r.code;
+              return (
+                <Pressable
+                  key={r.code}
+                  onPress={() => pickRegion(r.code)}
+                  style={[styles.regionChip, active && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                  testID={`buy-ing-region-${r.code}`}
+                >
+                  <Text style={[styles.regionChipText, active && { color: colors.primaryForeground }]}>{r.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {appsQuery.isLoading ? (
+            <Loading />
+          ) : appsQuery.data ? (
+            <>
+              <Text style={styles.regionLabel}>
+                Showing apps for {appsQuery.data.country}
+              </Text>
+              <View style={styles.appList}>
+                {appsQuery.data.apps.map((app) => (
+                  <Pressable
+                    key={app.id}
+                    style={styles.appCard}
+                    onPress={() => pickApp(app)}
+                    disabled={selectedNames.length === 0}
+                    testID={`buy-ing-app-${app.id}`}
+                  >
+                    <View style={[styles.appLogoWrap, { backgroundColor: app.color }]}>
+                      <Image source={{ uri: app.logo }} style={styles.appLogo} contentFit="contain" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.appName}>{app.name}</Text>
+                      <Text style={styles.appTime}>{app.delivery_time} delivery</Text>
+                    </View>
+                    <Icon name="chevron-right" size={20} color={colors.mutedForeground} />
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          ) : null}
+
+          {selectedNames.length === 0 && poolIngredients.length > 0 ? (
+            <Text style={styles.hint}>Select at least one ingredient above to enable buying.</Text>
+          ) : null}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -248,7 +302,7 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: 12 },
   headerTitle: { fontFamily: f.serif, fontSize: 24, color: colors.foreground },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 4 },
-  subtitle: { fontFamily: f.body, fontSize: 13.5, color: colors.mutedForeground, marginBottom: 10 },
+  subtitle: { fontFamily: f.body, fontSize: 13.5, color: colors.mutedForeground, marginBottom: 14, lineHeight: 19 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, marginBottom: 10 },
   section: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 },
   toggleAll: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.accent },
@@ -267,5 +321,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   appLogo: { width: '100%', height: '100%' },
   appName: { fontFamily: f.bodyBold, fontSize: 15, color: colors.foreground },
   appTime: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, marginTop: 1 },
+  urlRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  urlIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  urlQuery: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, marginTop: 2 },
   hint: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, textAlign: 'center', marginTop: 16 },
 }));

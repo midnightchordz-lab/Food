@@ -12,7 +12,7 @@ from .deps import db, User, get_current_user
 # Import delivery apps config
 import sys
 sys.path.insert(0, '/app/backend')
-from config.delivery_apps import DELIVERY_APPS, get_apps_for_country, build_delivery_url
+from config.delivery_apps import DELIVERY_APPS, get_apps_for_country, build_delivery_url, build_delivery_urls
 
 router = APIRouter(prefix="/shopping", tags=["Shopping"])
 
@@ -196,6 +196,45 @@ async def build_url(
     except Exception as e:
         logging.error(f"Build URL error: {e}")
         raise HTTPException(status_code=500, detail="Failed to build URL")
+
+
+@router.post("/build-urls")
+async def build_urls(
+    request: BuildUrlRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    POST /api/shopping/build-urls
+    Build one search URL per ingredient for the selected app. Grocery
+    search boxes (Zepto, Blinkit, BigBasket, etc.) only match a single
+    product per query, so a combined multi-ingredient search returns no
+    results -- the caller should let the user open these one at a time.
+    """
+    try:
+        if not request.app_id or not request.ingredients:
+            raise HTTPException(status_code=400, detail="app_id and ingredients are required")
+
+        country_apps = DELIVERY_APPS.get(request.country_code, DELIVERY_APPS["DEFAULT"])
+        app = next((a for a in country_apps["apps"] if a["id"] == request.app_id), None)
+
+        if not app:
+            raise HTTPException(status_code=404, detail="App not found")
+
+        ingredients_list = [{"name": ing.name, "amount": ing.amount} for ing in request.ingredients]
+        items = build_delivery_urls(app, ingredients_list)
+
+        return {
+            "success": True,
+            "app_name": app["name"],
+            "app_id": request.app_id,
+            "items": items
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Build URLs error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to build URLs")
 
 
 @router.post("/list/add")
