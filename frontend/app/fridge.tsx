@@ -8,6 +8,7 @@ import { api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
+import { useSafeBack } from '@/src/utils/navigation';
 
 type Ingredient = { name: string; category?: string; quantity?: string | null };
 type FridgeRecipe = {
@@ -27,6 +28,7 @@ export default function Fridge() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
+  const goBack = useSafeBack();
   const { isSubscribed } = useSubscription();
 
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -94,7 +96,7 @@ export default function Fridge() {
   if (!isSubscribed) {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
-        <Header onClose={() => router.back()} />
+        <Header onClose={goBack} />
         <View style={styles.lockWrap}>
           <View style={styles.lockIcon}><Icon name="fridge-outline" size={34} color={colors.accent} /></View>
           <Text style={styles.lockTitle}>Scan your fridge</Text>
@@ -108,7 +110,7 @@ export default function Fridge() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Header onClose={() => router.back()} />
+      <Header onClose={goBack} />
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.photoWrap}>
           <Pressable style={styles.photoBtn} onPress={() => pickImage(true)} testID="fridge-camera">

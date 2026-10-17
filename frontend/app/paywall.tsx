@@ -3,11 +3,11 @@ import { View, Text, ScrollView, Pressable, Modal, ActivityIndicator } from 'rea
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import type { PurchasesPackage } from 'react-native-purchases';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
+import { useSafeBack } from '@/src/utils/navigation';
 
 const HERO = 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=900&q=80';
 
@@ -24,7 +24,7 @@ export default function Paywall() {
   const styles = useStyles();
   const { colors } = useTheme();
   const toast = useToast();
-  const router = useRouter();
+  const goBack = useSafeBack();
   const { offerings, isSubscribed, purchase, restore, isPurchasing, isRestoring, identityReady } = useSubscription();
 
   const currentOffering = offerings?.current;
@@ -41,7 +41,7 @@ export default function Paywall() {
     try {
       await purchase(pkg);
       toast.show('Welcome to Premium! 🎉', 'success');
-      router.back();
+      goBack();
     } catch (e: any) {
       if (e?.userCancelled || String(e?.message).includes('cancel')) return;
       if (String(e?.message).includes('identity_not_ready')) {
@@ -74,7 +74,7 @@ export default function Paywall() {
         <View style={styles.heroWrap}>
           <Image source={{ uri: HERO }} style={styles.hero} contentFit="cover" transition={250} />
           <LinearGradient colors={['transparent', colors.background]} style={styles.heroFade} locations={[0.2, 0.95]} />
-          <Pressable style={[styles.close, { top: insets.top + 8 }]} onPress={() => router.back()} testID="paywall-close" hitSlop={8}>
+          <Pressable style={[styles.close, { top: insets.top + 8 }]} onPress={goBack} testID="paywall-close" hitSlop={8}>
             <Icon name="close" size={22} color="#FFFFFF" />
           </Pressable>
         </View>

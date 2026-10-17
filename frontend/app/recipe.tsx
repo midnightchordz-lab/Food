@@ -10,6 +10,7 @@ import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Loading, useToast } from '@/src/components/ui';
 import { foodImage, useRecipeImage } from '@/src/components/RecipeCard';
 import { useSubscription } from '@/src/lib/revenuecat';
+import { useSafeBack } from '@/src/utils/navigation';
 
 // Extract ordered cooking steps from the AI recipe markdown.
 function parseSteps(md: string): string[] {
@@ -50,6 +51,7 @@ export default function RecipeDetail() {
   const { colors } = useTheme();
   const router = useRouter();
   const toast = useToast();
+  const goBack = useSafeBack();
   const queryClient = useQueryClient();
   const { isSubscribed } = useSubscription();
   const p = useLocalSearchParams<{
@@ -169,7 +171,7 @@ export default function RecipeDetail() {
             locations={[0, 0.45, 1]}
             style={styles.heroFade}
           />
-          <Pressable style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={() => router.back()} testID="close-recipe" hitSlop={8}>
+          <Pressable style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={goBack} testID="close-recipe" hitSlop={8}>
             <Icon name="close" size={22} color="#FFFFFF" />
           </Pressable>
           <View style={styles.heroTextWrap}>

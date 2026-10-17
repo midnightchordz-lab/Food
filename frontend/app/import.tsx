@@ -9,6 +9,7 @@ import { api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
+import { useSafeBack } from '@/src/utils/navigation';
 
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -29,6 +30,7 @@ export default function ImportRecipe() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
+  const goBack = useSafeBack();
   const queryClient = useQueryClient();
   const { isSubscribed } = useSubscription();
 
@@ -129,7 +131,7 @@ export default function ImportRecipe() {
   if (!isSubscribed) {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
-        <Header onClose={() => router.back()} />
+        <Header onClose={goBack} />
         <View style={styles.lockWrap}>
           <View style={styles.lockIcon}><Icon name="import" size={34} color={colors.accent} /></View>
           <Text style={styles.lockTitle}>Import any recipe</Text>
@@ -143,7 +145,7 @@ export default function ImportRecipe() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Header onClose={() => router.back()} />
+      <Header onClose={goBack} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {!preview ? (

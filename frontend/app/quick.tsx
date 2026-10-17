@@ -8,6 +8,7 @@ import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { RecipeCard } from '@/src/components/RecipeCard';
 import { DIETARY_PREFS } from '@/src/constants/data';
+import { useSafeBack } from '@/src/utils/navigation';
 
 const CUISINES = ['International', 'Indian', 'Italian', 'Thai', 'Mexican', 'Mediterranean', 'Chinese', 'American'];
 
@@ -30,6 +31,7 @@ export default function Quick() {
   const { colors } = useTheme();
   const router = useRouter();
   const toast = useToast();
+  const goBack = useSafeBack();
 
   const [dietary, setDietary] = useState('balanced');
   const [cuisine, setCuisine] = useState('International');
@@ -91,7 +93,7 @@ export default function Quick() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} testID="quick-close"><Icon name="close" size={24} color={colors.foreground} /></Pressable>
+        <Pressable onPress={goBack} hitSlop={8} testID="quick-close"><Icon name="close" size={24} color={colors.foreground} /></Pressable>
         <Text style={styles.headerTitle}>10-Minute Meals</Text>
         <View style={{ width: 24 }} />
       </View>

@@ -9,6 +9,7 @@ import { api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Button, useToast } from '@/src/components/ui';
 import { useSubscription } from '@/src/lib/revenuecat';
+import { useSafeBack } from '@/src/utils/navigation';
 
 const BACKEND = process.env.EXPO_PUBLIC_BACKEND_URL;
 
@@ -36,6 +37,7 @@ export default function MoodMixers() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
+  const goBack = useSafeBack();
   const { isSubscribed } = useSubscription();
 
   const [preview, setPreview] = React.useState<MixologyResult | null>(null);
@@ -79,7 +81,7 @@ export default function MoodMixers() {
   if (!isSubscribed) {
     return (
       <View style={[styles.root, { paddingTop: insets.top }]}>
-        <Header onClose={() => router.back()} />
+        <Header onClose={goBack} />
         <View style={styles.lockWrap}>
           <View style={styles.lockIcon}><Icon name="glass-cocktail" size={34} color={colors.accent} /></View>
           <Text style={styles.lockTitle}>Mood Mixers</Text>
@@ -93,7 +95,7 @@ export default function MoodMixers() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Header onClose={() => router.back()} />
+      <Header onClose={goBack} />
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
         {!preview ? (
           <>

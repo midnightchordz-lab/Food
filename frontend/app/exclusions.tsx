@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, Button, Loading, useToast } from '@/src/components/ui';
+import { useSafeBack } from '@/src/utils/navigation';
 
 const COMMON = ['Eggs', 'Milk', 'Peanuts', 'Tree Nuts', 'Soy', 'Wheat', 'Fish', 'Shellfish', 'Sesame', 'Gluten', 'Pork', 'Beef', 'Mushroom', 'Onion', 'Garlic'];
 
@@ -14,7 +14,7 @@ export default function Exclusions() {
   const styles = useStyles();
   const { colors } = useTheme();
   const toast = useToast();
-  const router = useRouter();
+  const goBack = useSafeBack();
   const queryClient = useQueryClient();
 
   const [items, setItems] = useState<string[] | null>(null);
@@ -52,7 +52,7 @@ export default function Exclusions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exclusions'] });
       toast.show('Exclusions saved', 'success');
-      router.back();
+      goBack();
     },
     onError: () => toast.show('Could not save', 'error'),
   });
@@ -60,7 +60,7 @@ export default function Exclusions() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} testID="excl-back">
+        <Pressable onPress={goBack} hitSlop={8} testID="excl-back">
           <Icon name="chevron-left" size={26} color={colors.foreground} />
         </Pressable>
         <Text style={styles.title}>Food Exclusions</Text>

@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme, fonts } from '@/src/theme';
 import { Icon, Loading, EmptyState, useToast } from '@/src/components/ui';
+import { useSafeBack } from '@/src/utils/navigation';
 
 type Item = { name: string; checked: boolean };
 
@@ -15,6 +16,7 @@ export default function Shopping() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
+  const goBack = useSafeBack();
   const queryClient = useQueryClient();
 
   const [items, setItems] = useState<Item[] | null>(null);
@@ -67,7 +69,7 @@ export default function Shopping() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} testID="shop-back">
+        <Pressable onPress={goBack} hitSlop={8} testID="shop-back">
           <Icon name="chevron-left" size={26} color={colors.foreground} />
         </Pressable>
         <Text style={styles.title}>Shopping List</Text>

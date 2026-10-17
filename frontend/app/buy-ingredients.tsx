@@ -2,11 +2,12 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, Loading, EmptyState, useToast } from '@/src/components/ui';
+import { useSafeBack } from '@/src/utils/navigation';
 
 type DeliveryApp = {
   id: string;
@@ -45,7 +46,7 @@ export default function BuyIngredients() {
   const styles = useStyles();
   const { colors } = useTheme();
   const toast = useToast();
-  const router = useRouter();
+  const goBack = useSafeBack();
 
   const params = useLocalSearchParams<{ ingredients?: string; title?: string }>();
 
@@ -172,15 +173,6 @@ export default function BuyIngredients() {
   };
 
   const loadingIngredients = providedIngredients.length === 0 && shoppingListQuery.isLoading;
-
-  // router.back() fails silently (a "GO_BACK was not handled" error, no
-  // navigation) when this screen has no history behind it in the current
-  // navigator -- e.g. a fresh web preview load -- stranding the user on
-  // Buy Ingredients with no way back to the recipe. Fall back to Discover.
-  const goBack = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/(tabs)');
-  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>

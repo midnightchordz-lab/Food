@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 import { useKeepAwake } from 'expo-keep-awake';
 import { API_ROOT, api } from '@/src/api/client';
 import { makeStyles, useTheme } from '@/src/theme';
 import { Icon, useToast } from '@/src/components/ui';
 import { useVoiceCommands, voiceSupported } from '@/src/lib/voice';
+import { useSafeBack } from '@/src/utils/navigation';
 
 const TIMER_OPTIONS = [15, 30, 60] as const;
 const DEFAULT_TIMER = 30;
@@ -59,8 +60,8 @@ export default function CookMode() {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
   const { colors } = useTheme();
-  const router = useRouter();
   const toast = useToast();
+  const goBack = useSafeBack();
   const p = useLocalSearchParams<{ title?: string; steps?: string }>();
 
   const steps = useMemo<string[]>(() => {
@@ -224,7 +225,7 @@ export default function CookMode() {
   if (!steps.length) {
     return (
       <View style={[styles.root, { paddingTop: insets.top + 12 }]}>
-        <Header title={title} onClose={() => router.back()} />
+        <Header title={title} onClose={goBack} />
         <View style={styles.center}>
           <Icon name="chef-hat" size={40} color={colors.mutedForeground} />
           <Text style={styles.emptyText}>No cooking steps found for this recipe.</Text>
@@ -235,7 +236,7 @@ export default function CookMode() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + 12 }]}>
-      <Header title={title} onClose={() => router.back()} />
+      <Header title={title} onClose={goBack} />
       <View style={styles.progressWrap}>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${((index + 1) / steps.length) * 100}%` }]} />
