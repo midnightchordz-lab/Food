@@ -427,7 +427,7 @@ class TestRegionalAppConfiguration:
         app_ids = [app["id"] for app in data["apps"]]
         
         # Check for India-specific apps
-        india_apps = ["blinkit", "zepto", "swiggy_instamart"]
+        india_apps = ["blinkit", "swiggy_instamart", "bigbasket"]
         has_india_apps = any(app_id in india_apps for app_id in app_ids)
         assert has_india_apps or data.get("country_code") != "IN", f"India should have local apps: {app_ids}"
     

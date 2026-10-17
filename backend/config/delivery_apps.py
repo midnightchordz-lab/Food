@@ -20,16 +20,6 @@ DELIVERY_APPS = {
                 "available": True
             },
             {
-                "id": "zepto",
-                "name": "Zepto",
-                "logo": "https://play-lh.googleusercontent.com/bTJzNNQhJL6gqC_YnY5EBMJ1DH5WNXvqfz4tO6dyJ_4S2r4qN6SRrYEf5PVxYdAaAQ",
-                "color": "#8B2FC9",
-                "text_color": "#FFFFFF",
-                "delivery_time": "10 mins",
-                "search_url": "https://www.zeptonow.com/search?q={query}",
-                "available": True
-            },
-            {
                 "id": "swiggy_instamart",
                 "name": "Swiggy Instamart",
                 "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/1/12/Swiggy_logo.svg/1200px-Swiggy_logo.svg.png",
@@ -47,16 +37,6 @@ DELIVERY_APPS = {
                 "text_color": "#FFFFFF",
                 "delivery_time": "2 hours",
                 "search_url": "https://www.bigbasket.com/ps/?q={query}",
-                "available": True
-            },
-            {
-                "id": "jiomart",
-                "name": "JioMart",
-                "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/JioMart_Logo.svg/1200px-JioMart_Logo.svg.png",
-                "color": "#0071CE",
-                "text_color": "#FFFFFF",
-                "delivery_time": "Same day",
-                "search_url": "https://www.jiomart.com/search/{query}",
                 "available": True
             }
         ]
