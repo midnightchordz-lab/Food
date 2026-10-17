@@ -247,12 +247,23 @@ def parse_recipes_to_json(ai_response: str, user_cuisine: str = '') -> List[Dict
         """Extract key ingredients from recipe content"""
         ingredients = []
         
-        # Look for "Key Ingredients:" section
-        ing_match = re.search(r'\*\*(?:Key\s*)?Ingredients:?\*\*:?\s*([^\n]+)', text, re.IGNORECASE)
+        # Look for "Key Ingredients:" section. Capture everything up to the next
+        # bold header / divider, not just the first line -- the AI is told to list
+        # ingredients inline but often formats them as a bullet list under the
+        # header instead, and `\s*` already skips past the newline into that list,
+        # so capturing only `[^\n]+` grabbed just the first bullet as a single item.
+        ing_match = re.search(
+            r'\*\*(?:Key\s*)?Ingredients:?\*\*:?\s*([\s\S]*?)(?=\n\s*\*\*|\n\s*---|\Z)',
+            text, re.IGNORECASE
+        )
         if ing_match:
-            ing_text = ing_match.group(1).strip()
-            # Split by comma
-            ingredients = [i.strip() for i in ing_text.split(',') if i.strip()]
+            ing_block = ing_match.group(1).strip()
+            bullet_lines = re.findall(r'^\s*[-*•]\s*(.+)$', ing_block, re.MULTILINE)
+            if bullet_lines:
+                ingredients = [b.strip() for b in bullet_lines if b.strip()]
+            elif ing_block:
+                # Inline comma-separated list on the header's own line
+                ingredients = [i.strip() for i in ing_block.split('\n')[0].split(',') if i.strip()]
         
         # Look for bullet point ingredients
         if not ingredients:

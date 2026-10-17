@@ -159,6 +159,7 @@ function ThemedStack() {
         <Stack.Screen name="cook" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="fridge" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="mixers" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="buy-ingredients" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="quick" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
     </>

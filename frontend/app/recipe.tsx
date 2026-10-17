@@ -253,10 +253,23 @@ export default function RecipeDetail() {
             <>
               <Markdown content={recipeContent} />
               {getShoppingIngredients().length > 0 ? (
-                <Pressable style={styles.listBtn} onPress={() => addToListMut.mutate()} testID="add-to-list" disabled={addToListMut.isPending}>
-                  <Icon name="cart-plus" size={18} color={colors.primary} />
-                  <Text style={styles.listText}>{addToListMut.isPending ? 'Adding…' : 'Add ingredients to shopping list'}</Text>
-                </Pressable>
+                <>
+                  <Pressable style={styles.listBtn} onPress={() => addToListMut.mutate()} testID="add-to-list" disabled={addToListMut.isPending}>
+                    <Icon name="cart-plus" size={18} color={colors.primary} />
+                    <Text style={styles.listText}>{addToListMut.isPending ? 'Adding…' : 'Add ingredients to shopping list'}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.buyBtn}
+                    onPress={() => router.push({
+                      pathname: '/buy-ingredients',
+                      params: { title, ingredients: JSON.stringify(getShoppingIngredients()) },
+                    })}
+                    testID="buy-ingredients"
+                  >
+                    <Icon name="truck-delivery-outline" size={18} color={colors.accent} />
+                    <Text style={styles.buyText}>Buy ingredients</Text>
+                  </Pressable>
+                </>
               ) : null}
             </>
           )}
@@ -377,6 +390,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   cookText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.primaryForeground },
   listBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20, backgroundColor: colors.primarySoft, borderRadius: 999, paddingVertical: 13 },
   listText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.primary },
+  buyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10, backgroundColor: colors.accentSoft, borderRadius: 999, paddingVertical: 13 },
+  buyText: { fontFamily: f.bodySemiBold, fontSize: 15, color: colors.accent },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 22 },
   h1: { fontFamily: f.serif, fontSize: 26, color: colors.foreground, marginTop: 12, marginBottom: 4 },
   h2: { fontFamily: f.serif, fontSize: 23, color: colors.foreground, marginTop: 20, marginBottom: 10 },

@@ -71,13 +71,25 @@ export default function Shopping() {
           <Icon name="chevron-left" size={26} color={colors.foreground} />
         </Pressable>
         <Text style={styles.title}>Shopping List</Text>
-        {checkedCount > 0 ? (
-          <Pressable onPress={clearChecked} hitSlop={8} testID="shop-clear">
-            <Text style={styles.clear}>Clear ({checkedCount})</Text>
-          </Pressable>
-        ) : (
-          <View style={{ width: 26 }} />
-        )}
+        <View style={styles.headerActions}>
+          {list.length > 0 ? (
+            <Pressable
+              onPress={() => router.push({
+                pathname: '/buy-ingredients',
+                params: { ingredients: JSON.stringify(list.filter((i) => !i.checked).map((i) => i.name)) },
+              })}
+              hitSlop={8}
+              testID="shop-buy"
+            >
+              <Icon name="truck-delivery-outline" size={22} color={colors.accent} />
+            </Pressable>
+          ) : null}
+          {checkedCount > 0 ? (
+            <Pressable onPress={clearChecked} hitSlop={8} testID="shop-clear">
+              <Text style={styles.clear}>Clear ({checkedCount})</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
@@ -136,6 +148,7 @@ const useStyles = makeStyles(({ colors, spacing, fonts: f }) => ({
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: 12 },
   title: { fontFamily: f.serif, fontSize: 24, color: colors.foreground },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14, minWidth: 26, justifyContent: 'flex-end' },
   clear: { fontFamily: f.bodySemiBold, fontSize: 14, color: colors.accent },
   inputRowWrap: { paddingHorizontal: spacing.lg, paddingBottom: 12 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 16, paddingHorizontal: 16, height: 54 },
