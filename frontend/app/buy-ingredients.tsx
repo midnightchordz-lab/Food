@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Linking } from 'react-native';
 import { Image } from 'expo-image';
+import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -180,8 +181,20 @@ export default function BuyIngredients() {
       {selectedApp ? (
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
           <Text style={styles.subtitle}>
-            Grocery apps search one item at a time — tap each ingredient below to search it on {selectedApp.name}.
+            Grocery apps search one item at a time — tap each ingredient below to search it on {selectedApp.name}, or copy the whole list and paste it into {selectedApp.name}&apos;s own search or list feature.
           </Text>
+          <Pressable
+            style={styles.copyBtn}
+            onPress={async () => {
+              const names = (buildUrlsMut.data?.items || []).map((i) => i.query);
+              await Clipboard.setStringAsync(names.join(', '));
+              toast.show(`Copied ${names.length} ingredient${names.length === 1 ? '' : 's'} — paste into ${selectedApp.name}`, 'success');
+            }}
+            testID="buy-ing-copy-all"
+          >
+            <Icon name="content-copy" size={16} color={colors.primary} />
+            <Text style={styles.copyBtnText}>Copy all ingredients</Text>
+          </Pressable>
           {buildUrlsMut.isPending ? (
             <Loading />
           ) : (
@@ -303,6 +316,8 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   headerTitle: { fontFamily: f.serif, fontSize: 24, color: colors.foreground },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 4 },
   subtitle: { fontFamily: f.body, fontSize: 13.5, color: colors.mutedForeground, marginBottom: 14, lineHeight: 19 },
+  copyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 999, paddingVertical: 12, marginBottom: 16 },
+  copyBtnText: { fontFamily: f.bodySemiBold, fontSize: 14, color: colors.primary },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, marginBottom: 10 },
   section: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 },
   toggleAll: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.accent },
