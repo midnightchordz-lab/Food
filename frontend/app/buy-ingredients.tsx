@@ -173,11 +173,20 @@ export default function BuyIngredients() {
 
   const loadingIngredients = providedIngredients.length === 0 && shoppingListQuery.isLoading;
 
+  // router.back() fails silently (a "GO_BACK was not handled" error, no
+  // navigation) when this screen has no history behind it in the current
+  // navigator -- e.g. a fresh web preview load -- stranding the user on
+  // Buy Ingredients with no way back to the recipe. Fall back to Discover.
+  const goBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
+  };
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable
-          onPress={() => (selectedApp ? setSelectedApp(null) : router.back())}
+          onPress={() => (selectedApp ? setSelectedApp(null) : goBack())}
           hitSlop={8}
           testID="buy-ing-close"
         >
