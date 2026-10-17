@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Linking } from 'react-native';
 import { Image } from 'expo-image';
-import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -162,6 +161,16 @@ export default function BuyIngredients() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNames.join('|')]);
 
+  // Grocery sites don't support bulk-pasting a list either (confirmed: Blinkit
+  // treats a pasted comma-separated list as ONE query and just matches the
+  // first couple of words) -- the per-item tap is genuinely the only thing
+  // that works, so just track which ones have been opened already.
+  const [opened, setOpened] = React.useState<Record<string, boolean>>({});
+  const openItem = (item: UrlItem) => {
+    Linking.openURL(item.url);
+    setOpened((o) => ({ ...o, [item.name]: true }));
+  };
+
   const loadingIngredients = providedIngredients.length === 0 && shoppingListQuery.isLoading;
 
   return (
@@ -181,41 +190,32 @@ export default function BuyIngredients() {
       {selectedApp ? (
         <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
           <Text style={styles.subtitle}>
-            Grocery apps search one item at a time — tap each ingredient below to search it on {selectedApp.name}, or copy the whole list and paste it into {selectedApp.name}&apos;s own search or list feature.
+            Grocery apps can only search one item at a time — tap each ingredient below to search it on {selectedApp.name}. Each one opens as its own search; once you've added it there, come back and tap the next.
           </Text>
-          <Pressable
-            style={styles.copyBtn}
-            onPress={async () => {
-              const names = (buildUrlsMut.data?.items || []).map((i) => i.query);
-              await Clipboard.setStringAsync(names.join(', '));
-              toast.show(`Copied ${names.length} ingredient${names.length === 1 ? '' : 's'} — paste into ${selectedApp.name}`, 'success');
-            }}
-            testID="buy-ing-copy-all"
-          >
-            <Icon name="content-copy" size={16} color={colors.primary} />
-            <Text style={styles.copyBtnText}>Copy all ingredients</Text>
-          </Pressable>
           {buildUrlsMut.isPending ? (
             <Loading />
           ) : (
             <View style={styles.ingList}>
-              {(buildUrlsMut.data?.items || []).map((item) => (
-                <Pressable
-                  key={item.name}
-                  style={styles.urlRow}
-                  onPress={() => Linking.openURL(item.url)}
-                  testID={`buy-ing-open-${item.query}`}
-                >
-                  <View style={[styles.urlIcon, { backgroundColor: selectedApp.color }]}>
-                    <Icon name="magnify" size={16} color={selectedApp.text_color} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.ingText}>{item.name}</Text>
-                    <Text style={styles.urlQuery}>Search “{item.query}”</Text>
-                  </View>
-                  <Icon name="open-in-new" size={18} color={colors.mutedForeground} />
-                </Pressable>
-              ))}
+              {(buildUrlsMut.data?.items || []).map((item) => {
+                const isOpened = !!opened[item.name];
+                return (
+                  <Pressable
+                    key={item.name}
+                    style={[styles.urlRow, isOpened && styles.urlRowOpened]}
+                    onPress={() => openItem(item)}
+                    testID={`buy-ing-open-${item.query}`}
+                  >
+                    <View style={[styles.urlIcon, { backgroundColor: isOpened ? colors.border : selectedApp.color }]}>
+                      <Icon name={isOpened ? 'check' : 'magnify'} size={16} color={isOpened ? colors.mutedForeground : selectedApp.text_color} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.ingText, isOpened && styles.ingTextOpened]}>{item.name}</Text>
+                      <Text style={styles.urlQuery}>{isOpened ? 'Opened' : `Search “${item.query}”`}</Text>
+                    </View>
+                    <Icon name="open-in-new" size={18} color={colors.mutedForeground} />
+                  </Pressable>
+                );
+              })}
             </View>
           )}
         </ScrollView>
@@ -316,8 +316,6 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   headerTitle: { fontFamily: f.serif, fontSize: 24, color: colors.foreground },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: 4 },
   subtitle: { fontFamily: f.body, fontSize: 13.5, color: colors.mutedForeground, marginBottom: 14, lineHeight: 19 },
-  copyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 999, paddingVertical: 12, marginBottom: 16 },
-  copyBtnText: { fontFamily: f.bodySemiBold, fontSize: 14, color: colors.primary },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, marginBottom: 10 },
   section: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 },
   toggleAll: { fontFamily: f.bodySemiBold, fontSize: 13, color: colors.accent },
@@ -337,7 +335,9 @@ const useStyles = makeStyles(({ colors, radius, spacing, fonts: f }) => ({
   appName: { fontFamily: f.bodyBold, fontSize: 15, color: colors.foreground },
   appTime: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, marginTop: 1 },
   urlRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  urlRowOpened: { backgroundColor: colors.cardAlt, opacity: 0.7 },
   urlIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   urlQuery: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, marginTop: 2 },
+  ingTextOpened: { textDecorationLine: 'line-through', color: colors.mutedForeground },
   hint: { fontFamily: f.body, fontSize: 12.5, color: colors.mutedForeground, textAlign: 'center', marginTop: 16 },
 }));
