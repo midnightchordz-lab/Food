@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { Platform } from 'react-native';
-import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import type { CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from '@/src/api/client';
+import { useAuth } from '@/src/auth/AuthContext';
 
 const REVENUECAT_TEST_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
 const REVENUECAT_IOS_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
@@ -10,8 +12,22 @@ const REVENUECAT_ANDROID_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_AP
 
 export const REVENUECAT_ENTITLEMENT_IDENTIFIER = 'pro';
 
-// web preview uses the Test Store; production web has no store
-export const rcEnabled = Platform.OS !== 'web' || __DEV__;
+// react-native-purchases is a NATIVE module that is NOT bundled in Expo Go — its
+// native calls hang/crash on Android there. Payments are split by platform:
+// iOS uses RevenueCat (Apple requirement), Android uses Razorpay. So RevenueCat
+// is enabled ONLY on iOS real builds, plus web-dev preview (Test Store browser
+// mode). Never on Android, never in Expo Go.
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+export const rcEnabled = Platform.OS === 'ios' ? !isExpoGo : (Platform.OS === 'web' ? __DEV__ : false);
+
+// Lazy accessor: react-native-purchases is a NATIVE module. Its top-level code
+// builds a NativeEventEmitter the moment it is imported, which THROWS on Android
+// inside Expo Go (where the native module is absent) and freezes the app before
+// any rcEnabled guard can run. We therefore never `import` it statically — we
+// require it only when RevenueCat is actually enabled (iOS real build / web-dev).
+function getPurchases() {
+  return require('react-native-purchases').default;
+}
 
 function getRevenueCatApiKey() {
   if (!REVENUECAT_TEST_API_KEY || !REVENUECAT_IOS_API_KEY || !REVENUECAT_ANDROID_API_KEY) {
@@ -25,31 +41,83 @@ function getRevenueCatApiKey() {
 
 export function initializeRevenueCat() {
   if (!rcEnabled) return;
+  const Purchases = getPurchases();
+  const { LOG_LEVEL } = require('react-native-purchases');
   Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
   Purchases.configure({ apiKey: getRevenueCatApiKey() });
 }
 
 function useSubscriptionContext() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [identityBound, setIdentityBound] = useState(false);
   const identityBoundRef = useRef(false);
 
+  // Backend is the source of truth for premium on Android (Razorpay) — and a
+  // safety net on iOS. Premium if the server subscription is a paid plan that is
+  // active or trialing. Refetches whenever the signed-in user changes.
+  const backendPremiumQuery = useQuery({
+    queryKey: ['premium', 'backend', user?.id ?? null],
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+    retry: 0,
+    queryFn: async () => {
+      const r = await api.get('/subscription/current');
+      const s = r.data?.subscription || {};
+      const premium = !!(s.plan_id && s.plan_id !== 'free' && ['active', 'trialing'].includes(s.status));
+      return {
+        premium,
+        status: s.status as string | undefined,
+        planId: s.plan_id as string | undefined,
+        source: s.source as string | undefined,
+        trialEnd: (s.trial_end || null) as string | null,
+        cancelAtPeriodEnd: !!s.cancel_at_period_end,
+        periodEnd: (s.current_period_end || null) as string | null,
+      };
+    },
+  });
+
+  const refetchPremium = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['premium', 'backend'] });
+    queryClient.invalidateQueries({ queryKey: ['trial', 'status'] });
+  }, [queryClient]);
+
+  // Trial status (source of truth for the countdown + "trial ended" prompt).
+  const trialStatusQuery = useQuery({
+    queryKey: ['trial', 'status', user?.id ?? null],
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+    retry: 0,
+    queryFn: async () => {
+      const r = await api.get('/trial/status');
+      const t = r.data?.trial || {};
+      return {
+        isActive: !!t.isActive,
+        daysRemaining: typeof t.daysRemaining === 'number' ? t.daysRemaining : null,
+        trialEndsAt: (t.trialEndsAt || null) as string | null,
+        trialExpired: !!t.trialExpired,
+        canStartTrial: !!t.canStartTrial,
+      };
+    },
+  });
+
   const customerInfoQuery = useQuery({
     queryKey: ['revenuecat', 'customer-info'],
-    queryFn: () => Purchases.getCustomerInfo(),
+    queryFn: () => getPurchases().getCustomerInfo(),
     enabled: rcEnabled,
     staleTime: 60 * 1000,
   });
 
   const offeringsQuery = useQuery({
     queryKey: ['revenuecat', 'offerings'],
-    queryFn: () => Purchases.getOfferings(),
+    queryFn: () => getPurchases().getOfferings(),
     enabled: rcEnabled,
     staleTime: 300 * 1000,
   });
 
   useEffect(() => {
     if (!rcEnabled) return;
+    const Purchases = getPurchases();
     const listener = (info: CustomerInfo) => queryClient.setQueryData(['revenuecat', 'customer-info'], info);
     Purchases.addCustomerInfoUpdateListener(listener);
     return () => {
@@ -62,7 +130,7 @@ function useSubscriptionContext() {
   // from originalAppUserId (which keeps the aliased anonymous value).
   const bindIdentity = useCallback(async (userId: string) => {
     if (!rcEnabled) return;
-    const { customerInfo } = await Purchases.logIn(userId);
+    const { customerInfo } = await getPurchases().logIn(userId);
     queryClient.setQueryData(['revenuecat', 'customer-info'], customerInfo);
     identityBoundRef.current = true;
     setIdentityBound(true);
@@ -70,6 +138,7 @@ function useSubscriptionContext() {
 
   const unbindIdentity = useCallback(async () => {
     if (!rcEnabled) return;
+    const Purchases = getPurchases();
     await Purchases.logOut();
     const info = await Purchases.getCustomerInfo();
     queryClient.setQueryData(['revenuecat', 'customer-info'], info);
@@ -80,7 +149,7 @@ function useSubscriptionContext() {
   const purchaseMutation = useMutation({
     mutationFn: async (packageToPurchase: PurchasesPackage) => {
       if (!identityBoundRef.current) throw new Error('identity_not_ready');
-      const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
+      const { customerInfo } = await getPurchases().purchasePackage(packageToPurchase);
       return customerInfo;
     },
     onSuccess: (customerInfo) => {
@@ -89,22 +158,58 @@ function useSubscriptionContext() {
   });
 
   const restoreMutation = useMutation({
-    mutationFn: () => Purchases.restorePurchases(),
+    mutationFn: () => getPurchases().restorePurchases(),
     onSuccess: (customerInfo) => {
       queryClient.setQueryData(['revenuecat', 'customer-info'], customerInfo);
     },
   });
 
-  const isSubscribed =
+  const rcSubscribed =
     customerInfoQuery.data?.entitlements.active?.[REVENUECAT_ENTITLEMENT_IDENTIFIER] !== undefined;
+  const premiumInfo = backendPremiumQuery.data;
+
+  // isSubscribed is platform-gated intentionally:
+  //
+  // iOS: rcSubscribed || status==='active' only — trialing excluded.
+  //   Apple-processed introductory/free trials come through StoreKit and
+  //   appear as active RevenueCat entitlements (rcSubscribed=true), so
+  //   those correctly grant access. Backend 'trialing' is excluded because
+  //   it caused auto-premium without purchase (Guideline 2.1b).
+  //   DO NOT change the iOS branch back to premiumInfo?.premium — that
+  //   field is true for both 'active' and 'trialing' and re-introduces
+  //   the App Store rejection.
+  //
+  // Android: premiumInfo?.premium === true (trialing included) — unchanged
+  //   from original. Android has live users on this behavior; do not
+  //   tighten without a separate migration plan.
+  const isSubscribed =
+    Platform.OS === 'ios'
+      ? (rcSubscribed || premiumInfo?.status === 'active')
+      : (premiumInfo?.premium === true);
+
+  // Days remaining in a Razorpay trial (for the "trial ending" banner). null if not trialing.
+  let trialDaysLeft: number | null = null;
+  if (premiumInfo?.status === 'trialing' && premiumInfo.trialEnd) {
+    const ms = new Date(premiumInfo.trialEnd).getTime() - Date.now();
+    trialDaysLeft = ms > 0 ? Math.ceil(ms / (24 * 60 * 60 * 1000)) : 0;
+  } else if (trialStatusQuery.data?.isActive && typeof trialStatusQuery.data.daysRemaining === 'number') {
+    trialDaysLeft = trialStatusQuery.data.daysRemaining;
+  }
+
+  // "Trial ended" — had a trial that expired and is not currently subscribed.
+  const trialExpired = !isSubscribed && trialStatusQuery.data?.trialExpired === true;
 
   return {
     customerInfo: customerInfoQuery.data,
     offerings: offeringsQuery.data,
     isSubscribed,
+    premiumInfo,
+    trialDaysLeft,
+    trialExpired,
     identityReady: identityBound,
     bindIdentity,
     unbindIdentity,
+    refetchPremium,
     isLoading: customerInfoQuery.isLoading || offeringsQuery.isLoading,
     purchase: purchaseMutation.mutateAsync,
     restore: restoreMutation.mutateAsync,

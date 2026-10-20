@@ -60,8 +60,8 @@
           "color": "#C87D56"
         }
       ],
-      "expo-audio",
       "./plugins/withIosNoBackgroundAudio",
+      "expo-audio",
       "expo-web-browser",
       [
         "expo-build-properties",
